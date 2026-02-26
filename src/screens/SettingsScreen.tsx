@@ -21,10 +21,42 @@ export const SettingsScreen: React.FC = () => {
     { value: 'mixed', label: 'Mixed' },
   ];
 
+  const difficulties: { value: 'easy' | 'medium' | 'hard'; label: string }[] = [
+    { value: 'easy', label: 'Easy (3x4)' },
+    { value: 'medium', label: 'Medium (4x5)' },
+    { value: 'hard', label: 'Hard (5x6)' },
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Settings</Text>
+
+        {/* Difficulty */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Difficulty</Text>
+          <View style={styles.optionsContainer}>
+            {difficulties.map(({ value, label }) => (
+              <TouchableOpacity
+                key={value}
+                style={[
+                  styles.optionButton,
+                  settings.difficulty === value && styles.optionButtonActive,
+                ]}
+                onPress={() => updateSettings({ difficulty: value })}
+              >
+                <Text
+                  style={[
+                    styles.optionText,
+                    settings.difficulty === value && styles.optionTextActive,
+                  ]}
+                >
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
 
         {/* Theme */}
         <View style={styles.section}>
@@ -79,6 +111,44 @@ export const SettingsScreen: React.FC = () => {
           </View>
           <Text style={styles.description}>Enable gentle sound effects</Text>
         </View>
+
+        {/* Volume */}
+        {settings.soundEnabled && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Volume</Text>
+            <View style={styles.volumeRow}>
+              <TouchableOpacity
+                style={styles.volumeButton}
+                onPress={() => updateSettings({ soundVolume: Math.max(0, Math.round((settings.soundVolume - 0.1) * 10) / 10) })}
+                disabled={settings.soundVolume <= 0}
+              >
+                <Text style={styles.volumeButtonText}>−</Text>
+              </TouchableOpacity>
+
+              <View style={styles.volumeBarTrack}>
+                {[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].map((step) => (
+                  <TouchableOpacity
+                    key={step}
+                    style={[
+                      styles.volumeSegment,
+                      settings.soundVolume >= step && styles.volumeSegmentFilled,
+                    ]}
+                    onPress={() => updateSettings({ soundVolume: step })}
+                  />
+                ))}
+              </View>
+
+              <TouchableOpacity
+                style={styles.volumeButton}
+                onPress={() => updateSettings({ soundVolume: Math.min(1, Math.round((settings.soundVolume + 0.1) * 10) / 10) })}
+                disabled={settings.soundVolume >= 1}
+              >
+                <Text style={styles.volumeButtonText}>+</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.description}>{Math.round(settings.soundVolume * 100)}%</Text>
+          </View>
+        )}
 
         {/* Back Button */}
         <TouchableOpacity
@@ -153,6 +223,43 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#8A8A8A',
     marginTop: 4,
+  },
+  volumeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  volumeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#E8E4E1',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  volumeButtonText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#5A5A5A',
+    lineHeight: 22,
+  },
+  volumeBarTrack: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 3,
+    alignItems: 'center',
+  },
+  volumeSegment: {
+    flex: 1,
+    height: 20,
+    borderRadius: 4,
+    backgroundColor: '#E8E4E1',
+  },
+  volumeSegmentFilled: {
+    backgroundColor: '#A8D8EA',
   },
   backButton: {
     backgroundColor: '#FFB6C1',

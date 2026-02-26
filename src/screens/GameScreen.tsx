@@ -6,10 +6,8 @@ import { GameBoard } from '../components/GameBoard';
 export const GameScreen: React.FC = () => {
   const navigation = useNavigation();
 
-  const handleGameComplete = (time: number) => {
-    // Game completion is handled within GameBoard
-    // This callback can be used for analytics or additional features
-    console.log('Game completed in:', time);
+  const handleGameComplete = (_time: number) => {
+    // Extension point for future analytics
   };
 
   const handleBackPress = () => {

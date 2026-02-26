@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, Animated } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, Animated, View } from 'react-native';
 import { Tile as TileType } from '../types';
 import { useSettings } from '../context/SettingsContext';
 
@@ -9,47 +9,38 @@ interface TileProps {
   size: number;
 }
 
-export const Tile: React.FC<TileProps> = ({ tile, onPress, size }) => {
+const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
   const { settings } = useSettings();
-  const flipAnim = React.useRef(new Animated.Value(tile.isFlipped ? 1 : 0)).current;
-  
+  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+
   const emojiSize = Math.floor(size * 0.6);
   const minEmojiSize = 20;
   const maxEmojiSize = 60;
   const finalEmojiSize = Math.max(minEmojiSize, Math.min(maxEmojiSize, emojiSize));
-  
-  const questionSize = Math.floor(finalEmojiSize * 0.8);
+
+  const [showFront, setShowFront] = React.useState(!tile.isFlipped);
 
   React.useEffect(() => {
     if (settings.animationsEnabled) {
-      Animated.spring(flipAnim, {
-        toValue: tile.isFlipped ? 1 : 0,
-        friction: 8,
-        tension: 10,
+      Animated.timing(scaleAnim, {
+        toValue: 0,
+        duration: 120,
         useNativeDriver: true,
-      }).start();
+      }).start(() => {
+        setShowFront(!tile.isFlipped);
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 120,
+          useNativeDriver: true,
+        }).start();
+      });
     } else {
-      flipAnim.setValue(tile.isFlipped ? 1 : 0);
+      setShowFront(!tile.isFlipped);
+      scaleAnim.setValue(1);
     }
   }, [tile.isFlipped, settings.animationsEnabled]);
 
-  const frontInterpolate = flipAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '180deg'],
-  });
-
-  const backInterpolate = flipAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['180deg', '360deg'],
-  });
-
-  const frontAnimatedStyle = {
-    transform: [{ rotateY: frontInterpolate }],
-  };
-
-  const backAnimatedStyle = {
-    transform: [{ rotateY: backInterpolate }],
-  };
+  const tileStyle = tile.isMatched ? styles.tileMatched : (showFront ? styles.tileFront : styles.tileBack);
 
   return (
     <TouchableOpacity
@@ -61,68 +52,112 @@ export const Tile: React.FC<TileProps> = ({ tile, onPress, size }) => {
       <Animated.View
         style={[
           styles.tile,
-          styles.front,
-          frontAnimatedStyle,
-          { opacity: tile.isFlipped ? 0 : 1 },
+          tileStyle,
+          { transform: [{ scaleX: scaleAnim }] },
         ]}
       >
-        <Text style={[styles.backText, { fontSize: questionSize }]}>?</Text>
-      </Animated.View>
-
-      <Animated.View
-        style={[
-          styles.tile,
-          styles.back,
-          backAnimatedStyle,
-          { opacity: tile.isFlipped ? 1 : 0 },
-          tile.isMatched && styles.matched,
-        ]}
-      >
-        <Text style={[styles.emoji, { fontSize: finalEmojiSize }, tile.isMatched && styles.matchedEmoji]}>
-          {tile.value}
-        </Text>
+        {showFront ? (
+          <View style={styles.cardBack}>
+            <View style={styles.swirlBackground}>
+              <View style={[styles.swirl, styles.swirl1]} />
+              <View style={[styles.swirl, styles.swirl2]} />
+              <View style={[styles.swirl, styles.swirl3]} />
+            </View>
+            <Text style={styles.questionMark}>?</Text>
+          </View>
+        ) : (
+          <Text style={[styles.emoji, { fontSize: finalEmojiSize }, tile.isMatched && styles.matchedEmoji]}>
+            {tile.value}
+          </Text>
+        )}
       </Animated.View>
     </TouchableOpacity>
   );
 };
+
+export const Tile = React.memo(TileComponent);
 
 const styles = StyleSheet.create({
   container: {
     margin: 4,
   },
   tile: {
-    position: 'absolute',
     width: '100%',
     height: '100%',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    backfaceVisibility: 'hidden',
+    overflow: 'hidden',
   },
-  front: {
+  tileFront: {
     backgroundColor: '#E8E4E1',
     borderWidth: 2,
     borderColor: '#D4D0CD',
   },
-  back: {
+  tileBack: {
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#E8E4E1',
   },
-  matched: {
+  tileMatched: {
     backgroundColor: '#F0F0F0',
+    borderWidth: 2,
     borderColor: '#D3D3D3',
-    opacity: 0.6,
+    opacity: 0.65,
   },
-  backText: {
-    fontSize: 32,
-    color: '#B8B8B8',
-    fontWeight: '600',
+  cardBack: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  swirlBackground: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    opacity: 0.4,
+  },
+  swirl: {
+    position: 'absolute',
+    borderRadius: 100,
+  },
+  swirl1: {
+    width: '80%',
+    height: '80%',
+    backgroundColor: '#FFB6C1',
+    top: '-20%',
+    left: '-20%',
+    transform: [{ rotate: '45deg' }],
+  },
+  swirl2: {
+    width: '60%',
+    height: '60%',
+    backgroundColor: '#A8D8EA',
+    bottom: '-10%',
+    right: '-10%',
+    transform: [{ rotate: '-30deg' }],
+  },
+  swirl3: {
+    width: '50%',
+    height: '50%',
+    backgroundColor: '#FFE4E1',
+    top: '25%',
+    left: '25%',
+    transform: [{ rotate: '60deg' }],
+  },
+  questionMark: {
+    fontSize: 42,
+    color: '#5A5A5A',
+    fontWeight: '700',
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+    zIndex: 10,
   },
   emoji: {
     fontSize: 40,
   },
-  matchedEmoji: {
-    opacity: 0.5,
-  },
+  matchedEmoji: {},
 });

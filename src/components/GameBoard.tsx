@@ -28,44 +28,45 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
   const gap = 8;
   const tileMargin = 4;
 
-  const { cols, rows, boardSize, tileSize } = useMemo(() => {
-    const { cols, rows } = calculateGridDimensions(settings.pairCount, screenWidth, screenHeight);
-    
+  const { cols, boardSize, tileSize } = useMemo(() => {
+    const { cols } = calculateGridDimensions(settings.difficulty, screenWidth, screenHeight);
+
     const maxBoardWidth = screenWidth - padding * 2;
     const maxBoardHeight = screenHeight - padding * 2 - headerHeight - 40;
     const boardSize = Math.min(maxBoardWidth, maxBoardHeight);
-    
+
     const calculatedTileSize = Math.floor(
       (boardSize - gap * (cols - 1) - tileMargin * 2 * cols) / cols
     );
-    
-    return { cols, rows, boardSize, tileSize: calculatedTileSize };
-  }, [screenWidth, screenHeight, settings.pairCount]);
+
+    return { cols, boardSize, tileSize: calculatedTileSize };
+  }, [screenWidth, screenHeight, settings.difficulty]);
 
   useEffect(() => {
     startNewGame();
-  }, [settings.pairCount, settings.theme]);
+  }, [settings.difficulty, settings.theme]);
 
-  // Timer effect - updates every 100ms while game is active
+  // Timer effect - updates every second while game is active
   useEffect(() => {
     if (!startTime || isGameComplete || endTime) return;
-    
+
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
-    }, 100);
-    
+    }, 1000);
+
     return () => clearInterval(interval);
   }, [startTime, isGameComplete, endTime]);
 
   const startNewGame = () => {
-    const newTiles = generateTiles(settings.pairCount, settings.theme);
+    const newTiles = generateTiles(settings.difficulty, settings.theme);
     setTiles(newTiles);
     setSelectedTiles([]);
     setIsGameComplete(false);
-    setStartTime(Date.now());
+    setStartTime(null); // timer starts on first flip
     setEndTime(null);
     setMoves(0);
     setIsProcessing(false);
+    setCurrentTime(Date.now());
   };
 
   const handleTilePress = useCallback(async (tileId: string) => {
@@ -73,6 +74,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
     if (selectedTiles.includes(tileId)) return;
 
     await playFlipSound(settings);
+
+    // Start timer on first flip
+    if (!startTime) {
+      setStartTime(Date.now());
+    }
 
     const newSelected = [...selectedTiles, tileId];
     setSelectedTiles(newSelected);
@@ -87,52 +93,50 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
       setIsProcessing(true);
       setMoves(prev => prev + 1);
 
-      const isMatch = checkMatch(tiles, newSelected);
+      // Use functional updater to read latest tiles, avoiding stale closure
+      setTiles(prev => {
+        const isMatch = checkMatch(prev, newSelected);
 
-      if (isMatch) {
-        await playMatchSound(settings);
-        
-        setTimeout(() => {
-          setTiles(prev =>
-            prev.map(tile =>
-              newSelected.includes(tile.id)
-                ? { ...tile, isMatched: true }
-                : tile
-            )
-          );
-          setSelectedTiles([]);
-          setIsProcessing(false);
+        if (isMatch) {
+          playMatchSound(settings);
 
-          // Check if game is complete
-          const updatedTiles = tiles.map(tile =>
-            newSelected.includes(tile.id)
-              ? { ...tile, isMatched: true }
-              : tile
+          const updatedTiles = prev.map(tile =>
+            newSelected.includes(tile.id) ? { ...tile, isMatched: true } : tile
           );
-          
-          if (checkGameComplete(updatedTiles)) {
-            const end = Date.now();
-            setEndTime(end);
-            setIsGameComplete(true);
-            playCompleteSound(settings);
-            onGameComplete(end - (startTime || end));
-          }
-        }, 500);
-      } else {
-        setTimeout(() => {
-          setTiles(prev =>
-            prev.map(tile =>
-              newSelected.includes(tile.id)
-                ? { ...tile, isFlipped: false }
-                : tile
-            )
-          );
-          setSelectedTiles([]);
-          setIsProcessing(false);
-        }, 1000);
-      }
+
+          setTimeout(() => {
+            setTiles(updatedTiles);
+            setSelectedTiles([]);
+            setIsProcessing(false);
+
+            if (checkGameComplete(updatedTiles)) {
+              const end = Date.now();
+              setEndTime(end);
+              setIsGameComplete(true);
+              playCompleteSound(settings);
+              setStartTime(st => {
+                onGameComplete(end - (st || end));
+                return st;
+              });
+            }
+          }, 500);
+        } else {
+          setTimeout(() => {
+            setTiles(p =>
+              p.map(tile =>
+                newSelected.includes(tile.id) ? { ...tile, isFlipped: false } : tile
+              )
+            );
+            setSelectedTiles([]);
+            setIsProcessing(false);
+          }, 1000);
+        }
+
+        // Return prev unchanged here — the real update happens in the setTimeout
+        return prev;
+      });
     }
-  }, [selectedTiles, tiles, isProcessing, settings, startTime, onGameComplete]);
+  }, [selectedTiles, isProcessing, settings, startTime, onGameComplete]);
 
   const elapsed = endTime
     ? endTime - (startTime || 0)
@@ -146,7 +150,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
         <TouchableOpacity onPress={onBackPress} style={styles.backButton}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.timerText}>{formatTime(elapsed)}</Text>
+        <Text style={styles.timerText}>{startTime ? formatTime(elapsed) : '—'}</Text>
         <Text style={styles.movesText}>Moves: {moves}</Text>
       </View>
 

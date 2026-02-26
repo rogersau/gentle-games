@@ -8,22 +8,13 @@ export interface Tile {
   isMatched: boolean;
 }
 
-export type PairCount = 6 | 8 | 10 | 12 | 15 | 18 | 20 | 24 | 30;
-
-export interface GameState {
-  tiles: Tile[];
-  selectedTiles: string[];
-  isGameComplete: boolean;
-  startTime: number | null;
-  endTime: number | null;
-  moves: number;
-}
+export type Difficulty = 'easy' | 'medium' | 'hard';
 
 export interface Settings {
   animationsEnabled: boolean;
   soundEnabled: boolean;
   soundVolume: number;
-  pairCount: PairCount;
+  difficulty: Difficulty;
   theme: 'animals' | 'shapes' | 'mixed';
 }
 
@@ -57,7 +48,7 @@ export const ANIMALS = [
   { emoji: '🦆', name: 'duck', color: '#FFD700' },
   { emoji: '🦢', name: 'swan', color: '#FFFAFA' },
   { emoji: '🦜', name: 'parrot', color: '#7FFFD4' },
-  { emoji: '🐢', name: 'tortoise', color: '#8FBC8F' },
+  { emoji: '🦎', name: 'lizard', color: '#8FBC8F' },
   { emoji: '🐌', name: 'snail', color: '#D2B48C' },
   { emoji: '🐛', name: 'caterpillar', color: '#98FB98' },
   { emoji: '🐞', name: 'ladybug', color: '#FF4500' },
@@ -75,8 +66,8 @@ export const ANIMALS = [
   { emoji: '🐊', name: 'crocodile', color: '#2E8B57' },
   { emoji: '🦩', name: 'flamingo', color: '#FF69B4' },
   { emoji: '🦚', name: 'peacock', color: '#00FA9A' },
-  { emoji: '🦢', name: 'swan2', color: '#FFFAFA' },
-  { emoji: '🦜', name: 'parrot2', color: '#7FFFD4' },
+  { emoji: '🦤', name: 'dodo', color: '#FFFAFA' },
+  { emoji: '🐦', name: 'bird', color: '#87CEEB' },
   { emoji: '🐇', name: 'rabbit', color: '#FFB6C1' },
   { emoji: '🐁', name: 'mouse', color: '#D3D3D3' },
   { emoji: '🐀', name: 'rat', color: '#A9A9A9' },
@@ -121,7 +112,7 @@ export const SHAPES = [
   { emoji: '💚', name: 'green2', color: '#90EE90' },
   { emoji: '💛', name: 'yellow2', color: '#FFFACD' },
   { emoji: '🧡', name: 'orange2', color: '#FFA500' },
-  { emoji: '❤️', name: 'red2', color: '#FF4500' },
+  { emoji: '🩷', name: 'red2', color: '#FF4500' },
   { emoji: '💙', name: 'blue3', color: '#6495ED' },
   { emoji: '🤎', name: 'brown', color: '#D2691E' },
   { emoji: '🖤', name: 'black2', color: '#000000' },

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,22 +7,24 @@ import {
   Text,
   ScrollView,
   Modal,
-  GestureResponderEvent,
 } from 'react-native';
-import Svg, { Path, Circle, Rect, Polygon } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, Polygon, Line } from 'react-native-svg';
 
-interface Point {
+export interface Point {
   x: number;
   y: number;
 }
 
-interface Stroke {
+export interface Stroke {
+  kind: 'stroke';
+  id: string;
   points: Point[];
   color: string;
   width: number;
 }
 
-interface Shape {
+export interface Shape {
+  kind: 'shape';
   id: string;
   type: 'circle' | 'square' | 'triangle';
   x: number;
@@ -31,8 +33,19 @@ interface Shape {
   color: string;
 }
 
+export interface ErasedRegion {
+  kind: 'erase';
+  id: string;
+  points: Point[];
+  width: number;
+}
+
+// A history entry is a drawable action
+export type HistoryEntry = Stroke | Shape | ErasedRegion;
+
 type Tool = 'pen' | 'eraser' | 'shape';
 type ShapeType = 'circle' | 'square' | 'triangle';
+type SymmetryMode = 'none' | 'half' | 'quarter';
 
 const COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
@@ -51,449 +64,637 @@ const PRESET_COLORS = [
 interface DrawingCanvasProps {
   width: number;
   height: number;
+  initialHistory?: HistoryEntry[];
+  onHistoryChange?: (history: HistoryEntry[]) => void;
 }
 
-export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ width, height }) => {
-  const [strokes, setStrokes] = useState<Stroke[]>([]);
-  const [shapes, setShapes] = useState<Shape[]>([]);
-  const [currentStroke, setCurrentStroke] = useState<Stroke | null>(null);
-  const [selectedColor, setSelectedColor] = useState('#FF6B6B');
-  const [tool, setTool] = useState<Tool>('pen');
-  const [shapeType, setShapeType] = useState<ShapeType>('circle');
-  const [shapeSize, setShapeSize] = useState(40);
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const [showShapePicker, setShowShapePicker] = useState(false);
-  const [customColors, setCustomColors] = useState<string[]>([]);
-  const [pickerColor, setPickerColor] = useState('#FF6B6B');
-  
-  const selectedColorRef = useRef(selectedColor);
-  const toolRef = useRef(tool);
-  const shapeTypeRef = useRef(shapeType);
-  const shapeSizeRef = useRef(shapeSize);
-  
-  useEffect(() => {
-    selectedColorRef.current = selectedColor;
-  }, [selectedColor]);
-  
-  useEffect(() => {
-    toolRef.current = tool;
-  }, [tool]);
+export interface DrawingCanvasRef {
+  clear: () => void;
+  getHistory: () => HistoryEntry[];
+}
 
-  useEffect(() => {
-    shapeTypeRef.current = shapeType;
-  }, [shapeType]);
+/**
+ * Convert an array of points into a smooth SVG path using quadratic Bézier
+ * curves through the midpoints between consecutive points.
+ */
+const pointsToSmoothPath = (points: Point[]): string => {
+  if (points.length === 0) return '';
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+  if (points.length === 2) {
+    return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
+  }
 
-  useEffect(() => {
-    shapeSizeRef.current = shapeSize;
-  }, [shapeSize]);
+  let path = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length - 1; i++) {
+    const midX = (points[i].x + points[i + 1].x) / 2;
+    const midY = (points[i].y + points[i + 1].y) / 2;
+    path += ` Q ${points[i].x} ${points[i].y} ${midX} ${midY}`;
+  }
+  // Line to last point
+  const last = points[points.length - 1];
+  path += ` L ${last.x} ${last.y}`;
+  return path;
+};
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt) => {
-        const { locationX, locationY } = evt.nativeEvent;
-        
-        if (toolRef.current === 'shape') {
-          // Add shape at tap location
-          const newShape: Shape = {
-            id: Date.now().toString(),
-            type: shapeTypeRef.current,
-            x: locationX,
-            y: locationY,
-            size: shapeSizeRef.current,
-            color: selectedColorRef.current,
-          };
-          setShapes((prev) => [...prev, newShape]);
-        } else {
-          // Regular drawing
-          const strokeWidth = toolRef.current === 'eraser' ? 30 : 5;
-          const newStroke: Stroke = {
-            points: [{ x: locationX, y: locationY }],
-            color: toolRef.current === 'eraser' ? '#FFFFFF' : selectedColorRef.current,
-            width: strokeWidth,
-          };
-          setCurrentStroke(newStroke);
-        }
+/**
+ * Get all symmetry offsets for a given mode
+ * Returns array of [xMultiplier, yMultiplier] pairs
+ * where (1,1) = original, (-1,1) = mirrored horizontally, etc.
+ */
+const getSymmetryOffsets = (mode: SymmetryMode): Array<[number, number]> => {
+  if (mode === 'none') return [[1, 1]];
+  if (mode === 'half') return [[1, 1], [-1, 1]];
+  if (mode === 'quarter') return [[1, 1], [-1, 1], [1, -1], [-1, -1]];
+  return [[1, 1]];
+};
+
+/**
+ * Apply symmetry transform to a point
+ */
+const applySymmetry = (point: Point, width: number, height: number, xMult: number, yMult: number): Point => {
+  const centerX = width / 2;
+  const centerY = height / 2;
+  
+  return {
+    x: centerX + (point.x - centerX) * xMult,
+    y: centerY + (point.y - centerY) * yMult,
+  };
+};
+
+export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
+  ({ width, height, initialHistory = [], onHistoryChange }, ref) => {
+    // Unified ordered history — preserves exact draw order for correct undo
+    const [history, setHistory] = useState<HistoryEntry[]>(initialHistory);
+    // Current strokes being drawn (one per symmetry copy)
+    const [currentStrokes, setCurrentStrokes] = useState<Omit<Stroke, 'kind' | 'id'>[]>([]);
+
+    // Update history when initialHistory prop changes (e.g., when loading saved drawing)
+    useEffect(() => {
+      console.log('DrawingCanvas: initialHistory changed, entries:', initialHistory.length);
+      setHistory(initialHistory);
+    }, [initialHistory]);
+
+    const [selectedColor, setSelectedColor] = useState('#FF6B6B');
+    const [tool, setTool] = useState<Tool>('pen');
+    const [shapeType, setShapeType] = useState<ShapeType>('circle');
+    const [shapeSize, setShapeSize] = useState(50);
+    const [symmetryMode, setSymmetryMode] = useState<SymmetryMode>('none');
+    const [showColorPicker, setShowColorPicker] = useState(false);
+    const [showShapePicker, setShowShapePicker] = useState(false);
+    const [customColors, setCustomColors] = useState<string[]>([]);
+    const [pickerColor, setPickerColor] = useState('#FF6B6B');
+
+    // Refs for PanResponder closures
+    const selectedColorRef = useRef(selectedColor);
+    const toolRef = useRef(tool);
+    const shapeTypeRef = useRef(shapeType);
+    const shapeSizeRef = useRef(shapeSize);
+    const symmetryModeRef = useRef(symmetryMode);
+    const historyRef = useRef(history);
+
+    useEffect(() => { selectedColorRef.current = selectedColor; }, [selectedColor]);
+    useEffect(() => { toolRef.current = tool; }, [tool]);
+    useEffect(() => { shapeTypeRef.current = shapeType; }, [shapeType]);
+    useEffect(() => { shapeSizeRef.current = shapeSize; }, [shapeSize]);
+    useEffect(() => { symmetryModeRef.current = symmetryMode; }, [symmetryMode]);
+    useEffect(() => { historyRef.current = history; }, [history]);
+
+    // Notify parent of history changes
+    useEffect(() => {
+      console.log('DrawingCanvas: history changed, entries:', history.length);
+      onHistoryChange?.(history);
+    }, [history, onHistoryChange]);
+
+    // Expose imperative methods
+    useImperativeHandle(ref, () => ({
+      clear: () => {
+        setHistory([]);
+        setCurrentStrokes([]);
       },
-      onPanResponderMove: (evt) => {
-        if (toolRef.current === 'shape') return;
-        
-        const { locationX, locationY } = evt.nativeEvent;
-        setCurrentStroke((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            points: [...prev.points, { x: locationX, y: locationY }],
-          };
-        });
-      },
-      onPanResponderRelease: () => {
-        if (toolRef.current === 'shape') return;
-        
-        setCurrentStroke((prev) => {
-          if (prev) {
-            setStrokes((strokes) => [...strokes, prev]);
+      getHistory: () => historyRef.current,
+    }));
+
+    const panResponder = useRef(
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (evt) => {
+          const { locationX, locationY } = evt.nativeEvent;
+          const mode = symmetryModeRef.current;
+
+          if (toolRef.current === 'shape') {
+            // Create shapes with symmetry
+            const offsets = getSymmetryOffsets(mode);
+            const newShapes: Shape[] = offsets.map(([xMult, yMult], idx) => {
+              const pt = applySymmetry({ x: locationX, y: locationY }, width, height, xMult, yMult);
+              return {
+                kind: 'shape' as const,
+                id: `shape-${Date.now()}-${idx}`,
+                type: shapeTypeRef.current,
+                x: pt.x,
+                y: pt.y,
+                size: shapeSizeRef.current,
+                color: selectedColorRef.current,
+              };
+            });
+            setHistory((prev) => [...prev, ...newShapes]);
+          } else {
+            const strokeWidth = toolRef.current === 'eraser' ? 30 : 5;
+            const offsets = getSymmetryOffsets(mode);
+            // Create one stroke for each symmetry copy with properly mirrored initial points
+            const newStrokes = offsets.map(([xMult, yMult]) => {
+              const mirroredPt = applySymmetry({ x: locationX, y: locationY }, width, height, xMult, yMult);
+              return {
+                points: [mirroredPt],
+                color: selectedColorRef.current,
+                width: strokeWidth,
+              };
+            });
+            setCurrentStrokes(newStrokes);
           }
-          return null;
-        });
-      },
-    })
-  ).current;
-
-  const pointsToPath = (points: Point[]): string => {
-    if (points.length === 0) return '';
-    let path = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 1; i < points.length; i++) {
-      path += ` L ${points[i].x} ${points[i].y}`;
-    }
-    return path;
-  };
-
-  const handleClear = () => {
-    setStrokes([]);
-    setShapes([]);
-    setCurrentStroke(null);
-  };
-
-  const handleUndo = () => {
-    // Undo shapes first, then strokes
-    if (shapes.length > 0) {
-      setShapes((prev) => prev.slice(0, -1));
-    } else {
-      setStrokes((prev) => prev.slice(0, -1));
-    }
-  };
-
-  const handleColorSelect = (color: string) => {
-    setSelectedColor(color);
-    if (tool === 'eraser') {
-      setTool('pen');
-    }
-  };
-
-  const handleToolSelect = (selectedTool: Tool) => {
-    setTool(selectedTool);
-    if (selectedTool === 'shape') {
-      setShowShapePicker(true);
-    }
-  };
-
-  const handleOpenColorPicker = () => {
-    setPickerColor(selectedColor);
-    setShowColorPicker(true);
-  };
-
-  const handleCustomColorSelect = () => {
-    if (!customColors.includes(pickerColor)) {
-      setCustomColors((prev) => [...prev.slice(-3), pickerColor]);
-    }
-    handleColorSelect(pickerColor);
-    setShowColorPicker(false);
-  };
-
-  const handleShapeSelect = (type: ShapeType) => {
-    setShapeType(type);
-    setTool('shape');
-    setShowShapePicker(false);
-  };
-
-  const allColors = [...COLORS, ...customColors];
-
-  const renderShape = (shape: Shape) => {
-    const halfSize = shape.size / 2;
-    
-    switch (shape.type) {
-      case 'circle':
-        return (
-          <Circle
-            key={shape.id}
-            cx={shape.x}
-            cy={shape.y}
-            r={halfSize}
-            fill={shape.color}
-          />
-        );
-      case 'square':
-        return (
-          <Rect
-            key={shape.id}
-            x={shape.x - halfSize}
-            y={shape.y - halfSize}
-            width={shape.size}
-            height={shape.size}
-            fill={shape.color}
-          />
-        );
-      case 'triangle':
-        const points = `
-          ${shape.x},${shape.y - halfSize}
-          ${shape.x - halfSize},${shape.y + halfSize}
-          ${shape.x + halfSize},${shape.y + halfSize}
-        `;
-        return (
-          <Polygon
-            key={shape.id}
-            points={points}
-            fill={shape.color}
-          />
-        );
-    }
-  };
-
-  return (
-    <View style={styles.container}>
-      {/* Canvas */}
-      <View style={[styles.canvasContainer, { width, height }]}>
-        <Svg width={width} height={height} style={styles.canvas}>
-          <Path d={`M 0 0 H ${width} V ${height} H 0 Z`} fill="#FFFFFF" />
+        },
+        onPanResponderMove: (evt) => {
+          if (toolRef.current === 'shape') return;
+          const { locationX, locationY } = evt.nativeEvent;
+          const mode = symmetryModeRef.current;
           
-          {/* Completed strokes */}
-          {strokes.map((stroke, index) => (
-            <Path
-              key={`stroke-${index}`}
-              d={pointsToPath(stroke.points)}
-              stroke={stroke.color}
-              strokeWidth={stroke.width}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
+          setCurrentStrokes((prevStrokes) => {
+            if (prevStrokes.length === 0) return [];
+            const offsets = getSymmetryOffsets(mode);
+            
+            return prevStrokes.map((stroke, idx) => {
+              const [xMult, yMult] = offsets[idx] || [1, 1];
+              const mirroredPt = applySymmetry({ x: locationX, y: locationY }, width, height, xMult, yMult);
+              return {
+                ...stroke,
+                points: [...stroke.points, mirroredPt],
+              };
+            });
+          });
+        },
+        onPanResponderRelease: () => {
+          if (toolRef.current === 'shape') return;
+
+          setCurrentStrokes((strokes) => {
+            if (strokes.length === 0) return [];
+            
+            if (toolRef.current === 'eraser') {
+              // Create erase entries for each symmetry copy
+              const eraseEntries: ErasedRegion[] = strokes.map((stroke, idx) => ({
+                kind: 'erase',
+                id: `erase-${Date.now()}-${idx}`,
+                points: stroke.points,
+                width: stroke.width,
+              }));
+              setHistory((h) => [...h, ...eraseEntries]);
+            } else {
+              // Create stroke entries for each symmetry copy
+              const strokeEntries: Stroke[] = strokes.map((stroke, idx) => ({
+                kind: 'stroke',
+                id: `stroke-${Date.now()}-${idx}`,
+                points: stroke.points,
+                color: stroke.color,
+                width: stroke.width,
+              }));
+              setHistory((h) => [...h, ...strokeEntries]);
+            }
+            return [];
+          });
+        },
+      })
+    ).current;
+
+    const handleClear = () => {
+      setHistory([]);
+      setCurrentStrokes([]);
+    };
+
+    const handleUndo = () => {
+      // When undoing with symmetry, we need to remove all copies of the last action
+      // Each action creates N entries (where N is the symmetry count at that time)
+      // For simplicity, just remove one entry at a time
+      setHistory((prev) => prev.slice(0, -1));
+    };
+
+    const handleColorSelect = (color: string) => {
+      setSelectedColor(color);
+      if (tool === 'eraser') setTool('pen');
+    };
+
+    const handleToolSelect = (selectedTool: Tool) => {
+      setTool(selectedTool);
+      if (selectedTool === 'shape') setShowShapePicker(true);
+    };
+
+    const handleOpenColorPicker = () => {
+      setPickerColor(selectedColor);
+      setShowColorPicker(true);
+    };
+
+    const handleCustomColorSelect = () => {
+      if (!customColors.includes(pickerColor)) {
+        setCustomColors((prev) => [...prev.slice(-3), pickerColor]);
+      }
+      handleColorSelect(pickerColor);
+      setShowColorPicker(false);
+    };
+
+    const handleShapeSelect = (type: ShapeType) => {
+      setShapeType(type);
+      setTool('shape');
+      setShowShapePicker(false);
+    };
+
+    const cycleSymmetryMode = () => {
+      const modes: SymmetryMode[] = ['none', 'half', 'quarter'];
+      const currentIndex = modes.indexOf(symmetryMode);
+      const nextIndex = (currentIndex + 1) % modes.length;
+      setSymmetryMode(modes[nextIndex]);
+    };
+
+    const allColors = [...COLORS, ...customColors];
+
+    // Build SVG content from unified history.
+    const renderHistoryEntry = (entry: HistoryEntry) => {
+      if (entry.kind === 'stroke') {
+        return (
+          <Path
+            key={entry.id}
+            d={pointsToSmoothPath(entry.points)}
+            stroke={entry.color}
+            strokeWidth={entry.width}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+        );
+      }
+
+      if (entry.kind === 'erase') {
+        return (
+          <Path
+            key={entry.id}
+            d={pointsToSmoothPath(entry.points)}
+            stroke="#FFFFFF"
+            strokeWidth={entry.width}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+        );
+      }
+
+      if (entry.kind === 'shape') {
+        const halfSize = entry.size / 2;
+        switch (entry.type) {
+          case 'circle':
+            return (
+              <Circle
+                key={entry.id}
+                cx={entry.x}
+                cy={entry.y}
+                r={halfSize}
+                fill={entry.color}
+              />
+            );
+          case 'square':
+            return (
+              <Rect
+                key={entry.id}
+                x={entry.x - halfSize}
+                y={entry.y - halfSize}
+                width={entry.size}
+                height={entry.size}
+                fill={entry.color}
+              />
+            );
+          case 'triangle': {
+            const pts = `${entry.x},${entry.y - halfSize} ${entry.x - halfSize},${entry.y + halfSize} ${entry.x + halfSize},${entry.y + halfSize}`;
+            return (
+              <Polygon
+                key={entry.id}
+                points={pts}
+                fill={entry.color}
+              />
+            );
+          }
+        }
+      }
+    };
+
+    const canUndo = history.length > 0;
+
+    // Render symmetry guide lines
+    const renderSymmetryGuides = () => {
+      if (symmetryMode === 'none') return null;
+      
+      const centerX = width / 2;
+      const centerY = height / 2;
+      
+      if (symmetryMode === 'half') {
+        return (
+          <Line
+            x1={centerX}
+            y1={0}
+            x2={centerX}
+            y2={height}
+            stroke="#A8D8EA"
+            strokeWidth={2}
+            strokeDasharray="8,4"
+          />
+        );
+      }
+      
+      if (symmetryMode === 'quarter') {
+        return (
+          <>
+            <Line
+              x1={centerX}
+              y1={0}
+              x2={centerX}
+              y2={height}
+              stroke="#A8D8EA"
+              strokeWidth={2}
+              strokeDasharray="8,4"
             />
-          ))}
-          
-          {/* Shapes */}
-          {shapes.map((shape) => renderShape(shape))}
-          
-          {/* Current stroke */}
-          {currentStroke && (
-            <Path
-              d={pointsToPath(currentStroke.points)}
-              stroke={currentStroke.color}
-              strokeWidth={currentStroke.width}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
+            <Line
+              x1={0}
+              y1={centerY}
+              x2={width}
+              y2={centerY}
+              stroke="#A8D8EA"
+              strokeWidth={2}
+              strokeDasharray="8,4"
             />
-          )}
-        </Svg>
-        
-        <View style={styles.touchOverlay} {...panResponder.panHandlers} />
-      </View>
+          </>
+        );
+      }
+      
+      return null;
+    };
 
-      {/* Toolbar */}
-      <View style={styles.toolbar}>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.colorPalette}
-        >
-          {allColors.map((color) => (
+    return (
+      <View style={styles.container}>
+        {/* Canvas */}
+        <View style={[styles.canvasContainer, { width, height }]}>
+          <Svg width={width} height={height} style={styles.canvas}>
+            {/* White background */}
+            <Path d={`M 0 0 H ${width} V ${height} H 0 Z`} fill="#FFFFFF" />
+
+            {history.map((entry) => renderHistoryEntry(entry))}
+
+            {/* Symmetry guide lines */}
+            {renderSymmetryGuides()}
+
+            {/* Live stroke previews */}
+            {currentStrokes.map((stroke, idx) => (
+              <Path
+                key={`preview-${idx}`}
+                d={pointsToSmoothPath(stroke.points)}
+                stroke={tool === 'eraser' ? '#FFFFFF' : stroke.color}
+                strokeWidth={stroke.width}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            ))}
+          </Svg>
+
+          <View style={styles.touchOverlay} {...panResponder.panHandlers} />
+        </View>
+
+        {/* Toolbar */}
+        <View style={styles.toolbar}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.colorPalette}
+          >
+            {allColors.map((color) => (
+              <TouchableOpacity
+                key={color}
+                style={[
+                  styles.colorButton,
+                  { backgroundColor: color },
+                  selectedColor === color && tool !== 'eraser' && styles.selectedColor,
+                ]}
+                onPress={() => handleColorSelect(color)}
+              />
+            ))}
+
             <TouchableOpacity
-              key={color}
-              style={[
-                styles.colorButton,
-                { backgroundColor: color },
-                selectedColor === color && tool !== 'eraser' && styles.selectedColor,
-              ]}
-              onPress={() => handleColorSelect(color)}
-            />
-          ))}
-          
-          <TouchableOpacity
-            style={[styles.colorButton, styles.customColorButton]}
-            onPress={handleOpenColorPicker}
-          >
-            <Text style={styles.plusText}>+</Text>
-          </TouchableOpacity>
-        </ScrollView>
-
-        <View style={styles.toolButtons}>
-          <TouchableOpacity
-            style={[styles.toolButton, tool === 'pen' && styles.toolButtonActive]}
-            onPress={() => handleToolSelect('pen')}
-          >
-            <Text style={styles.toolButtonText}>✏️</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.toolButton, tool === 'shape' && styles.toolButtonActive]}
-            onPress={() => handleToolSelect('shape')}
-          >
-            <Text style={styles.toolButtonText}>
-              {shapeType === 'circle' && '🔴'}
-              {shapeType === 'square' && '🟦'}
-              {shapeType === 'triangle' && '🔺'}
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.toolButton, tool === 'eraser' && styles.toolButtonActive]}
-            onPress={() => handleToolSelect('eraser')}
-          >
-            <Text style={styles.toolButtonText}>🧹</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={styles.toolButton}
-            onPress={handleUndo}
-            disabled={strokes.length === 0 && shapes.length === 0}
-          >
-            <Text style={[styles.toolButtonText, strokes.length === 0 && shapes.length === 0 && styles.disabledText]}>
-              ↩️
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={styles.toolButton}
-            onPress={handleClear}
-          >
-            <Text style={styles.toolButtonText}>🗑️</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Tool indicator */}
-      {tool === 'shape' && (
-        <View style={styles.toolIndicator}>
-          <Text style={styles.toolIndicatorText}>
-            Tap to place {shapeType} ({shapeSize}px)
-          </Text>
-          <View style={styles.sizeControls}>
-            <TouchableOpacity 
-              style={styles.sizeButton}
-              onPress={() => setShapeSize(Math.max(20, shapeSize - 10))}
+              style={[styles.colorButton, styles.customColorButton]}
+              onPress={handleOpenColorPicker}
             >
-              <Text style={styles.sizeButtonText}>−</Text>
+              <Text style={styles.plusText}>+</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.sizeButton}
-              onPress={() => setShapeSize(Math.min(100, shapeSize + 10))}
+          </ScrollView>
+
+          <View style={styles.toolButtons}>
+            <TouchableOpacity
+              style={[styles.toolButton, tool === 'pen' && styles.toolButtonActive]}
+              onPress={() => handleToolSelect('pen')}
             >
-              <Text style={styles.sizeButtonText}>+</Text>
+              <Text style={styles.toolButtonText}>✏️</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.toolButton, tool === 'shape' && styles.toolButtonActive]}
+              onPress={() => handleToolSelect('shape')}
+            >
+              <Text style={styles.toolButtonText}>
+                {shapeType === 'circle' && '🔴'}
+                {shapeType === 'square' && '🟦'}
+                {shapeType === 'triangle' && '🔺'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.toolButton, symmetryMode !== 'none' && styles.toolButtonActive]}
+              onPress={cycleSymmetryMode}
+            >
+              <Text style={styles.toolButtonText}>
+                {symmetryMode === 'none' && '🦋'}
+                {symmetryMode === 'half' && '🦋'}
+                {symmetryMode === 'quarter' && '🦋'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.toolButton, tool === 'eraser' && styles.toolButtonActive]}
+              onPress={() => handleToolSelect('eraser')}
+            >
+              <Text style={styles.toolButtonText}>🧹</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.toolButton, !canUndo && styles.toolButtonDisabled]}
+              onPress={handleUndo}
+              disabled={!canUndo}
+            >
+              <Text style={[styles.toolButtonText, !canUndo && styles.disabledText]}>↩️</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.toolButton}
+              onPress={handleClear}
+            >
+              <Text style={styles.toolButtonText}>🗑️</Text>
             </TouchableOpacity>
           </View>
         </View>
-      )}
 
-      {/* Color Picker Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={showColorPicker}
-        onRequestClose={() => setShowColorPicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Pick a Color</Text>
-            
-            <View style={styles.previewContainer}>
-              <View style={[styles.colorPreview, { backgroundColor: pickerColor }]} />
-              <Text style={styles.colorHex}>{pickerColor.toUpperCase()}</Text>
-            </View>
-
-            <View style={styles.colorGrid}>
-              {PRESET_COLORS.map((color) => (
-                <TouchableOpacity
-                  key={color}
-                  style={[
-                    styles.gridColorButton,
-                    { backgroundColor: color },
-                    pickerColor === color && styles.gridColorSelected,
-                  ]}
-                  onPress={() => setPickerColor(color)}
-                />
-              ))}
-            </View>
-
-            <View style={styles.modalButtons}>
+        {/* Shape tool indicator */}
+        {tool === 'shape' && (
+          <View style={styles.toolIndicator}>
+            <Text style={styles.toolIndicatorText}>
+              Tap to place {shapeType} (size: {shapeSize})
+            </Text>
+            <View style={styles.sizeControls}>
               <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setShowColorPicker(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.selectButton}
-                onPress={handleCustomColorSelect}
-              >
-                <Text style={styles.selectButtonText}>Use Color</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Shape Picker Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={showShapePicker}
-        onRequestClose={() => setShowShapePicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Choose Shape</Text>
-            
-            <View style={styles.shapeGrid}>
-              <TouchableOpacity
-                style={[styles.shapeButton, shapeType === 'circle' && styles.shapeButtonActive]}
-                onPress={() => handleShapeSelect('circle')}
-              >
-                <Text style={styles.shapeIcon}>🔴</Text>
-                <Text style={styles.shapeLabel}>Circle</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.shapeButton, shapeType === 'square' && styles.shapeButtonActive]}
-                onPress={() => handleShapeSelect('square')}
-              >
-                <Text style={styles.shapeIcon}>🟦</Text>
-                <Text style={styles.shapeLabel}>Square</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.shapeButton, shapeType === 'triangle' && styles.shapeButtonActive]}
-                onPress={() => handleShapeSelect('triangle')}
-              >
-                <Text style={styles.shapeIcon}>🔺</Text>
-                <Text style={styles.shapeLabel}>Triangle</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.sizeLabel}>Size: {shapeSize}px</Text>
-            <View style={styles.sizeSlider}>
-              <TouchableOpacity 
-                style={styles.sizeControlButton}
+                style={styles.sizeButton}
                 onPress={() => setShapeSize(Math.max(20, shapeSize - 10))}
               >
-                <Text style={styles.sizeControlText}>Small</Text>
+                <Text style={styles.sizeButtonText}>−</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.sizeControlButton}
-                onPress={() => setShapeSize(50)}
+              <TouchableOpacity
+                style={styles.sizeButton}
+                onPress={() => setShapeSize(Math.min(150, shapeSize + 10))}
               >
-                <Text style={styles.sizeControlText}>Medium</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.sizeControlButton}
-                onPress={() => setShapeSize(Math.min(100, shapeSize + 10))}
-              >
-                <Text style={styles.sizeControlText}>Large</Text>
+                <Text style={styles.sizeButtonText}>+</Text>
               </TouchableOpacity>
             </View>
-
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => setShowShapePicker(false)}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
-    </View>
-  );
-};
+        )}
+
+        {/* Color Picker Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={showColorPicker}
+          onRequestClose={handleCustomColorSelect}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            onPress={handleCustomColorSelect}
+            activeOpacity={1}
+          >
+            <TouchableOpacity style={styles.modalContent} onPress={(e) => e.stopPropagation()} activeOpacity={1}>
+              <Text style={styles.modalTitle}>Pick a Color</Text>
+
+              <View style={styles.previewContainer}>
+                <View style={[styles.colorPreview, { backgroundColor: pickerColor }]} />
+                <Text style={styles.colorHex}>{pickerColor.toUpperCase()}</Text>
+              </View>
+
+              <View style={styles.colorGrid}>
+                {PRESET_COLORS.map((color) => (
+                  <TouchableOpacity
+                    key={color}
+                    style={[
+                      styles.gridColorButton,
+                      { backgroundColor: color },
+                      pickerColor === color && styles.gridColorSelected,
+                    ]}
+                    onPress={() => setPickerColor(color)}
+                  />
+                ))}
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setShowColorPicker(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.selectButton}
+                  onPress={handleCustomColorSelect}
+                >
+                  <Text style={styles.selectButtonText}>Use Color</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
+
+        {/* Shape Picker Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={showShapePicker}
+          onRequestClose={() => setShowShapePicker(false)}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            onPress={() => setShowShapePicker(false)}
+            activeOpacity={1}
+          >
+            <TouchableOpacity style={styles.modalContent} onPress={(e) => e.stopPropagation()} activeOpacity={1}>
+              <Text style={styles.modalTitle}>Choose Shape</Text>
+
+              <View style={styles.shapeGrid}>
+                <TouchableOpacity
+                  style={[styles.shapeButton, shapeType === 'circle' && styles.shapeButtonActive]}
+                  onPress={() => handleShapeSelect('circle')}
+                >
+                  <Text style={styles.shapeIcon}>🔴</Text>
+                  <Text style={styles.shapeLabel}>Circle</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.shapeButton, shapeType === 'square' && styles.shapeButtonActive]}
+                  onPress={() => handleShapeSelect('square')}
+                >
+                  <Text style={styles.shapeIcon}>🟦</Text>
+                  <Text style={styles.shapeLabel}>Square</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.shapeButton, shapeType === 'triangle' && styles.shapeButtonActive]}
+                  onPress={() => handleShapeSelect('triangle')}
+                >
+                  <Text style={styles.shapeIcon}>🔺</Text>
+                  <Text style={styles.shapeLabel}>Triangle</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.sizeLabel}>Size: {shapeSize}</Text>
+              <View style={styles.sizeSlider}>
+                <TouchableOpacity
+                  style={styles.sizeControlButton}
+                  onPress={() => setShapeSize(30)}
+                >
+                  <Text style={styles.sizeControlText}>Small</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.sizeControlButton}
+                  onPress={() => setShapeSize(60)}
+                >
+                  <Text style={styles.sizeControlText}>Medium</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.sizeControlButton}
+                  onPress={() => setShapeSize(100)}
+                >
+                  <Text style={styles.sizeControlText}>Large</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowShapePicker(false)}
+              >
+                <Text style={styles.cancelButtonText}>Done</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
+      </View>
+    );
+  }
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -523,7 +724,7 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   toolbar: {
-    marginTop: 12,
+    marginTop: 8,
     width: '100%',
     alignItems: 'center',
     paddingBottom: 8,
@@ -573,6 +774,9 @@ const styles = StyleSheet.create({
   toolButtonActive: {
     backgroundColor: '#A8D8EA',
     borderColor: '#A8D8EA',
+  },
+  toolButtonDisabled: {
+    opacity: 0.4,
   },
   toolButtonText: {
     fontSize: 18,

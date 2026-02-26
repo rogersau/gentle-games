@@ -6,11 +6,11 @@ import {
   StyleSheet,
   SafeAreaView,
   Modal,
-  ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSettings } from '../context/SettingsContext';
-import { PairCount } from '../types';
+import { Difficulty } from '../types';
+import { getGridConfig } from '../utils/gameLogic';
 
 interface Game {
   id: string;
@@ -34,23 +34,17 @@ const GAMES: Game[] = [
   },
 ];
 
+const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; description: string }[] = [
+  { value: 'easy', label: 'Easy', description: '3x4 grid (12 cards)' },
+  { value: 'medium', label: 'Medium', description: '4x5 grid (20 cards)' },
+  { value: 'hard', label: 'Hard', description: '5x6 grid (30 cards)' },
+];
+
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings, updateSettings } = useSettings();
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-  const [showPairSelector, setShowPairSelector] = useState(false);
-
-  const pairOptions: { count: PairCount; label: string }[] = [
-    { count: 6, label: '6 Pairs (Easy)' },
-    { count: 8, label: '8 Pairs (Easy)' },
-    { count: 10, label: '10 Pairs (Easy)' },
-    { count: 12, label: '12 Pairs (Medium)' },
-    { count: 15, label: '15 Pairs (Medium)' },
-    { count: 18, label: '18 Pairs (Medium)' },
-    { count: 20, label: '20 Pairs (Hard)' },
-    { count: 24, label: '24 Pairs (Hard)' },
-    { count: 30, label: '30 Pairs (Hard)' },
-  ];
+  const [showDifficultySelector, setShowDifficultySelector] = useState(false);
 
   const handleGameSelect = (game: Game) => {
     setSelectedGame(game);
@@ -58,13 +52,13 @@ export const HomeScreen: React.FC = () => {
       navigation.navigate('Drawing' as never);
       setSelectedGame(null);
     } else {
-      setShowPairSelector(true);
+      setShowDifficultySelector(true);
     }
   };
 
-  const handlePairSelect = async (count: PairCount) => {
-    await updateSettings({ pairCount: count });
-    setShowPairSelector(false);
+  const handleDifficultySelect = async (difficulty: Difficulty) => {
+    await updateSettings({ difficulty });
+    setShowDifficultySelector(false);
     if (selectedGame?.id === 'memory-snap') {
       navigation.navigate('Game' as never);
     }
@@ -72,8 +66,13 @@ export const HomeScreen: React.FC = () => {
   };
 
   const handleCloseModal = () => {
-    setShowPairSelector(false);
+    setShowDifficultySelector(false);
     setSelectedGame(null);
+  };
+
+  const getDifficultyLabel = (difficulty: Difficulty) => {
+    const option = DIFFICULTY_OPTIONS.find(opt => opt.value === difficulty);
+    return option?.label || difficulty;
   };
 
   return (
@@ -111,41 +110,53 @@ export const HomeScreen: React.FC = () => {
       <Modal
         animationType="slide"
         transparent={true}
-        visible={showPairSelector}
+        visible={showDifficultySelector}
         onRequestClose={handleCloseModal}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{selectedGame?.name}</Text>
             <Text style={styles.modalSubtitle}>
-              Select number of pairs
-              {settings.pairCount && ` (last played: ${settings.pairCount})`}
+              Select difficulty
+              {settings.difficulty && ` (last played: ${getDifficultyLabel(settings.difficulty)})`}
             </Text>
             
-            <ScrollView style={styles.optionsList}>
-              {pairOptions.map(({ count, label }) => (
+            <View style={styles.optionsList}>
+              {DIFFICULTY_OPTIONS.map(({ value, label, description }) => (
                 <TouchableOpacity
-                  key={count}
+                  key={value}
                   style={[
                     styles.optionButton,
-                    settings.pairCount === count && styles.optionButtonActive,
+                    settings.difficulty === value && styles.optionButtonActive,
                   ]}
-                  onPress={() => handlePairSelect(count)}
+                  onPress={() => handleDifficultySelect(value)}
                 >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      settings.pairCount === count && styles.optionTextActive,
-                    ]}
-                  >
-                    {label}
-                  </Text>
-                  {settings.pairCount === count && (
-                    <Text style={styles.lastPlayedBadge}>Last Played</Text>
-                  )}
+                  <View style={styles.optionContent}>
+                    <View style={styles.optionHeader}>
+                      <Text
+                        style={[
+                          styles.optionLabel,
+                          settings.difficulty === value && styles.optionTextActive,
+                        ]}
+                      >
+                        {label}
+                      </Text>
+                      {settings.difficulty === value && (
+                        <Text style={styles.lastPlayedBadge}>Last Played</Text>
+                      )}
+                    </View>
+                    <Text
+                      style={[
+                        styles.optionDescription,
+                        settings.difficulty === value && styles.optionTextActive,
+                      ]}
+                    >
+                      {description}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </View>
 
             <TouchableOpacity
               style={styles.closeButton}
@@ -253,7 +264,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 24,
     width: '100%',
-    maxHeight: '80%',
+    maxWidth: 400,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -274,7 +285,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   optionsList: {
-    maxHeight: 300,
+    marginBottom: 16,
   },
   optionButton: {
     backgroundColor: '#FFFFFF',
@@ -284,22 +295,31 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#E8E4E1',
     marginBottom: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   optionButtonActive: {
     backgroundColor: '#A8D8EA',
     borderColor: '#A8D8EA',
   },
-  optionText: {
-    fontSize: 18,
+  optionContent: {
+    flexDirection: 'column',
+  },
+  optionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  optionLabel: {
+    fontSize: 20,
     color: '#5A5A5A',
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  optionDescription: {
+    fontSize: 14,
+    color: '#8A8A8A',
   },
   optionTextActive: {
     color: '#FFFFFF',
-    fontWeight: '600',
   },
   lastPlayedBadge: {
     fontSize: 12,
@@ -314,7 +334,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: 25,
-    marginTop: 16,
     alignItems: 'center',
   },
   closeButtonText: {
