@@ -1,0 +1,27 @@
+name: Mobile Validation
+
+on:
+  workflow_dispatch:
+
+jobs:
+  export-platform-bundles:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [android, ios]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate ${{ matrix.platform }} bundle
+        run: npx expo export --platform ${{ matrix.platform }} --output-dir dist/${{ matrix.platform }}

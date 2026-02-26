@@ -118,6 +118,41 @@ A simple drawing canvas where kids can draw, add shapes, and be creative.
    - Scan QR code with Expo Go app on physical device
    - `w` to open in web browser
 
+## Testing and Quality Checks
+
+```bash
+# TypeScript regression check
+npm run typecheck
+
+# Run all tests
+npm test
+
+# CI-mode test run
+npm run test:ci
+
+# Watch mode during development
+npm run test:watch
+
+# Run one test file
+npm run test:single -- src/utils/gameLogic.test.ts
+```
+
+## Android and iOS Validation
+
+```bash
+# Launch app on emulator/simulator from Expo
+npm run android
+npm run ios
+
+# CI-friendly bundle validation for each platform
+npm run validate:android
+npm run validate:ios
+```
+
+For GitHub Actions, use:
+- `CI` workflow for typecheck + regression tests on PRs
+- `Mobile Validation` workflow (manual trigger) to validate Android/iOS bundles
+
 ## Building for Production
 
 ### Web
