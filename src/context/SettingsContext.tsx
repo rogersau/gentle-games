@@ -14,6 +14,7 @@ const defaultSettings: Settings = {
   soundVolume: 0.5,
   difficulty: 'medium',
   theme: 'mixed',
+  showCardPreview: true,
 };
 
 const toBoolean = (value: unknown, fallback: boolean): boolean => {
@@ -56,6 +57,7 @@ const sanitizeSettings = (candidate: unknown): Settings => {
     soundVolume: toVolume(parsed.soundVolume, defaultSettings.soundVolume),
     difficulty: toDifficulty(parsed.difficulty, defaultSettings.difficulty),
     theme: toTheme(parsed.theme, defaultSettings.theme),
+    showCardPreview: toBoolean(parsed.showCardPreview, defaultSettings.showCardPreview),
   };
 };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Tile as TileType } from '../types';
 import { generateTiles, checkMatch, checkGameComplete, formatTime, calculateGridDimensions } from '../utils/gameLogic';
@@ -22,6 +22,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
   const [moves, setMoves] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentTime, setCurrentTime] = useState<number>(Date.now());
+  const [isPreviewPhase, setIsPreviewPhase] = useState(false);
+  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const padding = 16;
   const headerHeight = 60;
@@ -46,6 +48,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
     startNewGame();
   }, [settings.difficulty, settings.theme]);
 
+  // Cleanup preview timer on unmount
+  useEffect(() => {
+    return () => {
+      if (previewTimerRef.current) {
+        clearTimeout(previewTimerRef.current);
+      }
+    };
+  }, []);
+
   // Timer effect - updates every second while game is active
   useEffect(() => {
     if (!startTime || isGameComplete || endTime) return;
@@ -58,19 +69,36 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
   }, [startTime, isGameComplete, endTime]);
 
   const startNewGame = () => {
+    if (previewTimerRef.current) {
+      clearTimeout(previewTimerRef.current);
+      previewTimerRef.current = null;
+    }
+
     const newTiles = generateTiles(settings.difficulty, settings.theme);
-    setTiles(newTiles);
     setSelectedTiles([]);
     setIsGameComplete(false);
-    setStartTime(null); // timer starts on first flip
+    setStartTime(null);
     setEndTime(null);
     setMoves(0);
     setIsProcessing(false);
     setCurrentTime(Date.now());
+
+    if (settings.showCardPreview) {
+      setTiles(newTiles.map(tile => ({ ...tile, isFlipped: true })));
+      setIsPreviewPhase(true);
+      previewTimerRef.current = setTimeout(() => {
+        setTiles(newTiles);
+        setIsPreviewPhase(false);
+        previewTimerRef.current = null;
+      }, 2000);
+    } else {
+      setTiles(newTiles);
+      setIsPreviewPhase(false);
+    }
   };
 
   const handleTilePress = useCallback(async (tileId: string) => {
-    if (isProcessing || selectedTiles.length >= 2) return;
+    if (isPreviewPhase || isProcessing || selectedTiles.length >= 2) return;
     if (selectedTiles.includes(tileId)) return;
 
     await playFlipSound(settings);
@@ -136,7 +164,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
         return prev;
       });
     }
-  }, [selectedTiles, isProcessing, settings, startTime, onGameComplete]);
+  }, [selectedTiles, isProcessing, isPreviewPhase, settings, startTime, onGameComplete]);
 
   const elapsed = endTime
     ? endTime - (startTime || 0)

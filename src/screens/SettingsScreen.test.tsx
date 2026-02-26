@@ -10,6 +10,7 @@ let mockSettings = {
   soundVolume: 0.5,
   difficulty: 'medium' as const,
   theme: 'mixed' as const,
+  showCardPreview: true,
 };
 
 jest.mock('@react-navigation/native', () => ({
@@ -34,17 +35,32 @@ describe('SettingsScreen', () => {
       soundVolume: 0.5,
       difficulty: 'medium',
       theme: 'mixed',
+      showCardPreview: true,
     };
   });
 
-  it('updates theme and volume using controls', () => {
+  it('updates volume using controls', () => {
     const screen = render(<SettingsScreen />);
 
-    fireEvent.press(screen.getByText('Shapes'));
     fireEvent.press(screen.getByText('+'));
 
-    expect(mockUpdateSettings).toHaveBeenCalledWith({ theme: 'shapes' });
     expect(mockUpdateSettings).toHaveBeenCalledWith({ soundVolume: 0.6 });
+  });
+
+  it('toggles card preview setting', () => {
+    const screen = render(<SettingsScreen />);
+
+    const switches = screen.getAllByRole('switch');
+    fireEvent(switches[0], 'valueChange', false);
+
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ showCardPreview: false });
+  });
+
+  it('does not show theme or difficulty controls', () => {
+    const screen = render(<SettingsScreen />);
+
+    expect(screen.queryByText('Theme')).toBeNull();
+    expect(screen.queryByText('Difficulty')).toBeNull();
   });
 
   it('goes back to home when back button is pressed', () => {
