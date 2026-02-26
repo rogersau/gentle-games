@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { GameBoard } from './GameBoard';
 import { generateTiles } from '../utils/gameLogic';
 
@@ -69,7 +69,9 @@ describe('GameBoard', () => {
     );
 
     expect(screen.getByText('—')).toBeTruthy();
-    fireEvent.press(screen.getByTestId('tile-1a'));
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('tile-1a'));
+    });
 
     await waitFor(() => {
       expect(screen.queryByText('—')).toBeNull();
@@ -78,25 +80,43 @@ describe('GameBoard', () => {
 
   it('shows completion state and calls onGameComplete after all matches', async () => {
     const onGameComplete = jest.fn();
+    jest.useFakeTimers();
 
-    const screen = render(
-      <GameBoard onGameComplete={onGameComplete} onBackPress={jest.fn()} />
-    );
+    try {
+      const screen = render(
+        <GameBoard onGameComplete={onGameComplete} onBackPress={jest.fn()} />
+      );
 
-    fireEvent.press(screen.getByTestId('tile-1a'));
-    await waitFor(() => expect(screen.queryAllByText('🐰').length).toBeGreaterThan(0));
-    fireEvent.press(screen.getByTestId('tile-1b'));
-    await new Promise((resolve) => setTimeout(resolve, 650));
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('tile-1a'));
+      });
+      await waitFor(() => expect(screen.queryAllByText('🐰').length).toBeGreaterThan(0));
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('tile-1b'));
+      });
+      await act(async () => {
+        jest.advanceTimersByTime(650);
+      });
 
-    fireEvent.press(screen.getByTestId('tile-2a'));
-    await waitFor(() => expect(screen.queryAllByText('🐶').length).toBeGreaterThan(0));
-    fireEvent.press(screen.getByTestId('tile-2b'));
-    await new Promise((resolve) => setTimeout(resolve, 650));
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('tile-2a'));
+      });
+      await waitFor(() => expect(screen.queryAllByText('🐶').length).toBeGreaterThan(0));
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('tile-2b'));
+      });
+      await act(async () => {
+        jest.advanceTimersByTime(650);
+      });
 
-    await waitFor(() => {
-      expect(screen.getByText(/You finished in/)).toBeTruthy();
-    });
-    expect(onGameComplete).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('Moves: 2')).toBeTruthy();
+      await waitFor(() => {
+        expect(screen.getByText(/You finished in/)).toBeTruthy();
+      });
+      expect(onGameComplete).toHaveBeenCalledTimes(1);
+      expect(screen.getByText('Moves: 2')).toBeTruthy();
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
   });
 });
