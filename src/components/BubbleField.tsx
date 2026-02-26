@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: PASTEL_COLORS.background,
+    backgroundColor: PASTEL_COLORS.cardFront,
   },
   touchLayer: {
     position: 'absolute',

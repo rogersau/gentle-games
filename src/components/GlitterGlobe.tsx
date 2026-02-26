@@ -26,6 +26,14 @@ interface GlitterParticle {
   opacity: number;
 }
 
+interface WakeRipple {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  opacity: number;
+}
+
 export interface GlitterGlobeRef {
   addGlitter: (count?: number) => void;
   clearGlitter: () => void;
@@ -48,6 +56,10 @@ const FINGER_PUSH = 16;
 const SHAKE_IMPULSE = 45;
 const MAX_SPEED = 65;
 const LARGE_PIECE_CHANCE = 0.22;
+const WAKE_INTERVAL_MS = 45;
+const WAKE_MAX_TRAIL = 22;
+const WAKE_FADE_PER_SECOND = 2.2;
+const WAKE_EXPAND_PER_SECOND = 20;
 
 const PARTICLE_COLORS = [
   '#FF5D8F',
@@ -102,6 +114,15 @@ const createParticle = (width: number, height: number): GlitterParticle => {
 
 const createParticles = (count: number, width: number, height: number): GlitterParticle[] =>
   Array.from({ length: count }, () => createParticle(width, height));
+
+const isPointInsideGlobe = (x: number, y: number, width: number, height: number): boolean => {
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const globeRadius = Math.min(width, height) / 2 - GLOBE_PADDING;
+  const dx = x - centerX;
+  const dy = y - centerY;
+  return dx * dx + dy * dy <= globeRadius * globeRadius;
+};
 
 const clampParticleToGlobe = (
   particle: GlitterParticle,
@@ -239,12 +260,14 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
     const [particles, setParticles] = useState<GlitterParticle[]>(() =>
       createParticles(initialCount, width, height)
     );
+    const [wakeRipples, setWakeRipples] = useState<WakeRipple[]>([]);
     const frameRef = useRef<number | null>(null);
     const lastTimeRef = useRef<number>(0);
     const sizeRef = useRef({ width, height });
     const motionForceRef = useRef({ x: 0, y: 0 });
     const lastShakeAtRef = useRef(0);
     const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
+    const lastWakeAtRef = useRef(0);
 
     useEffect(() => {
       sizeRef.current = { width, height };
@@ -313,6 +336,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
         },
         clearGlitter: () => {
           setParticles([]);
+          setWakeRipples([]);
         },
       }),
       [maxParticles]
@@ -339,6 +363,15 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
               BASE_GRAVITY + motionForce.y
             )
           );
+          setWakeRipples((prev) =>
+            prev
+              .map((wake) => ({
+                ...wake,
+                radius: wake.radius + WAKE_EXPAND_PER_SECOND * elapsedSeconds,
+                opacity: wake.opacity - WAKE_FADE_PER_SECOND * elapsedSeconds,
+              }))
+              .filter((wake) => wake.opacity > 0)
+          );
         }
 
         frameRef.current = requestAnimationFrame(tick);
@@ -362,6 +395,29 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
               x: event.nativeEvent.locationX,
               y: event.nativeEvent.locationY,
             };
+            if (
+              isPointInsideGlobe(
+                event.nativeEvent.locationX,
+                event.nativeEvent.locationY,
+                sizeRef.current.width,
+                sizeRef.current.height
+              )
+            ) {
+              const now = Date.now();
+              lastWakeAtRef.current = now;
+              setWakeRipples((prev) =>
+                [
+                  ...prev,
+                  {
+                    id: `wake-${now}-start`,
+                    x: event.nativeEvent.locationX,
+                    y: event.nativeEvent.locationY,
+                    radius: 6,
+                    opacity: 0.34,
+                  },
+                ].slice(-WAKE_MAX_TRAIL)
+              );
+            }
           },
           onPanResponderMove: (event) => {
             const point = {
@@ -378,6 +434,31 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
               return;
             }
 
+            const isInside = isPointInsideGlobe(
+              point.x,
+              point.y,
+              sizeRef.current.width,
+              sizeRef.current.height
+            );
+            if (isInside) {
+              const now = Date.now();
+              if (now - lastWakeAtRef.current >= WAKE_INTERVAL_MS) {
+                lastWakeAtRef.current = now;
+                setWakeRipples((prev) =>
+                  [
+                    ...prev,
+                    {
+                      id: `wake-${now}-${Math.random().toString(36).slice(2, 6)}`,
+                      x: point.x,
+                      y: point.y,
+                      radius: 5,
+                      opacity: 0.28,
+                    },
+                  ].slice(-WAKE_MAX_TRAIL)
+                );
+              }
+            }
+
             setParticles((prev) =>
               applyFingerImpulse(
                 prev,
@@ -392,9 +473,11 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
           },
           onPanResponderRelease: () => {
             lastTouchRef.current = null;
+            lastWakeAtRef.current = 0;
           },
           onPanResponderTerminate: () => {
             lastTouchRef.current = null;
+            lastWakeAtRef.current = 0;
           },
         }),
       []
@@ -415,7 +498,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
           <Defs>
             <RadialGradient id="globeFill" cx="50%" cy="32%" rx="65%" ry="65%">
               <Stop offset="0%" stopColor={PASTEL_COLORS.cardFront} />
-              <Stop offset="100%" stopColor={PASTEL_COLORS.background} />
+              <Stop offset="100%" stopColor={PASTEL_COLORS.cardFront} />
             </RadialGradient>
           </Defs>
 
@@ -484,6 +567,18 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
               />
             );
           })}
+          {wakeRipples.map((wake) => (
+            <Circle
+              key={wake.id}
+              cx={wake.x}
+              cy={wake.y}
+              r={wake.radius}
+              fill="none"
+              stroke={PASTEL_COLORS.cardFront}
+              strokeWidth={1.5}
+              opacity={wake.opacity}
+            />
+          ))}
         </Svg>
         <View style={styles.touchLayer} {...panResponder.panHandlers} />
       </View>
