@@ -66,7 +66,7 @@ const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
             <Text style={styles.questionMark}>?</Text>
           </View>
         ) : (
-          <Text style={[styles.emoji, { fontSize: finalEmojiSize }, tile.isMatched && styles.matchedEmoji]}>
+          <Text style={[styles.emoji, { fontSize: finalEmojiSize }, tile.isMatched ? styles.matchedEmoji : undefined]}>
             {tile.value}
           </Text>
         )}

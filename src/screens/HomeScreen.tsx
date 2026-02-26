@@ -4,10 +4,10 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   Modal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSettings } from '../context/SettingsContext';
 import { Difficulty } from '../types';
 import { getGridConfig } from '../utils/gameLogic';
@@ -76,7 +76,7 @@ export const HomeScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.content}>
         <Text style={styles.title}>Gentle Games</Text>
         <Text style={styles.subtitle}>Calm games for kids</Text>
@@ -127,7 +127,7 @@ export const HomeScreen: React.FC = () => {
                   key={value}
                   style={[
                     styles.optionButton,
-                    settings.difficulty === value && styles.optionButtonActive,
+                    settings.difficulty === value ? styles.optionButtonActive : undefined,
                   ]}
                   onPress={() => handleDifficultySelect(value)}
                 >
@@ -136,7 +136,7 @@ export const HomeScreen: React.FC = () => {
                       <Text
                         style={[
                           styles.optionLabel,
-                          settings.difficulty === value && styles.optionTextActive,
+                          settings.difficulty === value ? styles.optionTextActive : undefined,
                         ]}
                       >
                         {label}
@@ -148,7 +148,7 @@ export const HomeScreen: React.FC = () => {
                     <Text
                       style={[
                         styles.optionDescription,
-                        settings.difficulty === value && styles.optionTextActive,
+                          settings.difficulty === value ? styles.optionTextActive : undefined,
                       ]}
                     >
                       {description}

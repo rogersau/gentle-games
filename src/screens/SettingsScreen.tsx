@@ -4,11 +4,11 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   Switch,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSettings } from '../context/SettingsContext';
 
 export const SettingsScreen: React.FC = () => {
@@ -28,7 +28,7 @@ export const SettingsScreen: React.FC = () => {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Settings</Text>
 
@@ -41,14 +41,14 @@ export const SettingsScreen: React.FC = () => {
                 key={value}
                 style={[
                   styles.optionButton,
-                  settings.difficulty === value && styles.optionButtonActive,
+                  settings.difficulty === value ? styles.optionButtonActive : undefined,
                 ]}
                 onPress={() => updateSettings({ difficulty: value })}
               >
                 <Text
                   style={[
                     styles.optionText,
-                    settings.difficulty === value && styles.optionTextActive,
+                    settings.difficulty === value ? styles.optionTextActive : undefined,
                   ]}
                 >
                   {label}
@@ -67,14 +67,14 @@ export const SettingsScreen: React.FC = () => {
                 key={value}
                 style={[
                   styles.optionButton,
-                  settings.theme === value && styles.optionButtonActive,
+                    settings.theme === value ? styles.optionButtonActive : undefined,
                 ]}
                 onPress={() => updateSettings({ theme: value })}
               >
                 <Text
                   style={[
                     styles.optionText,
-                    settings.theme === value && styles.optionTextActive,
+                    settings.theme === value ? styles.optionTextActive : undefined,
                   ]}
                 >
                   {label}
@@ -89,7 +89,7 @@ export const SettingsScreen: React.FC = () => {
           <View style={styles.toggleRow}>
             <Text style={styles.sectionTitle}>Animations</Text>
             <Switch
-              value={settings.animationsEnabled}
+              value={!!settings.animationsEnabled}
               onValueChange={(value) => updateSettings({ animationsEnabled: value })}
               trackColor={{ false: '#D4D0CD', true: '#A8D8EA' }}
               thumbColor={settings.animationsEnabled ? '#FFFFFF' : '#FFFFFF'}
@@ -103,7 +103,7 @@ export const SettingsScreen: React.FC = () => {
           <View style={styles.toggleRow}>
             <Text style={styles.sectionTitle}>Sound</Text>
             <Switch
-              value={settings.soundEnabled}
+              value={!!settings.soundEnabled}
               onValueChange={(value) => updateSettings({ soundEnabled: value })}
               trackColor={{ false: '#D4D0CD', true: '#A8D8EA' }}
               thumbColor={settings.soundEnabled ? '#FFFFFF' : '#FFFFFF'}
@@ -131,7 +131,7 @@ export const SettingsScreen: React.FC = () => {
                     key={step}
                     style={[
                       styles.volumeSegment,
-                      settings.soundVolume >= step && styles.volumeSegmentFilled,
+                      settings.soundVolume >= step ? styles.volumeSegmentFilled : undefined,
                     ]}
                     onPress={() => updateSettings({ soundVolume: step })}
                   />

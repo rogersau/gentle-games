@@ -64,6 +64,7 @@ const PRESET_COLORS = [
 interface DrawingCanvasProps {
   width: number;
   height: number;
+  bottomInset?: number;
   initialHistory?: HistoryEntry[];
   onHistoryChange?: (history: HistoryEntry[]) => void;
 }
@@ -122,7 +123,7 @@ const applySymmetry = (point: Point, width: number, height: number, xMult: numbe
 };
 
 export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
-  ({ width, height, initialHistory = [], onHistoryChange }, ref) => {
+  ({ width, height, bottomInset = 0, initialHistory = [], onHistoryChange }, ref) => {
     // Unified ordered history — preserves exact draw order for correct undo
     const [history, setHistory] = useState<HistoryEntry[]>(initialHistory);
     // Current strokes being drawn (one per symmetry copy)
@@ -464,7 +465,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
         </View>
 
         {/* Toolbar */}
-        <View style={styles.toolbar}>
+        <View style={[styles.toolbar, { paddingBottom: Math.max(8, bottomInset) }]}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -476,7 +477,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                 style={[
                   styles.colorButton,
                   { backgroundColor: color },
-                  selectedColor === color && tool !== 'eraser' && styles.selectedColor,
+                  selectedColor === color && tool !== 'eraser' ? styles.selectedColor : undefined,
                 ]}
                 onPress={() => handleColorSelect(color)}
               />
@@ -492,14 +493,14 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
           <View style={styles.toolButtons}>
             <TouchableOpacity
-              style={[styles.toolButton, tool === 'pen' && styles.toolButtonActive]}
+              style={[styles.toolButton, tool === 'pen' ? styles.toolButtonActive : undefined]}
               onPress={() => handleToolSelect('pen')}
             >
               <Text style={styles.toolButtonText}>✏️</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.toolButton, tool === 'shape' && styles.toolButtonActive]}
+              style={[styles.toolButton, tool === 'shape' ? styles.toolButtonActive : undefined]}
               onPress={() => handleToolSelect('shape')}
             >
               <Text style={styles.toolButtonText}>
@@ -510,7 +511,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.toolButton, symmetryMode !== 'none' && styles.toolButtonActive]}
+              style={[styles.toolButton, symmetryMode !== 'none' ? styles.toolButtonActive : undefined]}
               onPress={cycleSymmetryMode}
             >
               <Text style={styles.toolButtonText}>
@@ -521,18 +522,18 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.toolButton, tool === 'eraser' && styles.toolButtonActive]}
+              style={[styles.toolButton, tool === 'eraser' ? styles.toolButtonActive : undefined]}
               onPress={() => handleToolSelect('eraser')}
             >
               <Text style={styles.toolButtonText}>🧹</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.toolButton, !canUndo && styles.toolButtonDisabled]}
+              style={[styles.toolButton, !canUndo ? styles.toolButtonDisabled : undefined]}
               onPress={handleUndo}
               disabled={!canUndo}
             >
-              <Text style={[styles.toolButtonText, !canUndo && styles.disabledText]}>↩️</Text>
+              <Text style={[styles.toolButtonText, !canUndo ? styles.disabledText : undefined]}>↩️</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -594,7 +595,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                     style={[
                       styles.gridColorButton,
                       { backgroundColor: color },
-                      pickerColor === color && styles.gridColorSelected,
+                      pickerColor === color ? styles.gridColorSelected : undefined,
                     ]}
                     onPress={() => setPickerColor(color)}
                   />
@@ -636,7 +637,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
               <View style={styles.shapeGrid}>
                 <TouchableOpacity
-                  style={[styles.shapeButton, shapeType === 'circle' && styles.shapeButtonActive]}
+                  style={[styles.shapeButton, shapeType === 'circle' ? styles.shapeButtonActive : undefined]}
                   onPress={() => handleShapeSelect('circle')}
                 >
                   <Text style={styles.shapeIcon}>🔴</Text>
@@ -644,7 +645,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.shapeButton, shapeType === 'square' && styles.shapeButtonActive]}
+                  style={[styles.shapeButton, shapeType === 'square' ? styles.shapeButtonActive : undefined]}
                   onPress={() => handleShapeSelect('square')}
                 >
                   <Text style={styles.shapeIcon}>🟦</Text>
@@ -652,7 +653,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.shapeButton, shapeType === 'triangle' && styles.shapeButtonActive]}
+                  style={[styles.shapeButton, shapeType === 'triangle' ? styles.shapeButtonActive : undefined]}
                   onPress={() => handleShapeSelect('triangle')}
                 >
                   <Text style={styles.shapeIcon}>🔺</Text>

@@ -4,13 +4,13 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   useWindowDimensions,
   Modal,
   Alert,
   BackHandler,
 } from 'react-native';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DrawingCanvas, DrawingCanvasRef, HistoryEntry } from '../components/DrawingCanvas';
 
@@ -19,6 +19,7 @@ const DRAWING_STORAGE_KEY = '@gentle_match_saved_drawing';
 export const DrawingScreen: React.FC = () => {
   const navigation = useNavigation();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const canvasRef = useRef<DrawingCanvasRef>(null);
   
   const [savedHistory, setSavedHistory] = useState<HistoryEntry[]>([]);
@@ -32,13 +33,13 @@ export const DrawingScreen: React.FC = () => {
     const padding = 32;
     
     const availableWidth = screenWidth - padding;
-    const availableHeight = screenHeight - headerHeight - toolbarHeight - padding;
+    const availableHeight = screenHeight - insets.top - insets.bottom - headerHeight - toolbarHeight - padding;
 
     return {
       width: availableWidth,
-      height: availableHeight,
+      height: Math.max(260, availableHeight),
     };
-  }, [screenWidth, screenHeight]);
+  }, [screenWidth, screenHeight, insets.top, insets.bottom]);
 
   // Check for saved drawing on mount
   useEffect(() => {
@@ -49,13 +50,15 @@ export const DrawingScreen: React.FC = () => {
         if (saved) {
           const parsed = JSON.parse(saved);
           console.log('Parsed drawing entries:', parsed.length);
-          if (parsed && parsed.length > 0) {
+          if (parsed && Array.isArray(parsed) && parsed.length > 0) {
             setSavedHistory(parsed);
             setShowContinueModal(true);
           }
         }
       } catch (error) {
         console.warn('Error loading saved drawing:', error);
+        // Clear corrupted drawing data
+        await AsyncStorage.removeItem(DRAWING_STORAGE_KEY);
       } finally {
         setHasCheckedSaved(true);
         setIsLoading(false);
@@ -148,7 +151,7 @@ export const DrawingScreen: React.FC = () => {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading...</Text>
         </View>
@@ -157,7 +160,7 @@ export const DrawingScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <TouchableOpacity 
           onPress={handleBackPress}
@@ -176,6 +179,7 @@ export const DrawingScreen: React.FC = () => {
             ref={canvasRef}
             width={canvasDimensions.width}
             height={canvasDimensions.height}
+            bottomInset={insets.bottom}
             initialHistory={savedHistory}
             onHistoryChange={handleHistoryChange}
           />
