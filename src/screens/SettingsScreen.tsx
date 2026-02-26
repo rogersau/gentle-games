@@ -15,73 +15,23 @@ export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings, updateSettings } = useSettings();
 
-  const themes: { value: 'animals' | 'shapes' | 'mixed'; label: string }[] = [
-    { value: 'animals', label: 'Animals' },
-    { value: 'shapes', label: 'Shapes' },
-    { value: 'mixed', label: 'Mixed' },
-  ];
-
-  const difficulties: { value: 'easy' | 'medium' | 'hard'; label: string }[] = [
-    { value: 'easy', label: 'Easy (3x4)' },
-    { value: 'medium', label: 'Medium (4x5)' },
-    { value: 'hard', label: 'Hard (5x6)' },
-  ];
-
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Settings</Text>
 
-        {/* Difficulty */}
+        {/* Card Preview */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Difficulty</Text>
-          <View style={styles.optionsContainer}>
-            {difficulties.map(({ value, label }) => (
-              <TouchableOpacity
-                key={value}
-                style={[
-                  styles.optionButton,
-                  settings.difficulty === value ? styles.optionButtonActive : undefined,
-                ]}
-                onPress={() => updateSettings({ difficulty: value })}
-              >
-                <Text
-                  style={[
-                    styles.optionText,
-                    settings.difficulty === value ? styles.optionTextActive : undefined,
-                  ]}
-                >
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.toggleRow}>
+            <Text style={styles.sectionTitle}>Show Card Preview</Text>
+            <Switch
+              value={!!settings.showCardPreview}
+              onValueChange={(value) => updateSettings({ showCardPreview: value })}
+              trackColor={{ false: '#D4D0CD', true: '#A8D8EA' }}
+              thumbColor={settings.showCardPreview ? '#FFFFFF' : '#FFFFFF'}
+            />
           </View>
-        </View>
-
-        {/* Theme */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Theme</Text>
-          <View style={styles.optionsContainer}>
-            {themes.map(({ value, label }) => (
-              <TouchableOpacity
-                key={value}
-                style={[
-                  styles.optionButton,
-                    settings.theme === value ? styles.optionButtonActive : undefined,
-                ]}
-                onPress={() => updateSettings({ theme: value })}
-              >
-                <Text
-                  style={[
-                    styles.optionText,
-                    settings.theme === value ? styles.optionTextActive : undefined,
-                  ]}
-                >
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <Text style={styles.description}>Show all cards for 2 seconds before the game starts</Text>
         </View>
 
         {/* Animations */}
@@ -185,34 +135,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#5A5A5A',
     marginBottom: 12,
-  },
-  optionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  optionButton: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#E8E4E1',
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  optionButtonActive: {
-    backgroundColor: '#A8D8EA',
-    borderColor: '#A8D8EA',
-  },
-  optionText: {
-    fontSize: 16,
-    color: '#5A5A5A',
-    fontWeight: '500',
-  },
-  optionTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
   },
   toggleRow: {
     flexDirection: 'row',

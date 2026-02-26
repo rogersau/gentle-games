@@ -16,6 +16,7 @@ export interface Settings {
   soundVolume: number;
   difficulty: Difficulty;
   theme: 'animals' | 'shapes' | 'mixed';
+  showCardPreview: boolean;
 }
 
 export const ANIMALS = [
