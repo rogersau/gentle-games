@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Support — Gentle Games</title>
+  <style>
+    :root {
+      --bg:        #FFFEF7;
+      --primary:   #A8D8EA;
+      --secondary: #FFB6C1;
+      --accent:    #B5EAD7;
+      --muted:     #C7B8EA;
+      --text:      #4A4A6A;
+      --subtext:   #7A7A9A;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    header {
+      background: var(--primary);
+      padding: 2rem 1.5rem 1.5rem;
+      text-align: center;
+    }
+    header h1 { font-size: 2rem; font-weight: 700; }
+    header p  { font-size: 0.95rem; color: var(--text); margin-top: 0.3rem; }
+    main { max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+    h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 2rem 0 0.6rem;
+      border-left: 4px solid var(--secondary);
+      padding-left: 0.7rem;
+    }
+    p { margin-bottom: 0.9rem; font-size: 0.96rem; color: var(--subtext); }
+    ul { padding-left: 1.4rem; margin-bottom: 0.9rem; }
+    ul li { margin-bottom: 0.3rem; font-size: 0.95rem; color: var(--subtext); }
+    details {
+      border: 1.5px solid var(--primary);
+      border-radius: 10px;
+      padding: 0.8rem 1rem;
+      margin-bottom: 0.8rem;
+    }
+    details summary {
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.96rem;
+      color: var(--text);
+    }
+    details p { margin-top: 0.6rem; margin-bottom: 0; }
+    .btn {
+      display: inline-block;
+      background: var(--primary);
+      color: var(--text);
+      text-decoration: none;
+      border-radius: 10px;
+      padding: 0.55rem 1.3rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin: 0.3rem 0.3rem 0.3rem 0;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.82; }
+    .btn.secondary { background: var(--secondary); }
+    a { color: var(--text); }
+    footer {
+      background: var(--primary);
+      text-align: center;
+      padding: 1.2rem 1rem;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    footer a { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🛟 Support</h1>
+  <p>Gentle Games &nbsp;·&nbsp; We're here to help</p>
+</header>
+
+<main>
+
+  <p>
+    Gentle Games is free, open-source software maintained by volunteers.
+    Support is provided on a best-effort basis through the public issue tracker
+    on GitHub.
+  </p>
+
+  <h2>Get Help</h2>
+  <p>
+    The fastest way to get help is to open an issue on GitHub. Please include:
+  </p>
+  <ul>
+    <li>Your device type and operating system version</li>
+    <li>The version of Gentle Games you are using</li>
+    <li>A description of the problem and steps to reproduce it</li>
+  </ul>
+  <a class="btn" href="https://github.com/rogersau/gentle-games/issues/new">Open an Issue on GitHub</a>
+
+  <h2>Frequently Asked Questions</h2>
+
+  <details>
+    <summary>Does Gentle Games collect any personal data?</summary>
+    <p>
+      No. Gentle Games collects absolutely no personal data. The app stores only
+      your local settings (sound, animation preference, last pair count) on your
+      device using AsyncStorage. This data never leaves your device.
+      See the <a href="privacy-policy.html">Privacy Policy</a> for full details.
+    </p>
+  </details>
+
+  <details>
+    <summary>Is Gentle Games free?</summary>
+    <p>
+      Yes. Gentle Games is completely free with no ads, no in-app purchases,
+      and no subscription model.
+    </p>
+  </details>
+
+  <details>
+    <summary>Is Gentle Games open source?</summary>
+    <p>
+      Yes. The full source code is available on
+      <a href="https://github.com/rogersau/gentle-games">GitHub</a>
+      under the GNU General Public License v3 (GPLv3).
+      You are free to view, modify, and redistribute the code under the terms
+      of that license.
+    </p>
+  </details>
+
+  <details>
+    <summary>The app sounds are too loud / too quiet.</summary>
+    <p>
+      Open the Settings screen (gear icon on the home screen) and adjust the
+      volume slider. You can also toggle sounds off entirely. The app respects
+      your device's media volume as well.
+    </p>
+  </details>
+
+  <details>
+    <summary>How do I turn off animations?</summary>
+    <p>
+      Open the Settings screen and toggle the "Animations" option off.
+      All flip and celebration animations will be disabled immediately.
+    </p>
+  </details>
+
+  <details>
+    <summary>Memory Snap seems too easy / too hard.</summary>
+    <p>
+      On the game selection screen, tap "Memory Snap" and choose from Easy
+      (6–10 pairs), Medium (12–18 pairs), or Hard (20–30 pairs). You can also
+      adjust the exact number of pairs using the slider.
+    </p>
+  </details>
+
+  <details>
+    <summary>How do I clear my drawing?</summary>
+    <p>
+      On the Drawing Pad screen, tap the trash icon (Clear All) to remove
+      everything on the canvas. You can also use the Undo button to remove
+      the last stroke or shape one at a time.
+    </p>
+  </details>
+
+  <details>
+    <summary>I found a bug. How do I report it?</summary>
+    <p>
+      Please open an issue on the
+      <a href="https://github.com/rogersau/gentle-games/issues">GitHub issue tracker</a>.
+      Include your device type, OS version, app version, and a description
+      of the problem with steps to reproduce it.
+    </p>
+  </details>
+
+  <details>
+    <summary>Can I contribute to Gentle Games?</summary>
+    <p>
+      Absolutely! Pull requests are welcome. Please read the contributing
+      guidelines in the
+      <a href="https://github.com/rogersau/gentle-games">repository</a>
+      before submitting a change.
+    </p>
+  </details>
+
+  <h2>Contact</h2>
+  <p>
+    For questions not covered above, please use the
+    <a href="https://github.com/rogersau/gentle-games/issues">GitHub issue tracker</a>.
+    We aim to respond within a few business days.
+  </p>
+
+</main>
+
+<footer>
+  <p>
+    <a href="index.html">Home</a> &nbsp;·&nbsp;
+    <a href="privacy-policy.html">Privacy Policy</a> &nbsp;·&nbsp;
+    <a href="https://github.com/rogersau/gentle-games">GitHub</a>
+  </p>
+  <p style="margin-top:0.4rem;">
+    Gentle Games is open source under the
+    <a href="https://github.com/rogersau/gentle-games/blob/main/LICENSE">GPLv3 License</a>.
+  </p>
+</footer>
+
+</body>
+</html>

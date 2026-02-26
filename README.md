@@ -246,14 +246,32 @@ export const PASTEL_COLORS = {
 
 ## License
 
-This project is completely free and open source.
+This project is free and open source, released under the
+[GNU General Public License v3 (GPLv3)](LICENSE).
+
+You are free to use, modify, and distribute this software under the terms of
+that license. See the [LICENSE](LICENSE) file for the full text.
+
+## Website & App Store Pages
+
+The GitHub Pages site for this project lives in the [`docs/`](docs/) folder
+and is published at **https://rogersau.github.io/gentle-games/**. It includes:
+
+- [Home page](https://rogersau.github.io/gentle-games/) — app overview
+- [Privacy Policy](https://rogersau.github.io/gentle-games/privacy-policy.html) — required by Google Play and Apple App Store
+- [Support](https://rogersau.github.io/gentle-games/support.html) — required by Apple App Store
+
+> **Note:** To enable GitHub Pages for this repository, go to
+> **Settings → Pages**, set the source branch to `main`, and set the folder
+> to `/docs`.
 
 ## Support
 
 For issues or questions:
+- Open an issue on the [GitHub issue tracker](https://github.com/rogersau/gentle-games/issues)
+- Visit the [Support page](https://rogersau.github.io/gentle-games/support.html)
 - Check the [Expo documentation](https://docs.expo.dev)
 - Visit [React Native community resources](https://reactnative.dev/help)
-- Review the project code for examples
 
 ---
 
