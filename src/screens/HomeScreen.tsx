@@ -38,6 +38,12 @@ const GAMES: Game[] = [
     description: 'Snow globe glitter play',
     icon: '✨',
   },
+  {
+    id: 'bubble-pop',
+    name: 'Bubble Pop',
+    description: 'Tap falling bubbles',
+    icon: '🫧',
+  },
 ];
 
 const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; description: string }[] = [
@@ -59,6 +65,9 @@ export const HomeScreen: React.FC = () => {
       setSelectedGame(null);
     } else if (game.id === 'glitter-fall') {
       navigation.navigate('Glitter' as never);
+      setSelectedGame(null);
+    } else if (game.id === 'bubble-pop') {
+      navigation.navigate('Bubble' as never);
       setSelectedGame(null);
     } else {
       setShowDifficultySelector(true);

@@ -9,6 +9,7 @@ import { GameScreen } from './src/screens/GameScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { DrawingScreen } from './src/screens/DrawingScreen';
 import { GlitterScreen } from './src/screens/GlitterScreen';
+import { BubbleScreen } from './src/screens/BubbleScreen';
 import { initializeSounds, unloadSounds } from './src/utils/sounds';
 
 const Stack = createStackNavigator();
@@ -35,6 +36,7 @@ export default function App() {
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="Drawing" component={DrawingScreen} />
             <Stack.Screen name="Glitter" component={GlitterScreen} />
+            <Stack.Screen name="Bubble" component={BubbleScreen} />
           </Stack.Navigator>
           <StatusBar style="dark" />
         </NavigationContainer>

@@ -61,6 +61,15 @@ A calming snow globe where kids can sprinkle glitter and watch it drift.
 - Touch and swirl through the globe to move nearby glitter
 - Touch-only fallback on web when motion sensors are unavailable
 
+### 🫧 Bubble Pop
+A calm tapping game where bubbles drift down from the top of the screen.
+
+**Features:**
+- Endless mode with continuous bubble spawning
+- Mixed bubble sizes and gentle falling motion
+- Tap to pop bubbles and track a simple pop count
+- Active bubble guard that keeps at least 2 bubbles on screen
+
 ## Features (All Games)
 
 - **Sensory-Friendly Design**
@@ -204,17 +213,20 @@ gentle-games/
 │   │   ├── GameBoard.tsx       # Memory Snap game board
 │   │   ├── Tile.tsx            # Memory tile component
 │   │   ├── DrawingCanvas.tsx   # Drawing canvas with tools
-│   │   └── GlitterGlobe.tsx    # Glitter Fall particle globe
+│   │   ├── GlitterGlobe.tsx    # Glitter Fall particle globe
+│   │   └── BubbleField.tsx     # Bubble Pop falling bubble field
 │   ├── screens/
 │   │   ├── HomeScreen.tsx      # Game selection menu
 │   │   ├── GameScreen.tsx      # Memory Snap screen
 │   │   ├── DrawingScreen.tsx   # Drawing Pad screen
 │   │   ├── GlitterScreen.tsx   # Glitter Fall screen
+│   │   ├── BubbleScreen.tsx    # Bubble Pop screen
 │   │   └── SettingsScreen.tsx  # App settings
 │   ├── context/
 │   │   └── SettingsContext.tsx # Global settings state
 │   ├── utils/
 │   │   ├── gameLogic.ts        # Memory game logic
+│   │   ├── bubbleLogic.ts      # Bubble Pop spawn + movement logic
 │   │   ├── glitterMotion.ts    # Shake and motion helpers
 │   │   └── sounds.ts           # Audio management
 │   └── types/

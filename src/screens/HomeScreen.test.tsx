@@ -53,6 +53,13 @@ describe('HomeScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('Glitter');
   });
 
+  it('navigates directly to Bubble screen when Bubble Pop is selected', () => {
+    const screen = render(<HomeScreen />);
+    fireEvent.press(screen.getByText('Bubble Pop'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('Bubble');
+  });
+
   it('shows difficulty modal for Memory Snap and navigates to Game after selection', async () => {
     const screen = render(<HomeScreen />);
 
