@@ -32,6 +32,12 @@ const GAMES: Game[] = [
     description: 'Draw with colors and erase',
     icon: '🎨',
   },
+  {
+    id: 'glitter-fall',
+    name: 'Glitter Fall',
+    description: 'Snow globe glitter play',
+    icon: '✨',
+  },
 ];
 
 const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; description: string }[] = [
@@ -50,6 +56,9 @@ export const HomeScreen: React.FC = () => {
     setSelectedGame(game);
     if (game.id === 'drawing') {
       navigation.navigate('Drawing' as never);
+      setSelectedGame(null);
+    } else if (game.id === 'glitter-fall') {
+      navigation.navigate('Glitter' as never);
       setSelectedGame(null);
     } else {
       setShowDifficultySelector(true);

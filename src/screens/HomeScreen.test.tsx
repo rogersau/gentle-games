@@ -10,6 +10,7 @@ let mockSettings = {
   soundVolume: 0.5,
   difficulty: 'medium' as const,
   theme: 'mixed' as const,
+  showCardPreview: true,
 };
 
 jest.mock('@react-navigation/native', () => ({
@@ -34,6 +35,7 @@ describe('HomeScreen', () => {
       soundVolume: 0.5,
       difficulty: 'medium',
       theme: 'mixed',
+      showCardPreview: true,
     };
   });
 
@@ -42,6 +44,13 @@ describe('HomeScreen', () => {
     fireEvent.press(screen.getByText('Drawing Pad'));
 
     expect(mockNavigate).toHaveBeenCalledWith('Drawing');
+  });
+
+  it('navigates directly to Glitter screen when Glitter Fall is selected', () => {
+    const screen = render(<HomeScreen />);
+    fireEvent.press(screen.getByText('Glitter Fall'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('Glitter');
   });
 
   it('shows difficulty modal for Memory Snap and navigates to Game after selection', async () => {

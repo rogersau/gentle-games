@@ -8,6 +8,7 @@ import { HomeScreen } from './src/screens/HomeScreen';
 import { GameScreen } from './src/screens/GameScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { DrawingScreen } from './src/screens/DrawingScreen';
+import { GlitterScreen } from './src/screens/GlitterScreen';
 import { initializeSounds, unloadSounds } from './src/utils/sounds';
 
 const Stack = createStackNavigator();
@@ -33,6 +34,7 @@ export default function App() {
             <Stack.Screen name="Game" component={GameScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="Drawing" component={DrawingScreen} />
+            <Stack.Screen name="Glitter" component={GlitterScreen} />
           </Stack.Navigator>
           <StatusBar style="dark" />
         </NavigationContainer>

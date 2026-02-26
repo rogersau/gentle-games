@@ -52,6 +52,15 @@ A simple drawing canvas where kids can draw, add shapes, and be creative.
   - White background
   - Maximum screen space utilization
 
+### ✨ Glitter Fall
+A calming snow globe where kids can sprinkle glitter and watch it drift.
+
+**Features:**
+- Add glitter with simple tap controls
+- Shake device on mobile to create playful motion bursts
+- Touch and swirl through the globe to move nearby glitter
+- Touch-only fallback on web when motion sensors are unavailable
+
 ## Features (All Games)
 
 - **Sensory-Friendly Design**
@@ -79,6 +88,7 @@ A simple drawing canvas where kids can draw, add shapes, and be creative.
 - **Language**: TypeScript
 - **Navigation**: React Navigation
 - **Audio**: Expo AV
+- **Motion Sensors**: Expo Sensors (Accelerometer)
 - **Storage**: AsyncStorage
 - **Graphics**: React Native SVG
 - **State Management**: React Context API
@@ -193,16 +203,19 @@ gentle-games/
 │   ├── components/
 │   │   ├── GameBoard.tsx       # Memory Snap game board
 │   │   ├── Tile.tsx            # Memory tile component
-│   │   └── DrawingCanvas.tsx   # Drawing canvas with tools
+│   │   ├── DrawingCanvas.tsx   # Drawing canvas with tools
+│   │   └── GlitterGlobe.tsx    # Glitter Fall particle globe
 │   ├── screens/
 │   │   ├── HomeScreen.tsx      # Game selection menu
 │   │   ├── GameScreen.tsx      # Memory Snap screen
 │   │   ├── DrawingScreen.tsx   # Drawing Pad screen
+│   │   ├── GlitterScreen.tsx   # Glitter Fall screen
 │   │   └── SettingsScreen.tsx  # App settings
 │   ├── context/
 │   │   └── SettingsContext.tsx # Global settings state
 │   ├── utils/
 │   │   ├── gameLogic.ts        # Memory game logic
+│   │   ├── glitterMotion.ts    # Shake and motion helpers
 │   │   └── sounds.ts           # Audio management
 │   └── types/
 │       └── index.ts            # TypeScript types & data
