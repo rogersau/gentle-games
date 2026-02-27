@@ -28,7 +28,37 @@
       "versionCode": 1
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "bundler": "metro",
+      "output": "single",
+      "name": "Gentle Games",
+      "shortName": "Gentle Games",
+      "themeColor": "#FFFEF7",
+      "backgroundColor": "#FFFEF7",
+      "display": "standalone",
+      "favicon": "./assets/pwa/icon-32x32.png",
+      "icons": [
+        {
+          "src": "./assets/pwa/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        },
+        {
+          "src": "./assets/pwa/icon-512x512.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        },
+        {
+          "src": "./assets/pwa/icon-512x512-maskable.png",
+          "sizes": "512x512",
+          "type": "image/png",
+          "purpose": "maskable"
+        },
+        {
+          "src": "./assets/pwa/icon-180x180.png",
+          "sizes": "180x180",
+          "type": "image/png"
+        }
+      ]
     },
     "plugins": [
       "expo-audio"

@@ -185,6 +185,46 @@ npx expo export --platform web
 npx expo start --web
 ```
 
+## PWA Publish (GitHub Actions)
+
+This repo includes a workflow at [.github/workflows/pwa-deploy.yml](.github/workflows/pwa-deploy.yml) that builds and deploys the Expo web export to GitHub Pages.
+
+### One-time GitHub setup
+
+1. Go to **Settings → Pages** in your GitHub repo.
+2. Set **Source** to **GitHub Actions**.
+3. Push to `master` or `main` (or run the workflow manually from the **Actions** tab).
+
+### Workflow behavior
+
+- Installs dependencies with `npm ci`
+- Runs `npx expo export --platform web --output-dir dist --clear --base-url /<repo-name>/`
+- Runs `node scripts/prepare-pwa.js` to generate:
+  - `dist/manifest.webmanifest`
+  - `dist/sw.js`
+  - `dist/icons/*`
+- Publishes `dist` to GitHub Pages
+
+### Local PWA build
+
+```bash
+npm run build:pwa
+```
+
+### PWA placeholder icons (replace these)
+
+The workflow and app config use files in `assets/pwa/`:
+
+- `assets/pwa/icon-32x32.png` (favicon)
+- `assets/pwa/icon-180x180.png` (apple touch icon)
+- `assets/pwa/icon-192x192.png`
+- `assets/pwa/icon-384x384.png`
+- `assets/pwa/icon-512x512.png`
+- `assets/pwa/icon-192x192-maskable.png`
+- `assets/pwa/icon-512x512-maskable.png`
+
+Replace these files with your final brand assets using the same file names.
+
 ### iOS
 
 ```bash
@@ -280,22 +320,21 @@ that license. See the [LICENSE](LICENSE) file for the full text.
 
 ## Website & App Store Pages
 
-The GitHub Pages site for this project lives in the [`docs/`](docs/) folder
-and is published at **https://rogersau.github.io/gentle-games/**. It includes:
+The GitHub Pages docs site for this project lives in the [`docs/`](docs/) folder
+and is published at **https://rogersau.github.io/gentle-games/docs/**. It includes:
 
-- [Home page](https://rogersau.github.io/gentle-games/) — app overview
-- [Privacy Policy](https://rogersau.github.io/gentle-games/privacy-policy.html) — required by Google Play and Apple App Store
-- [Support](https://rogersau.github.io/gentle-games/support.html) — required by Apple App Store
+- [Home page](https://rogersau.github.io/gentle-games/docs/)
+- [Privacy Policy](https://rogersau.github.io/gentle-games/docs/privacy-policy.html)
+- [Support](https://rogersau.github.io/gentle-games/docs/support.html)
 
 > **Note:** To enable GitHub Pages for this repository, go to
-> **Settings → Pages**, set the source branch to `main`, and set the folder
-> to `/docs`.
+> **Settings → Pages**, set **Source** to **GitHub Actions**.
 
 ## Support
 
 For issues or questions:
 - Open an issue on the [GitHub issue tracker](https://github.com/rogersau/gentle-games/issues)
-- Visit the [Support page](https://rogersau.github.io/gentle-games/support.html)
+- Visit the [Support page](https://rogersau.github.io/gentle-games/docs/support.html)
 - Check the [Expo documentation](https://docs.expo.dev)
 - Visit [React Native community resources](https://reactnative.dev/help)
 
