@@ -7,6 +7,7 @@ import {
   Text,
   ScrollView,
   Modal,
+  Alert,
 } from 'react-native';
 import Svg, { Path, Circle, Rect, Polygon, Line } from 'react-native-svg';
 
@@ -167,12 +168,14 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
       onHistoryChange?.(history);
     }, [history, onHistoryChange]);
 
+    const clearCanvas = () => {
+      setHistory([]);
+      setCurrentStrokes([]);
+    };
+
     // Expose imperative methods
     useImperativeHandle(ref, () => ({
-      clear: () => {
-        setHistory([]);
-        setCurrentStrokes([]);
-      },
+      clear: clearCanvas,
       getHistory: () => historyRef.current,
     }));
 
@@ -267,8 +270,10 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     ).current;
 
     const handleClear = () => {
-      setHistory([]);
-      setCurrentStrokes([]);
+      Alert.alert('Clear drawing?', 'This will remove everything on the canvas.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Clear', style: 'destructive', onPress: clearCanvas },
+      ]);
     };
 
     const handleUndo = () => {
@@ -551,6 +556,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             </TouchableOpacity>
 
             <TouchableOpacity
+              testID="clear-drawing-button"
               style={styles.toolButton}
               onPress={handleClear}
             >
