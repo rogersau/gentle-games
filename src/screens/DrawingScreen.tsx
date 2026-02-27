@@ -183,6 +183,7 @@ export const DrawingScreen: React.FC = () => {
             ref={canvasRef}
             width={canvasDimensions.width}
             height={canvasDimensions.height}
+            canvasBackgroundColor={colors.surfaceGame}
             bottomInset={insets.bottom}
             initialHistory={savedHistory}
             onHistoryChange={handleHistoryChange}

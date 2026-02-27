@@ -67,6 +67,7 @@ interface DrawingCanvasProps {
   bottomInset?: number;
   initialHistory?: HistoryEntry[];
   onHistoryChange?: (history: HistoryEntry[]) => void;
+  canvasBackgroundColor?: string;
 }
 
 export interface DrawingCanvasRef {
@@ -123,7 +124,7 @@ const applySymmetry = (point: Point, width: number, height: number, xMult: numbe
 };
 
 export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
-  ({ width, height, bottomInset = 0, initialHistory = [], onHistoryChange }, ref) => {
+  ({ width, height, bottomInset = 0, initialHistory = [], onHistoryChange, canvasBackgroundColor = '#FFFFFF' }, ref) => {
     // Unified ordered history — preserves exact draw order for correct undo
     const [history, setHistory] = useState<HistoryEntry[]>(initialHistory);
     // Current strokes being drawn (one per symmetry copy)
@@ -293,10 +294,18 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     };
 
     const handleCustomColorSelect = () => {
-      if (!customColors.includes(pickerColor)) {
-        setCustomColors((prev) => [...prev.slice(-3), pickerColor]);
-      }
-      handleColorSelect(pickerColor);
+      const normalizedPickerColor = pickerColor.toUpperCase();
+
+      setCustomColors((prev) => {
+        const normalizedExisting = [...COLORS, ...prev].map((color) => color.toUpperCase());
+        if (normalizedExisting.includes(normalizedPickerColor)) {
+          return prev;
+        }
+
+        return [...prev.slice(-3), normalizedPickerColor];
+      });
+
+      handleColorSelect(normalizedPickerColor);
       setShowColorPicker(false);
     };
 
@@ -336,7 +345,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           <Path
             key={entry.id}
             d={pointsToSmoothPath(entry.points)}
-            stroke="#FFFFFF"
+            stroke={canvasBackgroundColor}
             strokeWidth={entry.width}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -437,10 +446,13 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     return (
       <View style={styles.container}>
         {/* Canvas */}
-        <View style={[styles.canvasContainer, { width, height }]}>
-          <Svg width={width} height={height} style={styles.canvas}>
-            {/* White background */}
-            <Path d={`M 0 0 H ${width} V ${height} H 0 Z`} fill="#FFFFFF" />
+        <View
+          testID="drawing-canvas-container"
+          style={[styles.canvasContainer, { width, height, backgroundColor: canvasBackgroundColor }]}
+        >
+          <Svg width={width} height={height} style={[styles.canvas, { backgroundColor: canvasBackgroundColor }]}>
+            {/* Canvas background */}
+            <Path d={`M 0 0 H ${width} V ${height} H 0 Z`} fill={canvasBackgroundColor} />
 
             {history.map((entry) => renderHistoryEntry(entry))}
 
@@ -452,7 +464,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               <Path
                 key={`preview-${idx}`}
                 d={pointsToSmoothPath(stroke.points)}
-                stroke={tool === 'eraser' ? '#FFFFFF' : stroke.color}
+                stroke={tool === 'eraser' ? canvasBackgroundColor : stroke.color}
                 strokeWidth={stroke.width}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -474,6 +486,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             {allColors.map((color) => (
               <TouchableOpacity
                 key={color}
+                testID="palette-color-button"
                 style={[
                   styles.colorButton,
                   { backgroundColor: color },
@@ -484,6 +497,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             ))}
 
             <TouchableOpacity
+              testID="open-color-picker"
               style={[styles.colorButton, styles.customColorButton]}
               onPress={handleOpenColorPicker}
             >
@@ -610,6 +624,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
+                  testID="confirm-custom-color"
                   style={styles.selectButton}
                   onPress={handleCustomColorSelect}
                 >

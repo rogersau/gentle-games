@@ -1,4 +1,4 @@
-import { Tile } from '../types';
+import { ANIMALS, SHAPES, Tile } from '../types';
 import {
   checkGameComplete,
   checkMatch,
@@ -30,6 +30,29 @@ describe('gameLogic', () => {
       expect(tile.isFlipped).toBe(false);
       expect(tile.isMatched).toBe(false);
     });
+  });
+
+  it('prioritizes animals in mixed theme', () => {
+    const tiles = generateTiles('medium', 'mixed');
+    const animalTiles = tiles.filter((tile) => tile.type === 'animal').length;
+    const shapeTiles = tiles.length - animalTiles;
+
+    expect(animalTiles).toBeGreaterThan(shapeTiles);
+  });
+
+  it('keeps scary animals out of the animal pool', () => {
+    const animalNames = ANIMALS.map((animal) => animal.name);
+    expect(animalNames).not.toContain('spider');
+    expect(animalNames).not.toContain('scorpion');
+    expect(animalNames).not.toContain('shark');
+    expect(animalNames).not.toContain('crocodile');
+  });
+
+  it('includes gentle buildings in the non-animal tile pool', () => {
+    const shapeNames = SHAPES.map((shape) => shape.name);
+    expect(shapeNames).toContain('house');
+    expect(shapeNames).toContain('school');
+    expect(shapeNames).toContain('castle');
   });
 
   it('formats timer output correctly', () => {

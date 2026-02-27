@@ -16,7 +16,7 @@ A calm memory matching game where players flip tiles to find matching pairs.
 - **Three Themes**
   - Animals (bunnies, bears, cats, and more)
   - Shapes (stars, hearts, moons, and more)
-  - Mixed (combination of both)
+  - Mixed (animal-first with a few shapes/places like houses and castles)
 
 - **Game Features**
   - Live timer showing elapsed time
@@ -49,7 +49,7 @@ A simple drawing canvas where kids can draw, add shapes, and be creative.
 - **Canvas Features**
   - Undo (removes last stroke or shape)
   - Clear all
-  - White background
+  - Theme-aware canvas background (white in light mode, soft grey in dark mode)
   - Maximum screen space utilization
 
 ### ✨ Glitter Fall

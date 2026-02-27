@@ -39,7 +39,12 @@ export const generateTiles = (difficulty: Difficulty, theme: 'animals' | 'shapes
   } else if (theme === 'shapes') {
     availableItems = shuffle(SHAPES);
   } else {
-    availableItems = shuffle([...ANIMALS, ...SHAPES]);
+    const animalPairs = Math.ceil(pairs * 0.75);
+    const shapePairs = Math.max(0, pairs - animalPairs);
+    availableItems = shuffle([
+      ...shuffle(ANIMALS).slice(0, animalPairs),
+      ...shuffle(SHAPES).slice(0, shapePairs),
+    ]);
   }
   
   const selected = availableItems.slice(0, pairs);

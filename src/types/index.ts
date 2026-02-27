@@ -69,8 +69,6 @@ export const ANIMALS = [
   { emoji: '🐛', name: 'caterpillar', color: '#98FB98' },
   { emoji: '🐞', name: 'ladybug', color: '#FF4500' },
   { emoji: '🪲', name: 'beetle', color: '#8B4513' },
-  { emoji: '🕷️', name: 'spider', color: '#2F4F4F' },
-  { emoji: '🦂', name: 'scorpion', color: '#8B0000' },
   { emoji: '🦀', name: 'crab', color: '#FF6347' },
   { emoji: '🦞', name: 'lobster', color: '#CD5C5C' },
   { emoji: '🐠', name: 'fish', color: '#87CEEB' },
@@ -78,8 +76,6 @@ export const ANIMALS = [
   { emoji: '🐡', name: 'blowfish', color: '#F4A460' },
   { emoji: '🐬', name: 'dolphin', color: '#00CED1' },
   { emoji: '🐳', name: 'whale', color: '#4169E1' },
-  { emoji: '🦈', name: 'shark', color: '#708090' },
-  { emoji: '🐊', name: 'crocodile', color: '#2E8B57' },
   { emoji: '🦩', name: 'flamingo', color: '#FF69B4' },
   { emoji: '🦚', name: 'peacock', color: '#00FA9A' },
   { emoji: '🦤', name: 'dodo', color: '#FFFAFA' },
@@ -141,6 +137,9 @@ export const SHAPES = [
   { emoji: '💦', name: 'sweat', color: '#00BFFF' },
   { emoji: '🕸️', name: 'web', color: '#2F4F4F' },
   { emoji: '🎪', name: 'circus', color: '#FFA500' },
+  { emoji: '🏠', name: 'house', color: '#FFE4C4' },
+  { emoji: '🏫', name: 'school', color: '#F5DEB3' },
+  { emoji: '🏰', name: 'castle', color: '#E6E6FA' },
 ];
 
 export const PASTEL_COLORS: ThemeColors = {
