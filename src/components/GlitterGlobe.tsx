@@ -392,14 +392,15 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
           onStartShouldSetPanResponder: () => true,
           onMoveShouldSetPanResponder: () => true,
           onPanResponderGrant: (event) => {
+            const { locationX, locationY } = event.nativeEvent;
             lastTouchRef.current = {
-              x: event.nativeEvent.locationX,
-              y: event.nativeEvent.locationY,
+              x: locationX,
+              y: locationY,
             };
             if (
               isPointInsideGlobe(
-                event.nativeEvent.locationX,
-                event.nativeEvent.locationY,
+                locationX,
+                locationY,
                 sizeRef.current.width,
                 sizeRef.current.height
               )
@@ -411,8 +412,8 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
                   ...prev,
                   {
                     id: `wake-${now}-start`,
-                    x: event.nativeEvent.locationX,
-                    y: event.nativeEvent.locationY,
+                    x: locationX,
+                    y: locationY,
                     radius: 6,
                     opacity: 0.34,
                   },
