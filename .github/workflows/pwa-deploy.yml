@@ -40,7 +40,7 @@ jobs:
 
       - name: Build web export + PWA assets
         run: |
-          npx expo export --platform web --output-dir dist --clear --base-url /${{ github.event.repository.name }}/
+          npx expo export --platform web --output-dir dist --clear
           node scripts/prepare-pwa.js
           cp -R docs dist/docs
 
