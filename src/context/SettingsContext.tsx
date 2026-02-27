@@ -16,6 +16,8 @@ const defaultSettings: Settings = {
   theme: 'mixed',
   showCardPreview: true,
   colorMode: 'system',
+  hiddenGames: [],
+  parentTimerMinutes: 0,
 };
 
 const toBoolean = (value: unknown, fallback: boolean): boolean => {
@@ -50,6 +52,17 @@ const toColorMode = (value: unknown, fallback: ColorMode): ColorMode => {
   return fallback;
 };
 
+const toHiddenGames = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string');
+};
+
+const toParentTimerMinutes = (value: unknown): number => {
+  if (typeof value !== 'number' || Number.isNaN(value)) return 0;
+  if (value < 0) return 0;
+  return Math.floor(value);
+};
+
 const sanitizeSettings = (candidate: unknown): Settings => {
   if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return defaultSettings;
@@ -65,6 +78,8 @@ const sanitizeSettings = (candidate: unknown): Settings => {
     theme: toTheme(parsed.theme, defaultSettings.theme),
     showCardPreview: toBoolean(parsed.showCardPreview, defaultSettings.showCardPreview),
     colorMode: toColorMode(parsed.colorMode, defaultSettings.colorMode),
+    hiddenGames: toHiddenGames(parsed.hiddenGames),
+    parentTimerMinutes: toParentTimerMinutes(parsed.parentTimerMinutes),
   };
 };
 

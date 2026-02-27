@@ -19,6 +19,23 @@ const COLOR_MODE_OPTIONS: { value: ColorMode; label: string }[] = [
   { value: 'system', label: 'System' },
 ];
 
+const TIMER_OPTIONS: { value: number; label: string }[] = [
+  { value: 0, label: 'Off' },
+  { value: 5, label: '5 min' },
+  { value: 10, label: '10 min' },
+  { value: 15, label: '15 min' },
+  { value: 20, label: '20 min' },
+  { value: 30, label: '30 min' },
+];
+
+const ALL_GAMES: { id: string; name: string; icon: string }[] = [
+  { id: 'memory-snap', name: 'Memory Snap', icon: '🧩' },
+  { id: 'drawing', name: 'Drawing Pad', icon: '🎨' },
+  { id: 'glitter-fall', name: 'Glitter Fall', icon: '✨' },
+  { id: 'bubble-pop', name: 'Bubble Pop', icon: '🫧' },
+  { id: 'category-match', name: 'Category Match', icon: '🗂️' },
+];
+
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings, updateSettings } = useSettings();
@@ -140,6 +157,60 @@ export const SettingsScreen: React.FC = () => {
           </View>
         )}
 
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Games on Home Screen</Text>
+          {ALL_GAMES.map((game) => {
+            const isVisible = !settings.hiddenGames.includes(game.id);
+            return (
+              <View key={game.id} style={styles.toggleRow}>
+                <Text style={styles.gameToggleLabel}>
+                  {game.icon}  {game.name}
+                </Text>
+                <Switch
+                  value={isVisible}
+                  onValueChange={(value) => {
+                    const updated = value
+                      ? settings.hiddenGames.filter((id) => id !== game.id)
+                      : [...settings.hiddenGames, game.id];
+                    updateSettings({ hiddenGames: updated });
+                  }}
+                  trackColor={{ false: colors.cardBack, true: colors.primary }}
+                  thumbColor={colors.cardFront}
+                />
+              </View>
+            );
+          })}
+          <Text style={styles.description}>Hide games you don't want on the home screen</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Parent Timer</Text>
+          <View style={styles.modeOptions}>
+            {TIMER_OPTIONS.map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  styles.timerButton,
+                  settings.parentTimerMinutes === option.value ? styles.modeButtonActive : undefined,
+                ]}
+                onPress={() => updateSettings({ parentTimerMinutes: option.value })}
+              >
+                <Text
+                  style={[
+                    styles.modeButtonText,
+                    settings.parentTimerMinutes === option.value ? styles.modeButtonTextActive : undefined,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={styles.description}>
+            After the set time, a maths question pauses play until a grown-up answers
+          </Text>
+        </View>
+
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={styles.backButtonText}>Back to Home</Text>
         </TouchableOpacity>
@@ -258,6 +329,20 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       fontSize: 18,
       fontWeight: '600',
       color: colors.cardFront,
+    },
+    gameToggleLabel: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: colors.text,
+    },
+    timerButton: {
+      backgroundColor: colors.cardFront,
+      borderWidth: 2,
+      borderColor: colors.cardBack,
+      borderRadius: 12,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      alignItems: 'center',
     },
   });
 

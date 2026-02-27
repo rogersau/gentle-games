@@ -12,6 +12,8 @@ let mockSettings = {
   theme: 'mixed' as const,
   showCardPreview: true,
   colorMode: 'system' as const,
+  hiddenGames: [] as string[],
+  parentTimerMinutes: 0,
 };
 
 jest.mock('@react-navigation/native', () => ({
@@ -38,6 +40,8 @@ describe('HomeScreen', () => {
       theme: 'mixed',
       showCardPreview: true,
       colorMode: 'system',
+      hiddenGames: [],
+      parentTimerMinutes: 0,
     };
   });
 
@@ -81,5 +85,16 @@ describe('HomeScreen', () => {
       expect(mockUpdateSettings).toHaveBeenCalledWith({ difficulty: 'hard' });
       expect(mockNavigate).toHaveBeenCalledWith('Game');
     });
+  });
+
+  it('hides games listed in hiddenGames setting', () => {
+    mockSettings = { ...mockSettings, hiddenGames: ['drawing', 'bubble-pop'] };
+    const screen = render(<HomeScreen />);
+
+    expect(screen.queryByText('Drawing Pad')).toBeNull();
+    expect(screen.queryByText('Bubble Pop')).toBeNull();
+    expect(screen.getByText('Memory Snap')).toBeTruthy();
+    expect(screen.getByText('Glitter Fall')).toBeTruthy();
+    expect(screen.getByText('Category Match')).toBeTruthy();
   });
 });

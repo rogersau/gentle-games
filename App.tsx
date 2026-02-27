@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import React, { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SettingsProvider } from './src/context/SettingsContext';
+import { ParentTimerProvider } from './src/context/ParentTimerContext';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { GameScreen } from './src/screens/GameScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
@@ -52,7 +53,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <SettingsProvider>
-        <AppNavigator />
+        <ParentTimerProvider>
+          <AppNavigator />
+        </ParentTimerProvider>
       </SettingsProvider>
     </SafeAreaProvider>
   );

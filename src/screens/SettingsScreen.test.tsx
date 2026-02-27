@@ -12,6 +12,8 @@ let mockSettings = {
   theme: 'mixed' as const,
   showCardPreview: true,
   colorMode: 'system' as const,
+  hiddenGames: [] as string[],
+  parentTimerMinutes: 0,
 };
 
 jest.mock('@react-navigation/native', () => ({
@@ -38,6 +40,8 @@ describe('SettingsScreen', () => {
       theme: 'mixed',
       showCardPreview: true,
       colorMode: 'system',
+      hiddenGames: [],
+      parentTimerMinutes: 0,
     };
   });
 
@@ -77,5 +81,24 @@ describe('SettingsScreen', () => {
     fireEvent.press(screen.getByText('Back to Home'));
 
     expect(mockGoBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('toggles game visibility via switch', () => {
+    const screen = render(<SettingsScreen />);
+    const switches = screen.getAllByRole('switch');
+    // First 3 switches: Card Preview, Animations, Sound. Next 5: game toggles.
+    const memorySnapSwitch = switches[3];
+    fireEvent(memorySnapSwitch, 'valueChange', false);
+
+    expect(mockUpdateSettings).toHaveBeenCalledWith({
+      hiddenGames: ['memory-snap'],
+    });
+  });
+
+  it('selects parent timer duration', () => {
+    const screen = render(<SettingsScreen />);
+    fireEvent.press(screen.getByText('15 min'));
+
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ parentTimerMinutes: 15 });
   });
 });

@@ -10,7 +10,6 @@ import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSettings } from '../context/SettingsContext';
 import { Difficulty, ThemeColors } from '../types';
-import { getGridConfig } from '../utils/gameLogic';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 
 interface Game {
@@ -67,6 +66,11 @@ export const HomeScreen: React.FC = () => {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [showDifficultySelector, setShowDifficultySelector] = useState(false);
 
+  const visibleGames = useMemo(
+    () => GAMES.filter((game) => !settings.hiddenGames.includes(game.id)),
+    [settings.hiddenGames]
+  );
+
   const handleGameSelect = (game: Game) => {
     setSelectedGame(game);
     if (game.id === 'drawing') {
@@ -114,7 +118,7 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.gamesContainer}>
           <Text style={styles.sectionTitle}>Choose a Game</Text>
           
-          {GAMES.map((game) => (
+          {visibleGames.map((game) => (
             <TouchableOpacity
               key={game.id}
               style={styles.gameCard}

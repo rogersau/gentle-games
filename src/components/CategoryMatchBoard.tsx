@@ -71,7 +71,11 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
     []
   );
 
-  const resetToken = () => {
+  const snapTokenBack = () => {
+    dragPosition.setValue({ x: 0, y: 0 });
+  };
+
+  const springTokenBack = () => {
     Animated.spring(dragPosition, {
       toValue: { x: 0, y: 0 },
       friction: 7,
@@ -114,23 +118,23 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
           const droppedZone = getDropTarget(dropX, dropY);
 
           if (!droppedZone) {
-            resetToken();
+            springTokenBack();
             return;
           }
 
           if (isCategoryMatchCorrect(round.item, droppedZone.category)) {
             const matchedItem = round.item;
+            snapTokenBack();
             showFeedback('Great match!', true);
             setRound((previousRound) => createCategoryMatchRound(previousRound.item));
             onCorrectMatch?.(matchedItem, droppedZone.category);
           } else {
             showFeedback('Try a different category', false);
+            springTokenBack();
           }
-
-          resetToken();
         },
         onPanResponderTerminate: () => {
-          resetToken();
+          springTokenBack();
         },
       }),
     [dragPosition, onCorrectMatch, round.item, tokenCenterX, tokenCenterY, zones]
@@ -160,7 +164,12 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
       </Animated.View>
 
       {feedback && (
-        <Text style={feedback.isSuccess ? styles.successText : styles.errorText}>
+        <Text
+          style={[
+            feedback.isSuccess ? styles.successText : styles.errorText,
+            { marginTop: tokenStartY + tokenSize - 12 },
+          ]}
+        >
           {feedback.message}
         </Text>
       )}
@@ -208,14 +217,12 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       textAlign: 'center',
     },
     successText: {
-      marginTop: 118,
       textAlign: 'center',
       color: colors.success,
       fontSize: 16,
       fontWeight: '700',
     },
     errorText: {
-      marginTop: 118,
       textAlign: 'center',
       color: resolvedMode === 'dark' ? colors.secondary : '#B76A7C',
       fontSize: 16,

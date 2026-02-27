@@ -32,6 +32,8 @@ export interface Settings {
   theme: 'animals' | 'shapes' | 'mixed';
   showCardPreview: boolean;
   colorMode: ColorMode;
+  hiddenGames: string[];
+  parentTimerMinutes: number;
 }
 
 export type CategoryMatchCategory = 'animals' | 'objects' | 'shapes';
