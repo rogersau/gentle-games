@@ -60,15 +60,13 @@ const writeManifest = () => {
 
 const writeServiceWorker = () => {
   const cacheEntries = [
-    './',
-    './index.html',
     './manifest.webmanifest',
     './icons/icon-32x32.png',
     './icons/icon-180x180.png',
     ...manifestIcons.map((icon) => icon.src),
   ];
 
-  const serviceWorker = `const CACHE_NAME = 'gentle-games-v1';
+  const serviceWorker = `const CACHE_NAME = 'gentle-games-v2';
 const APP_SHELL = ${JSON.stringify(cacheEntries, null, 2)};
 
 self.addEventListener('install', (event) => {
@@ -90,6 +88,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  const requestUrl = new URL(event.request.url);
+  const isNavigationRequest = event.request.mode === 'navigate';
+  const isIndexRequest = requestUrl.pathname.endsWith('/index.html');
+
+  if (isNavigationRequest || isIndexRequest) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) {
@@ -104,7 +111,7 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => caches.match('./index.html'));
+        .catch(() => caches.match(event.request));
     })
   );
 });

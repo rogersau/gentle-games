@@ -1,13 +1,16 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BubbleField } from '../components/BubbleField';
 import { ThemeColors } from '../types';
+import { useSettings } from '../context/SettingsContext';
+import { playBubblePopSound } from '../utils/sounds';
 import { useThemeColors } from '../utils/theme';
 
 export const BubbleScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { settings } = useSettings();
   const { colors } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [poppedCount, setPoppedCount] = useState(0);
@@ -18,6 +21,11 @@ export const BubbleScreen: React.FC = () => {
     const height = Math.max(320, Math.min(screenHeight * 0.72, screenHeight - 220));
     return { width, height };
   }, [screenHeight, screenWidth]);
+
+  const handleBubblePop = useCallback(() => {
+    setPoppedCount((count) => count + 1);
+    void playBubblePopSound(settings);
+  }, [settings]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -39,7 +47,7 @@ export const BubbleScreen: React.FC = () => {
             height={boardSize.height}
             minActiveBubbles={2}
             maxActiveBubbles={12}
-            onBubblePop={() => setPoppedCount((count) => count + 1)}
+            onBubblePop={handleBubblePop}
           />
         </View>
       </View>

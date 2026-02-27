@@ -5,6 +5,7 @@ const soundAssets = {
   flip: require('../assets/sounds/flip.mp3'),
   match: require('../assets/sounds/match.mp3'),
   complete: require('../assets/sounds/complete.mp3'),
+  pop: require('../assets/sounds/pop.mp3'),
 };
 
 interface SoundEffect {
@@ -16,6 +17,7 @@ const sounds: Record<keyof typeof soundAssets, SoundEffect> = {
   flip: { player: null, isLoaded: false },
   match: { player: null, isLoaded: false },
   complete: { player: null, isLoaded: false },
+  pop: { player: null, isLoaded: false },
 };
 
 const loadSound = async (name: keyof typeof soundAssets): Promise<void> => {
@@ -43,7 +45,7 @@ export const initializeSounds = async (): Promise<void> => {
     console.warn('Failed to configure audio mode:', error);
   }
 
-  await Promise.all([loadSound('flip'), loadSound('match'), loadSound('complete')]);
+  await Promise.all([loadSound('flip'), loadSound('match'), loadSound('complete'), loadSound('pop')]);
 };
 
 const playSoundEffect = async (
@@ -79,6 +81,10 @@ export const playCompleteSound = async (settings: Settings): Promise<void> => {
   await playSoundEffect('complete', 1.0, settings);
 };
 
+export const playBubblePopSound = async (settings: Settings): Promise<void> => {
+  await playSoundEffect('pop', 0.7, settings);
+};
+
 export const unloadSounds = async (): Promise<void> => {
   for (const effect of Object.values(sounds)) {
     if (effect.player) {
@@ -89,8 +95,10 @@ export const unloadSounds = async (): Promise<void> => {
   sounds.flip.player = null;
   sounds.match.player = null;
   sounds.complete.player = null;
+  sounds.pop.player = null;
   sounds.flip.isLoaded = false;
   sounds.match.isLoaded = false;
   sounds.complete.isLoaded = false;
+  sounds.pop.isLoaded = false;
 };
 

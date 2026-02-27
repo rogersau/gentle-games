@@ -3,6 +3,16 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { BubbleScreen } from './BubbleScreen';
 
 const mockGoBack = jest.fn();
+const mockPlayBubblePopSound = jest.fn();
+const mockSettings = {
+  animationsEnabled: true,
+  soundEnabled: true,
+  soundVolume: 0.5,
+  difficulty: 'medium' as const,
+  theme: 'mixed' as const,
+  showCardPreview: true,
+  colorMode: 'system' as const,
+};
 
 jest.mock('../utils/theme', () => ({
   useThemeColors: () => ({
@@ -27,6 +37,16 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     goBack: mockGoBack,
   }),
+}));
+
+jest.mock('../context/SettingsContext', () => ({
+  useSettings: () => ({
+    settings: mockSettings,
+  }),
+}));
+
+jest.mock('../utils/sounds', () => ({
+  playBubblePopSound: (...args: unknown[]) => mockPlayBubblePopSound(...args),
 }));
 
 jest.mock('../components/BubbleField', () => {
@@ -63,6 +83,7 @@ describe('BubbleScreen', () => {
     expect(screen.getByText('Popped: 0')).toBeTruthy();
     fireEvent.press(screen.getByText('Pop Mock Bubble'));
     expect(screen.getByText('Popped: 1')).toBeTruthy();
+    expect(mockPlayBubblePopSound).toHaveBeenCalledWith(mockSettings);
   });
 });
 
