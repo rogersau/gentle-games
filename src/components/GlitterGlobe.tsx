@@ -9,8 +9,8 @@ import React, {
 import { PanResponder, Platform, StyleSheet, View } from 'react-native';
 import { Accelerometer } from 'expo-sensors';
 import Svg, { Circle, Defs, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg';
-import { PASTEL_COLORS } from '../types';
 import { getMotionForce, shouldTriggerShake } from '../utils/glitterMotion';
+import { useThemeColors } from '../utils/theme';
 
 type GlitterShape = 'circle' | 'square' | 'diamond' | 'star';
 
@@ -257,6 +257,7 @@ const applyFingerImpulse = (
 
 export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
   ({ width, height, initialCount = 36, maxParticles = 120 }, ref) => {
+    const { colors } = useThemeColors();
     const [particles, setParticles] = useState<GlitterParticle[]>(() =>
       createParticles(initialCount, width, height)
     );
@@ -497,8 +498,8 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
         <Svg width={width} height={height}>
           <Defs>
             <RadialGradient id="globeFill" cx="50%" cy="32%" rx="65%" ry="65%">
-              <Stop offset="0%" stopColor={PASTEL_COLORS.cardFront} />
-              <Stop offset="100%" stopColor={PASTEL_COLORS.cardFront} />
+              <Stop offset="0%" stopColor={colors.surfaceGame} />
+              <Stop offset="100%" stopColor={colors.surfaceGame} />
             </RadialGradient>
           </Defs>
 
@@ -507,7 +508,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
             cy={globe.centerY}
             r={globe.radius}
             fill="url(#globeFill)"
-            stroke={PASTEL_COLORS.primary}
+            stroke={colors.primary}
             strokeWidth={3}
           />
 
@@ -574,7 +575,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
               cy={wake.y}
               r={wake.radius}
               fill="none"
-              stroke={PASTEL_COLORS.cardFront}
+              stroke={colors.cardFront}
               strokeWidth={1.5}
               opacity={wake.opacity}
             />

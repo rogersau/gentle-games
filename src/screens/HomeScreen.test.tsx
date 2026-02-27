@@ -11,6 +11,7 @@ let mockSettings = {
   difficulty: 'medium' as const,
   theme: 'mixed' as const,
   showCardPreview: true,
+  colorMode: 'system' as const,
 };
 
 jest.mock('@react-navigation/native', () => ({
@@ -36,6 +37,7 @@ describe('HomeScreen', () => {
       difficulty: 'medium',
       theme: 'mixed',
       showCardPreview: true,
+      colorMode: 'system',
     };
   });
 

@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { PanResponder, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
-import { PASTEL_COLORS } from '../types';
+import { ThemeColors } from '../types';
 import { Bubble, ensureMinimumBubbles, spawnBubbles, stepBubbles } from '../utils/bubbleLogic';
+import { useThemeColors } from '../utils/theme';
 
 interface PopIndicator {
   id: string;
@@ -30,6 +31,8 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   spawnIntervalMs = 800,
   onBubblePop,
 }) => {
+  const { colors } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [bubbles, setBubbles] = useState<Bubble[]>(() =>
     ensureMinimumBubbles([], minActiveBubbles, width, maxActiveBubbles)
   );
@@ -150,14 +153,14 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
               r={bubble.radius}
               fill={bubble.color}
               opacity={bubble.opacity}
-              stroke={PASTEL_COLORS.cardFront}
+              stroke={colors.cardFront}
               strokeWidth={2}
             />
             <Circle
               cx={bubble.x - bubble.radius * 0.25}
               cy={bubble.y - bubble.radius * 0.3}
               r={Math.max(3, bubble.radius * 0.25)}
-              fill={PASTEL_COLORS.cardFront}
+              fill={colors.cardFront}
               opacity={0.35}
             />
           </React.Fragment>
@@ -169,14 +172,14 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
               cy={indicator.y}
               r={10 + (1 - indicator.life) * 14}
               fill="none"
-              stroke={PASTEL_COLORS.cardFront}
+              stroke={colors.cardFront}
               strokeWidth={2}
               opacity={indicator.life * 0.8}
             />
             <SvgText
               x={indicator.x}
               y={indicator.y - 2}
-              fill={PASTEL_COLORS.secondary}
+              fill={colors.secondary}
               fontSize={16}
               fontWeight="700"
               textAnchor="middle"
@@ -192,19 +195,20 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    position: 'relative',
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: PASTEL_COLORS.cardFront,
-  },
-  touchLayer: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      position: 'relative',
+      borderRadius: 16,
+      overflow: 'hidden',
+      backgroundColor: colors.surfaceGame,
+    },
+    touchLayer: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+    },
+  });
 

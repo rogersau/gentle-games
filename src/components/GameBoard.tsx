@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
-import { Tile as TileType } from '../types';
+import { ThemeColors, Tile as TileType } from '../types';
 import { generateTiles, checkMatch, checkGameComplete, formatTime, calculateGridDimensions } from '../utils/gameLogic';
 import { playFlipSound, playMatchSound, playCompleteSound } from '../utils/sounds';
 import { Tile } from './Tile';
 import { useSettings } from '../context/SettingsContext';
+import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 
 interface GameBoardProps {
   onGameComplete: (time: number) => void;
@@ -14,6 +15,8 @@ interface GameBoardProps {
 export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPress }) => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const { settings } = useSettings();
+  const { colors, resolvedMode } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const [tiles, setTiles] = useState<TileType[]>([]);
   const [selectedTiles, setSelectedTiles] = useState<string[]>([]);
   const [isGameComplete, setIsGameComplete] = useState(false);
@@ -213,74 +216,75 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    padding: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  backButton: {
-    padding: 8,
-    marginRight: 8,
-  },
-  backButtonText: {
-    fontSize: 24,
-    color: '#5A5A5A',
-  },
-  timerText: {
-    flex: 1,
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#5A5A5A',
-    textAlign: 'center',
-  },
-  movesText: {
-    fontSize: 18,
-    color: '#8A8A8A',
-    width: 80,
-    textAlign: 'right',
-  },
-  board: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  completeContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255, 254, 247, 0.95)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  completeText: {
-    fontSize: 28,
-    fontWeight: '600',
-    color: '#5A5A5A',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  playAgainButton: {
-    backgroundColor: '#A8D8EA',
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 25,
-  },
-  playAgainText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-});
+const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      padding: 16,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      width: '100%',
+      paddingHorizontal: 16,
+      marginBottom: 16,
+    },
+    backButton: {
+      padding: 8,
+      marginRight: 8,
+    },
+    backButtonText: {
+      fontSize: 24,
+      color: colors.text,
+    },
+    timerText: {
+      flex: 1,
+      fontSize: 24,
+      fontWeight: '600',
+      color: colors.text,
+      textAlign: 'center',
+    },
+    movesText: {
+      fontSize: 18,
+      color: colors.textLight,
+      width: 80,
+      textAlign: 'right',
+    },
+    board: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    completeContainer: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: resolvedMode === 'dark' ? 'rgba(47, 51, 59, 0.94)' : 'rgba(255, 254, 247, 0.95)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 32,
+    },
+    completeText: {
+      fontSize: 28,
+      fontWeight: '600',
+      color: colors.text,
+      textAlign: 'center',
+      marginBottom: 24,
+    },
+    playAgainButton: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 32,
+      paddingVertical: 16,
+      borderRadius: 25,
+    },
+    playAgainText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.cardFront,
+    },
+  });

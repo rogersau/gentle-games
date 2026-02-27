@@ -10,6 +10,7 @@ const mockSettings = {
   difficulty: 'easy' as const,
   theme: 'animals' as const,
   showCardPreview: false,
+  colorMode: 'system' as const,
 };
 
 const mockPlayFlipSound = jest.fn();

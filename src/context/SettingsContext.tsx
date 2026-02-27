@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Settings } from '../types';
+import { ColorMode, Settings } from '../types';
 
 interface SettingsContextType {
   settings: Settings;
@@ -15,6 +15,7 @@ const defaultSettings: Settings = {
   difficulty: 'medium',
   theme: 'mixed',
   showCardPreview: true,
+  colorMode: 'system',
 };
 
 const toBoolean = (value: unknown, fallback: boolean): boolean => {
@@ -44,6 +45,11 @@ const toTheme = (value: unknown, fallback: Settings['theme']): Settings['theme']
   return fallback;
 };
 
+const toColorMode = (value: unknown, fallback: ColorMode): ColorMode => {
+  if (value === 'light' || value === 'dark' || value === 'system') return value;
+  return fallback;
+};
+
 const sanitizeSettings = (candidate: unknown): Settings => {
   if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return defaultSettings;
@@ -58,6 +64,7 @@ const sanitizeSettings = (candidate: unknown): Settings => {
     difficulty: toDifficulty(parsed.difficulty, defaultSettings.difficulty),
     theme: toTheme(parsed.theme, defaultSettings.theme),
     showCardPreview: toBoolean(parsed.showCardPreview, defaultSettings.showCardPreview),
+    colorMode: toColorMode(parsed.colorMode, defaultSettings.colorMode),
   };
 };
 

@@ -80,6 +80,7 @@ A calm tapping game where bubbles drift down from the top of the screen.
   - Calm, non-competitive gameplay
 
 - **Accessibility**
+  - Light / Dark / System appearance modes with pastel palettes
   - Animation on/off toggle
   - Sound on/off with volume control
   - Large touch targets for small fingers

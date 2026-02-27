@@ -3,10 +3,13 @@ import { StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'r
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlitterGlobe, GlitterGlobeRef } from '../components/GlitterGlobe';
-import { PASTEL_COLORS } from '../types';
+import { ThemeColors } from '../types';
+import { useThemeColors } from '../utils/theme';
 
 export const GlitterScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { colors } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const globeRef = useRef<GlitterGlobeRef>(null);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
@@ -46,82 +49,83 @@ export const GlitterScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: PASTEL_COLORS.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: PASTEL_COLORS.cardBack,
-  },
-  backButton: {
-    width: 40,
-    padding: 8,
-  },
-  backButtonText: {
-    fontSize: 24,
-    color: PASTEL_COLORS.text,
-  },
-  backPlaceholder: {
-    width: 40,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: PASTEL_COLORS.text,
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: PASTEL_COLORS.textLight,
-    textAlign: 'center',
-    marginBottom: 14,
-  },
-  globeWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 18,
-  },
-  controls: {
-    width: '90%',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  primaryButton: {
-    flex: 1,
-    backgroundColor: PASTEL_COLORS.secondary,
-    paddingVertical: 14,
-    borderRadius: 24,
-    alignItems: 'center',
-  },
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: PASTEL_COLORS.cardFront,
-  },
-  secondaryButton: {
-    flex: 1,
-    backgroundColor: PASTEL_COLORS.primary,
-    paddingVertical: 14,
-    borderRadius: 24,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: PASTEL_COLORS.cardFront,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.cardBack,
+    },
+    backButton: {
+      width: 40,
+      padding: 8,
+    },
+    backButtonText: {
+      fontSize: 24,
+      color: colors.text,
+    },
+    backPlaceholder: {
+      width: 40,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    content: {
+      flex: 1,
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      paddingBottom: 12,
+    },
+    subtitle: {
+      fontSize: 14,
+      color: colors.textLight,
+      textAlign: 'center',
+      marginBottom: 14,
+    },
+    globeWrap: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 18,
+    },
+    controls: {
+      width: '90%',
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 10,
+    },
+    primaryButton: {
+      flex: 1,
+      backgroundColor: colors.secondary,
+      paddingVertical: 14,
+      borderRadius: 24,
+      alignItems: 'center',
+    },
+    primaryButtonText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.cardFront,
+    },
+    secondaryButton: {
+      flex: 1,
+      backgroundColor: colors.primary,
+      paddingVertical: 14,
+      borderRadius: 24,
+      alignItems: 'center',
+    },
+    secondaryButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.cardFront,
+    },
+  });

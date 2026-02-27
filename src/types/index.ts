@@ -9,6 +9,20 @@ export interface Tile {
 }
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
+export type ColorMode = 'light' | 'dark' | 'system';
+
+export interface ThemeColors {
+  background: string;
+  cardBack: string;
+  cardFront: string;
+  text: string;
+  textLight: string;
+  primary: string;
+  secondary: string;
+  success: string;
+  matched: string;
+  surfaceGame: string;
+}
 
 export interface Settings {
   animationsEnabled: boolean;
@@ -17,6 +31,7 @@ export interface Settings {
   difficulty: Difficulty;
   theme: 'animals' | 'shapes' | 'mixed';
   showCardPreview: boolean;
+  colorMode: ColorMode;
 }
 
 export const ANIMALS = [
@@ -128,7 +143,7 @@ export const SHAPES = [
   { emoji: '🎪', name: 'circus', color: '#FFA500' },
 ];
 
-export const PASTEL_COLORS = {
+export const PASTEL_COLORS: ThemeColors = {
   background: '#FFFEF7',
   cardBack: '#E8E4E1',
   cardFront: '#FFFFFF',
@@ -138,4 +153,18 @@ export const PASTEL_COLORS = {
   secondary: '#FFB6C1',
   success: '#B8E6B8',
   matched: '#D3D3D3',
+  surfaceGame: '#FFFFFF',
+};
+
+export const DARK_PASTEL_COLORS: ThemeColors = {
+  background: '#2F333B',
+  cardBack: '#4A4E57',
+  cardFront: '#E9E4DC',
+  text: '#EAE6DF',
+  textLight: '#C2BEB6',
+  primary: '#7FB1C1',
+  secondary: '#D59CB2',
+  success: '#95C5A3',
+  matched: '#8B9099',
+  surfaceGame: '#3F444D',
 };

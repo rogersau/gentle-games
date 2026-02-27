@@ -30,6 +30,7 @@ const TestConsumer = () => {
       <Text testID="volume">{String(settings.soundVolume)}</Text>
       <Text testID="difficulty">{settings.difficulty}</Text>
       <Text testID="theme">{settings.theme}</Text>
+      <Text testID="colorMode">{settings.colorMode}</Text>
       <TouchableOpacity testID="set-hard" onPress={() => updateSettings({ difficulty: 'hard' })}>
         <Text>set-hard</Text>
       </TouchableOpacity>
@@ -50,6 +51,7 @@ describe('SettingsContext', () => {
         soundVolume: 2,
         difficulty: 'invalid',
         theme: 'invalid',
+        colorMode: 'invalid',
       })
     );
 
@@ -66,6 +68,7 @@ describe('SettingsContext', () => {
     expect(screen.getByTestId('volume').props.children).toBe('1');
     expect(screen.getByTestId('difficulty').props.children).toBe('medium');
     expect(screen.getByTestId('theme').props.children).toBe('mixed');
+    expect(screen.getByTestId('colorMode').props.children).toBe('system');
   });
 
   it('removes corrupted persisted settings', async () => {

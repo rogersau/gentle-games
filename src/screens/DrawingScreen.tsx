@@ -13,11 +13,15 @@ import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/nativ
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DrawingCanvas, DrawingCanvasRef, HistoryEntry } from '../components/DrawingCanvas';
+import { ThemeColors } from '../types';
+import { useThemeColors } from '../utils/theme';
 
 const DRAWING_STORAGE_KEY = '@gentle_match_saved_drawing';
 
 export const DrawingScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { colors } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const canvasRef = useRef<DrawingCanvasRef>(null);
@@ -230,10 +234,11 @@ export const DrawingScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFEF7',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
@@ -242,7 +247,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 18,
-    color: '#5A5A5A',
+    color: colors.text,
   },
   header: {
     flexDirection: 'row',
@@ -251,7 +256,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8E4E1',
+    borderBottomColor: colors.cardBack,
     height: 60,
   },
   backButton: {
@@ -260,12 +265,12 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 24,
-    color: '#5A5A5A',
+    color: colors.text,
   },
   title: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#5A5A5A',
+    color: colors.text,
   },
   placeholder: {
     width: 40,
@@ -285,7 +290,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: '#FFFEF7',
+    backgroundColor: colors.background,
     borderRadius: 20,
     padding: 32,
     width: '100%',
@@ -299,13 +304,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#5A5A5A',
+    color: colors.text,
     textAlign: 'center',
     marginBottom: 16,
   },
   modalText: {
     fontSize: 16,
-    color: '#5A5A5A',
+    color: colors.text,
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 22,
@@ -316,7 +321,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   newButton: {
-    backgroundColor: '#E8E4E1',
+    backgroundColor: colors.cardBack,
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 25,
@@ -325,11 +330,11 @@ const styles = StyleSheet.create({
   newButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#5A5A5A',
+    color: colors.text,
     textAlign: 'center',
   },
   continueButton: {
-    backgroundColor: '#A8D8EA',
+    backgroundColor: colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 25,
@@ -338,7 +343,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.cardFront,
     textAlign: 'center',
   },
 });

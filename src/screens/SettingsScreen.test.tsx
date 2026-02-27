@@ -11,6 +11,7 @@ let mockSettings = {
   difficulty: 'medium' as const,
   theme: 'mixed' as const,
   showCardPreview: true,
+  colorMode: 'system' as const,
 };
 
 jest.mock('@react-navigation/native', () => ({
@@ -36,7 +37,15 @@ describe('SettingsScreen', () => {
       difficulty: 'medium',
       theme: 'mixed',
       showCardPreview: true,
+      colorMode: 'system',
     };
+  });
+
+  it('updates color mode from appearance options', () => {
+    const screen = render(<SettingsScreen />);
+    fireEvent.press(screen.getByText('Dark'));
+
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ colorMode: 'dark' });
   });
 
   it('updates volume using controls', () => {

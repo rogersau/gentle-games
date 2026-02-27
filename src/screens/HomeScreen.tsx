@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,9 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSettings } from '../context/SettingsContext';
-import { Difficulty } from '../types';
+import { Difficulty, ThemeColors } from '../types';
 import { getGridConfig } from '../utils/gameLogic';
+import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 
 interface Game {
   id: string;
@@ -55,6 +56,8 @@ const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; description: strin
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings, updateSettings } = useSettings();
+  const { colors, resolvedMode } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [showDifficultySelector, setShowDifficultySelector] = useState(false);
 
@@ -189,10 +192,11 @@ export const HomeScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFEF7',
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -203,13 +207,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 42,
     fontWeight: '700',
-    color: '#5A5A5A',
+    color: colors.text,
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 18,
-    color: '#8A8A8A',
+    color: colors.textLight,
     marginBottom: 48,
     textAlign: 'center',
   },
@@ -220,12 +224,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#5A5A5A',
+    color: colors.text,
     marginBottom: 16,
     textAlign: 'center',
   },
   gameCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.cardFront,
     borderRadius: 16,
     padding: 24,
     marginBottom: 16,
@@ -247,19 +251,19 @@ const styles = StyleSheet.create({
   gameName: {
     fontSize: 22,
     fontWeight: '600',
-    color: '#5A5A5A',
+    color: resolvedMode === 'dark' ? colors.background : colors.text,
     marginBottom: 4,
   },
   gameDescription: {
     fontSize: 14,
-    color: '#8A8A8A',
+    color: resolvedMode === 'dark' ? colors.cardBack : colors.textLight,
   },
   settingsButton: {
-    backgroundColor: '#FFB6C1',
+    backgroundColor: colors.secondary,
     paddingHorizontal: 48,
     paddingVertical: 18,
     borderRadius: 30,
-    shadowColor: '#FFB6C1',
+    shadowColor: colors.secondary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -268,7 +272,7 @@ const styles = StyleSheet.create({
   settingsButtonText: {
     fontSize: 22,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.cardFront,
   },
   modalOverlay: {
     flex: 1,
@@ -278,7 +282,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: '#FFFEF7',
+    backgroundColor: colors.background,
     borderRadius: 20,
     padding: 24,
     width: '100%',
@@ -292,13 +296,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#5A5A5A',
+    color: colors.text,
     textAlign: 'center',
     marginBottom: 8,
   },
   modalSubtitle: {
     fontSize: 14,
-    color: '#8A8A8A',
+    color: colors.textLight,
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -306,17 +310,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   optionButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.cardFront,
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#E8E4E1',
+    borderColor: colors.cardBack,
     marginBottom: 12,
   },
   optionButtonActive: {
-    backgroundColor: '#A8D8EA',
-    borderColor: '#A8D8EA',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   optionContent: {
     flexDirection: 'column',
@@ -329,26 +333,26 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     fontSize: 20,
-    color: '#5A5A5A',
+    color: resolvedMode === 'dark' ? colors.background : colors.text,
     fontWeight: '600',
   },
   optionDescription: {
     fontSize: 14,
-    color: '#8A8A8A',
+    color: resolvedMode === 'dark' ? colors.cardBack : colors.textLight,
   },
   optionTextActive: {
-    color: '#FFFFFF',
+    color: colors.cardFront,
   },
   lastPlayedBadge: {
     fontSize: 12,
-    color: '#FFFFFF',
+    color: colors.cardFront,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 10,
   },
   closeButton: {
-    backgroundColor: '#E8E4E1',
+    backgroundColor: colors.cardBack,
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: 25,
@@ -357,6 +361,6 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#5A5A5A',
+    color: colors.text,
   },
 });

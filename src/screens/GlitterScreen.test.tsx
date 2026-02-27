@@ -6,6 +6,25 @@ const mockGoBack = jest.fn();
 const mockAddGlitter = jest.fn();
 const mockClearGlitter = jest.fn();
 
+jest.mock('../utils/theme', () => ({
+  useThemeColors: () => ({
+    colors: {
+      background: '#FFFEF7',
+      cardBack: '#E8E4E1',
+      cardFront: '#FFFFFF',
+      text: '#5A5A5A',
+      textLight: '#8A8A8A',
+      primary: '#A8D8EA',
+      secondary: '#FFB6C1',
+      success: '#B8E6B8',
+      matched: '#D3D3D3',
+      surfaceGame: '#FFFFFF',
+    },
+    resolvedMode: 'light',
+    colorMode: 'light',
+  }),
+}));
+
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     goBack: mockGoBack,
