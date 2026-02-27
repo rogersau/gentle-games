@@ -1,7 +1,8 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { GameBoard } from './GameBoard';
-import { generateTiles } from '../utils/gameLogic';
+import { calculateGridDimensions, generateTiles } from '../utils/gameLogic';
 
 const mockSettings = {
   animationsEnabled: false,
@@ -16,6 +17,7 @@ const mockSettings = {
 const mockPlayFlipSound = jest.fn();
 const mockPlayMatchSound = jest.fn();
 const mockPlayCompleteSound = jest.fn();
+let renderedTileSize = 0;
 
 const baseTiles = [
   { id: '1a', value: '🐰', type: 'animal' as const, isFlipped: false, isMatched: false },
@@ -49,19 +51,27 @@ jest.mock('./Tile', () => {
   const React = require('react');
   const { TouchableOpacity, Text } = require('react-native');
   return {
-    Tile: ({ tile, onPress }: { tile: { id: string; value: string; isFlipped: boolean; isMatched: boolean }; onPress: () => void }) => (
-      <TouchableOpacity testID={`tile-${tile.id}`} onPress={onPress}>
+    Tile: ({ tile, onPress, size }: { tile: { id: string; value: string; isFlipped: boolean; isMatched: boolean }; onPress: () => void; size: number }) => {
+      renderedTileSize = size;
+      return (
+        <TouchableOpacity testID={`tile-${tile.id}`} style={{ width: size, height: size }} onPress={onPress}>
         <Text>{tile.isFlipped || tile.isMatched ? tile.value : '?'}</Text>
       </TouchableOpacity>
-    ),
+      );
+    },
   };
 });
 
 describe('GameBoard', () => {
   const mockedGenerateTiles = generateTiles as jest.MockedFunction<typeof generateTiles>;
+  const mockedCalculateGridDimensions = calculateGridDimensions as jest.MockedFunction<
+    typeof calculateGridDimensions
+  >;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    renderedTileSize = 0;
+    mockedCalculateGridDimensions.mockReturnValue({ cols: 2, rows: 2 });
     mockedGenerateTiles.mockImplementation(() => baseTiles.map((tile) => ({ ...tile })));
   });
 
@@ -120,5 +130,13 @@ describe('GameBoard', () => {
       jest.runOnlyPendingTimers();
       jest.useRealTimers();
     }
+  });
+
+  it('keeps full tile grid height within the board bounds', () => {
+    mockedCalculateGridDimensions.mockReturnValue({ cols: 3, rows: 4 });
+    const screen = render(<GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />);
+
+    const boardStyle = StyleSheet.flatten(screen.getByTestId('memory-board').props.style);
+    expect(boardStyle.height).toBeGreaterThanOrEqual(renderedTileSize * 4);
   });
 });

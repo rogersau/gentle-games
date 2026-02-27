@@ -7,7 +7,6 @@ import {
   Text,
   ScrollView,
   Modal,
-  Alert,
 } from 'react-native';
 import Svg, { Path, Circle, Rect, Polygon, Line } from 'react-native-svg';
 
@@ -133,7 +132,6 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
     // Update history when initialHistory prop changes (e.g., when loading saved drawing)
     useEffect(() => {
-      console.log('DrawingCanvas: initialHistory changed, entries:', initialHistory.length);
       setHistory(initialHistory);
     }, [initialHistory]);
 
@@ -142,6 +140,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     const [shapeType, setShapeType] = useState<ShapeType>('circle');
     const [shapeSize, setShapeSize] = useState(50);
     const [symmetryMode, setSymmetryMode] = useState<SymmetryMode>('none');
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
     const [showShapePicker, setShowShapePicker] = useState(false);
     const [customColors, setCustomColors] = useState<string[]>([]);
@@ -164,7 +163,6 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
     // Notify parent of history changes
     useEffect(() => {
-      console.log('DrawingCanvas: history changed, entries:', history.length);
       onHistoryChange?.(history);
     }, [history, onHistoryChange]);
 
@@ -270,10 +268,16 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     ).current;
 
     const handleClear = () => {
-      Alert.alert('Clear drawing?', 'This will remove everything on the canvas.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Clear', style: 'destructive', onPress: clearCanvas },
-      ]);
+      setShowClearConfirm(true);
+    };
+
+    const handleCancelClear = () => {
+      setShowClearConfirm(false);
+    };
+
+    const handleConfirmClear = () => {
+      clearCanvas();
+      setShowClearConfirm(false);
     };
 
     const handleUndo = () => {
@@ -588,6 +592,41 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           </View>
         )}
 
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={showClearConfirm}
+          onRequestClose={handleCancelClear}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            onPress={handleCancelClear}
+            activeOpacity={1}
+          >
+            <TouchableOpacity style={styles.modalContent} onPress={(e) => e.stopPropagation()} activeOpacity={1}>
+              <Text style={styles.modalTitle}>Clear drawing?</Text>
+              <Text style={styles.modalText}>This will remove everything on the canvas.</Text>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  testID="clear-confirm-cancel"
+                  style={styles.cancelButton}
+                  onPress={handleCancelClear}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  testID="clear-confirm-accept"
+                  style={styles.selectButton}
+                  onPress={handleConfirmClear}
+                >
+                  <Text style={styles.selectButtonText}>Clear</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
+
         {/* Color Picker Modal */}
         <Modal
           animationType="slide"
@@ -857,6 +896,13 @@ const styles = StyleSheet.create({
     color: '#5A5A5A',
     textAlign: 'center',
     marginBottom: 20,
+  },
+  modalText: {
+    fontSize: 16,
+    color: '#5A5A5A',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 22,
   },
   previewContainer: {
     alignItems: 'center',

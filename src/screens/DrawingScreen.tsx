@@ -6,10 +6,9 @@ import {
   StyleSheet,
   useWindowDimensions,
   Modal,
-  Alert,
   BackHandler,
 } from 'react-native';
-import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DrawingCanvas, DrawingCanvasRef, HistoryEntry } from '../components/DrawingCanvas';
@@ -50,10 +49,8 @@ export const DrawingScreen: React.FC = () => {
     const checkSavedDrawing = async () => {
       try {
         const saved = await AsyncStorage.getItem(DRAWING_STORAGE_KEY);
-        console.log('Loaded saved drawing:', saved ? 'found' : 'not found');
         if (saved) {
           const parsed = JSON.parse(saved);
-          console.log('Parsed drawing entries:', parsed.length);
           if (parsed && Array.isArray(parsed) && parsed.length > 0) {
             setSavedHistory(parsed);
             setShowContinueModal(true);
@@ -76,13 +73,10 @@ export const DrawingScreen: React.FC = () => {
   const saveDrawing = useCallback(async () => {
     try {
       const history = canvasRef.current?.getHistory();
-      console.log('Saving drawing, entries:', history?.length || 0);
       if (history && history.length > 0) {
         await AsyncStorage.setItem(DRAWING_STORAGE_KEY, JSON.stringify(history));
-        console.log('Save successful');
       } else {
         await AsyncStorage.removeItem(DRAWING_STORAGE_KEY);
-        console.log('Removed empty drawing');
       }
     } catch (error) {
       console.warn('Error saving drawing:', error);
@@ -106,11 +100,9 @@ export const DrawingScreen: React.FC = () => {
       e.preventDefault();
       
       // Save the drawing
-      console.log('Navigation intercepted, saving...');
       await saveDrawing();
       
       // Now navigate
-      console.log('Save complete, navigating...');
       navigation.dispatch(e.data.action);
     });
 
@@ -135,13 +127,10 @@ export const DrawingScreen: React.FC = () => {
   // Auto-save whenever drawing changes
   const handleHistoryChange = useCallback(async (history: HistoryEntry[]) => {
     try {
-      console.log('Auto-saving drawing, entries:', history.length);
       if (history.length > 0) {
         await AsyncStorage.setItem(DRAWING_STORAGE_KEY, JSON.stringify(history));
-        console.log('Auto-save successful');
       } else {
         await AsyncStorage.removeItem(DRAWING_STORAGE_KEY);
-        console.log('Removed saved drawing (empty)');
       }
     } catch (error) {
       console.warn('Error auto-saving drawing:', error);

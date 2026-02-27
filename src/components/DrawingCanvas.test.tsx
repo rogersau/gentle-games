@@ -1,6 +1,6 @@
 import React from 'react';
-import { Alert, StyleSheet } from 'react-native';
-import { act, fireEvent, render } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import { DrawingCanvas, DrawingCanvasRef, HistoryEntry } from './DrawingCanvas';
 
 describe('DrawingCanvas', () => {
@@ -35,7 +35,6 @@ describe('DrawingCanvas', () => {
   });
 
   it('shows confirmation before clearing and clears on confirm', () => {
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     const initialHistory: HistoryEntry[] = [
       { kind: 'shape', id: 'shape-1', type: 'circle', x: 40, y: 40, size: 24, color: '#FF0000' },
     ];
@@ -47,14 +46,10 @@ describe('DrawingCanvas', () => {
 
     expect(ref.current?.getHistory()).toHaveLength(1);
     fireEvent.press(getByTestId('clear-drawing-button'));
-    expect(alertSpy).toHaveBeenCalledTimes(1);
-
-    const buttons = alertSpy.mock.calls[0]?.[2];
-    const clearButton = buttons?.find((button) => button.text === 'Clear');
-    act(() => clearButton?.onPress?.());
+    expect(getByTestId('clear-confirm-accept')).toBeTruthy();
+    fireEvent.press(getByTestId('clear-confirm-accept'));
 
     expect(ref.current?.getHistory()).toHaveLength(0);
-    alertSpy.mockRestore();
   });
 });
 

@@ -10,9 +10,10 @@ import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 interface GameBoardProps {
   onGameComplete: (time: number) => void;
   onBackPress: () => void;
+  bottomInset?: number;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPress }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPress, bottomInset = 0 }) => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const { settings } = useSettings();
   const { colors, resolvedMode } = useThemeColors();
@@ -30,22 +31,23 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
 
   const padding = 16;
   const headerHeight = 60;
-  const gap = 8;
   const tileMargin = 4;
 
-  const { cols, boardSize, tileSize } = useMemo(() => {
-    const { cols } = calculateGridDimensions(settings.difficulty, screenWidth, screenHeight);
+  const { cols, boardWidth, boardHeight, tileSize } = useMemo(() => {
+    const { cols, rows } = calculateGridDimensions(settings.difficulty, screenWidth, screenHeight);
 
     const maxBoardWidth = screenWidth - padding * 2;
-    const maxBoardHeight = screenHeight - padding * 2 - headerHeight - 40;
-    const boardSize = Math.min(maxBoardWidth, maxBoardHeight);
+    const maxBoardHeight = screenHeight - padding * 2 - headerHeight - 40 - bottomInset;
 
-    const calculatedTileSize = Math.floor(
-      (boardSize - gap * (cols - 1) - tileMargin * 2 * cols) / cols
-    );
+    const widthLimitedTileSize = Math.floor((maxBoardWidth - tileMargin * 2 * cols) / cols);
+    const heightLimitedTileSize = Math.floor((maxBoardHeight - tileMargin * 2 * rows) / rows);
+    const calculatedTileSize = Math.max(1, Math.min(widthLimitedTileSize, heightLimitedTileSize));
 
-    return { cols, boardSize, tileSize: calculatedTileSize };
-  }, [screenWidth, screenHeight, settings.difficulty]);
+    const boardWidth = cols * (calculatedTileSize + tileMargin * 2);
+    const boardHeight = rows * (calculatedTileSize + tileMargin * 2);
+
+    return { cols, boardWidth, boardHeight, tileSize: calculatedTileSize };
+  }, [bottomInset, screenWidth, screenHeight, settings.difficulty]);
 
   useEffect(() => {
     startNewGame();
@@ -186,11 +188,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
       </View>
 
       <View
+        testID="memory-board"
         style={[
           styles.board,
           {
-            width: boardSize,
-            height: boardSize,
+            width: boardWidth,
+            height: boardHeight,
           },
         ]}
       >
