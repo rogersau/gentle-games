@@ -34,6 +34,27 @@ export interface Settings {
   colorMode: ColorMode;
 }
 
+export type CategoryMatchCategory = 'animals' | 'objects' | 'shapes';
+
+export interface CategoryMatchCategoryConfig {
+  id: CategoryMatchCategory;
+  label: string;
+  icon: string;
+}
+
+export interface CategoryMatchItem {
+  emoji: string;
+  name: string;
+  color: string;
+  category: CategoryMatchCategory;
+}
+
+export const CATEGORY_MATCH_CATEGORIES: CategoryMatchCategoryConfig[] = [
+  { id: 'animals', label: 'Animals', icon: '🐾' },
+  { id: 'objects', label: 'Objects', icon: '🏠' },
+  { id: 'shapes', label: 'Shapes', icon: '🔷' },
+];
+
 export const ANIMALS = [
   { emoji: '🐰', name: 'bunny', color: '#FFB6C1' },
   { emoji: '🐻', name: 'bear', color: '#D2B48C' },
@@ -140,6 +161,57 @@ export const SHAPES = [
   { emoji: '🏠', name: 'house', color: '#FFE4C4' },
   { emoji: '🏫', name: 'school', color: '#F5DEB3' },
   { emoji: '🏰', name: 'castle', color: '#E6E6FA' },
+];
+
+export const CATEGORY_MATCH_ANIMALS: CategoryMatchItem[] = [
+  { emoji: '🐰', name: 'bunny', color: '#FFB6C1', category: 'animals' },
+  { emoji: '🐻', name: 'bear', color: '#D2B48C', category: 'animals' },
+  { emoji: '🐱', name: 'cat', color: '#FFDAB9', category: 'animals' },
+  { emoji: '🐶', name: 'dog', color: '#F5DEB3', category: 'animals' },
+  { emoji: '🦊', name: 'fox', color: '#FFA07A', category: 'animals' },
+  { emoji: '🐼', name: 'panda', color: '#E6E6FA', category: 'animals' },
+  { emoji: '🐨', name: 'koala', color: '#D3D3D3', category: 'animals' },
+  { emoji: '🦁', name: 'lion', color: '#F0E68C', category: 'animals' },
+  { emoji: '🐷', name: 'pig', color: '#FFC0CB', category: 'animals' },
+  { emoji: '🐸', name: 'frog', color: '#98FB98', category: 'animals' },
+  { emoji: '🦋', name: 'butterfly', color: '#E0FFFF', category: 'animals' },
+  { emoji: '🐢', name: 'turtle', color: '#90EE90', category: 'animals' },
+];
+
+export const CATEGORY_MATCH_SHAPES: CategoryMatchItem[] = [
+  { emoji: '⭕', name: 'circle', color: '#FFB6C1', category: 'shapes' },
+  { emoji: '🔲', name: 'square', color: '#ADD8E6', category: 'shapes' },
+  { emoji: '🔺', name: 'triangle', color: '#FFDAB9', category: 'shapes' },
+  { emoji: '⭐', name: 'star', color: '#FFFACD', category: 'shapes' },
+  { emoji: '❤️', name: 'heart', color: '#FFC0CB', category: 'shapes' },
+  { emoji: '💎', name: 'diamond', color: '#E0FFFF', category: 'shapes' },
+  { emoji: '🔷', name: 'blue', color: '#ADD8E6', category: 'shapes' },
+  { emoji: '🟢', name: 'green', color: '#90EE90', category: 'shapes' },
+  { emoji: '🟡', name: 'yellow', color: '#FFFFE0', category: 'shapes' },
+  { emoji: '🟣', name: 'purple', color: '#DDA0DD', category: 'shapes' },
+  { emoji: '🔴', name: 'red', color: '#FF6347', category: 'shapes' },
+  { emoji: '🔵', name: 'blue2', color: '#87CEEB', category: 'shapes' },
+];
+
+export const CATEGORY_MATCH_OBJECTS: CategoryMatchItem[] = [
+  { emoji: '🏠', name: 'house', color: '#FFE4C4', category: 'objects' },
+  { emoji: '🏫', name: 'school', color: '#F5DEB3', category: 'objects' },
+  { emoji: '🏰', name: 'castle', color: '#E6E6FA', category: 'objects' },
+  { emoji: '🔔', name: 'bell', color: '#FFD700', category: 'objects' },
+  { emoji: '🎈', name: 'balloon', color: '#FFB6C1', category: 'objects' },
+  { emoji: '🎀', name: 'ribbon', color: '#FFC0CB', category: 'objects' },
+  { emoji: '🌙', name: 'moon', color: '#E6E6FA', category: 'objects' },
+  { emoji: '☀️', name: 'sun', color: '#FFFACD', category: 'objects' },
+  { emoji: '☁️', name: 'cloud', color: '#F0F8FF', category: 'objects' },
+  { emoji: '🌸', name: 'flower', color: '#FFE4E1', category: 'objects' },
+  { emoji: '🍁', name: 'leaf', color: '#FFDAB9', category: 'objects' },
+  { emoji: '🌈', name: 'rainbow', color: '#E6E6FA', category: 'objects' },
+];
+
+export const CATEGORY_MATCH_ITEMS: CategoryMatchItem[] = [
+  ...CATEGORY_MATCH_ANIMALS,
+  ...CATEGORY_MATCH_OBJECTS,
+  ...CATEGORY_MATCH_SHAPES,
 ];
 
 export const PASTEL_COLORS: ThemeColors = {

@@ -70,6 +70,14 @@ A calm tapping game where bubbles drift down from the top of the screen.
 - Tap to pop bubbles and track a simple pop count
 - Active bubble guard that keeps at least 2 bubbles on screen
 
+### 🗂️ Category Match
+A calm sorting game where kids drag each emoji into the right category.
+
+**Features:**
+- Endless rounds with one emoji at a time
+- Three friendly categories in a fixed row: Animals, Objects, Shapes
+- Gentle correct/try-again feedback with a running correct counter
+
 ## Features (All Games)
 
 - **Sensory-Friendly Design**
@@ -256,13 +264,15 @@ gentle-games/
 │   │   ├── Tile.tsx            # Memory tile component
 │   │   ├── DrawingCanvas.tsx   # Drawing canvas with tools
 │   │   ├── GlitterGlobe.tsx    # Glitter Fall particle globe
-│   │   └── BubbleField.tsx     # Bubble Pop falling bubble field
+│   │   ├── BubbleField.tsx     # Bubble Pop falling bubble field
+│   │   └── CategoryMatchBoard.tsx # Category Match drag/drop board
 │   ├── screens/
 │   │   ├── HomeScreen.tsx      # Game selection menu
 │   │   ├── GameScreen.tsx      # Memory Snap screen
 │   │   ├── DrawingScreen.tsx   # Drawing Pad screen
 │   │   ├── GlitterScreen.tsx   # Glitter Fall screen
 │   │   ├── BubbleScreen.tsx    # Bubble Pop screen
+│   │   ├── CategoryMatchScreen.tsx # Category Match screen
 │   │   └── SettingsScreen.tsx  # App settings
 │   ├── context/
 │   │   └── SettingsContext.tsx # Global settings state
@@ -270,6 +280,7 @@ gentle-games/
 │   │   ├── gameLogic.ts        # Memory game logic
 │   │   ├── bubbleLogic.ts      # Bubble Pop spawn + movement logic
 │   │   ├── glitterMotion.ts    # Shake and motion helpers
+│   │   ├── categoryMatchLogic.ts # Category Match round logic
 │   │   └── sounds.ts           # Audio management
 │   └── types/
 │       └── index.ts            # TypeScript types & data

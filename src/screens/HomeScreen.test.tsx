@@ -62,6 +62,13 @@ describe('HomeScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('Bubble');
   });
 
+  it('navigates directly to Category Match screen when Category Match is selected', () => {
+    const screen = render(<HomeScreen />);
+    fireEvent.press(screen.getByText('Category Match'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('CategoryMatch');
+  });
+
   it('shows difficulty modal for Memory Snap and navigates to Game after selection', async () => {
     const screen = render(<HomeScreen />);
 

@@ -45,6 +45,12 @@ const GAMES: Game[] = [
     description: 'Tap falling bubbles',
     icon: '🫧',
   },
+  {
+    id: 'category-match',
+    name: 'Category Match',
+    description: 'Drag to sort by category',
+    icon: '🗂️',
+  },
 ];
 
 const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; description: string }[] = [
@@ -71,6 +77,9 @@ export const HomeScreen: React.FC = () => {
       setSelectedGame(null);
     } else if (game.id === 'bubble-pop') {
       navigation.navigate('Bubble' as never);
+      setSelectedGame(null);
+    } else if (game.id === 'category-match') {
+      navigation.navigate('CategoryMatch' as never);
       setSelectedGame(null);
     } else {
       setShowDifficultySelector(true);
