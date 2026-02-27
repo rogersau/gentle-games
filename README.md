@@ -198,8 +198,9 @@ This repo includes a workflow at [.github/workflows/pwa-deploy.yml](.github/work
 ### Workflow behavior
 
 - Installs dependencies with `npm ci`
-- Runs `npx expo export --platform web --output-dir dist --clear --base-url /<repo-name>/`
-- Runs `node scripts/prepare-pwa.js` to generate:
+- Runs `npm run build:pwa` (exports web + prepares PWA assets)
+- Uses `expo.experiments.baseUrl` (`/gentle-games`) so assets resolve on GitHub Pages
+- Generates:
   - `dist/manifest.webmanifest`
   - `dist/sw.js`
   - `dist/icons/*`
