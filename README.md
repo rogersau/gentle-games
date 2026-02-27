@@ -193,7 +193,7 @@ This repo includes a workflow at [.github/workflows/pwa-deploy.yml](.github/work
 
 1. Go to **Settings → Pages** in your GitHub repo.
 2. Set **Source** to **GitHub Actions**.
-3. Push to `master` or `main` (or run the workflow manually from the **Actions** tab).
+3. Push to `master` (or run the workflow manually from the **Actions** tab).
 
 ### Workflow behavior
 
