@@ -1,7 +1,6 @@
-import { Audio } from 'expo-av';
+import { AudioPlayer, createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { Settings } from '../types';
 
-// Asset mapping — Metro will bundle these at build time
 const soundAssets = {
   flip: require('../assets/sounds/flip.mp3'),
   match: require('../assets/sounds/match.mp3'),
@@ -9,23 +8,25 @@ const soundAssets = {
 };
 
 interface SoundEffect {
-  sound: Audio.Sound | null;
+  player: AudioPlayer | null;
   isLoaded: boolean;
 }
 
-const sounds: Record<string, SoundEffect> = {
-  flip: { sound: null, isLoaded: false },
-  match: { sound: null, isLoaded: false },
-  complete: { sound: null, isLoaded: false },
+const sounds: Record<keyof typeof soundAssets, SoundEffect> = {
+  flip: { player: null, isLoaded: false },
+  match: { player: null, isLoaded: false },
+  complete: { player: null, isLoaded: false },
 };
 
 const loadSound = async (name: keyof typeof soundAssets): Promise<void> => {
   try {
-    const { sound } = await Audio.Sound.createAsync(
-      soundAssets[name],
-      { volume: 0.5 }
-    );
-    sounds[name].sound = sound;
+    const player = createAudioPlayer(soundAssets[name], {
+      keepAudioSessionActive: false,
+    });
+    player.volume = 0.5;
+    player.loop = false;
+
+    sounds[name].player = player;
     sounds[name].isLoaded = true;
   } catch (error) {
     console.warn(`Sound file for "${name}" not found. Add MP3 files to src/assets/sounds/ to enable audio.`);
@@ -33,11 +34,16 @@ const loadSound = async (name: keyof typeof soundAssets): Promise<void> => {
 };
 
 export const initializeSounds = async (): Promise<void> => {
-  await Promise.all([
-    loadSound('flip'),
-    loadSound('match'),
-    loadSound('complete'),
-  ]);
+  try {
+    await setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
+    });
+  } catch (error) {
+    console.warn('Failed to configure audio mode:', error);
+  }
+
+  await Promise.all([loadSound('flip'), loadSound('match'), loadSound('complete')]);
 };
 
 const playSoundEffect = async (
@@ -48,15 +54,14 @@ const playSoundEffect = async (
   if (!settings.soundEnabled) return;
 
   const effect = sounds[name];
-  if (!effect?.isLoaded || !effect.sound) return;
+  if (!effect?.isLoaded || !effect.player) return;
 
   try {
-    // Cap max volume at 50% so user 100% = actual 50%, user 50% = actual 25%
     const cappedUserVolume = settings.soundVolume * 0.5;
     const finalVolume = Math.max(0, Math.min(1, cappedUserVolume * volumeMultiplier));
-    await effect.sound.setVolumeAsync(finalVolume);
-    await effect.sound.setPositionAsync(0);
-    await effect.sound.playAsync();
+    effect.player.volume = finalVolume;
+    await effect.player.seekTo(0);
+    effect.player.play();
   } catch (error) {
     console.warn(`Failed to play ${name} sound:`, error);
   }
@@ -76,11 +81,16 @@ export const playCompleteSound = async (settings: Settings): Promise<void> => {
 
 export const unloadSounds = async (): Promise<void> => {
   for (const effect of Object.values(sounds)) {
-    if (effect.sound) {
-      await effect.sound.unloadAsync();
+    if (effect.player) {
+      effect.player.remove();
     }
   }
+
+  sounds.flip.player = null;
+  sounds.match.player = null;
+  sounds.complete.player = null;
   sounds.flip.isLoaded = false;
   sounds.match.isLoaded = false;
   sounds.complete.isLoaded = false;
 };
+

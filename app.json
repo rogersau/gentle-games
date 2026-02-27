@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
     "backgroundColor": "#FFFEF7",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -32,12 +31,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      [
-        "expo-av",
-        {
-          "microphonePermission": "Gentle Games does not require microphone access."
-        }
-      ]
+      "expo-audio"
     ]
   }
 }

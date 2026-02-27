@@ -97,7 +97,7 @@ A calm tapping game where bubbles drift down from the top of the screen.
 - **Framework**: Expo (React Native)
 - **Language**: TypeScript
 - **Navigation**: React Navigation
-- **Audio**: Expo AV
+- **Audio**: Expo Audio
 - **Motion Sensors**: Expo Sensors (Accelerometer)
 - **Storage**: AsyncStorage
 - **Graphics**: React Native SVG
