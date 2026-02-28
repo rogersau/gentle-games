@@ -115,11 +115,12 @@ describe('HomeScreen', () => {
     expect(screen.getByText('Scroll to see more ↓')).toBeTruthy();
   });
 
-  it('constrains the game list container height to keep list scrolling available', () => {
+  it('game list container uses flex to fill available space', () => {
     const screen = render(<HomeScreen />);
     const gamesContainer = screen.getByTestId('home-games-container');
-    const { height, maxHeight } = StyleSheet.flatten(gamesContainer.props.style);
+    const { flex, maxHeight } = StyleSheet.flatten(gamesContainer.props.style);
 
-    expect(typeof height === 'number' || typeof maxHeight === 'number').toBe(true);
+    expect(flex).toBe(1);
+    expect(maxHeight).toBeUndefined();
   });
 });
