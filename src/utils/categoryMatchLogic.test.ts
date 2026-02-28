@@ -7,7 +7,7 @@ describe('categoryMatchLogic', () => {
 
     expect(round.item).toBeTruthy();
     expect(round.categories).toHaveLength(3);
-    expect(round.categories.map((category) => category.id)).toEqual(['animals', 'objects', 'shapes']);
+    expect(round.categories.map((category) => category.id)).toEqual(['sky', 'land', 'ocean']);
   });
 
   it('avoids repeating the same item in consecutive rounds', () => {
@@ -18,14 +18,14 @@ describe('categoryMatchLogic', () => {
   });
 
   it('validates category drops correctly', () => {
-    const item = CATEGORY_MATCH_ITEMS.find((entry) => entry.category === 'animals');
+    const item = CATEGORY_MATCH_ITEMS.find((entry) => entry.category === 'sky');
     expect(item).toBeTruthy();
     if (!item) {
       return;
     }
 
-    expect(isCategoryMatchCorrect(item, 'animals')).toBe(true);
-    expect(isCategoryMatchCorrect(item, 'shapes')).toBe(false);
+    expect(isCategoryMatchCorrect(item, 'sky')).toBe(true);
+    expect(isCategoryMatchCorrect(item, 'ocean')).toBe(false);
   });
 
   it('does not repeat category on consecutive rounds', () => {
@@ -38,46 +38,52 @@ describe('categoryMatchLogic', () => {
     }
   });
 
-  it('uses an even item split and keeps sky emojis out of shapes', () => {
+  it('uses an even item split with younger sky/land/ocean sets', () => {
     const counts = CATEGORY_MATCH_ITEMS.reduce<Record<string, number>>((acc, item) => {
       acc[item.category] = (acc[item.category] ?? 0) + 1;
       return acc;
     }, {});
 
-    expect(counts.animals).toBe(counts.objects);
-    expect(counts.objects).toBe(counts.shapes);
+    expect(counts.sky).toBe(counts.land);
+    expect(counts.land).toBe(counts.ocean);
 
-    const shapeNames = CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'shapes').map(
+    const skyNames = CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'sky').map(
       (item) => item.name
     );
-    expect(shapeNames).not.toContain('sun');
-    expect(shapeNames).not.toContain('moon');
-    expect(shapeNames).not.toContain('cloud');
+    expect(skyNames).toContain('sun');
+    expect(skyNames).toContain('cloud');
+    expect(skyNames).toContain('moon');
 
-    const objectNames = CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'objects').map(
+    const landNames = CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'land').map(
       (item) => item.name
     );
-    expect(objectNames).toContain('sun');
-    expect(objectNames).toContain('moon');
-    expect(objectNames).toContain('cloud');
+    expect(landNames).toContain('apple');
+    expect(landNames).toContain('carrot');
+    expect(landNames).toContain('broccoli');
+
+    const oceanNames = CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'ocean').map(
+      (item) => item.name
+    );
+    expect(oceanNames).toContain('fish');
+    expect(oceanNames).toContain('dolphin');
+    expect(oceanNames).toContain('wave');
   });
 
   it('widens the per-category pool as rounds progress', () => {
-    const previousShape = CATEGORY_MATCH_ITEMS.find((item) => item.category === 'shapes');
-    const objectPool = CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'objects');
-    const earlyObjectNames = objectPool.slice(0, 4).map((item) => item.name);
-    expect(previousShape).toBeTruthy();
-    if (!previousShape) {
+    const previousOcean = CATEGORY_MATCH_ITEMS.find((item) => item.category === 'ocean');
+    const landPool = CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'land');
+    const earlyLandNames = landPool.slice(0, 4).map((item) => item.name);
+    expect(previousOcean).toBeTruthy();
+    if (!previousOcean) {
       return;
     }
 
-    const earlyRound = createCategoryMatchRound(previousShape, 0, () => 0.99);
-    const laterRound = createCategoryMatchRound(previousShape, 20, () => 0.99);
+    const earlyRound = createCategoryMatchRound(previousOcean, 0, () => 0.99);
+    const laterRound = createCategoryMatchRound(previousOcean, 20, () => 0.99);
 
-    expect(earlyRound.item.category).toBe('objects');
-    expect(laterRound.item.category).toBe('objects');
-    expect(earlyObjectNames).toContain(earlyRound.item.name);
-    expect(earlyObjectNames).not.toContain(laterRound.item.name);
+    expect(earlyRound.item.category).toBe('land');
+    expect(laterRound.item.category).toBe('land');
+    expect(earlyLandNames).toContain(earlyRound.item.name);
+    expect(earlyLandNames).not.toContain(laterRound.item.name);
   });
 });
-

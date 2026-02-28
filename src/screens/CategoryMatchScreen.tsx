@@ -3,10 +3,10 @@ import { StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'r
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  CATEGORY_MATCH_ANIMALS,
+  CATEGORY_MATCH_LAND,
   CATEGORY_MATCH_CATEGORIES,
-  CATEGORY_MATCH_OBJECTS,
-  CATEGORY_MATCH_SHAPES,
+  CATEGORY_MATCH_OCEAN,
+  CATEGORY_MATCH_SKY,
   CategoryMatchCategory,
   CategoryMatchItem,
   ThemeColors,
@@ -31,9 +31,9 @@ export const CategoryMatchScreen: React.FC = () => {
 
   const categoryExamples = useMemo(
     () => ({
-      animals: CATEGORY_MATCH_ANIMALS.slice(0, 2).map((item) => item.emoji).join(' '),
-      objects: CATEGORY_MATCH_OBJECTS.slice(0, 2).map((item) => item.emoji).join(' '),
-      shapes: CATEGORY_MATCH_SHAPES.slice(0, 2).map((item) => item.emoji).join(' '),
+      sky: CATEGORY_MATCH_SKY.slice(0, 2).map((item) => item.emoji).join(' '),
+      land: CATEGORY_MATCH_LAND.slice(0, 2).map((item) => item.emoji).join(' '),
+      ocean: CATEGORY_MATCH_OCEAN.slice(0, 2).map((item) => item.emoji).join(' '),
     }),
     []
   );
@@ -61,7 +61,7 @@ export const CategoryMatchScreen: React.FC = () => {
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.subtitle}>Sort each emoji into Animals, Objects, or Shapes.</Text>
+        <Text style={styles.subtitle}>Sort each emoji into Sky, Land, or Ocean.</Text>
         <Text style={styles.counter}>Correct: {correctCount}</Text>
         {streakCount >= 3 ? <Text style={styles.encouragement}>You're on a roll! ✨</Text> : null}
 
@@ -214,4 +214,3 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       color: colors.cardFront,
     },
   });
-

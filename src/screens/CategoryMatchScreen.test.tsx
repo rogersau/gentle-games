@@ -37,15 +37,15 @@ jest.mock('../components/CategoryMatchBoard', () => {
     CategoryMatchBoard: ({
       onCorrectMatch,
     }: {
-      onCorrectMatch?: (item: { emoji: string; name: string; color: string; category: 'animals' }, category: 'animals') => void;
+      onCorrectMatch?: (item: { emoji: string; name: string; color: string; category: 'sky' }, category: 'sky') => void;
     }) => (
       <View>
         <Text>Mock Category Match Board</Text>
         <TouchableOpacity
           onPress={() =>
             onCorrectMatch?.(
-              { emoji: '🐰', name: 'bunny', color: '#FFB6C1', category: 'animals' },
-              'animals'
+              { emoji: '☀️', name: 'sun', color: '#FFFACD', category: 'sky' },
+              'sky'
             )
           }
         >
@@ -70,6 +70,7 @@ describe('CategoryMatchScreen', () => {
 
   it('increments correct count when the board reports a correct match', () => {
     const screen = render(<CategoryMatchScreen />);
+    expect(screen.getByText('Sort each emoji into Sky, Land, or Ocean.')).toBeTruthy();
     fireEvent.press(screen.getByText('Start Sorting'));
 
     expect(screen.getByText('Correct: 0')).toBeTruthy();
@@ -77,4 +78,3 @@ describe('CategoryMatchScreen', () => {
     expect(screen.getByText('Correct: 1')).toBeTruthy();
   });
 });
-
