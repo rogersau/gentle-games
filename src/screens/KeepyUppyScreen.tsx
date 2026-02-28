@@ -14,6 +14,10 @@ import {
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 
 const STEP_MS = 1000 / 30;
+const BALLOON_WIDTH_RATIO = 1.7;
+const BALLOON_HEIGHT_RATIO = 2.1;
+const BALLOON_STRING_HEIGHT = 22;
+const BALLOON_KNOT_HEIGHT = 8;
 
 export const KeepyUppyScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -101,8 +105,8 @@ export const KeepyUppyScreen: React.FC = () => {
             <View style={styles.grassStripe} />
           </View>
           {balloons.map((balloon) => {
-            const balloonW = balloon.radius * 1.7;
-            const balloonH = balloon.radius * 2.1;
+            const balloonW = balloon.radius * BALLOON_WIDTH_RATIO;
+            const balloonH = balloon.radius * BALLOON_HEIGHT_RATIO;
             return (
               <TouchableOpacity
                 key={balloon.id}
@@ -117,7 +121,7 @@ export const KeepyUppyScreen: React.FC = () => {
                     left: balloon.x - balloon.radius,
                     top: balloon.y - balloon.radius,
                     width: balloon.radius * 2,
-                    height: balloon.radius * 2 + 30,
+                    height: balloon.radius * 2 + BALLOON_KNOT_HEIGHT + BALLOON_STRING_HEIGHT,
                     opacity: balloon.groundedAt === null ? 1 : 0.72,
                   },
                 ]}
@@ -310,13 +314,13 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       height: 0,
       borderLeftWidth: 5,
       borderRightWidth: 5,
-      borderTopWidth: 8,
+      borderTopWidth: BALLOON_KNOT_HEIGHT,
       borderLeftColor: 'transparent',
       borderRightColor: 'transparent',
     },
     balloonString: {
       width: 1.5,
-      height: 22,
+      height: BALLOON_STRING_HEIGHT,
       backgroundColor: resolvedMode === 'dark' ? '#999' : '#BBB',
     },
   });
