@@ -109,6 +109,7 @@ export const ANIMALS = [
   { emoji: '🐿️', name: 'chipmunk', color: '#D2691E' },
 ];
 
+// Legacy name: this is the Memory Snap non-animal icon pool used by "shapes" and "mixed" themes.
 export const SHAPES = [
   { emoji: '🏠', name: 'house', color: '#FFE4C4' },
   { emoji: '🏫', name: 'school', color: '#F5DEB3' },
