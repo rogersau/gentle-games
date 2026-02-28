@@ -127,7 +127,9 @@ export const HomeScreen: React.FC = () => {
 
         <View style={styles.gamesContainer}>
           <Text style={styles.sectionTitle}>Choose a Game</Text>
-          <Text style={styles.scrollHint}>Scroll to see more ↓</Text>
+          {visibleGames.length > 0 && (
+            <Text style={styles.scrollHint}>Scroll to see more ↓</Text>
+          )}
 
           <ScrollView
             style={styles.gamesScroll}
