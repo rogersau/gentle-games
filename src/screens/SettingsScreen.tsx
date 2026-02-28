@@ -44,9 +44,17 @@ export const SettingsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>Settings</Text>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.toolbarButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.toolbarButtonText}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Settings</Text>
+        <TouchableOpacity style={styles.saveButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.saveButtonText}>Save</Text>
+        </TouchableOpacity>
+      </View>
 
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Appearance</Text>
           <View style={styles.modeOptions}>
@@ -185,7 +193,7 @@ export const SettingsScreen: React.FC = () => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Parent Timer</Text>
-          <View style={styles.modeOptions}>
+          <View style={styles.timerOptions}>
             {TIMER_OPTIONS.map((option) => (
               <TouchableOpacity
                 key={option.value}
@@ -225,15 +233,53 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       flex: 1,
       backgroundColor: colors.background,
     },
-    scrollContent: {
-      padding: 24,
+    header: {
+      height: 64,
+      paddingHorizontal: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.cardBack,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.background,
     },
-    title: {
-      fontSize: 32,
+    toolbarButton: {
+      minWidth: 86,
+      height: 40,
+      borderRadius: 20,
+      borderWidth: 2,
+      borderColor: colors.cardBack,
+      backgroundColor: colors.cardFront,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 12,
+    },
+    toolbarButtonText: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: resolvedMode === 'dark' ? colors.background : colors.text,
+    },
+    headerTitle: {
+      fontSize: 24,
       fontWeight: '700',
       color: colors.text,
-      marginBottom: 32,
-      textAlign: 'center',
+    },
+    saveButton: {
+      minWidth: 86,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 16,
+    },
+    saveButtonText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.cardFront,
+    },
+    scrollContent: {
+      padding: 24,
     },
     section: {
       marginBottom: 32,
@@ -256,6 +302,12 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     },
     modeOptions: {
       flexDirection: 'row',
+      gap: 8,
+      marginTop: 4,
+    },
+    timerOptions: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
       gap: 8,
       marginTop: 4,
     },

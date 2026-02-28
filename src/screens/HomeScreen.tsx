@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Modal,
+  ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -117,20 +118,25 @@ export const HomeScreen: React.FC = () => {
 
         <View style={styles.gamesContainer}>
           <Text style={styles.sectionTitle}>Choose a Game</Text>
-          
-          {visibleGames.map((game) => (
-            <TouchableOpacity
-              key={game.id}
-              style={styles.gameCard}
-              onPress={() => handleGameSelect(game)}
-            >
-              <Text style={styles.gameIcon}>{game.icon}</Text>
-              <View style={styles.gameInfo}>
-                <Text style={styles.gameName}>{game.name}</Text>
-                <Text style={styles.gameDescription}>{game.description}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+
+          <ScrollView style={styles.gamesScroll} contentContainerStyle={styles.gamesScrollContent}>
+            {visibleGames.map((game) => (
+              <TouchableOpacity
+                key={game.id}
+                style={styles.gameCard}
+                onPress={() => handleGameSelect(game)}
+              >
+                <Text style={styles.gameIcon}>{game.icon}</Text>
+                <View style={styles.gameInfo}>
+                  <Text style={styles.gameName}>{game.name}</Text>
+                  <Text style={styles.gameDescription}>{game.description}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+            {visibleGames.length === 0 ? (
+              <Text style={styles.emptyGamesText}>All games are hidden. Enable one in Settings.</Text>
+            ) : null}
+          </ScrollView>
         </View>
 
         <TouchableOpacity
@@ -213,9 +219,10 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     padding: 32,
+    paddingTop: 24,
   },
   title: {
     fontSize: 42,
@@ -232,7 +239,14 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   },
   gamesContainer: {
     width: '100%',
+    flex: 1,
     marginBottom: 32,
+  },
+  gamesScroll: {
+    flex: 1,
+  },
+  gamesScrollContent: {
+    paddingBottom: 8,
   },
   sectionTitle: {
     fontSize: 20,
@@ -270,6 +284,12 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   gameDescription: {
     fontSize: 14,
     color: resolvedMode === 'dark' ? colors.cardBack : colors.textLight,
+  },
+  emptyGamesText: {
+    marginTop: 8,
+    fontSize: 15,
+    textAlign: 'center',
+    color: colors.textLight,
   },
   settingsButton: {
     backgroundColor: colors.secondary,

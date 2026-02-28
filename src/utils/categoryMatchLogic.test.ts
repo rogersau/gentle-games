@@ -3,7 +3,7 @@ import { createCategoryMatchRound, isCategoryMatchCorrect } from './categoryMatc
 
 describe('categoryMatchLogic', () => {
   it('creates a round with one item and three categories', () => {
-    const round = createCategoryMatchRound(undefined, () => 0.2);
+    const round = createCategoryMatchRound(undefined, 0, () => 0.2);
 
     expect(round.item).toBeTruthy();
     expect(round.categories).toHaveLength(3);
@@ -12,7 +12,7 @@ describe('categoryMatchLogic', () => {
 
   it('avoids repeating the same item in consecutive rounds', () => {
     const previousItem = CATEGORY_MATCH_ITEMS[0];
-    const nextRound = createCategoryMatchRound(previousItem, () => 0);
+    const nextRound = createCategoryMatchRound(previousItem, 0, () => 0);
 
     expect(nextRound.item.name).not.toBe(previousItem.name);
   });
@@ -28,26 +28,14 @@ describe('categoryMatchLogic', () => {
     expect(isCategoryMatchCorrect(item, 'shapes')).toBe(false);
   });
 
-  it('cycles categories to keep rounds balanced at one-third each', () => {
-    const categories: string[] = [];
-    let round = createCategoryMatchRound(undefined, () => 0);
+  it('does not repeat category on consecutive rounds', () => {
+    let round = createCategoryMatchRound(undefined, 0, () => 0);
 
-    for (let i = 0; i < 9; i++) {
-      categories.push(round.item.category);
-      round = createCategoryMatchRound(round.item, () => 0);
+    for (let i = 0; i < 12; i++) {
+      const nextRound = createCategoryMatchRound(round.item, i + 1, () => 0);
+      expect(nextRound.item.category).not.toBe(round.item.category);
+      round = nextRound;
     }
-
-    expect(categories).toEqual([
-      'animals',
-      'objects',
-      'shapes',
-      'animals',
-      'objects',
-      'shapes',
-      'animals',
-      'objects',
-      'shapes',
-    ]);
   });
 
   it('uses an even item split and keeps sky emojis out of shapes', () => {
@@ -72,6 +60,24 @@ describe('categoryMatchLogic', () => {
     expect(objectNames).toContain('sun');
     expect(objectNames).toContain('moon');
     expect(objectNames).toContain('cloud');
+  });
+
+  it('widens the per-category pool as rounds progress', () => {
+    const previousShape = CATEGORY_MATCH_ITEMS.find((item) => item.category === 'shapes');
+    const objectPool = CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'objects');
+    const earlyObjectNames = objectPool.slice(0, 4).map((item) => item.name);
+    expect(previousShape).toBeTruthy();
+    if (!previousShape) {
+      return;
+    }
+
+    const earlyRound = createCategoryMatchRound(previousShape, 0, () => 0.99);
+    const laterRound = createCategoryMatchRound(previousShape, 20, () => 0.99);
+
+    expect(earlyRound.item.category).toBe('objects');
+    expect(laterRound.item.category).toBe('objects');
+    expect(earlyObjectNames).toContain(earlyRound.item.name);
+    expect(earlyObjectNames).not.toContain(laterRound.item.name);
   });
 });
 

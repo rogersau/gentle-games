@@ -63,13 +63,14 @@ describe('CategoryMatchScreen', () => {
 
   it('goes back when the back button is pressed', () => {
     const screen = render(<CategoryMatchScreen />);
-    fireEvent.press(screen.getByText('←'));
+    fireEvent.press(screen.getByText('← Back'));
 
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 
   it('increments correct count when the board reports a correct match', () => {
     const screen = render(<CategoryMatchScreen />);
+    fireEvent.press(screen.getByText('Start Sorting'));
 
     expect(screen.getByText('Correct: 0')).toBeTruthy();
     fireEvent.press(screen.getByText('Match Correct Item'));

@@ -76,9 +76,9 @@ describe('SettingsScreen', () => {
     expect(screen.queryByText('Difficulty')).toBeNull();
   });
 
-  it('goes back to home when back button is pressed', () => {
+  it('goes back to home when save button is pressed', () => {
     const screen = render(<SettingsScreen />);
-    fireEvent.press(screen.getByText('Back to Home'));
+    fireEvent.press(screen.getByText('Save'));
 
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });

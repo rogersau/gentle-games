@@ -6,13 +6,13 @@ import { BubbleField } from '../components/BubbleField';
 import { ThemeColors } from '../types';
 import { useSettings } from '../context/SettingsContext';
 import { playBubblePopSound } from '../utils/sounds';
-import { useThemeColors } from '../utils/theme';
+import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 
 export const BubbleScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings } = useSettings();
-  const { colors } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, resolvedMode } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const [poppedCount, setPoppedCount] = useState(0);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
@@ -31,7 +31,7 @@ export const BubbleScreen: React.FC = () => {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>←</Text>
+          <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Bubble Pop</Text>
         <View style={styles.backPlaceholder} />
@@ -55,7 +55,7 @@ export const BubbleScreen: React.FC = () => {
   );
 };
 
-const createStyles = (colors: ThemeColors) =>
+const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -71,15 +71,23 @@ const createStyles = (colors: ThemeColors) =>
       borderBottomColor: colors.cardBack,
     },
     backButton: {
-      width: 40,
-      padding: 8,
+      minWidth: 92,
+      height: 40,
+      borderRadius: 20,
+      borderWidth: 2,
+      borderColor: colors.cardBack,
+      backgroundColor: colors.cardFront,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 12,
     },
     backButtonText: {
-      fontSize: 24,
-      color: colors.text,
+      fontSize: 16,
+      fontWeight: '700',
+      color: resolvedMode === 'dark' ? colors.background : colors.text,
     },
     backPlaceholder: {
-      width: 40,
+      width: 92,
     },
     title: {
       fontSize: 22,

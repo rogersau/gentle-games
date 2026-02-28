@@ -21,6 +21,12 @@ const CATEGORY_ITEMS: Record<CategoryMatchCategory, CategoryMatchItem[]> = {
   shapes: CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'shapes'),
 };
 
+const getPoolLimitForRound = (roundsCompleted: number): number => {
+  if (roundsCompleted < 6) return 4;
+  if (roundsCompleted < 15) return 8;
+  return Number.POSITIVE_INFINITY;
+};
+
 const getNextCategory = (
   previousCategory: CategoryMatchCategory | undefined,
   random: () => number
@@ -30,20 +36,21 @@ const getNextCategory = (
     return CATEGORY_SEQUENCE[startIndex];
   }
 
-  const previousIndex = CATEGORY_SEQUENCE.indexOf(previousCategory);
-  const nextIndex = (previousIndex + 1) % CATEGORY_SEQUENCE.length;
-  return CATEGORY_SEQUENCE[nextIndex];
+  const eligible = CATEGORY_SEQUENCE.filter((category) => category !== previousCategory);
+  const nextIndex = Math.floor(random() * eligible.length);
+  return eligible[nextIndex];
 };
 
 const getRoundItem = (
   previousItem: CategoryMatchItem | undefined,
+  roundsCompleted: number,
   random: () => number
 ): CategoryMatchItem => {
   const nextCategory = getNextCategory(previousItem?.category, random);
   const inCategoryPool = CATEGORY_ITEMS[nextCategory];
-  const pool = previousItem
-    ? inCategoryPool.filter((item) => item.name !== previousItem.name)
-    : inCategoryPool;
+  const poolLimit = getPoolLimitForRound(roundsCompleted);
+  const tierPool = Number.isFinite(poolLimit) ? inCategoryPool.slice(0, poolLimit) : inCategoryPool;
+  const pool = previousItem ? tierPool.filter((item) => item.name !== previousItem.name) : tierPool;
   const selectedPool = pool.length > 0 ? pool : inCategoryPool;
 
   const index = Math.floor(random() * selectedPool.length);
@@ -52,9 +59,10 @@ const getRoundItem = (
 
 export const createCategoryMatchRound = (
   previousItem?: CategoryMatchItem,
+  roundsCompleted: number = 0,
   random: () => number = Math.random
 ): CategoryMatchRound => ({
-  item: getRoundItem(previousItem, random),
+  item: getRoundItem(previousItem, roundsCompleted, random),
   categories: [...CATEGORY_MATCH_CATEGORIES],
 });
 

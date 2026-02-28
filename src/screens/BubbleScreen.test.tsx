@@ -72,7 +72,7 @@ describe('BubbleScreen', () => {
 
   it('goes back when the back button is pressed', () => {
     const screen = render(<BubbleScreen />);
-    fireEvent.press(screen.getByText('←'));
+    fireEvent.press(screen.getByText('← Back'));
 
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });

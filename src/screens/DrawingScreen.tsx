@@ -13,14 +13,14 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DrawingCanvas, DrawingCanvasRef, HistoryEntry } from '../components/DrawingCanvas';
 import { ThemeColors } from '../types';
-import { useThemeColors } from '../utils/theme';
+import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 
 const DRAWING_STORAGE_KEY = '@gentle_match_saved_drawing';
 
 export const DrawingScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { colors } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, resolvedMode } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const canvasRef = useRef<DrawingCanvasRef>(null);
@@ -159,7 +159,7 @@ export const DrawingScreen: React.FC = () => {
           onPress={handleBackPress}
           style={styles.backButton}
         >
-          <Text style={styles.backButtonText}>←</Text>
+          <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Drawing Pad</Text>
         <View style={styles.placeholder} />
@@ -224,7 +224,7 @@ export const DrawingScreen: React.FC = () => {
   );
 };
 
-const createStyles = (colors: ThemeColors) =>
+const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
   container: {
     flex: 1,
@@ -250,12 +250,20 @@ const createStyles = (colors: ThemeColors) =>
     height: 60,
   },
   backButton: {
-    padding: 8,
-    width: 40,
+    minWidth: 92,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: colors.cardBack,
+    backgroundColor: colors.cardFront,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
   },
   backButtonText: {
-    fontSize: 24,
-    color: colors.text,
+    fontSize: 16,
+    fontWeight: '700',
+    color: resolvedMode === 'dark' ? colors.background : colors.text,
   },
   title: {
     fontSize: 20,
@@ -263,7 +271,7 @@ const createStyles = (colors: ThemeColors) =>
     color: colors.text,
   },
   placeholder: {
-    width: 40,
+    width: 92,
   },
   content: {
     flex: 1,

@@ -1,13 +1,16 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, StyleSheet, Text, View } from 'react-native';
 import { CategoryMatchCategory, CategoryMatchItem, ThemeColors } from '../types';
 import { createCategoryMatchRound, isCategoryMatchCorrect } from '../utils/categoryMatchLogic';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
+import { useSettings } from '../context/SettingsContext';
+import { playFlipSound, playMatchSound } from '../utils/sounds';
 
 interface CategoryMatchBoardProps {
   width: number;
   height: number;
   onCorrectMatch?: (item: CategoryMatchItem, category: CategoryMatchCategory) => void;
+  onIncorrectMatch?: () => void;
 }
 
 interface DropZone {
@@ -28,12 +31,18 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   width,
   height,
   onCorrectMatch,
+  onIncorrectMatch,
 }) => {
+  const { settings } = useSettings();
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
-  const [round, setRound] = useState(() => createCategoryMatchRound());
+  const [round, setRound] = useState(() => createCategoryMatchRound(undefined, 0));
+  const [, setRoundsCompleted] = useState(0);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const [activeDropCategory, setActiveDropCategory] = useState<CategoryMatchCategory | null>(null);
+  const activeDropCategoryRef = useRef<CategoryMatchCategory | null>(null);
   const dragPosition = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const tokenScale = useRef(new Animated.Value(1)).current;
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const boardPadding = 12;
@@ -95,14 +104,32 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
     }, FEEDBACK_DURATION_MS);
   };
 
-  const getDropTarget = (x: number, y: number): DropZone | undefined =>
-    zones.find(
-      (zone) =>
-        x >= zone.x &&
-        x <= zone.x + zone.width &&
-        y >= zone.y &&
-        y <= zone.y + zone.height
-    );
+  const playCorrectPulse = () => {
+    Animated.sequence([
+      Animated.timing(tokenScale, {
+        toValue: 1.08,
+        duration: 90,
+        useNativeDriver: true,
+      }),
+      Animated.timing(tokenScale, {
+        toValue: 1,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const getDropTarget = useCallback(
+    (x: number, y: number): DropZone | undefined =>
+      zones.find(
+        (zone) =>
+          x >= zone.x &&
+          x <= zone.x + zone.width &&
+          y >= zone.y &&
+          y <= zone.y + zone.height
+      ),
+    [zones]
+  );
 
   const panResponder = useMemo(
     () =>
@@ -111,11 +138,21 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
         onMoveShouldSetPanResponder: () => true,
         onPanResponderMove: (_, gestureState) => {
           dragPosition.setValue({ x: gestureState.dx, y: gestureState.dy });
+          const hoverX = tokenCenterX + gestureState.dx;
+          const hoverY = tokenCenterY + gestureState.dy;
+          const hoveredZone = getDropTarget(hoverX, hoverY);
+          const nextActive = hoveredZone?.category ?? null;
+          if (nextActive !== activeDropCategoryRef.current) {
+            activeDropCategoryRef.current = nextActive;
+            setActiveDropCategory(nextActive);
+          }
         },
         onPanResponderRelease: (_, gestureState) => {
           const dropX = tokenCenterX + gestureState.dx;
           const dropY = tokenCenterY + gestureState.dy;
           const droppedZone = getDropTarget(dropX, dropY);
+          activeDropCategoryRef.current = null;
+          setActiveDropCategory(null);
 
           if (!droppedZone) {
             springTokenBack();
@@ -126,18 +163,39 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
             const matchedItem = round.item;
             snapTokenBack();
             showFeedback('Great match!', true);
-            setRound((previousRound) => createCategoryMatchRound(previousRound.item));
+            void playMatchSound(settings);
+            playCorrectPulse();
+            setRoundsCompleted((previousCount) => {
+              const nextCount = previousCount + 1;
+              setRound((previousRound) => createCategoryMatchRound(previousRound.item, nextCount));
+              return nextCount;
+            });
             onCorrectMatch?.(matchedItem, droppedZone.category);
           } else {
             showFeedback('Try a different category', false);
+            void playFlipSound(settings);
+            onIncorrectMatch?.();
             springTokenBack();
           }
         },
         onPanResponderTerminate: () => {
+          activeDropCategoryRef.current = null;
+          setActiveDropCategory(null);
           springTokenBack();
         },
       }),
-    [dragPosition, onCorrectMatch, round.item, tokenCenterX, tokenCenterY, zones]
+    [
+      dragPosition,
+      getDropTarget,
+      onCorrectMatch,
+      onIncorrectMatch,
+      round.item,
+      settings,
+      tokenCenterX,
+      tokenCenterY,
+      tokenScale,
+      zones,
+    ]
   );
 
   return (
@@ -148,15 +206,15 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
         testID="category-draggable-token"
         style={[
           styles.draggableToken,
-          {
-            left: tokenStartX,
-            top: tokenStartY,
-            width: tokenSize,
-            height: tokenSize,
-            transform: dragPosition.getTranslateTransform(),
-          },
-        ]}
-        {...panResponder.panHandlers}
+            {
+              left: tokenStartX,
+              top: tokenStartY,
+              width: tokenSize,
+              height: tokenSize,
+              transform: [...dragPosition.getTranslateTransform(), { scale: tokenScale }],
+            },
+          ]}
+          {...panResponder.panHandlers}
       >
         <Text style={[styles.emojiText, { fontSize: Math.floor(tokenSize * 0.5) }]}>
           {round.item.emoji}
@@ -176,7 +234,14 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
 
       <View style={[styles.zoneRow, { top: zoneTop, left: boardPadding, right: boardPadding }]}>
         {zones.map((zone) => (
-          <View key={zone.category} style={[styles.zoneCard, { width: zone.width, height: zone.height }]}>
+          <View
+            key={zone.category}
+            style={[
+              styles.zoneCard,
+              { width: zone.width, height: zone.height },
+              activeDropCategory === zone.category ? styles.zoneCardActive : undefined,
+            ]}
+          >
             <Text style={styles.zoneIcon}>{zone.icon}</Text>
             <Text style={styles.zoneLabel}>{zone.label}</Text>
           </View>
@@ -241,6 +306,10 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: 8,
+    },
+    zoneCardActive: {
+      borderColor: colors.primary,
+      backgroundColor: resolvedMode === 'dark' ? colors.primary : colors.matched,
     },
     zoneIcon: {
       fontSize: 30,

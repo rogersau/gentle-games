@@ -181,7 +181,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onBackPress} style={styles.backButton}>
-          <Text style={styles.backButtonText}>←</Text>
+          <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.timerText}>{startTime ? formatTime(elapsed) : '—'}</Text>
         <Text style={styles.movesText}>Moves: {moves}</Text>
@@ -235,12 +235,20 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       marginBottom: 16,
     },
     backButton: {
-      padding: 8,
-      marginRight: 8,
+      minWidth: 92,
+      height: 40,
+      borderRadius: 20,
+      borderWidth: 2,
+      borderColor: colors.cardBack,
+      backgroundColor: colors.cardFront,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 12,
     },
     backButtonText: {
-      fontSize: 24,
-      color: colors.text,
+      fontSize: 16,
+      fontWeight: '700',
+      color: resolvedMode === 'dark' ? colors.background : colors.text,
     },
     timerText: {
       flex: 1,

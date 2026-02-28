@@ -57,7 +57,7 @@ describe('GlitterScreen', () => {
 
   it('goes back when back button is pressed', () => {
     const screen = render(<GlitterScreen />);
-    fireEvent.press(screen.getByText('←'));
+    fireEvent.press(screen.getByText('← Back'));
 
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });

@@ -4,12 +4,12 @@ import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlitterGlobe, GlitterGlobeRef } from '../components/GlitterGlobe';
 import { ThemeColors } from '../types';
-import { useThemeColors } from '../utils/theme';
+import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 
 export const GlitterScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { colors } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, resolvedMode } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const globeRef = useRef<GlitterGlobeRef>(null);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
@@ -23,7 +23,7 @@ export const GlitterScreen: React.FC = () => {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>←</Text>
+          <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Glitter Fall</Text>
         <View style={styles.backPlaceholder} />
@@ -49,7 +49,7 @@ export const GlitterScreen: React.FC = () => {
   );
 };
 
-const createStyles = (colors: ThemeColors) =>
+const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -65,15 +65,23 @@ const createStyles = (colors: ThemeColors) =>
       borderBottomColor: colors.cardBack,
     },
     backButton: {
-      width: 40,
-      padding: 8,
+      minWidth: 92,
+      height: 40,
+      borderRadius: 20,
+      borderWidth: 2,
+      borderColor: colors.cardBack,
+      backgroundColor: colors.cardFront,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 12,
     },
     backButtonText: {
-      fontSize: 24,
-      color: colors.text,
+      fontSize: 16,
+      fontWeight: '700',
+      color: resolvedMode === 'dark' ? colors.background : colors.text,
     },
     backPlaceholder: {
-      width: 40,
+      width: 92,
     },
     title: {
       fontSize: 22,
