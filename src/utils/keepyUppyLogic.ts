@@ -17,10 +17,10 @@ export interface KeepyUppyBounds {
 }
 
 export const MAX_BALLOONS = 3;
-export const GROUND_POP_DELAY_MS = 850;
+export const GROUND_POP_DELAY_MS = 1200;
 
-const GRAVITY = 260;
-const AIR_DRAG = 0.992;
+const GRAVITY = 200;
+const AIR_DRAG = 0.993;
 const BALLOON_RADIUS = 34;
 const BOUNCE = 0.62;
 
@@ -72,8 +72,8 @@ export const tapBalloon = (
   const dx = balloon.x - tapX;
   const dy = balloon.y - tapY;
   const distance = Math.max(1, Math.hypot(dx, dy));
-  const horizontalPush = (dx / distance) * 120;
-  const upwardPush = Math.max(0.65, -dy / distance + 0.9) * 250;
+  const horizontalPush = (dx / distance) * 130;
+  const upwardPush = Math.max(0.65, -dy / distance + 0.9) * 280;
 
   return {
     ...balloon,

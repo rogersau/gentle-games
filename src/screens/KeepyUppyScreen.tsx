@@ -14,6 +14,10 @@ import {
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 
 const STEP_MS = 1000 / 30;
+const BALLOON_WIDTH_RATIO = 1.7;
+const BALLOON_HEIGHT_RATIO = 2.1;
+const BALLOON_STRING_HEIGHT = 22;
+const BALLOON_KNOT_HEIGHT = 8;
 
 export const KeepyUppyScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -57,8 +61,10 @@ export const KeepyUppyScreen: React.FC = () => {
   }, [bounds]);
 
   const handleBalloonPress = useCallback((balloon: KeepyUppyBalloon, locationX: number, locationY: number) => {
-    const tapX = balloon.x - balloon.radius + locationX;
-    const tapY = balloon.y - balloon.radius + locationY;
+    const balloonW = balloon.radius * BALLOON_WIDTH_RATIO;
+    const balloonH = balloon.radius * BALLOON_HEIGHT_RATIO;
+    const tapX = balloon.x - balloonW / 2 + locationX;
+    const tapY = balloon.y - balloonH / 2 + locationY;
     setScore((value) => value + 1);
     setBalloons((previous) =>
       previous.map((current) => (current.id === balloon.id ? tapBalloon(current, tapX, tapY) : current))
@@ -92,31 +98,58 @@ export const KeepyUppyScreen: React.FC = () => {
 
         <View style={[styles.board, { width: bounds.width, height: bounds.height }]}>
           <View style={styles.sun} />
-          <View style={styles.ground} />
-          {balloons.map((balloon) => (
-            <TouchableOpacity
-              key={balloon.id}
-              accessibilityRole="button"
-              testID={`balloon-${balloon.id}`}
-              onPressIn={(event) =>
-                handleBalloonPress(balloon, event.nativeEvent.locationX, event.nativeEvent.locationY)
-              }
-              style={[
-                styles.balloon,
-                {
-                  left: balloon.x - balloon.radius,
-                  top: balloon.y - balloon.radius,
-                  width: balloon.radius * 2,
-                  height: balloon.radius * 2,
-                  borderRadius: balloon.radius,
-                  backgroundColor: balloon.color,
-                  opacity: balloon.groundedAt === null ? 1 : 0.72,
-                },
-              ]}
-            >
-              <Text style={styles.balloonIcon}>🎈</Text>
-            </TouchableOpacity>
-          ))}
+          {/* Clouds */}
+          <View style={[styles.cloud, styles.cloud1]} />
+          <View style={[styles.cloud, styles.cloud2]} />
+          <View style={[styles.cloud, styles.cloud3]} />
+          {/* Ground with grass */}
+          <View style={styles.ground}>
+            <View style={styles.grassStripe} />
+          </View>
+          {balloons.map((balloon) => {
+            const balloonW = balloon.radius * BALLOON_WIDTH_RATIO;
+            const balloonH = balloon.radius * BALLOON_HEIGHT_RATIO;
+            return (
+              <TouchableOpacity
+                key={balloon.id}
+                accessibilityRole="button"
+                testID={`balloon-${balloon.id}`}
+                onPressIn={(event) =>
+                  handleBalloonPress(balloon, event.nativeEvent.locationX, event.nativeEvent.locationY)
+                }
+                style={[
+                  styles.balloonHitArea,
+                  {
+                    left: balloon.x - balloonW / 2,
+                    top: balloon.y - balloonH / 2,
+                    width: balloonW,
+                    height: balloonH + BALLOON_KNOT_HEIGHT + BALLOON_STRING_HEIGHT,
+                    opacity: balloon.groundedAt === null ? 1 : 0.72,
+                  },
+                ]}
+              >
+                {/* Balloon body – oval */}
+                <View
+                  style={[
+                    styles.balloonBody,
+                    {
+                      width: balloonW,
+                      height: balloonH,
+                      borderRadius: balloonW / 2,
+                      backgroundColor: balloon.color,
+                    },
+                  ]}
+                >
+                  {/* Shine highlight */}
+                  <View style={styles.balloonShine} />
+                </View>
+                {/* Knot */}
+                <View style={[styles.balloonKnot, { borderTopColor: balloon.color }]} />
+                {/* String */}
+                <View style={styles.balloonString} />
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
     </SafeAreaView>
@@ -210,28 +243,86 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       position: 'absolute',
       right: 18,
       top: 16,
-      width: 34,
-      height: 34,
-      borderRadius: 17,
+      width: 38,
+      height: 38,
+      borderRadius: 19,
       backgroundColor: colors.success,
       opacity: 0.9,
+      borderWidth: 3,
+      borderColor: `${colors.success}80`,
+    },
+    cloud: {
+      position: 'absolute',
+      backgroundColor: `${colors.cardFront}${resolvedMode === 'dark' ? '30' : 'B3'}`,
+      borderRadius: 20,
+    },
+    cloud1: {
+      width: 70,
+      height: 28,
+      top: 22,
+      left: 24,
+    },
+    cloud2: {
+      width: 56,
+      height: 22,
+      top: 56,
+      right: 60,
+    },
+    cloud3: {
+      width: 64,
+      height: 24,
+      top: 90,
+      left: 80,
     },
     ground: {
       position: 'absolute',
       left: 0,
       right: 0,
       bottom: 0,
-      height: 44,
-      backgroundColor: colors.surfaceGame,
+      height: 50,
+      backgroundColor: colors.success,
+      borderTopWidth: 3,
+      borderTopColor: colors.cardBack,
     },
-    balloon: {
+    grassStripe: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 0,
+      height: 8,
+      backgroundColor: `${colors.cardFront}40`,
+    },
+    balloonHitArea: {
       position: 'absolute',
       alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 2,
-      borderColor: colors.cardFront,
     },
-    balloonIcon: {
-      fontSize: 30,
+    balloonBody: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: `${colors.text}1A`,
+    },
+    balloonShine: {
+      position: 'absolute',
+      top: 11,
+      left: 10,
+      width: 16,
+      height: 16,
+      borderRadius: 100,
+      backgroundColor: `${colors.cardFront}73`,
+    },
+    balloonKnot: {
+      width: 0,
+      height: 0,
+      borderLeftWidth: 5,
+      borderRightWidth: 5,
+      borderTopWidth: BALLOON_KNOT_HEIGHT,
+      borderLeftColor: 'transparent',
+      borderRightColor: 'transparent',
+    },
+    balloonString: {
+      width: 1.5,
+      height: BALLOON_STRING_HEIGHT,
+      backgroundColor: colors.matched,
     },
   });
