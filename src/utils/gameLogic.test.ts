@@ -55,6 +55,20 @@ describe('gameLogic', () => {
     expect(shapeNames).toContain('castle');
   });
 
+  it('uses objects and places instead of geometric shapes in the non-animal pool', () => {
+    const shapeNames = SHAPES.map((shape) => shape.name);
+    expect(shapeNames).not.toContain('circle');
+    expect(shapeNames).not.toContain('square');
+    expect(shapeNames).not.toContain('triangle');
+  });
+
+  it('keeps visually similar lizard/caterpillar pair out of the animal pool', () => {
+    const animalNames = ANIMALS.map((animal) => animal.name);
+    expect(animalNames).toContain('lizard');
+    expect(animalNames).not.toContain('caterpillar');
+    expect(animalNames).toContain('giraffe');
+  });
+
   it('formats timer output correctly', () => {
     expect(formatTime(0)).toBe('0s');
     expect(formatTime(59_000)).toBe('59s');
