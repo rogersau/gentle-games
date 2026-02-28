@@ -40,7 +40,7 @@ export const DrawingScreen: React.FC = () => {
 
     return {
       width: availableWidth,
-      height: Math.max(260, availableHeight),
+      height: Math.max(0, availableHeight),
     };
   }, [screenWidth, screenHeight, insets.top, insets.bottom]);
 
