@@ -49,13 +49,14 @@ interface GlitterGlobeProps {
 const BASE_GRAVITY = 10;
 const DRAG = 0.988;
 const BOUNCE = 0.4;
+const PARTICLE_BOUNCE = 0.6;
 const MAX_FRAME_SECONDS = 1 / 30;
 const GLOBE_PADDING = 10;
 const FINGER_INFLUENCE_RADIUS = 96;
 const FINGER_PUSH = 16;
 const SHAKE_IMPULSE = 45;
 const MAX_SPEED = 65;
-const LARGE_PIECE_CHANCE = 0.22;
+const LARGE_PIECE_CHANCE = 0.30;
 const WAKE_INTERVAL_MS = 45;
 const WAKE_MAX_TRAIL = 22;
 const WAKE_FADE_PER_SECOND = 2.2;
@@ -105,7 +106,7 @@ const createParticle = (width: number, height: number): GlitterParticle => {
     y: spawnY,
     vx: randomInRange(-10, 10),
     vy: randomInRange(4, 18),
-    radius: isLargePiece ? randomInRange(8.5, 13.5) : randomInRange(2, 4),
+    radius: isLargePiece ? randomInRange(12, 18) : randomInRange(4, 7),
     shape: PARTICLE_SHAPES[Math.floor(Math.random() * PARTICLE_SHAPES.length)],
     color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
     opacity: randomInRange(0.6, 0.95),
@@ -159,6 +160,48 @@ const clampParticleToGlobe = (
   };
 };
 
+const resolveParticleCollisions = (particles: GlitterParticle[]): GlitterParticle[] => {
+  if (particles.length < 2) return particles;
+
+  const result = particles.map((p) => ({ ...p }));
+
+  for (let i = 0; i < result.length; i++) {
+    for (let j = i + 1; j < result.length; j++) {
+      const a = result[i];
+      const b = result[j];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const distSq = dx * dx + dy * dy;
+      const minDist = a.radius + b.radius;
+
+      if (distSq >= minDist * minDist) continue;
+
+      const dist = Math.sqrt(distSq) || 0.01;
+      const nx = dx / dist;
+      const ny = dy / dist;
+
+      // Separate overlapping particles equally
+      const halfOverlap = (minDist - dist) / 2;
+      result[i].x -= nx * halfOverlap;
+      result[i].y -= ny * halfOverlap;
+      result[j].x += nx * halfOverlap;
+      result[j].y += ny * halfOverlap;
+
+      // Elastic impulse (equal mass) along collision normal
+      const dvn = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
+      if (dvn > 0) {
+        const impulse = (1 + PARTICLE_BOUNCE) * dvn / 2;
+        result[i].vx -= impulse * nx;
+        result[i].vy -= impulse * ny;
+        result[j].vx += impulse * nx;
+        result[j].vy += impulse * ny;
+      }
+    }
+  }
+
+  return result;
+};
+
 const stepParticles = (
   particles: GlitterParticle[],
   dt: number,
@@ -172,21 +215,21 @@ const stepParticles = (
   const globeRadius = Math.min(width, height) / 2 - GLOBE_PADDING;
   const damping = Math.pow(DRAG, dt * 60);
 
-  return particles.map((particle) => {
+  const moved = particles.map((particle) => {
     const vx = (particle.vx + gravityX * dt) * damping;
     const vy = (particle.vy + gravityY * dt) * damping;
     const clampedVx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, vx));
     const clampedVy = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, vy));
     const x = particle.x + clampedVx * dt;
     const y = particle.y + clampedVy * dt;
-
-    return clampParticleToGlobe(
-      { ...particle, x, y, vx: clampedVx, vy: clampedVy },
-      centerX,
-      centerY,
-      globeRadius
-    );
+    return { ...particle, x, y, vx: clampedVx, vy: clampedVy };
   });
+
+  const collided = resolveParticleCollisions(moved);
+
+  return collided.map((particle) =>
+    clampParticleToGlobe(particle, centerX, centerY, globeRadius)
+  );
 };
 
 const applyShakeImpulse = (
