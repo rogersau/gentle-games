@@ -13,6 +13,7 @@ import { GlitterScreen } from './src/screens/GlitterScreen';
 import { BubbleScreen } from './src/screens/BubbleScreen';
 import { CategoryMatchScreen } from './src/screens/CategoryMatchScreen';
 import { initializeSounds, unloadSounds } from './src/utils/sounds';
+import { installPwaBackNavigationGuard } from './src/utils/pwaBackGuard';
 import { useThemeColors } from './src/utils/theme';
 
 const Stack = createStackNavigator();
@@ -48,6 +49,10 @@ export default function App() {
     return () => {
       unloadSounds();
     };
+  }, []);
+
+  useEffect(() => {
+    return installPwaBackNavigationGuard();
   }, []);
 
   return (
