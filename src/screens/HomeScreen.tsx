@@ -51,6 +51,12 @@ const GAMES: Game[] = [
     description: 'Drag to sort by category',
     icon: '🗂️',
   },
+  {
+    id: 'keepy-uppy',
+    name: 'Keepy Uppy',
+    description: 'Tap balloons in the backyard',
+    icon: '🎈',
+  },
 ];
 
 const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; description: string }[] = [
@@ -85,6 +91,9 @@ export const HomeScreen: React.FC = () => {
       setSelectedGame(null);
     } else if (game.id === 'category-match') {
       navigation.navigate('CategoryMatch' as never);
+      setSelectedGame(null);
+    } else if (game.id === 'keepy-uppy') {
+      navigation.navigate('KeepyUppy' as never);
       setSelectedGame(null);
     } else {
       setShowDifficultySelector(true);

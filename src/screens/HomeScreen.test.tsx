@@ -73,6 +73,13 @@ describe('HomeScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('CategoryMatch');
   });
 
+  it('navigates directly to Keepy Uppy screen when Keepy Uppy is selected', () => {
+    const screen = render(<HomeScreen />);
+    fireEvent.press(screen.getByText('Keepy Uppy'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('KeepyUppy');
+  });
+
   it('shows difficulty modal for Memory Snap and navigates to Game after selection', async () => {
     const screen = render(<HomeScreen />);
 
@@ -96,5 +103,6 @@ describe('HomeScreen', () => {
     expect(screen.getByText('Memory Snap')).toBeTruthy();
     expect(screen.getByText('Glitter Fall')).toBeTruthy();
     expect(screen.getByText('Category Match')).toBeTruthy();
+    expect(screen.getByText('Keepy Uppy')).toBeTruthy();
   });
 });
