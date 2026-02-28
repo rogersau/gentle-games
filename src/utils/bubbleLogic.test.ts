@@ -21,8 +21,10 @@ describe('bubbleLogic', () => {
   });
 
   it('can spawn a bubble lower in the field with a smaller initial size', () => {
-    const [bubble] = ensureMinimumBubbles([], 1, 300, 400, 3, sequenceRng([0.5, 0.2, 0.3, 0.4, 0.7]));
-    expect(bubble.y).toBeGreaterThan(80);
+    const fieldHeight = 400;
+    const [bubble] = ensureMinimumBubbles([], 1, 300, fieldHeight, 3, sequenceRng([0.5, 0.2, 0.3, 0.4, 0.7]));
+    expect(bubble.y).toBeGreaterThanOrEqual(fieldHeight * 0.22);
+    expect(bubble.y).toBeLessThanOrEqual(fieldHeight * 0.62);
     expect(bubble.radius).toBeLessThan(bubble.targetRadius);
     expect(bubble.growthPerSecond).toBeGreaterThan(0);
   });

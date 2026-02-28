@@ -20,6 +20,15 @@ const BUBBLE_COLORS = [
   PASTEL_COLORS.success,
   PASTEL_COLORS.cardBack,
 ];
+const LOWER_SPAWN_PROBABILITY = 0.35;
+const LOWER_SPAWN_MIN_HEIGHT_RATIO = 0.22;
+const LOWER_SPAWN_MAX_HEIGHT_RATIO = 0.62;
+const MIN_INITIAL_SIZE_RATIO = 0.45;
+const MAX_INITIAL_SIZE_RATIO = 0.75;
+const TOP_SPAWN_MIN_OFFSET = 6;
+const TOP_SPAWN_MAX_OFFSET = 42;
+const MIN_GROWTH_SPEED = 8;
+const MAX_GROWTH_SPEED = 18;
 
 const randomInRange = (min: number, max: number, rng: () => number): number =>
   min + (max - min) * rng();
@@ -32,18 +41,24 @@ export const createBubble = (
   const targetRadius = randomInRange(18, 44, rng);
   const minX = targetRadius;
   const maxX = Math.max(targetRadius, width - targetRadius);
-  const startsLower = rng() < 0.35;
-  const radius = startsLower ? targetRadius * randomInRange(0.45, 0.75, rng) : targetRadius;
+  const startsLower = rng() < LOWER_SPAWN_PROBABILITY;
+  const radius = startsLower
+    ? targetRadius * randomInRange(MIN_INITIAL_SIZE_RATIO, MAX_INITIAL_SIZE_RATIO, rng)
+    : targetRadius;
 
   return {
     id: `bubble-${bubbleCounter++}`,
     x: randomInRange(minX, maxX, rng),
     y: startsLower
-      ? randomInRange(height * 0.22, height * 0.62, rng)
-      : -targetRadius - randomInRange(6, 42, rng),
+      ? randomInRange(
+          height * LOWER_SPAWN_MIN_HEIGHT_RATIO,
+          height * LOWER_SPAWN_MAX_HEIGHT_RATIO,
+          rng
+        )
+      : -targetRadius - randomInRange(TOP_SPAWN_MIN_OFFSET, TOP_SPAWN_MAX_OFFSET, rng),
     radius,
     targetRadius,
-    growthPerSecond: startsLower ? randomInRange(8, 18, rng) : 0,
+    growthPerSecond: startsLower ? randomInRange(MIN_GROWTH_SPEED, MAX_GROWTH_SPEED, rng) : 0,
     speed: randomInRange(24, 52, rng),
     color: BUBBLE_COLORS[Math.floor(rng() * BUBBLE_COLORS.length)],
     opacity: randomInRange(0.38, 0.7, rng),
