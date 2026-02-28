@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
-import { Dimensions } from 'react-native';
+import { Dimensions, ScaledSize } from 'react-native';
 
 const mockGoBack = jest.fn();
 const mockDispatch = jest.fn();
@@ -74,8 +74,18 @@ import {
 describe('DrawingScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Dimensions, 'get').mockReturnValue({
+      width: 390,
+      height: 844,
+      scale: 2,
+      fontScale: 2,
+    } as ScaledSize);
     mockInsets.top = 500;
     mockInsets.bottom = 500;
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('uses remaining space for canvas height on small screens', async () => {
