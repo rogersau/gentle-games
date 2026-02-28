@@ -65,7 +65,6 @@ const writeManifest = () => {
 
 const writeServiceWorker = () => {
   const cacheEntries = [
-    './',
     './index.html',
     './manifest.webmanifest',
     './icons/icon-32x32.png',
@@ -105,8 +104,10 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request)
         .then((response) => {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', copy));
-          return response;
+          return caches
+            .open(CACHE_NAME)
+            .then((cache) => cache.put('./index.html', copy))
+            .then(() => response);
         })
         .catch(() => caches.match(NAVIGATION_FALLBACK))
     );
@@ -139,14 +140,24 @@ self.addEventListener('fetch', (event) => {
 const patchIndexHtml = () => {
   let html = fs.readFileSync(indexPath, 'utf8');
 
-  if (!html.includes('manifest.webmanifest')) {
+  if (html.includes('manifest.webmanifest')) {
+    html = html.replace(
+      /href="[^"]*manifest\.webmanifest[^"]*"/,
+      `href="${getManifestTag()}"`
+    );
+  } else {
     html = html.replace(
       '</head>',
       `  <link rel="manifest" href="${getManifestTag()}" />\n  <link rel="apple-touch-icon" href="./icons/icon-180x180.png" />\n  <link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32x32.png" />\n</head>`
     );
   }
 
-  if (!html.includes("serviceWorker.register('./sw.js?v=")) {
+  if (html.includes('serviceWorker.register(')) {
+    html = html.replace(
+      /serviceWorker\.register\([^)]*\)/,
+      `serviceWorker.register('${getServiceWorkerTag()}')`
+    );
+  } else {
     html = html.replace(
       '</body>',
       `  <script>\n    if ('serviceWorker' in navigator) {\n      window.addEventListener('load', function () {\n        navigator.serviceWorker.register('${getServiceWorkerTag()}');\n      });\n    }\n  </script>\n</body>`

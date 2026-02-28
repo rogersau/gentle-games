@@ -18,4 +18,13 @@ describe('prepare-pwa cache busting helpers', () => {
     expect(pwa.getManifestTag()).toBe('./manifest.webmanifest?v=abc123');
     expect(pwa.getServiceWorkerTag()).toBe('./sw.js?v=abc123');
   });
+
+  it('falls back to timestamp-based version when GITHUB_SHA is missing', () => {
+    delete process.env.GITHUB_SHA;
+    const pwa = require('./prepare-pwa');
+
+    expect(pwa.getCacheName()).toMatch(/^gentle-games-\d+$/);
+    expect(pwa.getManifestTag()).toMatch(/^\.\/manifest\.webmanifest\?v=\d+$/);
+    expect(pwa.getServiceWorkerTag()).toMatch(/^\.\/sw\.js\?v=\d+$/);
+  });
 });
