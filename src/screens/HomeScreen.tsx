@@ -256,7 +256,10 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   },
   gamesContainer: {
     width: '100%',
-    height: 320,
+    flex: 1,
+    maxHeight: 320,
+    flexShrink: 1,
+    minHeight: 0,
     marginBottom: 32,
   },
   gamesScroll: {
