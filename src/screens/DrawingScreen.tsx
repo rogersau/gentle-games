@@ -16,6 +16,9 @@ import { ThemeColors } from '../types';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 
 const DRAWING_STORAGE_KEY = '@gentle_match_saved_drawing';
+export const DRAWING_HEADER_HEIGHT = 60;
+export const DRAWING_TOOLBAR_HEIGHT = 140;
+export const DRAWING_LAYOUT_PADDING = 32;
 
 export const DrawingScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -31,16 +34,18 @@ export const DrawingScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const canvasDimensions = useMemo(() => {
-    const headerHeight = 60;
-    const toolbarHeight = 140;
-    const padding = 32;
-    
-    const availableWidth = screenWidth - padding;
-    const availableHeight = screenHeight - insets.top - insets.bottom - headerHeight - toolbarHeight - padding;
+    const availableWidth = screenWidth - DRAWING_LAYOUT_PADDING;
+    const availableHeight =
+      screenHeight -
+      insets.top -
+      insets.bottom -
+      DRAWING_HEADER_HEIGHT -
+      DRAWING_TOOLBAR_HEIGHT -
+      DRAWING_LAYOUT_PADDING;
 
     return {
       width: availableWidth,
-      height: Math.max(260, availableHeight),
+      height: Math.max(0, availableHeight),
     };
   }, [screenWidth, screenHeight, insets.top, insets.bottom]);
 
@@ -247,7 +252,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.cardBack,
-    height: 60,
+    height: DRAWING_HEADER_HEIGHT,
   },
   backButton: {
     minWidth: 92,
