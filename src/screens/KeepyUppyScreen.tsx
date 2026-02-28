@@ -1,11 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSettings } from '../context/SettingsContext';
 import { ThemeColors } from '../types';
 import {
   addBalloon,
   createBalloon,
+  flickBalloon,
   KeepyUppyBalloon,
   MAX_BALLOONS,
   stepBalloons,
@@ -21,11 +23,13 @@ const BALLOON_KNOT_HEIGHT = 8;
 
 export const KeepyUppyScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { settings } = useSettings();
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const [score, setScore] = useState(0);
   const [popped, setPopped] = useState(0);
+  const touchStartRef = useRef<Record<string, { x: number; y: number; startedAt: number }>>({});
 
   const bounds = useMemo(() => {
     const width = Math.max(260, screenWidth - 24);
@@ -60,14 +64,41 @@ export const KeepyUppyScreen: React.FC = () => {
     setBalloons((previous) => addBalloon(previous, bounds));
   }, [bounds]);
 
-  const handleBalloonPress = useCallback((balloon: KeepyUppyBalloon, locationX: number, locationY: number) => {
+  const toBoardPoint = useCallback((balloon: KeepyUppyBalloon, locationX: number, locationY: number) => {
     const balloonW = balloon.radius * BALLOON_WIDTH_RATIO;
     const balloonH = balloon.radius * BALLOON_HEIGHT_RATIO;
-    const tapX = balloon.x - balloonW / 2 + locationX;
-    const tapY = balloon.y - balloonH / 2 + locationY;
+    return {
+      x: balloon.x - balloonW / 2 + locationX,
+      y: balloon.y - balloonH / 2 + locationY,
+    };
+  }, []);
+
+  const handleBalloonPress = useCallback((balloon: KeepyUppyBalloon, locationX: number, locationY: number) => {
+    const tapPoint = toBoardPoint(balloon, locationX, locationY);
     setScore((value) => value + 1);
     setBalloons((previous) =>
-      previous.map((current) => (current.id === balloon.id ? tapBalloon(current, tapX, tapY) : current))
+      previous.map((current) =>
+        current.id === balloon.id ? tapBalloon(current, tapPoint.x, tapPoint.y, settings.keepyUppyEasyMode) : current
+      )
+    );
+  }, [settings.keepyUppyEasyMode, toBoardPoint]);
+
+  const handleBalloonRelease = useCallback((balloon: KeepyUppyBalloon, locationX: number, locationY: number) => {
+    const touchStart = touchStartRef.current[balloon.id];
+    delete touchStartRef.current[balloon.id];
+    if (!touchStart) {
+      return;
+    }
+    const deltaX = locationX - touchStart.x;
+    const deltaY = locationY - touchStart.y;
+    const durationMs = Math.max(1, Date.now() - touchStart.startedAt);
+    if (Math.hypot(deltaX, deltaY) < 8 || durationMs > 500) {
+      return;
+    }
+    setBalloons((previous) =>
+      previous.map((current) =>
+        current.id === balloon.id ? flickBalloon(current, deltaX, deltaY, durationMs) : current
+      )
     );
   }, []);
 
@@ -114,8 +145,16 @@ export const KeepyUppyScreen: React.FC = () => {
                 key={balloon.id}
                 accessibilityRole="button"
                 testID={`balloon-${balloon.id}`}
-                onPressIn={(event) =>
-                  handleBalloonPress(balloon, event.nativeEvent.locationX, event.nativeEvent.locationY)
+                onPressIn={(event) => {
+                  touchStartRef.current[balloon.id] = {
+                    x: event.nativeEvent.locationX,
+                    y: event.nativeEvent.locationY,
+                    startedAt: Date.now(),
+                  };
+                  handleBalloonPress(balloon, event.nativeEvent.locationX, event.nativeEvent.locationY);
+                }}
+                onPressOut={(event) =>
+                  handleBalloonRelease(balloon, event.nativeEvent.locationX, event.nativeEvent.locationY)
                 }
                 style={[
                   styles.balloonHitArea,

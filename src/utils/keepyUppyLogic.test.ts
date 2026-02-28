@@ -1,5 +1,6 @@
 import {
   addBalloon,
+  flickBalloon,
   GROUND_POP_DELAY_MS,
   MAX_BALLOONS,
   KeepyUppyBalloon,
@@ -40,6 +41,44 @@ describe('keepyUppyLogic', () => {
     expect(tappedRight.vx).toBeLessThan(0);
     expect(tappedLeft.vy).toBeLessThan(balloon.vy);
     expect(tappedLeft.groundedAt).toBeNull();
+  });
+
+  it('keeps taps gently upward in easy mode', () => {
+    const balloon: KeepyUppyBalloon = {
+      id: 'easy',
+      x: 160,
+      y: 220,
+      vx: 0,
+      vy: 180,
+      radius: 34,
+      color: '#fff',
+      groundedAt: null,
+    };
+
+    const normalTap = tapBalloon(balloon, 160, 254, false);
+    const easyTap = tapBalloon(balloon, 160, 254, true);
+
+    expect(easyTap.vy).toBeLessThanOrEqual(-80);
+    expect(easyTap.vy).toBeLessThanOrEqual(normalTap.vy);
+  });
+
+  it('applies extra momentum from an upward flick', () => {
+    const balloon: KeepyUppyBalloon = {
+      id: 'f',
+      x: 160,
+      y: 220,
+      vx: 0,
+      vy: 0,
+      radius: 34,
+      color: '#fff',
+      groundedAt: 100,
+    };
+
+    const flicked = flickBalloon(balloon, 18, -40, 120);
+
+    expect(flicked.vx).toBeGreaterThan(balloon.vx);
+    expect(flicked.vy).toBeLessThan(balloon.vy);
+    expect(flicked.groundedAt).toBeNull();
   });
 
   it('gives a brief ground grace period before popping', () => {

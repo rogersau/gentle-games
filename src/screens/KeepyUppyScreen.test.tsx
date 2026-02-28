@@ -29,6 +29,14 @@ jest.mock('../utils/theme', () => ({
   }),
 }));
 
+jest.mock('../context/SettingsContext', () => ({
+  useSettings: () => ({
+    settings: {
+      keepyUppyEasyMode: true,
+    },
+  }),
+}));
+
 describe('KeepyUppyScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();

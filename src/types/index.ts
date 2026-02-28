@@ -31,6 +31,7 @@ export interface Settings {
   difficulty: Difficulty;
   theme: 'animals' | 'shapes' | 'mixed';
   showCardPreview: boolean;
+  keepyUppyEasyMode: boolean;
   colorMode: ColorMode;
   hiddenGames: string[];
   parentTimerMinutes: number;

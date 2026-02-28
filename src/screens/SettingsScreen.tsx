@@ -110,6 +110,19 @@ export const SettingsScreen: React.FC = () => {
 
         <View style={styles.section}>
           <View style={styles.toggleRow}>
+            <Text style={styles.sectionTitle}>Keepy Uppy Easy Mode</Text>
+            <Switch
+              value={!!settings.keepyUppyEasyMode}
+              onValueChange={(value) => updateSettings({ keepyUppyEasyMode: value })}
+              trackColor={{ false: colors.cardBack, true: colors.primary }}
+              thumbColor={colors.cardFront}
+            />
+          </View>
+          <Text style={styles.description}>Any tap gives a gentle lift while good taps still go higher</Text>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.toggleRow}>
             <Text style={styles.sectionTitle}>Sound</Text>
             <Switch
               value={!!settings.soundEnabled}

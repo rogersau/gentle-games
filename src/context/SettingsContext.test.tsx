@@ -30,6 +30,7 @@ const TestConsumer = () => {
       <Text testID="volume">{String(settings.soundVolume)}</Text>
       <Text testID="difficulty">{settings.difficulty}</Text>
       <Text testID="theme">{settings.theme}</Text>
+      <Text testID="keepyEasy">{String(settings.keepyUppyEasyMode)}</Text>
       <Text testID="colorMode">{settings.colorMode}</Text>
       <TouchableOpacity testID="set-hard" onPress={() => updateSettings({ difficulty: 'hard' })}>
         <Text>set-hard</Text>
@@ -51,6 +52,7 @@ describe('SettingsContext', () => {
         soundVolume: 2,
         difficulty: 'invalid',
         theme: 'invalid',
+        keepyUppyEasyMode: 'invalid',
         colorMode: 'invalid',
       })
     );
@@ -68,6 +70,7 @@ describe('SettingsContext', () => {
     expect(screen.getByTestId('volume').props.children).toBe('1');
     expect(screen.getByTestId('difficulty').props.children).toBe('medium');
     expect(screen.getByTestId('theme').props.children).toBe('mixed');
+    expect(screen.getByTestId('keepyEasy').props.children).toBe('true');
     expect(screen.getByTestId('colorMode').props.children).toBe('system');
   });
 
