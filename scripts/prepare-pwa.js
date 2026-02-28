@@ -103,11 +103,14 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          const copy = response.clone();
-          return caches
-            .open(CACHE_NAME)
-            .then((cache) => cache.put('./index.html', copy))
-            .then(() => response);
+          if (response && response.ok) {
+            const copy = response.clone();
+            return caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put('./index.html', copy))
+              .then(() => response);
+          }
+          return response;
         })
         .catch(() => caches.match(NAVIGATION_FALLBACK))
     );
