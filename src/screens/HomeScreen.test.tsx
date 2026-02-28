@@ -1,5 +1,6 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { HomeScreen } from './HomeScreen';
 
 const mockNavigate = jest.fn();
@@ -112,5 +113,13 @@ describe('HomeScreen', () => {
     const screen = render(<HomeScreen />);
 
     expect(screen.getByText('Scroll to see more ↓')).toBeTruthy();
+  });
+
+  it('constrains the game list container height to keep list scrolling available', () => {
+    const screen = render(<HomeScreen />);
+    const gamesContainer = screen.getByTestId('home-games-container');
+    const { height, maxHeight } = StyleSheet.flatten(gamesContainer.props.style);
+
+    expect(typeof height === 'number' || typeof maxHeight === 'number').toBe(true);
   });
 });

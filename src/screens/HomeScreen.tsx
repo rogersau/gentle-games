@@ -125,7 +125,7 @@ export const HomeScreen: React.FC = () => {
         <Text style={styles.title}>Gentle Games</Text>
         <Text style={styles.subtitle}>Calm games for kids</Text>
 
-        <View style={styles.gamesContainer}>
+        <View style={styles.gamesContainer} testID="home-games-container">
           <Text style={styles.sectionTitle}>Choose a Game</Text>
           {visibleGames.length > 0 && (
             <Text style={styles.scrollHint}>Scroll to see more ↓</Text>
@@ -257,6 +257,9 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   gamesContainer: {
     width: '100%',
     flex: 1,
+    maxHeight: 320,
+    flexShrink: 1,
+    minHeight: 0,
     marginBottom: 32,
   },
   gamesScroll: {
