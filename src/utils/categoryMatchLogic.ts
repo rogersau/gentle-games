@@ -16,9 +16,9 @@ const CATEGORY_SEQUENCE: CategoryMatchCategory[] = CATEGORY_MATCH_CATEGORIES.map
 );
 
 const CATEGORY_ITEMS: Record<CategoryMatchCategory, CategoryMatchItem[]> = {
-  animals: CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'animals'),
-  objects: CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'objects'),
-  shapes: CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'shapes'),
+  sky: CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'sky'),
+  land: CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'land'),
+  ocean: CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'ocean'),
 };
 
 const getPoolLimitForRound = (roundsCompleted: number): number => {
@@ -70,4 +70,3 @@ export const isCategoryMatchCorrect = (
   item: CategoryMatchItem,
   droppedCategory: CategoryMatchCategory
 ): boolean => item.category === droppedCategory;
-

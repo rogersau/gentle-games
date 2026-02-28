@@ -31,9 +31,9 @@ export const CategoryMatchScreen: React.FC = () => {
 
   const categoryExamples = useMemo(
     () => ({
-      animals: CATEGORY_MATCH_ANIMALS.slice(0, 2).map((item) => item.emoji).join(' '),
-      objects: CATEGORY_MATCH_OBJECTS.slice(0, 2).map((item) => item.emoji).join(' '),
-      shapes: CATEGORY_MATCH_SHAPES.slice(0, 2).map((item) => item.emoji).join(' '),
+      sky: CATEGORY_MATCH_ANIMALS.slice(0, 2).map((item) => item.emoji).join(' '),
+      land: CATEGORY_MATCH_OBJECTS.slice(0, 2).map((item) => item.emoji).join(' '),
+      ocean: CATEGORY_MATCH_SHAPES.slice(0, 2).map((item) => item.emoji).join(' '),
     }),
     []
   );

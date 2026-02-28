@@ -37,15 +37,15 @@ jest.mock('../components/CategoryMatchBoard', () => {
     CategoryMatchBoard: ({
       onCorrectMatch,
     }: {
-      onCorrectMatch?: (item: { emoji: string; name: string; color: string; category: 'animals' }, category: 'animals') => void;
+      onCorrectMatch?: (item: { emoji: string; name: string; color: string; category: 'sky' }, category: 'sky') => void;
     }) => (
       <View>
         <Text>Mock Category Match Board</Text>
         <TouchableOpacity
           onPress={() =>
             onCorrectMatch?.(
-              { emoji: '🐰', name: 'bunny', color: '#FFB6C1', category: 'animals' },
-              'animals'
+              { emoji: '☀️', name: 'sun', color: '#FFFACD', category: 'sky' },
+              'sky'
             )
           }
         >
