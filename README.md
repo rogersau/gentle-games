@@ -75,7 +75,7 @@ A calm sorting game where kids drag each emoji into the right category.
 
 **Features:**
 - Endless rounds with one emoji at a time
-- Three friendly categories in a fixed row: Animals, Objects, Shapes
+- Three friendly categories in a fixed row: Sky, Land, Ocean
 - Gentle correct/try-again feedback with a running correct counter
 
 ## Features (All Games)

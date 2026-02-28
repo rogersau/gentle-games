@@ -38,7 +38,7 @@ describe('categoryMatchLogic', () => {
     }
   });
 
-  it('uses an even item split and keeps sky emojis out of shapes', () => {
+  it('uses an even item split with younger sky/land/ocean sets', () => {
     const counts = CATEGORY_MATCH_ITEMS.reduce<Record<string, number>>((acc, item) => {
       acc[item.category] = (acc[item.category] ?? 0) + 1;
       return acc;
@@ -47,19 +47,26 @@ describe('categoryMatchLogic', () => {
     expect(counts.animals).toBe(counts.objects);
     expect(counts.objects).toBe(counts.shapes);
 
-    const shapeNames = CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'shapes').map(
+    const skyNames = CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'animals').map(
       (item) => item.name
     );
-    expect(shapeNames).not.toContain('sun');
-    expect(shapeNames).not.toContain('moon');
-    expect(shapeNames).not.toContain('cloud');
+    expect(skyNames).toContain('sun');
+    expect(skyNames).toContain('cloud');
+    expect(skyNames).toContain('moon');
 
-    const objectNames = CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'objects').map(
+    const landNames = CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'objects').map(
       (item) => item.name
     );
-    expect(objectNames).toContain('sun');
-    expect(objectNames).toContain('moon');
-    expect(objectNames).toContain('cloud');
+    expect(landNames).toContain('apple');
+    expect(landNames).toContain('carrot');
+    expect(landNames).toContain('broccoli');
+
+    const oceanNames = CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'shapes').map(
+      (item) => item.name
+    );
+    expect(oceanNames).toContain('fish');
+    expect(oceanNames).toContain('dolphin');
+    expect(oceanNames).toContain('wave');
   });
 
   it('widens the per-category pool as rounds progress', () => {
@@ -80,4 +87,3 @@ describe('categoryMatchLogic', () => {
     expect(earlyObjectNames).not.toContain(laterRound.item.name);
   });
 });
-

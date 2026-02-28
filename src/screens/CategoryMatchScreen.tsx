@@ -61,7 +61,7 @@ export const CategoryMatchScreen: React.FC = () => {
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.subtitle}>Sort each emoji into Animals, Objects, or Shapes.</Text>
+        <Text style={styles.subtitle}>Sort each emoji into Sky, Land, or Ocean.</Text>
         <Text style={styles.counter}>Correct: {correctCount}</Text>
         {streakCount >= 3 ? <Text style={styles.encouragement}>You're on a roll! ✨</Text> : null}
 
@@ -214,4 +214,3 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       color: colors.cardFront,
     },
   });
-
