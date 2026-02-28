@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-type BrowserLike = {
+export type BrowserLike = {
   history: {
     pushState: (data: unknown, unused: string, url?: string) => void;
   };
@@ -21,7 +21,7 @@ export const isStandalonePwa = (
     return false;
   }
 
-  const standaloneMedia = browser.matchMedia?.('(display-mode: standalone)').matches === true;
+  const standaloneMedia = browser.matchMedia?.('(display-mode: standalone)')?.matches === true;
   return standaloneMedia || standaloneFlag === true;
 };
 

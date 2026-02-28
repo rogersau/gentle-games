@@ -1,13 +1,13 @@
-import { installPwaBackNavigationGuard, isStandalonePwa } from './pwaBackGuard';
+import { installPwaBackNavigationGuard, isStandalonePwa, type BrowserLike } from './pwaBackGuard';
 
-type MockBrowser = {
+type MockBrowser = BrowserLike & {
   history: {
     pushState: jest.Mock<void, [unknown, string, string?]>;
   };
   location: {
     href: string;
   };
-  matchMedia: jest.Mock<{ matches: boolean }, [string]>;
+  matchMedia?: jest.Mock<{ matches: boolean }, [string]>;
   addEventListener: jest.Mock<void, ['popstate', () => void]>;
   removeEventListener: jest.Mock<void, ['popstate', () => void]>;
 };
@@ -50,5 +50,17 @@ describe('pwaBackGuard', () => {
     expect(browser.addEventListener).not.toHaveBeenCalled();
     cleanup();
     expect(browser.removeEventListener).not.toHaveBeenCalled();
+  });
+
+  it('supports standalone fallback when matchMedia is unavailable', () => {
+    const browser = createMockBrowser(false);
+    delete browser.matchMedia;
+
+    expect(isStandalonePwa('web', browser, true)).toBe(true);
+    const cleanup = installPwaBackNavigationGuard('web', browser, true);
+
+    expect(browser.history.pushState).toHaveBeenCalledWith(null, '', browser.location.href);
+    cleanup();
+    expect(browser.removeEventListener).toHaveBeenCalledWith('popstate', expect.any(Function));
   });
 });
