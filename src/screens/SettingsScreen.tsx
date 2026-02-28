@@ -34,6 +34,7 @@ const ALL_GAMES: { id: string; name: string; icon: string }[] = [
   { id: 'glitter-fall', name: 'Glitter Fall', icon: '✨' },
   { id: 'bubble-pop', name: 'Bubble Pop', icon: '🫧' },
   { id: 'category-match', name: 'Category Match', icon: '🗂️' },
+  { id: 'keepy-uppy', name: 'Keepy Uppy', icon: '🎈' },
 ];
 
 export const SettingsScreen: React.FC = () => {
@@ -397,4 +398,3 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       alignItems: 'center',
     },
   });
-

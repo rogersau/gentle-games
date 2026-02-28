@@ -12,6 +12,7 @@ import { DrawingScreen } from './src/screens/DrawingScreen';
 import { GlitterScreen } from './src/screens/GlitterScreen';
 import { BubbleScreen } from './src/screens/BubbleScreen';
 import { CategoryMatchScreen } from './src/screens/CategoryMatchScreen';
+import { KeepyUppyScreen } from './src/screens/KeepyUppyScreen';
 import { initializeSounds, unloadSounds } from './src/utils/sounds';
 import { useThemeColors } from './src/utils/theme';
 
@@ -35,6 +36,7 @@ const AppNavigator: React.FC = () => {
           <Stack.Screen name="Glitter" component={GlitterScreen} />
           <Stack.Screen name="Bubble" component={BubbleScreen} />
           <Stack.Screen name="CategoryMatch" component={CategoryMatchScreen} />
+          <Stack.Screen name="KeepyUppy" component={KeepyUppyScreen} />
         </Stack.Navigator>
         <StatusBar style={resolvedMode === 'dark' ? 'light' : 'dark'} />
       </NavigationContainer>
