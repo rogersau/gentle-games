@@ -257,7 +257,6 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   gamesContainer: {
     width: '100%',
     flex: 1,
-    maxHeight: 320,
     flexShrink: 1,
     minHeight: 0,
     marginBottom: 32,
