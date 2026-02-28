@@ -55,11 +55,11 @@ describe('keepyUppyLogic', () => {
       groundedAt: null,
     };
 
-    const normalTap = tapBalloon(balloon, 160, 254, false);
-    const easyTap = tapBalloon(balloon, 160, 254, true);
+    const normalTap = tapBalloon(balloon, 160, 190, false);
+    const easyTap = tapBalloon(balloon, 160, 190, true);
 
     expect(easyTap.vy).toBeLessThanOrEqual(-80);
-    expect(easyTap.vy).toBeLessThanOrEqual(normalTap.vy);
+    expect(easyTap.vy).toBeLessThan(normalTap.vy);
   });
 
   it('applies extra momentum from an upward flick', () => {

@@ -85,14 +85,14 @@ export const KeepyUppyScreen: React.FC = () => {
     );
   }, [settings.keepyUppyEasyMode, toBoardPoint]);
 
-  const handleBalloonRelease = useCallback((balloon: KeepyUppyBalloon, locationX: number, locationY: number) => {
+  const handleBalloonRelease = useCallback((balloon: KeepyUppyBalloon, pageX: number, pageY: number) => {
     const touchStart = touchStartRef.current[balloon.id];
     delete touchStartRef.current[balloon.id];
     if (!touchStart) {
       return;
     }
-    const deltaX = locationX - touchStart.x;
-    const deltaY = locationY - touchStart.y;
+    const deltaX = pageX - touchStart.x;
+    const deltaY = pageY - touchStart.y;
     const durationMs = Math.max(1, Date.now() - touchStart.startedAt);
     if (Math.hypot(deltaX, deltaY) < MIN_FLICK_DISTANCE || durationMs > MAX_FLICK_DURATION_MS) {
       return;
@@ -149,14 +149,14 @@ export const KeepyUppyScreen: React.FC = () => {
                 testID={`balloon-${balloon.id}`}
                 onPressIn={(event) => {
                   touchStartRef.current[balloon.id] = {
-                    x: event.nativeEvent.locationX,
-                    y: event.nativeEvent.locationY,
+                    x: event.nativeEvent.pageX,
+                    y: event.nativeEvent.pageY,
                     startedAt: Date.now(),
                   };
                   handleBalloonPress(balloon, event.nativeEvent.locationX, event.nativeEvent.locationY);
                 }}
                 onPressOut={(event) =>
-                  handleBalloonRelease(balloon, event.nativeEvent.locationX, event.nativeEvent.locationY)
+                  handleBalloonRelease(balloon, event.nativeEvent.pageX, event.nativeEvent.pageY)
                 }
                 style={[
                   styles.balloonHitArea,
