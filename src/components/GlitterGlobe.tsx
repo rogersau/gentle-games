@@ -160,10 +160,13 @@ const clampParticleToGlobe = (
   };
 };
 
-const resolveParticleCollisions = (particles: GlitterParticle[]): GlitterParticle[] => {
+export const resolveParticleCollisions = (particles: GlitterParticle[]): GlitterParticle[] => {
   if (particles.length < 2) return particles;
 
-  const result = particles.map((p) => ({ ...p }));
+  const result: GlitterParticle[] = new Array(particles.length);
+  for (let k = 0; k < particles.length; k++) {
+    result[k] = { ...particles[k] };
+  }
 
   for (let i = 0; i < result.length; i++) {
     for (let j = i + 1; j < result.length; j++) {
@@ -176,9 +179,20 @@ const resolveParticleCollisions = (particles: GlitterParticle[]): GlitterParticl
 
       if (distSq >= minDist * minDist) continue;
 
-      const dist = Math.sqrt(distSq) || 0.01;
-      const nx = dx / dist;
-      const ny = dy / dist;
+      let nx: number;
+      let ny: number;
+      let dist: number;
+
+      if (distSq === 0) {
+        // Exact same position: use a fixed fallback normal to push them apart
+        nx = 1;
+        ny = 0;
+        dist = 0;
+      } else {
+        dist = Math.sqrt(distSq);
+        nx = dx / dist;
+        ny = dy / dist;
+      }
 
       // Separate overlapping particles equally
       const halfOverlap = (minDist - dist) / 2;
@@ -227,9 +241,19 @@ const stepParticles = (
 
   const collided = resolveParticleCollisions(moved);
 
-  return collided.map((particle) =>
-    clampParticleToGlobe(particle, centerX, centerY, globeRadius)
-  );
+  const result: GlitterParticle[] = new Array(collided.length);
+  for (let i = 0; i < collided.length; i++) {
+    const p = collided[i];
+    const clampedVx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, p.vx));
+    const clampedVy = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, p.vy));
+    result[i] = clampParticleToGlobe(
+      { ...p, vx: clampedVx, vy: clampedVy },
+      centerX,
+      centerY,
+      globeRadius
+    );
+  }
+  return result;
 };
 
 const applyShakeImpulse = (
