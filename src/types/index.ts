@@ -165,7 +165,7 @@ export const SHAPES = [
   { emoji: '🏰', name: 'castle', color: '#E6E6FA' },
 ];
 
-export const CATEGORY_MATCH_ANIMALS: CategoryMatchItem[] = [
+export const CATEGORY_MATCH_SKY: CategoryMatchItem[] = [
   { emoji: '☀️', name: 'sun', color: '#FFFACD', category: 'sky' },
   { emoji: '☁️', name: 'cloud', color: '#F0F8FF', category: 'sky' },
   { emoji: '🌙', name: 'moon', color: '#E6E6FA', category: 'sky' },
@@ -180,7 +180,7 @@ export const CATEGORY_MATCH_ANIMALS: CategoryMatchItem[] = [
   { emoji: '🚁', name: 'helicopter', color: '#C0C0C0', category: 'sky' },
 ];
 
-export const CATEGORY_MATCH_SHAPES: CategoryMatchItem[] = [
+export const CATEGORY_MATCH_OCEAN: CategoryMatchItem[] = [
   { emoji: '🐠', name: 'fish', color: '#87CEEB', category: 'ocean' },
   { emoji: '🐬', name: 'dolphin', color: '#00CED1', category: 'ocean' },
   { emoji: '🐳', name: 'whale', color: '#4169E1', category: 'ocean' },
@@ -195,7 +195,7 @@ export const CATEGORY_MATCH_SHAPES: CategoryMatchItem[] = [
   { emoji: '🌊', name: 'wave', color: '#ADD8E6', category: 'ocean' },
 ];
 
-export const CATEGORY_MATCH_OBJECTS: CategoryMatchItem[] = [
+export const CATEGORY_MATCH_LAND: CategoryMatchItem[] = [
   { emoji: '🌳', name: 'tree', color: '#90EE90', category: 'land' },
   { emoji: '🌻', name: 'flower', color: '#FFFACD', category: 'land' },
   { emoji: '🏠', name: 'house', color: '#FFE4C4', category: 'land' },
@@ -211,9 +211,9 @@ export const CATEGORY_MATCH_OBJECTS: CategoryMatchItem[] = [
 ];
 
 export const CATEGORY_MATCH_ITEMS: CategoryMatchItem[] = [
-  ...CATEGORY_MATCH_ANIMALS,
-  ...CATEGORY_MATCH_OBJECTS,
-  ...CATEGORY_MATCH_SHAPES,
+  ...CATEGORY_MATCH_SKY,
+  ...CATEGORY_MATCH_LAND,
+  ...CATEGORY_MATCH_OCEAN,
 ];
 
 export const PASTEL_COLORS: ThemeColors = {
