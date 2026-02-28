@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 
 export type BrowserLike = {
   history: {
-    pushState: (data: unknown, unused: string, url?: string) => void;
+    pushState: (data: unknown, title: string, url?: string) => void;
   };
   location: {
     href: string;
