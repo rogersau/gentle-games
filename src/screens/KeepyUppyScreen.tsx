@@ -61,8 +61,10 @@ export const KeepyUppyScreen: React.FC = () => {
   }, [bounds]);
 
   const handleBalloonPress = useCallback((balloon: KeepyUppyBalloon, locationX: number, locationY: number) => {
-    const tapX = balloon.x - balloon.radius + locationX;
-    const tapY = balloon.y - balloon.radius + locationY;
+    const balloonW = balloon.radius * BALLOON_WIDTH_RATIO;
+    const balloonH = balloon.radius * BALLOON_HEIGHT_RATIO;
+    const tapX = balloon.x - balloonW / 2 + locationX;
+    const tapY = balloon.y - balloonH / 2 + locationY;
     setScore((value) => value + 1);
     setBalloons((previous) =>
       previous.map((current) => (current.id === balloon.id ? tapBalloon(current, tapX, tapY) : current))
@@ -118,10 +120,10 @@ export const KeepyUppyScreen: React.FC = () => {
                 style={[
                   styles.balloonHitArea,
                   {
-                    left: balloon.x - balloon.radius,
-                    top: balloon.y - balloon.radius,
-                    width: balloon.radius * 2,
-                    height: balloon.radius * 2 + BALLOON_KNOT_HEIGHT + BALLOON_STRING_HEIGHT,
+                    left: balloon.x - balloonW / 2,
+                    top: balloon.y - balloonH / 2,
+                    width: balloonW,
+                    height: balloonH + BALLOON_KNOT_HEIGHT + BALLOON_STRING_HEIGHT,
                     opacity: balloon.groundedAt === null ? 1 : 0.72,
                   },
                 ]}
@@ -247,11 +249,11 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       backgroundColor: colors.success,
       opacity: 0.9,
       borderWidth: 3,
-      borderColor: 'rgba(255,255,200,0.5)',
+      borderColor: `${colors.success}80`,
     },
     cloud: {
       position: 'absolute',
-      backgroundColor: resolvedMode === 'dark' ? 'rgba(200,200,210,0.18)' : 'rgba(255,255,255,0.7)',
+      backgroundColor: `${colors.cardFront}${resolvedMode === 'dark' ? '30' : 'B3'}`,
       borderRadius: 20,
     },
     cloud1: {
@@ -278,9 +280,9 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       right: 0,
       bottom: 0,
       height: 50,
-      backgroundColor: resolvedMode === 'dark' ? '#4A6B4A' : '#8FCB8F',
+      backgroundColor: colors.success,
       borderTopWidth: 3,
-      borderTopColor: resolvedMode === 'dark' ? '#5A7B5A' : '#6DB86D',
+      borderTopColor: colors.cardBack,
     },
     grassStripe: {
       position: 'absolute',
@@ -288,7 +290,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       right: 0,
       top: 0,
       height: 8,
-      backgroundColor: resolvedMode === 'dark' ? '#5A7B5A' : '#A8DCA8',
+      backgroundColor: `${colors.cardFront}40`,
     },
     balloonHitArea: {
       position: 'absolute',
@@ -298,7 +300,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 1.5,
-      borderColor: 'rgba(0,0,0,0.1)',
+      borderColor: `${colors.text}1A`,
     },
     balloonShine: {
       position: 'absolute',
@@ -307,7 +309,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       width: 16,
       height: 16,
       borderRadius: 100,
-      backgroundColor: 'rgba(255,255,255,0.45)',
+      backgroundColor: `${colors.cardFront}73`,
     },
     balloonKnot: {
       width: 0,
@@ -321,6 +323,6 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     balloonString: {
       width: 1.5,
       height: BALLOON_STRING_HEIGHT,
-      backgroundColor: resolvedMode === 'dark' ? '#999' : '#BBB',
+      backgroundColor: colors.matched,
     },
   });
