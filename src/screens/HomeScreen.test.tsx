@@ -105,4 +105,10 @@ describe('HomeScreen', () => {
     expect(screen.getByText('Category Match')).toBeTruthy();
     expect(screen.getByText('Keepy Uppy')).toBeTruthy();
   });
+
+  it('shows a scroll hint on the game list', () => {
+    const screen = render(<HomeScreen />);
+
+    expect(screen.getByText('Scroll to see more ↓')).toBeTruthy();
+  });
 });

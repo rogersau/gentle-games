@@ -127,8 +127,14 @@ export const HomeScreen: React.FC = () => {
 
         <View style={styles.gamesContainer}>
           <Text style={styles.sectionTitle}>Choose a Game</Text>
+          <Text style={styles.scrollHint}>Scroll to see more ↓</Text>
 
-          <ScrollView style={styles.gamesScroll} contentContainerStyle={styles.gamesScrollContent}>
+          <ScrollView
+            style={styles.gamesScroll}
+            contentContainerStyle={styles.gamesScrollContent}
+            showsVerticalScrollIndicator
+            persistentScrollbar
+          >
             {visibleGames.map((game) => (
               <TouchableOpacity
                 key={game.id}
@@ -261,8 +267,14 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     fontSize: 20,
     fontWeight: '600',
     color: colors.text,
-    marginBottom: 16,
+    marginBottom: 8,
     textAlign: 'center',
+  },
+  scrollHint: {
+    fontSize: 13,
+    color: colors.textLight,
+    textAlign: 'center',
+    marginBottom: 12,
   },
   gameCard: {
     backgroundColor: colors.cardFront,
