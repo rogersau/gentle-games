@@ -34,7 +34,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   const { colors } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [bubbles, setBubbles] = useState<Bubble[]>(() =>
-    ensureMinimumBubbles([], minActiveBubbles, width, maxActiveBubbles)
+    ensureMinimumBubbles([], minActiveBubbles, width, height, maxActiveBubbles)
   );
   const [popIndicators, setPopIndicators] = useState<PopIndicator[]>([]);
 
@@ -52,7 +52,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   useEffect(() => {
     widthRef.current = width;
     heightRef.current = height;
-    setBubbles((prev) => ensureMinimumBubbles(prev, minActiveBubbles, width, maxActiveBubbles));
+    setBubbles((prev) => ensureMinimumBubbles(prev, minActiveBubbles, width, height, maxActiveBubbles));
   }, [height, maxActiveBubbles, minActiveBubbles, width]);
 
   useEffect(() => {
@@ -74,13 +74,19 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
         let next = stepBubbles(prev, elapsedMs / 1000, heightRef.current);
 
         if (spawnCount > 0 && next.length < maxActiveBubbles) {
-          next = spawnBubbles(next, Math.min(spawnCount, maxActiveBubbles - next.length), widthRef.current);
+          next = spawnBubbles(
+            next,
+            Math.min(spawnCount, maxActiveBubbles - next.length),
+            widthRef.current,
+            heightRef.current
+          );
         }
 
         next = ensureMinimumBubbles(
           next,
           minActiveBubbles,
           widthRef.current,
+          heightRef.current,
           maxActiveBubbles
         );
         return next;
@@ -125,7 +131,13 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
 
           setBubbles((prev) => {
             const next = prev.filter((bubble) => bubble.id !== poppedBubble.id);
-            return ensureMinimumBubbles(next, minActiveBubbles, widthRef.current, maxActiveBubbles);
+            return ensureMinimumBubbles(
+              next,
+              minActiveBubbles,
+              widthRef.current,
+              heightRef.current,
+              maxActiveBubbles
+            );
           });
           setPopIndicators((prev) => [
             ...prev,
@@ -211,4 +223,3 @@ const createStyles = (colors: ThemeColors) =>
       left: 0,
     },
   });
-

@@ -5,6 +5,8 @@ export interface Bubble {
   x: number;
   y: number;
   radius: number;
+  targetRadius: number;
+  growthPerSecond: number;
   speed: number;
   color: string;
   opacity: number;
@@ -22,16 +24,26 @@ const BUBBLE_COLORS = [
 const randomInRange = (min: number, max: number, rng: () => number): number =>
   min + (max - min) * rng();
 
-export const createBubble = (width: number, rng: () => number = Math.random): Bubble => {
-  const radius = randomInRange(18, 44, rng);
-  const minX = radius;
-  const maxX = Math.max(radius, width - radius);
+export const createBubble = (
+  width: number,
+  height: number,
+  rng: () => number = Math.random
+): Bubble => {
+  const targetRadius = randomInRange(18, 44, rng);
+  const minX = targetRadius;
+  const maxX = Math.max(targetRadius, width - targetRadius);
+  const startsLower = rng() < 0.35;
+  const radius = startsLower ? targetRadius * randomInRange(0.45, 0.75, rng) : targetRadius;
 
   return {
     id: `bubble-${bubbleCounter++}`,
     x: randomInRange(minX, maxX, rng),
-    y: -radius - randomInRange(6, 42, rng),
+    y: startsLower
+      ? randomInRange(height * 0.22, height * 0.62, rng)
+      : -targetRadius - randomInRange(6, 42, rng),
     radius,
+    targetRadius,
+    growthPerSecond: startsLower ? randomInRange(8, 18, rng) : 0,
     speed: randomInRange(24, 52, rng),
     color: BUBBLE_COLORS[Math.floor(rng() * BUBBLE_COLORS.length)],
     opacity: randomInRange(0.38, 0.7, rng),
@@ -42,9 +54,10 @@ export const spawnBubbles = (
   existing: Bubble[],
   count: number,
   width: number,
+  height: number,
   rng: () => number = Math.random
 ): Bubble[] => {
-  const additions = Array.from({ length: Math.max(0, count) }, () => createBubble(width, rng));
+  const additions = Array.from({ length: Math.max(0, count) }, () => createBubble(width, height, rng));
   return [...existing, ...additions];
 };
 
@@ -52,13 +65,14 @@ export const ensureMinimumBubbles = (
   existing: Bubble[],
   minimum: number,
   width: number,
+  height: number,
   maxBubbles: number,
   rng: () => number = Math.random
 ): Bubble[] => {
   const safeMinimum = Math.max(0, Math.min(minimum, maxBubbles));
   if (existing.length >= safeMinimum) return existing.slice(0, maxBubbles);
   const missing = safeMinimum - existing.length;
-  return spawnBubbles(existing, missing, width, rng).slice(0, maxBubbles);
+  return spawnBubbles(existing, missing, width, height, rng).slice(0, maxBubbles);
 };
 
 export const stepBubbles = (existing: Bubble[], deltaSeconds: number, height: number): Bubble[] => {
@@ -67,7 +81,7 @@ export const stepBubbles = (existing: Bubble[], deltaSeconds: number, height: nu
     .map((bubble) => ({
       ...bubble,
       y: bubble.y + bubble.speed * safeDelta,
+      radius: Math.min(bubble.targetRadius, bubble.radius + bubble.growthPerSecond * safeDelta),
     }))
     .filter((bubble) => bubble.y - bubble.radius <= height);
 };
-
