@@ -67,18 +67,39 @@ export const addBalloon = (
 export const tapBalloon = (
   balloon: KeepyUppyBalloon,
   tapX: number,
-  tapY: number
+  tapY: number,
+  easyMode = false
 ): KeepyUppyBalloon => {
   const dx = balloon.x - tapX;
   const dy = balloon.y - tapY;
   const distance = Math.max(1, Math.hypot(dx, dy));
   const horizontalPush = (dx / distance) * 130;
   const upwardPush = Math.max(0.65, -dy / distance + 0.9) * 280;
+  const nextVy = clamp(balloon.vy - upwardPush, -360, 280);
 
   return {
     ...balloon,
     vx: clamp(balloon.vx + horizontalPush, -260, 260),
-    vy: clamp(balloon.vy - upwardPush, -360, 280),
+    vy: easyMode ? Math.min(nextVy, -80) : nextVy,
+    groundedAt: null,
+  };
+};
+
+export const flickBalloon = (
+  balloon: KeepyUppyBalloon,
+  deltaX: number,
+  deltaY: number,
+  durationMs: number
+): KeepyUppyBalloon => {
+  const safeDurationMs = Math.max(60, durationMs);
+  const velocityScale = 1000 / safeDurationMs;
+  const horizontalPush = clamp(deltaX * velocityScale * 0.3, -240, 240);
+  const verticalPush = clamp(-deltaY * velocityScale * 0.55, -320, 320);
+
+  return {
+    ...balloon,
+    vx: clamp(balloon.vx + horizontalPush, -320, 320),
+    vy: clamp(balloon.vy - verticalPush, -420, 320),
     groundedAt: null,
   };
 };

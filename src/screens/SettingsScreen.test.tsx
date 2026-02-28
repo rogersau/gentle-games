@@ -11,6 +11,7 @@ let mockSettings = {
   difficulty: 'medium' as const,
   theme: 'mixed' as const,
   showCardPreview: true,
+  keepyUppyEasyMode: true,
   colorMode: 'system' as const,
   hiddenGames: [] as string[],
   parentTimerMinutes: 0,
@@ -39,6 +40,7 @@ describe('SettingsScreen', () => {
       difficulty: 'medium',
       theme: 'mixed',
       showCardPreview: true,
+      keepyUppyEasyMode: true,
       colorMode: 'system',
       hiddenGames: [],
       parentTimerMinutes: 0,
@@ -76,6 +78,15 @@ describe('SettingsScreen', () => {
     expect(screen.queryByText('Difficulty')).toBeNull();
   });
 
+  it('toggles Keepy Uppy easy mode setting', () => {
+    const screen = render(<SettingsScreen />);
+
+    const switches = screen.getAllByRole('switch');
+    fireEvent(switches[2], 'valueChange', false);
+
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ keepyUppyEasyMode: false });
+  });
+
   it('goes back to home when save button is pressed', () => {
     const screen = render(<SettingsScreen />);
     fireEvent.press(screen.getByText('Save'));
@@ -86,8 +97,8 @@ describe('SettingsScreen', () => {
   it('toggles game visibility via switch', () => {
     const screen = render(<SettingsScreen />);
     const switches = screen.getAllByRole('switch');
-    // First 3 switches: Card Preview, Animations, Sound. Next 5: game toggles.
-    const memorySnapSwitch = switches[3];
+    // First 4 switches: Card Preview, Animations, Keepy Uppy Easy Mode, Sound. Next 6: game toggles.
+    const memorySnapSwitch = switches[4];
     fireEvent(memorySnapSwitch, 'valueChange', false);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({
