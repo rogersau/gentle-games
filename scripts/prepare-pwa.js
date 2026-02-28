@@ -8,6 +8,7 @@ const iconsOutDir = path.join(distDir, 'icons');
 const indexPath = path.join(distDir, 'index.html');
 const manifestPath = path.join(distDir, 'manifest.webmanifest');
 const swPath = path.join(distDir, 'sw.js');
+const buildVersion = process.env.GITHUB_SHA || Date.now().toString();
 
 const requiredPwaFiles = [
   'icon-32x32.png',
@@ -42,6 +43,10 @@ const ensureExists = (filePath, label) => {
   }
 };
 
+const getCacheName = () => `gentle-games-${buildVersion}`;
+const getManifestTag = () => `./manifest.webmanifest?v=${buildVersion}`;
+const getServiceWorkerTag = () => `./sw.js?v=${buildVersion}`;
+
 const writeManifest = () => {
   const manifest = {
     name: 'Gentle Games',
@@ -60,13 +65,15 @@ const writeManifest = () => {
 
 const writeServiceWorker = () => {
   const cacheEntries = [
+    './index.html',
     './manifest.webmanifest',
     './icons/icon-32x32.png',
     './icons/icon-180x180.png',
     ...manifestIcons.map((icon) => icon.src),
   ];
 
-  const serviceWorker = `const CACHE_NAME = 'gentle-games-v2';
+  const serviceWorker = `const CACHE_NAME = '${getCacheName()}';
+const NAVIGATION_FALLBACK = './index.html';
 const APP_SHELL = ${JSON.stringify(cacheEntries, null, 2)};
 
 self.addEventListener('install', (event) => {
@@ -93,7 +100,20 @@ self.addEventListener('fetch', (event) => {
   const isIndexRequest = requestUrl.pathname.endsWith('/index.html');
 
   if (isNavigationRequest || isIndexRequest) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.ok) {
+            const copy = response.clone();
+            return caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put('./index.html', copy))
+              .then(() => response);
+          }
+          return response;
+        })
+        .catch(() => caches.match(NAVIGATION_FALLBACK))
+    );
     return;
   }
 
@@ -123,17 +143,27 @@ self.addEventListener('fetch', (event) => {
 const patchIndexHtml = () => {
   let html = fs.readFileSync(indexPath, 'utf8');
 
-  if (!html.includes('manifest.webmanifest')) {
+  if (html.includes('manifest.webmanifest')) {
+    html = html.replace(
+      /href="[^"]*manifest\.webmanifest[^"]*"/,
+      `href="${getManifestTag()}"`
+    );
+  } else {
     html = html.replace(
       '</head>',
-      '  <link rel="manifest" href="./manifest.webmanifest" />\n  <link rel="apple-touch-icon" href="./icons/icon-180x180.png" />\n  <link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32x32.png" />\n</head>'
+      `  <link rel="manifest" href="${getManifestTag()}" />\n  <link rel="apple-touch-icon" href="./icons/icon-180x180.png" />\n  <link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32x32.png" />\n</head>`
     );
   }
 
-  if (!html.includes("serviceWorker.register('./sw.js')")) {
+  if (html.includes('serviceWorker.register(')) {
+    html = html.replace(
+      /serviceWorker\.register\([^)]*\)/,
+      `serviceWorker.register('${getServiceWorkerTag()}')`
+    );
+  } else {
     html = html.replace(
       '</body>',
-      '  <script>\n    if (\'serviceWorker\' in navigator) {\n      window.addEventListener(\'load\', function () {\n        navigator.serviceWorker.register(\'./sw.js\');\n      });\n    }\n  </script>\n</body>'
+      `  <script>\n    if ('serviceWorker' in navigator) {\n      window.addEventListener('load', function () {\n        navigator.serviceWorker.register('${getServiceWorkerTag()}');\n      });\n    }\n  </script>\n</body>`
     );
   }
 
@@ -168,4 +198,14 @@ const run = () => {
   console.log('PWA assets prepared in dist/');
 };
 
-run();
+if (require.main === module) {
+  run();
+}
+
+module.exports = {
+  getCacheName,
+  getManifestTag,
+  getServiceWorkerTag,
+  writeServiceWorker,
+  patchIndexHtml,
+};

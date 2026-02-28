@@ -212,6 +212,7 @@ This repo includes a workflow at [.github/workflows/pwa-deploy.yml](.github/work
   - `dist/manifest.webmanifest`
   - `dist/sw.js`
   - `dist/icons/*`
+- Adds cache-busted manifest/service-worker URLs per deploy while keeping an offline app-shell fallback
 - Publishes `dist` to GitHub Pages
 
 ### Local PWA build
