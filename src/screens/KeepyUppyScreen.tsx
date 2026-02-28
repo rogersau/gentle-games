@@ -20,6 +20,8 @@ const BALLOON_WIDTH_RATIO = 1.7;
 const BALLOON_HEIGHT_RATIO = 2.1;
 const BALLOON_STRING_HEIGHT = 22;
 const BALLOON_KNOT_HEIGHT = 8;
+const MIN_FLICK_DISTANCE = 8;
+const MAX_FLICK_DURATION_MS = 500;
 
 export const KeepyUppyScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -92,7 +94,7 @@ export const KeepyUppyScreen: React.FC = () => {
     const deltaX = locationX - touchStart.x;
     const deltaY = locationY - touchStart.y;
     const durationMs = Math.max(1, Date.now() - touchStart.startedAt);
-    if (Math.hypot(deltaX, deltaY) < 8 || durationMs > 500) {
+    if (Math.hypot(deltaX, deltaY) < MIN_FLICK_DISTANCE || durationMs > MAX_FLICK_DURATION_MS) {
       return;
     }
     setBalloons((previous) =>
