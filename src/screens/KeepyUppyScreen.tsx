@@ -92,31 +92,58 @@ export const KeepyUppyScreen: React.FC = () => {
 
         <View style={[styles.board, { width: bounds.width, height: bounds.height }]}>
           <View style={styles.sun} />
-          <View style={styles.ground} />
-          {balloons.map((balloon) => (
-            <TouchableOpacity
-              key={balloon.id}
-              accessibilityRole="button"
-              testID={`balloon-${balloon.id}`}
-              onPressIn={(event) =>
-                handleBalloonPress(balloon, event.nativeEvent.locationX, event.nativeEvent.locationY)
-              }
-              style={[
-                styles.balloon,
-                {
-                  left: balloon.x - balloon.radius,
-                  top: balloon.y - balloon.radius,
-                  width: balloon.radius * 2,
-                  height: balloon.radius * 2,
-                  borderRadius: balloon.radius,
-                  backgroundColor: balloon.color,
-                  opacity: balloon.groundedAt === null ? 1 : 0.72,
-                },
-              ]}
-            >
-              <Text style={styles.balloonIcon}>🎈</Text>
-            </TouchableOpacity>
-          ))}
+          {/* Clouds */}
+          <View style={[styles.cloud, styles.cloud1]} />
+          <View style={[styles.cloud, styles.cloud2]} />
+          <View style={[styles.cloud, styles.cloud3]} />
+          {/* Ground with grass */}
+          <View style={styles.ground}>
+            <View style={styles.grassStripe} />
+          </View>
+          {balloons.map((balloon) => {
+            const balloonW = balloon.radius * 1.7;
+            const balloonH = balloon.radius * 2.1;
+            return (
+              <TouchableOpacity
+                key={balloon.id}
+                accessibilityRole="button"
+                testID={`balloon-${balloon.id}`}
+                onPressIn={(event) =>
+                  handleBalloonPress(balloon, event.nativeEvent.locationX, event.nativeEvent.locationY)
+                }
+                style={[
+                  styles.balloonHitArea,
+                  {
+                    left: balloon.x - balloon.radius,
+                    top: balloon.y - balloon.radius,
+                    width: balloon.radius * 2,
+                    height: balloon.radius * 2 + 30,
+                    opacity: balloon.groundedAt === null ? 1 : 0.72,
+                  },
+                ]}
+              >
+                {/* Balloon body – oval */}
+                <View
+                  style={[
+                    styles.balloonBody,
+                    {
+                      width: balloonW,
+                      height: balloonH,
+                      borderRadius: balloonW / 2,
+                      backgroundColor: balloon.color,
+                    },
+                  ]}
+                >
+                  {/* Shine highlight */}
+                  <View style={styles.balloonShine} />
+                </View>
+                {/* Knot */}
+                <View style={[styles.balloonKnot, { borderTopColor: balloon.color }]} />
+                {/* String */}
+                <View style={styles.balloonString} />
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
     </SafeAreaView>
@@ -210,28 +237,86 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       position: 'absolute',
       right: 18,
       top: 16,
-      width: 34,
-      height: 34,
-      borderRadius: 17,
+      width: 38,
+      height: 38,
+      borderRadius: 19,
       backgroundColor: colors.success,
       opacity: 0.9,
+      borderWidth: 3,
+      borderColor: 'rgba(255,255,200,0.5)',
+    },
+    cloud: {
+      position: 'absolute',
+      backgroundColor: resolvedMode === 'dark' ? 'rgba(200,200,210,0.18)' : 'rgba(255,255,255,0.7)',
+      borderRadius: 20,
+    },
+    cloud1: {
+      width: 70,
+      height: 28,
+      top: 22,
+      left: 24,
+    },
+    cloud2: {
+      width: 56,
+      height: 22,
+      top: 56,
+      right: 60,
+    },
+    cloud3: {
+      width: 64,
+      height: 24,
+      top: 90,
+      left: 80,
     },
     ground: {
       position: 'absolute',
       left: 0,
       right: 0,
       bottom: 0,
-      height: 44,
-      backgroundColor: colors.surfaceGame,
+      height: 50,
+      backgroundColor: resolvedMode === 'dark' ? '#4A6B4A' : '#8FCB8F',
+      borderTopWidth: 3,
+      borderTopColor: resolvedMode === 'dark' ? '#5A7B5A' : '#6DB86D',
     },
-    balloon: {
+    grassStripe: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 0,
+      height: 8,
+      backgroundColor: resolvedMode === 'dark' ? '#5A7B5A' : '#A8DCA8',
+    },
+    balloonHitArea: {
       position: 'absolute',
       alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 2,
-      borderColor: colors.cardFront,
     },
-    balloonIcon: {
-      fontSize: 30,
+    balloonBody: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: 'rgba(0,0,0,0.1)',
+    },
+    balloonShine: {
+      position: 'absolute',
+      top: 11,
+      left: 10,
+      width: 16,
+      height: 16,
+      borderRadius: 100,
+      backgroundColor: 'rgba(255,255,255,0.45)',
+    },
+    balloonKnot: {
+      width: 0,
+      height: 0,
+      borderLeftWidth: 5,
+      borderRightWidth: 5,
+      borderTopWidth: 8,
+      borderLeftColor: 'transparent',
+      borderRightColor: 'transparent',
+    },
+    balloonString: {
+      width: 1.5,
+      height: 22,
+      backgroundColor: resolvedMode === 'dark' ? '#999' : '#BBB',
     },
   });
