@@ -7,6 +7,7 @@ const mockDispatch = jest.fn();
 const mockAddListener = jest.fn(() => jest.fn());
 const mockGetItem = jest.fn(async () => null);
 const mockDrawingCanvas = jest.fn();
+const mockInsets = { top: 500, bottom: 500, left: 0, right: 0 };
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
@@ -59,15 +60,22 @@ jest.mock('react-native-safe-area-context', () => {
 
   return {
     SafeAreaView: ({ children }: { children: React.ReactNode }) => <View>{children}</View>,
-    useSafeAreaInsets: () => ({ top: 500, bottom: 500, left: 0, right: 0 }),
+    useSafeAreaInsets: () => mockInsets,
   };
 });
 
-import { DrawingScreen } from './DrawingScreen';
+import {
+  DrawingScreen,
+  DRAWING_HEADER_HEIGHT,
+  DRAWING_TOOLBAR_HEIGHT,
+  DRAWING_LAYOUT_PADDING,
+} from './DrawingScreen';
 
 describe('DrawingScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockInsets.top = 500;
+    mockInsets.bottom = 500;
   });
 
   it('uses remaining space for canvas height on small screens', async () => {
@@ -82,9 +90,36 @@ describe('DrawingScreen', () => {
     };
 
     const screenHeight = Dimensions.get('window').height;
-    const expectedRemainingHeight = Math.max(0, screenHeight - 500 - 500 - 60 - 140 - 32);
+    const expectedRemainingHeight = Math.max(
+      0,
+      screenHeight - 500 - 500 - DRAWING_HEADER_HEIGHT - DRAWING_TOOLBAR_HEIGHT - DRAWING_LAYOUT_PADDING
+    );
 
     expect(latestProps.height).toBe(expectedRemainingHeight);
     expect(latestProps.height).toBeLessThan(260);
+  });
+
+  it('keeps larger remaining space when insets are realistic', async () => {
+    mockInsets.top = 44;
+    mockInsets.bottom = 34;
+
+    render(<DrawingScreen />);
+
+    await waitFor(() => {
+      expect(mockDrawingCanvas).toHaveBeenCalled();
+    });
+
+    const latestProps = mockDrawingCanvas.mock.calls[mockDrawingCanvas.mock.calls.length - 1][0] as {
+      height: number;
+    };
+
+    const screenHeight = Dimensions.get('window').height;
+    const expectedRemainingHeight = Math.max(
+      0,
+      screenHeight - 44 - 34 - DRAWING_HEADER_HEIGHT - DRAWING_TOOLBAR_HEIGHT - DRAWING_LAYOUT_PADDING
+    );
+
+    expect(latestProps.height).toBe(expectedRemainingHeight);
+    expect(latestProps.height).toBeGreaterThanOrEqual(260);
   });
 });
