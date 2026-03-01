@@ -1,6 +1,6 @@
 # Gentle Games
 
-A collection of calm, sensory-friendly games designed for children ages 4-10 with visual and auditory sensitivities.
+A collection of six calm, sensory-friendly games designed for children ages 4-10 with visual and auditory sensitivities.
 
 ## Games
 
@@ -78,6 +78,15 @@ A calm sorting game where kids drag each emoji into the right category.
 - Three friendly categories in a fixed row: Sky, Land, Ocean
 - Gentle correct/try-again feedback with a running correct counter
 
+### 🎈 Keepy Uppy
+A gentle balloon-tapping game where players try to keep a balloon afloat by tapping it repeatedly.
+
+**Features:**
+- Balloons drift slowly downward and are kept aloft with taps
+- Tap anywhere on the balloon to register a hit
+- Easy mode toggle in settings reduces gravity for younger players
+- Endless play with soft background motion and simple pop counter
+
 ## Features (All Games)
 
 - **Sensory-Friendly Design**
@@ -99,6 +108,8 @@ A calm sorting game where kids drag each emoji into the right category.
   - Matched tiles stay visible (dimmed) for progress tracking
   - Last played pair count remembered
   - Dynamic grid sizing based on screen size
+- **Keepy Uppy Specific**
+  - Easy mode toggle can be enabled in Settings for slower-falling balloons
 
 ## Tech Stack
 
