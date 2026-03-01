@@ -9,8 +9,8 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   multiRemove: jest.fn(() => Promise.resolve()),
 }));
 
-jest.mock('./src/context/SettingsContext', () => {
-  const actual = jest.requireActual('./src/context/SettingsContext');
+jest.mock('../context/SettingsContext', () => {
+  const actual = jest.requireActual('../context/SettingsContext');
   return {
     ...actual,
     useSettings: () => ({
