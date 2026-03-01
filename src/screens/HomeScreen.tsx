@@ -64,6 +64,41 @@ const GAMES: Game[] = [
     icon: '🎈',
     accentColor: PASTEL_COLORS.secondary,
   },
+  {
+    id: 'breathing-garden',
+    name: 'Breathing Garden',
+    description: 'Follow calm breathing rhythms',
+    icon: '🌸',
+    accentColor: PASTEL_COLORS.accent,
+  },
+  {
+    id: 'pattern-train',
+    name: 'Pattern Train',
+    description: 'Complete cozy pattern sequences',
+    icon: '🚂',
+    accentColor: PASTEL_COLORS.primary,
+  },
+  {
+    id: 'number-picnic',
+    name: 'Number Picnic',
+    description: 'Count and fill the basket',
+    icon: '🧺',
+    accentColor: PASTEL_COLORS.success,
+  },
+  {
+    id: 'letter-lanterns',
+    name: 'Letter Lanterns',
+    description: 'Tap the matching glowing letter',
+    icon: '🏮',
+    accentColor: PASTEL_COLORS.secondary,
+  },
+  {
+    id: 'star-path',
+    name: 'Star Path',
+    description: 'Guide a star to moonlight tokens',
+    icon: '⭐',
+    accentColor: PASTEL_COLORS.cardBack,
+  },
 ];
 
 const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; description: string }[] = [
@@ -79,6 +114,11 @@ const ROUTE_MAP: Record<string, string> = {
   'bubble-pop': 'Bubble',
   'category-match': 'CategoryMatch',
   'keepy-uppy': 'KeepyUppy',
+  'breathing-garden': 'BreathingGarden',
+  'pattern-train': 'PatternTrain',
+  'number-picnic': 'NumberPicnic',
+  'letter-lanterns': 'LetterLantern',
+  'star-path': 'StarPath',
 };
 
 export const HomeScreen: React.FC = () => {

@@ -45,6 +45,37 @@ export interface Settings {
   parentTimerMinutes: number;
 }
 
+export type BreathingGardenPhase = 'inhale' | 'exhale';
+
+export interface PatternTrainRound {
+  sequence: string[];
+  display: string[];
+  choices: string[];
+  answer: string;
+  patternLabel: string;
+}
+
+export interface NumberPicnicPrompt {
+  itemEmoji: string;
+  itemName: string;
+  targetCount: number;
+}
+
+export interface LetterLanternRound {
+  targetLetter: string;
+  choices: string[];
+}
+
+export interface StarPathPoint {
+  x: number;
+  y: number;
+}
+
+export interface StarPathCollectible extends StarPathPoint {
+  id: string;
+  collected: boolean;
+}
+
 export type CategoryMatchCategory = 'sky' | 'land' | 'ocean';
 
 export interface CategoryMatchCategoryConfig {
@@ -210,6 +241,18 @@ export const CATEGORY_MATCH_ITEMS: CategoryMatchItem[] = [
   ...CATEGORY_MATCH_LAND,
   ...CATEGORY_MATCH_OCEAN,
 ];
+
+export const PATTERN_TRAIN_EMOJIS = ['🚂', '🌟', '🌈', '🌸', '☁️', '🫧', '🍓', '🧸'];
+
+export const NUMBER_PICNIC_ITEMS = [
+  { emoji: '🍓', name: 'berries' },
+  { emoji: '🍎', name: 'apples' },
+  { emoji: '🥕', name: 'carrots' },
+  { emoji: '⭐', name: 'stars' },
+  { emoji: '🌼', name: 'flowers' },
+];
+
+export const LETTER_LANTERN_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 export const PASTEL_COLORS: ThemeColors = {
   background: '#FFFEF7',

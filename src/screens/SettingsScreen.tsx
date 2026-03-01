@@ -43,6 +43,11 @@ const ALL_GAMES: { id: string; name: string; icon: string }[] = [
   { id: 'bubble-pop', name: 'Bubble Pop', icon: '🫧' },
   { id: 'category-match', name: 'Category Match', icon: '🗂️' },
   { id: 'keepy-uppy', name: 'Keepy Uppy', icon: '🎈' },
+  { id: 'breathing-garden', name: 'Breathing Garden', icon: '🌸' },
+  { id: 'pattern-train', name: 'Pattern Train', icon: '🚂' },
+  { id: 'number-picnic', name: 'Number Picnic', icon: '🧺' },
+  { id: 'letter-lanterns', name: 'Letter Lanterns', icon: '🏮' },
+  { id: 'star-path', name: 'Star Path', icon: '⭐' },
 ];
 
 export const SettingsScreen: React.FC = () => {
