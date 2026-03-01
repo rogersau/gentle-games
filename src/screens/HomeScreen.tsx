@@ -10,7 +10,7 @@ import { useSettings } from '../context/SettingsContext';
 import { Difficulty, ThemeColors } from '../types';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { AppScreen, AppButton, AppModal, GameCard, SegmentedControl } from '../ui/components';
-import { Space, TypeStyle, Radius } from '../ui/tokens';
+import { Space, TypeStyle } from '../ui/tokens';
 import { useLayout } from '../ui/useLayout';
 
 interface Game {
