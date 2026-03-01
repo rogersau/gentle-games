@@ -14,6 +14,8 @@ interface AppModalProps {
   /** Whether to show the close button */
   showClose?: boolean;
   closeLabel?: string;
+  /** Whether tapping backdrop should dismiss modal */
+  dismissOnBackdropPress?: boolean;
 }
 
 export const AppModal: React.FC<AppModalProps> = ({
@@ -24,6 +26,7 @@ export const AppModal: React.FC<AppModalProps> = ({
   contentStyle,
   showClose = true,
   closeLabel = 'Close',
+  dismissOnBackdropPress = true,
 }) => {
   const { colors } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -37,13 +40,15 @@ export const AppModal: React.FC<AppModalProps> = ({
       accessibilityViewIsModal
     >
       <View style={styles.overlay}>
-        <TouchableOpacity
-          style={StyleSheet.absoluteFill}
-          onPress={onClose}
-          activeOpacity={1}
-          accessibilityLabel="Close dialog"
-          accessibilityRole="button"
-        />
+        {dismissOnBackdropPress && (
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            onPress={onClose}
+            activeOpacity={1}
+            accessibilityLabel="Close dialog"
+            accessibilityRole="button"
+          />
+        )}
         <View style={[styles.content, contentStyle]}>
           {title && (
             <Text style={styles.title} accessibilityRole="header">

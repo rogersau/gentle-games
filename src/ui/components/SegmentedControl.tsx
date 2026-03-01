@@ -83,7 +83,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     },
     label: {
       ...TypeStyle.buttonSm,
-      color: resolvedMode === 'dark' ? colors.text : colors.text,
+      color: colors.text,
     },
     labelActive: {
       color: colors.surface,

@@ -219,7 +219,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
       <AppModal
         visible={isGameComplete}
         title="Well Done! 🎉"
-        onClose={startNewGame}
+        onClose={() => undefined}
+        showClose={false}
+        dismissOnBackdropPress={false}
       >
         <Text style={styles.completeText} accessibilityRole="text">
           You finished in {formatTime(elapsed)}!

@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSettings } from '../context/SettingsContext';
-import { Difficulty, ThemeColors } from '../types';
+import { Difficulty, PASTEL_COLORS, ThemeColors } from '../types';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { AppScreen, AppButton, AppModal, GameCard, SegmentedControl } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
@@ -27,42 +27,42 @@ const GAMES: Game[] = [
     name: 'Memory Snap',
     description: 'A calm memory matching game',
     icon: '🧩',
-    accentColor: '#A8D8EA',
+    accentColor: PASTEL_COLORS.primary,
   },
   {
     id: 'drawing',
     name: 'Drawing Pad',
     description: 'Draw with colors and erase',
     icon: '🎨',
-    accentColor: '#FFB6C1',
+    accentColor: PASTEL_COLORS.secondary,
   },
   {
     id: 'glitter-fall',
     name: 'Glitter Fall',
     description: 'Snow globe glitter play',
     icon: '✨',
-    accentColor: '#D4A9E6',
+    accentColor: PASTEL_COLORS.accent,
   },
   {
     id: 'bubble-pop',
     name: 'Bubble Pop',
     description: 'Tap falling bubbles',
     icon: '🫧',
-    accentColor: '#B8E6B8',
+    accentColor: PASTEL_COLORS.success,
   },
   {
     id: 'category-match',
     name: 'Category Match',
     description: 'Drag to sort by category',
     icon: '🗂️',
-    accentColor: '#FFDAB9',
+    accentColor: PASTEL_COLORS.cardBack,
   },
   {
     id: 'keepy-uppy',
     name: 'Keepy Uppy',
     description: 'Tap balloons in the backyard',
     icon: '🎈',
-    accentColor: '#FFB6C1',
+    accentColor: PASTEL_COLORS.secondary,
   },
 ];
 

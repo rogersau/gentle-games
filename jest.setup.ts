@@ -9,8 +9,8 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   multiRemove: jest.fn(() => Promise.resolve()),
 }));
 
-jest.mock('../context/SettingsContext', () => {
-  const actual = jest.requireActual('../context/SettingsContext');
+jest.mock('./src/context/SettingsContext', () => {
+  const actual = jest.requireActual('./src/context/SettingsContext');
   return {
     ...actual,
     useSettings: () => ({
@@ -18,7 +18,7 @@ jest.mock('../context/SettingsContext', () => {
         difficulty: 'medium',
         theme: 'animals',
         soundEnabled: true,
-        soundVolume: 70,
+        soundVolume: 0.7,
         animationsEnabled: true,
         colorMode: 'light' as const,
         showCardPreview: false,

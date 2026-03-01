@@ -1,8 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React, { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SettingsProvider } from './src/context/SettingsContext';
 import { ParentTimerProvider } from './src/context/ParentTimerContext';
@@ -16,8 +17,13 @@ import { CategoryMatchScreen } from './src/screens/CategoryMatchScreen';
 import { KeepyUppyScreen } from './src/screens/KeepyUppyScreen';
 import { initializeSounds, unloadSounds } from './src/utils/sounds';
 import { installPwaBackNavigationGuard } from './src/utils/pwaBackGuard';
+import { PASTEL_COLORS } from './src/types';
 import { useThemeColors } from './src/utils/theme';
 import { useFonts } from './src/ui/fonts';
+
+void SplashScreen.preventAutoHideAsync().catch((error) => {
+  console.warn('Unable to keep splash screen visible during app startup.', error);
+});
 
 const Stack = createStackNavigator();
 
@@ -52,6 +58,14 @@ export default function App() {
   const { fontsLoaded, fontError } = useFonts();
 
   useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync().catch((error) => {
+        console.warn('Unable to hide splash screen after startup.', error);
+      });
+    }
+  }, [fontsLoaded, fontError]);
+
+  useEffect(() => {
     initializeSounds();
     return () => {
       unloadSounds();
@@ -64,8 +78,8 @@ export default function App() {
 
   if (!fontsLoaded && !fontError) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFEF7' }}>
-        <ActivityIndicator size="large" color="#A8D8EA" />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={PASTEL_COLORS.primary} />
       </View>
     );
   }
@@ -80,3 +94,12 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: PASTEL_COLORS.background,
+  },
+});
