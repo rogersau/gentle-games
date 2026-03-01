@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Text, useWindowDimensions } from 'react-native';
 import { ThemeColors, Tile as TileType } from '../types';
 import { generateTiles, checkMatch, checkGameComplete, formatTime, calculateGridDimensions } from '../utils/gameLogic';
 import { playFlipSound, playMatchSound, playCompleteSound } from '../utils/sounds';
 import { Tile } from './Tile';
 import { useSettings } from '../context/SettingsContext';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
+import { AppHeader, AppButton, AppModal } from '../ui/components';
+import { Space, TypeStyle } from '../ui/tokens';
 
 interface GameBoardProps {
   onGameComplete: (time: number) => void;
@@ -29,7 +31,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
   const [isPreviewPhase, setIsPreviewPhase] = useState(false);
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const padding = 16;
+  const padding = Space.base;
   const headerHeight = 60;
   const tileMargin = 4;
 
@@ -179,13 +181,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBackPress} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.timerText}>{startTime ? formatTime(elapsed) : '—'}</Text>
-        <Text style={styles.movesText}>Moves: {moves}</Text>
-      </View>
+      <AppHeader
+        title=""
+        onBack={onBackPress}
+        rightAction={
+          <View style={styles.headerInfo}>
+            <Text style={styles.timerText} accessibilityLabel={startTime ? `Time ${formatTime(elapsed)}` : 'Timer not started'}>
+              {startTime ? formatTime(elapsed) : '—'}
+            </Text>
+            <Text style={styles.movesText} accessibilityLabel={`${moves} moves`}>
+              Moves: {moves}
+            </Text>
+          </View>
+        }
+      />
 
       <View
         testID="memory-board"
@@ -207,14 +216,21 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
         ))}
       </View>
 
-      {isGameComplete && (
-        <View style={styles.completeContainer}>
-          <Text style={styles.completeText}>You finished in {formatTime(elapsed)}!</Text>
-          <TouchableOpacity style={styles.playAgainButton} onPress={startNewGame}>
-            <Text style={styles.playAgainText}>Play Again</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      <AppModal
+        visible={isGameComplete}
+        title="Well Done! 🎉"
+        onClose={startNewGame}
+      >
+        <Text style={styles.completeText} accessibilityRole="text">
+          You finished in {formatTime(elapsed)}!
+        </Text>
+        <AppButton
+          label="Play Again"
+          variant="primary"
+          onPress={startNewGame}
+          accessibilityHint="Start a new game"
+        />
+      </AppModal>
     </View>
   );
 };
@@ -224,43 +240,21 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     container: {
       flex: 1,
       alignItems: 'center',
-      padding: 16,
+      padding: Space.base,
     },
-    header: {
+    headerInfo: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
       alignItems: 'center',
-      width: '100%',
-      paddingHorizontal: 16,
-      marginBottom: 16,
-    },
-    backButton: {
-      minWidth: 92,
-      height: 40,
-      borderRadius: 20,
-      borderWidth: 2,
-      borderColor: colors.cardBack,
-      backgroundColor: colors.cardFront,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 12,
-    },
-    backButtonText: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: resolvedMode === 'dark' ? colors.background : colors.text,
+      gap: Space.md,
     },
     timerText: {
-      flex: 1,
-      fontSize: 24,
-      fontWeight: '600',
+      ...TypeStyle.h3,
       color: colors.text,
       textAlign: 'center',
     },
     movesText: {
-      fontSize: 18,
+      ...TypeStyle.body,
       color: colors.textLight,
-      width: 80,
       textAlign: 'right',
     },
     board: {
@@ -269,33 +263,10 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       justifyContent: 'center',
       alignItems: 'center',
     },
-    completeContainer: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: resolvedMode === 'dark' ? 'rgba(47, 51, 59, 0.94)' : 'rgba(255, 254, 247, 0.95)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 32,
-    },
     completeText: {
-      fontSize: 28,
-      fontWeight: '600',
+      ...TypeStyle.body,
       color: colors.text,
       textAlign: 'center',
-      marginBottom: 24,
-    },
-    playAgainButton: {
-      backgroundColor: colors.primary,
-      paddingHorizontal: 32,
-      paddingVertical: 16,
-      borderRadius: 25,
-    },
-    playAgainText: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: colors.cardFront,
+      marginBottom: Space.lg,
     },
   });

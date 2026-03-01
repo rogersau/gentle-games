@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React, { useEffect } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SettingsProvider } from './src/context/SettingsContext';
 import { ParentTimerProvider } from './src/context/ParentTimerContext';
@@ -16,6 +17,7 @@ import { KeepyUppyScreen } from './src/screens/KeepyUppyScreen';
 import { initializeSounds, unloadSounds } from './src/utils/sounds';
 import { installPwaBackNavigationGuard } from './src/utils/pwaBackGuard';
 import { useThemeColors } from './src/utils/theme';
+import { useFonts } from './src/ui/fonts';
 
 const Stack = createStackNavigator();
 
@@ -46,6 +48,8 @@ const AppNavigator: React.FC = () => {
 };
 
 export default function App() {
+  const { fontsLoaded, fontError } = useFonts();
+
   useEffect(() => {
     initializeSounds();
     return () => {
@@ -56,6 +60,14 @@ export default function App() {
   useEffect(() => {
     return installPwaBackNavigationGuard();
   }, []);
+
+  if (!fontsLoaded && !fontError) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFEF7' }}>
+        <ActivityIndicator size="large" color="#A8D8EA" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaProvider>

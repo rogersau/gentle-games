@@ -2,6 +2,9 @@ import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Override the global mock — this test exercises the real SettingsContext
+jest.unmock('./SettingsContext');
 import { SettingsProvider, useSettings } from './SettingsContext';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({

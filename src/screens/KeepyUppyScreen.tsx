@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSettings } from '../context/SettingsContext';
 import { ThemeColors } from '../types';
 import {
@@ -14,6 +13,8 @@ import {
   tapBalloon,
 } from '../utils/keepyUppyLogic';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
+import { AppScreen, AppHeader, AppButton } from '../ui/components';
+import { Space, TypeStyle } from '../ui/tokens';
 
 const STEP_MS = 1000 / 30;
 const BALLOON_WIDTH_RATIO = 1.7;
@@ -105,37 +106,33 @@ export const KeepyUppyScreen: React.FC = () => {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Keepy Uppy</Text>
-        <View style={styles.backPlaceholder} />
-      </View>
+    <AppScreen>
+      <AppHeader title="Keepy Uppy" onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
-        <Text style={styles.subtitle}>Tap balloons to keep them in the air.</Text>
+        <Text style={styles.subtitle} accessibilityRole="text">
+          Tap balloons to keep them in the air.
+        </Text>
         <View style={styles.statsRow}>
-          <Text style={styles.statText}>Taps: {score}</Text>
-          <Text style={styles.statText}>Balloons: {balloons.length}</Text>
-          <Text style={styles.statText}>Popped: {popped}</Text>
+          <Text style={styles.statText} accessibilityLabel={`${score} taps`}>Taps: {score}</Text>
+          <Text style={styles.statText} accessibilityLabel={`${balloons.length} balloons`}>Balloons: {balloons.length}</Text>
+          <Text style={styles.statText} accessibilityLabel={`${popped} popped`}>Popped: {popped}</Text>
         </View>
-        <TouchableOpacity
-          style={[styles.addButton, balloons.length >= MAX_BALLOONS ? styles.addButtonDisabled : undefined]}
+        <AppButton
+          label="+ Balloon"
+          variant="secondary"
+          size="sm"
           onPress={handleAddBalloon}
           disabled={balloons.length >= MAX_BALLOONS}
-        >
-          <Text style={styles.addButtonText}>+ Balloon</Text>
-        </TouchableOpacity>
+          accessibilityHint="Add another balloon to the game"
+          style={{ marginBottom: Space.sm }}
+        />
 
         <View style={[styles.board, { width: bounds.width, height: bounds.height }]}>
           <View style={styles.sun} />
-          {/* Clouds */}
           <View style={[styles.cloud, styles.cloud1]} />
           <View style={[styles.cloud, styles.cloud2]} />
           <View style={[styles.cloud, styles.cloud3]} />
-          {/* Ground with grass */}
           <View style={styles.ground}>
             <View style={styles.grassStripe} />
           </View>
@@ -146,6 +143,7 @@ export const KeepyUppyScreen: React.FC = () => {
               <TouchableOpacity
                 key={balloon.id}
                 accessibilityRole="button"
+                accessibilityLabel={`Balloon, tap to keep it up`}
                 testID={`balloon-${balloon.id}`}
                 onPressIn={(event) => {
                   touchStartRef.current[balloon.id] = {
@@ -169,7 +167,6 @@ export const KeepyUppyScreen: React.FC = () => {
                   },
                 ]}
               >
-                {/* Balloon body – oval */}
                 <View
                   style={[
                     styles.balloonBody,
@@ -181,98 +178,42 @@ export const KeepyUppyScreen: React.FC = () => {
                     },
                   ]}
                 >
-                  {/* Shine highlight */}
                   <View style={styles.balloonShine} />
                 </View>
-                {/* Knot */}
                 <View style={[styles.balloonKnot, { borderTopColor: balloon.color }]} />
-                {/* String */}
                 <View style={styles.balloonString} />
               </TouchableOpacity>
             );
           })}
         </View>
       </View>
-    </SafeAreaView>
+    </AppScreen>
   );
 };
 
 const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.cardBack,
-    },
-    backButton: {
-      minWidth: 92,
-      height: 40,
-      borderRadius: 20,
-      borderWidth: 2,
-      borderColor: colors.cardBack,
-      backgroundColor: colors.cardFront,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 12,
-    },
-    backButtonText: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: resolvedMode === 'dark' ? colors.background : colors.text,
-    },
-    backPlaceholder: {
-      width: 92,
-    },
-    title: {
-      fontSize: 22,
-      fontWeight: '700',
-      color: colors.text,
-    },
     content: {
       flex: 1,
       alignItems: 'center',
-      paddingHorizontal: 12,
-      paddingTop: 16,
-      paddingBottom: 12,
+      paddingHorizontal: Space.md,
+      paddingTop: Space.base,
+      paddingBottom: Space.md,
     },
     subtitle: {
-      fontSize: 14,
+      ...TypeStyle.bodySm,
       color: colors.textLight,
       textAlign: 'center',
-      marginBottom: 10,
+      marginBottom: Space.sm,
     },
     statsRow: {
       flexDirection: 'row',
-      gap: 14,
-      marginBottom: 12,
+      gap: Space.md,
+      marginBottom: Space.md,
     },
     statText: {
-      fontSize: 15,
-      fontWeight: '600',
+      ...TypeStyle.buttonSm,
       color: colors.text,
-    },
-    addButton: {
-      backgroundColor: colors.secondary,
-      borderRadius: 22,
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-      marginBottom: 10,
-    },
-    addButtonDisabled: {
-      opacity: 0.55,
-    },
-    addButtonText: {
-      color: colors.cardFront,
-      fontSize: 16,
-      fontWeight: '700',
     },
     board: {
       borderRadius: 20,

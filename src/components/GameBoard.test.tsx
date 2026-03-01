@@ -125,7 +125,11 @@ describe('GameBoard', () => {
         expect(screen.getByText(/You finished in/)).toBeTruthy();
       });
       expect(onGameComplete).toHaveBeenCalledTimes(1);
-      expect(screen.getByText('Moves: 2')).toBeTruthy();
+      // Verify move counter is still visible
+      const movesElement = screen.root.findAll(
+        (node: any) => node.props?.accessibilityLabel === '2 moves'
+      );
+      expect(movesElement.length).toBeGreaterThan(0);
     } finally {
       jest.runOnlyPendingTimers();
       jest.useRealTimers();
