@@ -1,18 +1,19 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { BubbleField } from '../components/BubbleField';
 import { ThemeColors } from '../types';
 import { useSettings } from '../context/SettingsContext';
 import { playBubblePopSound } from '../utils/sounds';
-import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
+import { useThemeColors } from '../utils/theme';
+import { AppScreen, AppHeader } from '../ui/components';
+import { Space, TypeStyle } from '../ui/tokens';
 
 export const BubbleScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings } = useSettings();
-  const { colors, resolvedMode } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
+  const { colors } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [poppedCount, setPoppedCount] = useState(0);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
@@ -28,18 +29,16 @@ export const BubbleScreen: React.FC = () => {
   }, [settings]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Bubble Pop</Text>
-        <View style={styles.backPlaceholder} />
-      </View>
+    <AppScreen>
+      <AppHeader title="Bubble Pop" onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
-        <Text style={styles.subtitle}>Tap the falling bubbles to pop them.</Text>
-        <Text style={styles.counter}>Popped: {poppedCount}</Text>
+        <Text style={styles.subtitle} accessibilityRole="text">
+          Tap the falling bubbles to pop them.
+        </Text>
+        <Text style={styles.counter} accessibilityLabel={`Popped ${poppedCount} bubbles`}>
+          Popped: {poppedCount}
+        </Text>
 
         <View style={styles.boardWrap}>
           <BubbleField
@@ -51,67 +50,29 @@ export const BubbleScreen: React.FC = () => {
           />
         </View>
       </View>
-    </SafeAreaView>
+    </AppScreen>
   );
 };
 
-const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
+const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.cardBack,
-    },
-    backButton: {
-      minWidth: 92,
-      height: 40,
-      borderRadius: 20,
-      borderWidth: 2,
-      borderColor: colors.cardBack,
-      backgroundColor: colors.cardFront,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 12,
-    },
-    backButtonText: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: resolvedMode === 'dark' ? colors.background : colors.text,
-    },
-    backPlaceholder: {
-      width: 92,
-    },
-    title: {
-      fontSize: 22,
-      fontWeight: '700',
-      color: colors.text,
-    },
     content: {
       flex: 1,
       alignItems: 'center',
-      paddingHorizontal: 12,
-      paddingTop: 16,
-      paddingBottom: 12,
+      paddingHorizontal: Space.md,
+      paddingTop: Space.base,
+      paddingBottom: Space.md,
     },
     subtitle: {
-      fontSize: 14,
+      ...TypeStyle.bodySm,
       color: colors.textLight,
       textAlign: 'center',
-      marginBottom: 8,
+      marginBottom: Space.sm,
     },
     counter: {
-      fontSize: 18,
+      ...TypeStyle.label,
       color: colors.text,
-      fontWeight: '600',
-      marginBottom: 14,
+      marginBottom: Space.md,
     },
     boardWrap: {
       alignItems: 'center',

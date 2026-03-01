@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,6 +9,9 @@ import {
   Modal,
 } from 'react-native';
 import Svg, { Path, Circle, Rect, Polygon, Line } from 'react-native-svg';
+import { ThemeColors } from '../types';
+import { useThemeColors } from '../utils/theme';
+import { Space, Radius } from '../ui/tokens';
 
 export interface Point {
   x: number;
@@ -125,6 +128,8 @@ const applySymmetry = (point: Point, width: number, height: number, xMult: numbe
 
 export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
   ({ width, height, bottomInset = 0, initialHistory = [], onHistoryChange, canvasBackgroundColor = '#FFFFFF' }, ref) => {
+    const { colors } = useThemeColors();
+    const themedStyles = useMemo(() => createThemedStyles(colors), [colors]);
     // Unified ordered history — preserves exact draw order for correct undo
     const [history, setHistory] = useState<HistoryEntry[]>(initialHistory);
     // Current strokes being drawn (one per symmetry copy)
@@ -516,15 +521,21 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
           <View style={styles.toolButtons}>
             <TouchableOpacity
-              style={[styles.toolButton, tool === 'pen' ? styles.toolButtonActive : undefined]}
+              style={[styles.toolButton, tool === 'pen' ? themedStyles.toolButtonActive : undefined]}
               onPress={() => handleToolSelect('pen')}
+              accessibilityRole="button"
+              accessibilityLabel="Pen tool"
+              accessibilityState={{ selected: tool === 'pen' }}
             >
               <Text style={styles.toolButtonText}>✏️</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.toolButton, tool === 'shape' ? styles.toolButtonActive : undefined]}
+              style={[styles.toolButton, tool === 'shape' ? themedStyles.toolButtonActive : undefined]}
               onPress={() => handleToolSelect('shape')}
+              accessibilityRole="button"
+              accessibilityLabel={`Shape tool, ${shapeType}`}
+              accessibilityState={{ selected: tool === 'shape' }}
             >
               <Text style={styles.toolButtonText}>
                 {shapeType === 'circle' && '🔴'}
@@ -534,8 +545,11 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.toolButton, symmetryMode !== 'none' ? styles.toolButtonActive : undefined]}
+              style={[styles.toolButton, symmetryMode !== 'none' ? themedStyles.toolButtonActive : undefined]}
               onPress={cycleSymmetryMode}
+              accessibilityRole="button"
+              accessibilityLabel={`Symmetry: ${symmetryMode}`}
+              accessibilityHint="Cycle through symmetry modes"
             >
               <Text style={styles.toolButtonText}>
                 {symmetryMode === 'none' && '🦋'}
@@ -545,8 +559,11 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.toolButton, tool === 'eraser' ? styles.toolButtonActive : undefined]}
+              style={[styles.toolButton, tool === 'eraser' ? themedStyles.toolButtonActive : undefined]}
               onPress={() => handleToolSelect('eraser')}
+              accessibilityRole="button"
+              accessibilityLabel="Eraser tool"
+              accessibilityState={{ selected: tool === 'eraser' }}
             >
               <Text style={styles.toolButtonText}>🧹</Text>
             </TouchableOpacity>
@@ -555,6 +572,9 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               style={[styles.toolButton, !canUndo ? styles.toolButtonDisabled : undefined]}
               onPress={handleUndo}
               disabled={!canUndo}
+              accessibilityRole="button"
+              accessibilityLabel="Undo"
+              accessibilityState={{ disabled: !canUndo }}
             >
               <Text style={[styles.toolButtonText, !canUndo ? styles.disabledText : undefined]}>↩️</Text>
             </TouchableOpacity>
@@ -563,6 +583,9 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               testID="clear-drawing-button"
               style={styles.toolButton}
               onPress={handleClear}
+              accessibilityRole="button"
+              accessibilityLabel="Clear canvas"
+              accessibilityHint="Opens confirmation to clear the drawing"
             >
               <Text style={styles.toolButtonText}>🗑️</Text>
             </TouchableOpacity>
@@ -757,6 +780,14 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
   }
 );
 
+const createThemedStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    toolButtonActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+  });
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -765,7 +796,7 @@ const styles = StyleSheet.create({
   },
   canvasContainer: {
     position: 'relative',
-    borderRadius: 16,
+    borderRadius: Radius.lg,
     overflow: 'hidden',
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
@@ -785,16 +816,16 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   toolbar: {
-    marginTop: 8,
+    marginTop: Space.xs,
     width: '100%',
     alignItems: 'center',
-    paddingBottom: 8,
+    paddingBottom: Space.xs,
   },
   colorPalette: {
     flexDirection: 'row',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    gap: 10,
+    paddingHorizontal: Space.xs,
+    paddingVertical: Space.xs,
+    gap: Space.sm,
     alignItems: 'center',
   },
   colorButton: {
@@ -828,13 +859,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 25,
+    borderRadius: Radius.full,
     borderWidth: 2,
     borderColor: '#E8E4E1',
-  },
-  toolButtonActive: {
-    backgroundColor: '#A8D8EA',
-    borderColor: '#A8D8EA',
   },
   toolButtonDisabled: {
     opacity: 0.4,
@@ -880,8 +907,8 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#FFFEF7',
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: Radius.xl,
+    padding: Space.lg,
     width: '100%',
     maxWidth: 400,
     shadowColor: '#000',

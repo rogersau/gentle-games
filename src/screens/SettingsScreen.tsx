@@ -2,16 +2,24 @@ import React, { useMemo } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Switch,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSettings } from '../context/SettingsContext';
 import { ColorMode, ThemeColors } from '../types';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
+import {
+  AppScreen,
+  AppHeader,
+  AppButton,
+  SettingToggle,
+  SegmentedControl,
+  VolumeControl,
+  SectionHeader,
+} from '../ui/components';
+import { Space, TypeStyle } from '../ui/tokens';
+import { useLayout } from '../ui/useLayout';
 
 const COLOR_MODE_OPTIONS: { value: ColorMode; label: string }[] = [
   { value: 'light', label: 'Light' },
@@ -42,372 +50,167 @@ export const SettingsScreen: React.FC = () => {
   const { settings, updateSettings } = useSettings();
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
+  const { contentWidth, isTablet } = useLayout();
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.toolbarButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.toolbarButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <TouchableOpacity style={styles.saveButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.saveButtonText}>Save</Text>
-        </TouchableOpacity>
-      </View>
+    <AppScreen>
+      <AppHeader
+        title="Settings"
+        onBack={() => navigation.goBack()}
+        rightAction={
+          <AppButton
+            label="Save"
+            variant="primary"
+            size="sm"
+            onPress={() => navigation.goBack()}
+            accessibilityHint="Save settings and return home"
+          />
+        }
+      />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.scrollContent,
+          isTablet && { maxWidth: contentWidth, alignSelf: 'center', width: '100%' },
+        ]}
+      >
+        {/* Appearance */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Appearance</Text>
-          <View style={styles.modeOptions}>
-            {COLOR_MODE_OPTIONS.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                style={[
-                  styles.modeButton,
-                  settings.colorMode === option.value ? styles.modeButtonActive : undefined,
-                ]}
-                onPress={() => updateSettings({ colorMode: option.value })}
-              >
-                <Text
-                  style={[
-                    styles.modeButtonText,
-                    settings.colorMode === option.value ? styles.modeButtonTextActive : undefined,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <Text style={styles.description}>Soft pastel tones are used in both light and dark modes</Text>
+          <SectionHeader title="Appearance" />
+          <SegmentedControl
+            options={COLOR_MODE_OPTIONS}
+            value={settings.colorMode}
+            onValueChange={(value) => updateSettings({ colorMode: value })}
+          />
+          <Text style={styles.description}>
+            Soft pastel tones are used in both light and dark modes
+          </Text>
         </View>
 
+        {/* Card Preview */}
         <View style={styles.section}>
-          <View style={styles.toggleRow}>
-            <Text style={styles.sectionTitle}>Show Card Preview</Text>
-            <Switch
-              value={!!settings.showCardPreview}
-              onValueChange={(value) => updateSettings({ showCardPreview: value })}
-              trackColor={{ false: colors.cardBack, true: colors.primary }}
-              thumbColor={colors.cardFront}
-            />
-          </View>
-          <Text style={styles.description}>Show all cards for 2 seconds before the game starts</Text>
+          <SettingToggle
+            label="Show Card Preview"
+            description="Show all cards for 2 seconds before the game starts"
+            value={!!settings.showCardPreview}
+            onValueChange={(value) => updateSettings({ showCardPreview: value })}
+          />
         </View>
 
+        {/* Animations */}
         <View style={styles.section}>
-          <View style={styles.toggleRow}>
-            <Text style={styles.sectionTitle}>Animations</Text>
-            <Switch
-              value={!!settings.animationsEnabled}
-              onValueChange={(value) => updateSettings({ animationsEnabled: value })}
-              trackColor={{ false: colors.cardBack, true: colors.primary }}
-              thumbColor={colors.cardFront}
-            />
-          </View>
-          <Text style={styles.description}>Enable card flip animations</Text>
+          <SettingToggle
+            label="Animations"
+            description="Enable card flip and UI animations"
+            value={!!settings.animationsEnabled}
+            onValueChange={(value) => updateSettings({ animationsEnabled: value })}
+          />
         </View>
 
+        {/* Keepy Uppy Easy Mode */}
         <View style={styles.section}>
-          <View style={styles.toggleRow}>
-            <Text style={styles.sectionTitle}>Keepy Uppy Easy Mode</Text>
-            <Switch
-              value={!!settings.keepyUppyEasyMode}
-              onValueChange={(value) => updateSettings({ keepyUppyEasyMode: value })}
-              trackColor={{ false: colors.cardBack, true: colors.primary }}
-              thumbColor={colors.cardFront}
-            />
-          </View>
-          <Text style={styles.description}>Any tap gives a gentle lift while good taps still go higher</Text>
+          <SettingToggle
+            label="Keepy Uppy Easy Mode"
+            description="Any tap gives a gentle lift while good taps still go higher"
+            value={!!settings.keepyUppyEasyMode}
+            onValueChange={(value) => updateSettings({ keepyUppyEasyMode: value })}
+          />
         </View>
 
+        {/* Sound */}
         <View style={styles.section}>
-          <View style={styles.toggleRow}>
-            <Text style={styles.sectionTitle}>Sound</Text>
-            <Switch
-              value={!!settings.soundEnabled}
-              onValueChange={(value) => updateSettings({ soundEnabled: value })}
-              trackColor={{ false: colors.cardBack, true: colors.primary }}
-              thumbColor={colors.cardFront}
-            />
-          </View>
-          <Text style={styles.description}>Enable gentle sound effects</Text>
+          <SettingToggle
+            label="Sound"
+            description="Enable gentle sound effects"
+            value={!!settings.soundEnabled}
+            onValueChange={(value) => updateSettings({ soundEnabled: value })}
+          />
         </View>
 
+        {/* Volume */}
         {settings.soundEnabled && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Volume</Text>
-            <View style={styles.volumeRow}>
-              <TouchableOpacity
-                style={styles.volumeButton}
-                onPress={() =>
-                  updateSettings({
-                    soundVolume: Math.max(0, Math.round((settings.soundVolume - 0.1) * 10) / 10),
-                  })
-                }
-                disabled={settings.soundVolume <= 0}
-              >
-                <Text style={styles.volumeButtonText}>−</Text>
-              </TouchableOpacity>
-
-              <View style={styles.volumeBarTrack}>
-                {[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].map((step) => (
-                  <TouchableOpacity
-                    key={step}
-                    style={[
-                      styles.volumeSegment,
-                      settings.soundVolume >= step ? styles.volumeSegmentFilled : undefined,
-                    ]}
-                    onPress={() => updateSettings({ soundVolume: step })}
-                  />
-                ))}
-              </View>
-
-              <TouchableOpacity
-                style={styles.volumeButton}
-                onPress={() =>
-                  updateSettings({
-                    soundVolume: Math.min(1, Math.round((settings.soundVolume + 0.1) * 10) / 10),
-                  })
-                }
-                disabled={settings.soundVolume >= 1}
-              >
-                <Text style={styles.volumeButtonText}>+</Text>
-              </TouchableOpacity>
-            </View>
+            <SectionHeader title="Volume" />
+            <VolumeControl
+              value={settings.soundVolume}
+              onValueChange={(value) => updateSettings({ soundVolume: value })}
+            />
             <Text style={styles.description}>{Math.round(settings.soundVolume * 100)}%</Text>
           </View>
         )}
 
+        {/* Games on Home Screen */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Games on Home Screen</Text>
+          <SectionHeader title="Games on Home Screen" />
           {ALL_GAMES.map((game) => {
             const isVisible = !settings.hiddenGames.includes(game.id);
             return (
-              <View key={game.id} style={styles.toggleRow}>
-                <Text style={styles.gameToggleLabel}>
-                  {game.icon}  {game.name}
-                </Text>
-                <Switch
-                  value={isVisible}
-                  onValueChange={(value) => {
-                    const updated = value
-                      ? settings.hiddenGames.filter((id) => id !== game.id)
-                      : [...settings.hiddenGames, game.id];
-                    updateSettings({ hiddenGames: updated });
-                  }}
-                  trackColor={{ false: colors.cardBack, true: colors.primary }}
-                  thumbColor={colors.cardFront}
-                />
-              </View>
+              <SettingToggle
+                key={game.id}
+                label={`${game.icon}  ${game.name}`}
+                value={isVisible}
+                onValueChange={(value) => {
+                  const updated = value
+                    ? settings.hiddenGames.filter((id) => id !== game.id)
+                    : [...settings.hiddenGames, game.id];
+                  updateSettings({ hiddenGames: updated });
+                }}
+              />
             );
           })}
-          <Text style={styles.description}>Hide games you don't want on the home screen</Text>
+          <Text style={styles.description}>
+            Hide games you don't want on the home screen
+          </Text>
         </View>
 
+        {/* Parent Timer */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Parent Timer</Text>
-          <View style={styles.timerOptions}>
-            {TIMER_OPTIONS.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                style={[
-                  styles.timerButton,
-                  settings.parentTimerMinutes === option.value ? styles.modeButtonActive : undefined,
-                ]}
-                onPress={() => updateSettings({ parentTimerMinutes: option.value })}
-              >
-                <Text
-                  style={[
-                    styles.modeButtonText,
-                    settings.parentTimerMinutes === option.value ? styles.modeButtonTextActive : undefined,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <SectionHeader title="Parent Timer" />
+          <SegmentedControl
+            options={TIMER_OPTIONS}
+            value={settings.parentTimerMinutes}
+            onValueChange={(value) => updateSettings({ parentTimerMinutes: value })}
+            wrap
+          />
           <Text style={styles.description}>
             After the set time, a maths question pauses play until a grown-up answers
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>Back to Home</Text>
-        </TouchableOpacity>
+        <View style={styles.bottomAction}>
+          <AppButton
+            label="Back to Home"
+            variant="secondary"
+            onPress={() => navigation.goBack()}
+            accessibilityHint="Return to the home screen"
+          />
+        </View>
       </ScrollView>
-    </SafeAreaView>
+    </AppScreen>
   );
 };
 
-const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
+const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    header: {
-      height: 64,
-      paddingHorizontal: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.cardBack,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: colors.background,
-    },
-    toolbarButton: {
-      minWidth: 86,
-      height: 40,
-      borderRadius: 20,
-      borderWidth: 2,
-      borderColor: colors.cardBack,
-      backgroundColor: colors.cardFront,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 12,
-    },
-    toolbarButtonText: {
-      fontSize: 15,
-      fontWeight: '700',
-      color: resolvedMode === 'dark' ? colors.background : colors.text,
-    },
-    headerTitle: {
-      fontSize: 24,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    saveButton: {
-      minWidth: 86,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 16,
-    },
-    saveButtonText: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: colors.cardFront,
-    },
     scrollContent: {
-      padding: 24,
+      padding: Space.xl,
+    },
+    scroll: {
+      flex: 1,
+      minHeight: 0,
     },
     section: {
-      marginBottom: 32,
-    },
-    sectionTitle: {
-      fontSize: 20,
-      fontWeight: '600',
-      color: colors.text,
-      marginBottom: 12,
-    },
-    toggleRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      marginBottom: Space.xl,
     },
     description: {
-      fontSize: 14,
+      ...TypeStyle.bodySm,
       color: colors.textLight,
-      marginTop: 4,
+      marginTop: Space.xs,
     },
-    modeOptions: {
-      flexDirection: 'row',
-      gap: 8,
-      marginTop: 4,
-    },
-    timerOptions: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-      marginTop: 4,
-    },
-    modeButton: {
-      flex: 1,
-      backgroundColor: colors.cardFront,
-      borderWidth: 2,
-      borderColor: colors.cardBack,
-      borderRadius: 12,
-      paddingVertical: 10,
+    bottomAction: {
       alignItems: 'center',
-    },
-    modeButtonActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
-    modeButtonText: {
-      fontSize: 15,
-      fontWeight: '600',
-      color: resolvedMode === 'dark' ? colors.background : colors.text,
-    },
-    modeButtonTextActive: {
-      color: resolvedMode === 'dark' ? colors.background : colors.cardFront,
-    },
-    volumeRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      marginTop: 4,
-    },
-    volumeButton: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: colors.cardFront,
-      borderWidth: 2,
-      borderColor: colors.cardBack,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    volumeButtonText: {
-      fontSize: 20,
-      fontWeight: '600',
-      color: resolvedMode === 'dark' ? colors.background : colors.text,
-      lineHeight: 22,
-    },
-    volumeBarTrack: {
-      flex: 1,
-      flexDirection: 'row',
-      gap: 3,
-      alignItems: 'center',
-    },
-    volumeSegment: {
-      flex: 1,
-      height: 20,
-      borderRadius: 4,
-      backgroundColor: colors.cardBack,
-    },
-    volumeSegmentFilled: {
-      backgroundColor: colors.primary,
-    },
-    backButton: {
-      backgroundColor: colors.secondary,
-      paddingHorizontal: 32,
-      paddingVertical: 16,
-      borderRadius: 25,
-      alignItems: 'center',
-      marginTop: 16,
-    },
-    backButtonText: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: colors.cardFront,
-    },
-    gameToggleLabel: {
-      fontSize: 16,
-      fontWeight: '500',
-      color: colors.text,
-    },
-    timerButton: {
-      backgroundColor: colors.cardFront,
-      borderWidth: 2,
-      borderColor: colors.cardBack,
-      borderRadius: 12,
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-      alignItems: 'center',
+      marginTop: Space.base,
+      marginBottom: Space.xl,
     },
   });

@@ -22,6 +22,14 @@ export interface ThemeColors {
   success: string;
   matched: string;
   surfaceGame: string;
+  // Extended semantic tokens
+  surface: string;
+  surfaceElevated: string;
+  border: string;
+  borderSubtle: string;
+  overlay: string;
+  accent: string;
+  danger: string;
 }
 
 export interface Settings {
@@ -214,6 +222,13 @@ export const PASTEL_COLORS: ThemeColors = {
   success: '#B8E6B8',
   matched: '#D3D3D3',
   surfaceGame: '#FFFFFF',
+  surface: '#FFFFFF',
+  surfaceElevated: '#FFFFFF',
+  border: '#E8E4E1',
+  borderSubtle: '#F0EDE9',
+  overlay: 'rgba(90, 90, 90, 0.4)',
+  accent: '#D4A9E6',
+  danger: '#E8A0A0',
 };
 
 export const DARK_PASTEL_COLORS: ThemeColors = {
@@ -227,4 +242,11 @@ export const DARK_PASTEL_COLORS: ThemeColors = {
   success: '#95C5A3',
   matched: '#8B9099',
   surfaceGame: '#3F444D',
+  surface: '#3A3E47',
+  surfaceElevated: '#44484F',
+  border: '#4A4E57',
+  borderSubtle: '#3F434C',
+  overlay: 'rgba(0, 0, 0, 0.5)',
+  accent: '#B28DC7',
+  danger: '#C87878',
 };

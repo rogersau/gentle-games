@@ -5,6 +5,7 @@ import { createCategoryMatchRound, isCategoryMatchCorrect } from '../utils/categ
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { useSettings } from '../context/SettingsContext';
 import { playFlipSound, playMatchSound } from '../utils/sounds';
+import { Radius, Space, TypeStyle } from '../ui/tokens';
 
 interface CategoryMatchBoardProps {
   width: number;
@@ -199,11 +200,14 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   );
 
   return (
-    <View style={[styles.container, { width, height }]}>
-      <Text style={styles.promptText}>Drag to the matching category</Text>
+    <View style={[styles.container, { width, height }]} accessibilityLabel="Category matching game">
+      <Text style={styles.promptText} accessibilityRole="text">Drag to the matching category</Text>
 
       <Animated.View
         testID="category-draggable-token"
+        accessibilityRole="button"
+        accessibilityLabel={`${round.item.emoji}, drag to matching category`}
+        accessibilityHint="Press and drag to the correct category zone"
         style={[
           styles.draggableToken,
             {
@@ -236,6 +240,8 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
         {zones.map((zone) => (
           <View
             key={zone.category}
+            accessibilityRole="button"
+            accessibilityLabel={`${zone.label} category`}
             style={[
               styles.zoneCard,
               { width: zone.width, height: zone.height },
@@ -254,22 +260,21 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
 const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
     container: {
-      borderRadius: 18,
+      borderRadius: Radius.xl,
       overflow: 'hidden',
       backgroundColor: colors.surfaceGame,
       borderWidth: 2,
       borderColor: colors.cardBack,
     },
     promptText: {
-      marginTop: 12,
+      marginTop: Space.sm,
       textAlign: 'center',
       color: resolvedMode === 'dark' ? colors.text : colors.textLight,
-      fontSize: 14,
-      fontWeight: '500',
+      ...TypeStyle.bodySm,
     },
     draggableToken: {
       position: 'absolute',
-      borderRadius: 20,
+      borderRadius: Radius.xl,
       backgroundColor: colors.cardFront,
       borderWidth: 2,
       borderColor: colors.primary,
@@ -284,14 +289,12 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     successText: {
       textAlign: 'center',
       color: colors.success,
-      fontSize: 16,
-      fontWeight: '700',
+      ...TypeStyle.button,
     },
     errorText: {
       textAlign: 'center',
       color: resolvedMode === 'dark' ? colors.secondary : '#B76A7C',
-      fontSize: 16,
-      fontWeight: '700',
+      ...TypeStyle.button,
     },
     zoneRow: {
       position: 'absolute',
@@ -299,13 +302,13 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       justifyContent: 'space-between',
     },
     zoneCard: {
-      borderRadius: 16,
+      borderRadius: Radius.lg,
       borderWidth: 2,
       borderColor: colors.cardBack,
       backgroundColor: colors.cardFront,
       alignItems: 'center',
       justifyContent: 'center',
-      paddingHorizontal: 8,
+      paddingHorizontal: Space.xs,
     },
     zoneCardActive: {
       borderColor: colors.primary,
@@ -313,12 +316,11 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     },
     zoneIcon: {
       fontSize: 30,
-      marginBottom: 6,
+      marginBottom: Space.xxs,
     },
     zoneLabel: {
       color: resolvedMode === 'dark' ? colors.background : colors.text,
-      fontSize: 16,
-      fontWeight: '600',
+      ...TypeStyle.button,
       textAlign: 'center',
     },
   });

@@ -562,7 +562,11 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
     }, [height, width]);
 
     return (
-      <View style={[styles.container, { width, height }]}>
+      <View
+        style={[styles.container, { width, height }]}
+        accessible={true}
+        accessibilityLabel="Glitter globe. Swipe or shake to move glitter particles."
+      >
         <Svg width={width} height={height}>
           <Defs>
             <RadialGradient id="globeFill" cx="50%" cy="32%" rx="65%" ry="65%">

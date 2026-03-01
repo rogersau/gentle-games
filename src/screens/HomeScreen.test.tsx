@@ -86,10 +86,20 @@ describe('HomeScreen', () => {
   it('shows difficulty modal for Memory Snap and navigates to Game after selection', async () => {
     const screen = render(<HomeScreen />);
 
-    fireEvent.press(screen.getByText('Memory Snap'));
-    expect(screen.getByText('Select difficulty (last played: Medium)')).toBeTruthy();
+    // GameCard wraps content in TouchableOpacity with accessibility label
+    const memorySnapCard = screen.getAllByRole('button').find(
+      (el: any) => el.props.accessibilityLabel?.includes('Memory Snap')
+    );
+    expect(memorySnapCard).toBeTruthy();
+    fireEvent.press(memorySnapCard!);
+    expect(screen.getByText(/Select difficulty/)).toBeTruthy();
 
-    fireEvent.press(screen.getByText('Hard'));
+    // Find the Hard difficulty button
+    const hardButton = screen.getAllByRole('button').find(
+      (el: any) => el.props.accessibilityLabel?.includes('Hard')
+    );
+    expect(hardButton).toBeTruthy();
+    fireEvent.press(hardButton!);
 
     await waitFor(() => {
       expect(mockUpdateSettings).toHaveBeenCalledWith({ difficulty: 'hard' });
@@ -107,12 +117,6 @@ describe('HomeScreen', () => {
     expect(screen.getByText('Glitter Fall')).toBeTruthy();
     expect(screen.getByText('Category Match')).toBeTruthy();
     expect(screen.getByText('Keepy Uppy')).toBeTruthy();
-  });
-
-  it('shows a scroll hint on the game list', () => {
-    const screen = render(<HomeScreen />);
-
-    expect(screen.getByText('Scroll to see more ↓')).toBeTruthy();
   });
 
   it('game list container uses flex to fill available space', () => {

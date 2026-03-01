@@ -1,15 +1,16 @@
 import React, { useMemo, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlitterGlobe, GlitterGlobeRef } from '../components/GlitterGlobe';
 import { ThemeColors } from '../types';
-import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
+import { useThemeColors } from '../utils/theme';
+import { AppScreen, AppHeader, AppButton } from '../ui/components';
+import { Space, TypeStyle } from '../ui/tokens';
 
 export const GlitterScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { colors, resolvedMode } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
+  const { colors } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const globeRef = useRef<GlitterGlobeRef>(null);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
@@ -20,120 +21,63 @@ export const GlitterScreen: React.FC = () => {
   }, [screenHeight, screenWidth]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Glitter Fall</Text>
-        <View style={styles.backPlaceholder} />
-      </View>
+    <AppScreen>
+      <AppHeader title="Glitter Fall" onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
-        <Text style={styles.subtitle}>Tap buttons to add glitter, then shake or swirl your finger.</Text>
+        <Text style={styles.subtitle} accessibilityRole="text">
+          Tap buttons to add glitter, then shake or swirl your finger.
+        </Text>
 
         <View style={styles.globeWrap}>
           <GlitterGlobe ref={globeRef} width={globeSize} height={globeSize} />
         </View>
 
         <View style={styles.controls}>
-          <TouchableOpacity style={styles.primaryButton} onPress={() => globeRef.current?.addGlitter(12)}>
-            <Text style={styles.primaryButtonText}>⭐ Sprinkle</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.secondaryButton} onPress={() => globeRef.current?.clearGlitter()}>
-            <Text style={styles.secondaryButtonText}>🧹 Clear</Text>
-          </TouchableOpacity>
+          <AppButton
+            label="⭐ Sprinkle"
+            variant="secondary"
+            onPress={() => globeRef.current?.addGlitter(12)}
+            accessibilityHint="Add glitter particles to the globe"
+            style={{ flex: 1 }}
+          />
+          <AppButton
+            label="🧹 Clear"
+            variant="primary"
+            onPress={() => globeRef.current?.clearGlitter()}
+            accessibilityHint="Remove all glitter from the globe"
+            style={{ flex: 1 }}
+          />
         </View>
       </View>
-    </SafeAreaView>
+    </AppScreen>
   );
 };
 
-const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
+const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.cardBack,
-    },
-    backButton: {
-      minWidth: 92,
-      height: 40,
-      borderRadius: 20,
-      borderWidth: 2,
-      borderColor: colors.cardBack,
-      backgroundColor: colors.cardFront,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 12,
-    },
-    backButtonText: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: resolvedMode === 'dark' ? colors.background : colors.text,
-    },
-    backPlaceholder: {
-      width: 92,
-    },
-    title: {
-      fontSize: 22,
-      fontWeight: '700',
-      color: colors.text,
-    },
     content: {
       flex: 1,
       alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingTop: 16,
-      paddingBottom: 12,
+      paddingHorizontal: Space.base,
+      paddingTop: Space.base,
+      paddingBottom: Space.md,
     },
     subtitle: {
-      fontSize: 14,
+      ...TypeStyle.bodySm,
       color: colors.textLight,
       textAlign: 'center',
-      marginBottom: 14,
+      marginBottom: Space.md,
     },
     globeWrap: {
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 18,
+      marginBottom: Space.lg,
     },
     controls: {
       width: '90%',
       flexDirection: 'row',
       justifyContent: 'center',
-      gap: 10,
-    },
-    primaryButton: {
-      flex: 1,
-      backgroundColor: colors.secondary,
-      paddingVertical: 14,
-      borderRadius: 24,
-      alignItems: 'center',
-    },
-    primaryButtonText: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: colors.cardFront,
-    },
-    secondaryButton: {
-      flex: 1,
-      backgroundColor: colors.primary,
-      paddingVertical: 14,
-      borderRadius: 24,
-      alignItems: 'center',
-    },
-    secondaryButtonText: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.cardFront,
+      gap: Space.sm,
     },
   });

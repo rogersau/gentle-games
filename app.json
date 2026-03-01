@@ -64,7 +64,8 @@
       "baseUrl": "/gentle-games"
     },
     "plugins": [
-      "expo-audio"
+      "expo-audio",
+      "expo-font"
     ]
   }
 }

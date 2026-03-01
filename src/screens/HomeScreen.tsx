@@ -2,22 +2,23 @@ import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  Modal,
   ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSettings } from '../context/SettingsContext';
-import { Difficulty, ThemeColors } from '../types';
+import { Difficulty, PASTEL_COLORS, ThemeColors } from '../types';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
+import { AppScreen, AppButton, AppModal, GameCard, SegmentedControl } from '../ui/components';
+import { Space, TypeStyle } from '../ui/tokens';
+import { useLayout } from '../ui/useLayout';
 
 interface Game {
   id: string;
   name: string;
   description: string;
   icon: string;
+  accentColor?: string;
 }
 
 const GAMES: Game[] = [
@@ -26,50 +27,66 @@ const GAMES: Game[] = [
     name: 'Memory Snap',
     description: 'A calm memory matching game',
     icon: '🧩',
+    accentColor: PASTEL_COLORS.primary,
   },
   {
     id: 'drawing',
     name: 'Drawing Pad',
     description: 'Draw with colors and erase',
     icon: '🎨',
+    accentColor: PASTEL_COLORS.secondary,
   },
   {
     id: 'glitter-fall',
     name: 'Glitter Fall',
     description: 'Snow globe glitter play',
     icon: '✨',
+    accentColor: PASTEL_COLORS.accent,
   },
   {
     id: 'bubble-pop',
     name: 'Bubble Pop',
     description: 'Tap falling bubbles',
     icon: '🫧',
+    accentColor: PASTEL_COLORS.success,
   },
   {
     id: 'category-match',
     name: 'Category Match',
     description: 'Drag to sort by category',
     icon: '🗂️',
+    accentColor: PASTEL_COLORS.cardBack,
   },
   {
     id: 'keepy-uppy',
     name: 'Keepy Uppy',
     description: 'Tap balloons in the backyard',
     icon: '🎈',
+    accentColor: PASTEL_COLORS.secondary,
   },
 ];
 
 const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; description: string }[] = [
-  { value: 'easy', label: 'Easy', description: '3x4 grid (12 cards)' },
-  { value: 'medium', label: 'Medium', description: '4x5 grid (20 cards)' },
-  { value: 'hard', label: 'Hard', description: '5x6 grid (30 cards)' },
+  { value: 'easy', label: 'Easy', description: '3×4 grid (12 cards)' },
+  { value: 'medium', label: 'Medium', description: '4×5 grid (20 cards)' },
+  { value: 'hard', label: 'Hard', description: '5×6 grid (30 cards)' },
 ];
+
+const ROUTE_MAP: Record<string, string> = {
+  'memory-snap': 'Game',
+  drawing: 'Drawing',
+  'glitter-fall': 'Glitter',
+  'bubble-pop': 'Bubble',
+  'category-match': 'CategoryMatch',
+  'keepy-uppy': 'KeepyUppy',
+};
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings, updateSettings } = useSettings();
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
+  const { gridColumns, contentWidth, isTablet } = useLayout();
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [showDifficultySelector, setShowDifficultySelector] = useState(false);
 
@@ -80,32 +97,19 @@ export const HomeScreen: React.FC = () => {
 
   const handleGameSelect = (game: Game) => {
     setSelectedGame(game);
-    if (game.id === 'drawing') {
-      navigation.navigate('Drawing' as never);
-      setSelectedGame(null);
-    } else if (game.id === 'glitter-fall') {
-      navigation.navigate('Glitter' as never);
-      setSelectedGame(null);
-    } else if (game.id === 'bubble-pop') {
-      navigation.navigate('Bubble' as never);
-      setSelectedGame(null);
-    } else if (game.id === 'category-match') {
-      navigation.navigate('CategoryMatch' as never);
-      setSelectedGame(null);
-    } else if (game.id === 'keepy-uppy') {
-      navigation.navigate('KeepyUppy' as never);
-      setSelectedGame(null);
-    } else {
+    if (game.id === 'memory-snap') {
       setShowDifficultySelector(true);
+    } else {
+      const route = ROUTE_MAP[game.id];
+      if (route) navigation.navigate(route as never);
+      setSelectedGame(null);
     }
   };
 
   const handleDifficultySelect = async (difficulty: Difficulty) => {
     await updateSettings({ difficulty });
     setShowDifficultySelector(false);
-    if (selectedGame?.id === 'memory-snap') {
-      navigation.navigate('Game' as never);
-    }
+    navigation.navigate('Game' as never);
     setSelectedGame(null);
   };
 
@@ -120,305 +124,142 @@ export const HomeScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Gentle Games</Text>
-        <Text style={styles.subtitle}>Calm games for kids</Text>
+    <AppScreen testID="home-screen">
+      <View style={[styles.content, isTablet && { maxWidth: contentWidth, alignSelf: 'center', width: '100%' }]}>
+        <View style={styles.titleArea}>
+          <Text style={styles.title} accessibilityRole="header">Gentle Games</Text>
+          <Text style={styles.subtitle}>Calm games for little ones</Text>
+        </View>
 
         <View style={styles.gamesContainer} testID="home-games-container">
-          <Text style={styles.sectionTitle}>Choose a Game</Text>
-          {visibleGames.length > 0 && (
-            <Text style={styles.scrollHint}>Scroll to see more ↓</Text>
-          )}
-
-          <ScrollView
-            style={styles.gamesScroll}
-            contentContainerStyle={styles.gamesScrollContent}
-            showsVerticalScrollIndicator
-            persistentScrollbar
-          >
-            {visibleGames.map((game) => (
-              <TouchableOpacity
-                key={game.id}
-                style={styles.gameCard}
-                onPress={() => handleGameSelect(game)}
-              >
-                <Text style={styles.gameIcon}>{game.icon}</Text>
-                <View style={styles.gameInfo}>
-                  <Text style={styles.gameName}>{game.name}</Text>
-                  <Text style={styles.gameDescription}>{game.description}</Text>
+          {visibleGames.length > 0 ? (
+            <ScrollView
+              style={styles.gamesScroll}
+              contentContainerStyle={[
+                styles.gamesScrollContent,
+                isTablet && styles.gamesGrid,
+              ]}
+              showsVerticalScrollIndicator
+              persistentScrollbar
+            >
+              {visibleGames.map((game) => (
+                <View
+                  key={game.id}
+                  style={isTablet ? { width: `${Math.floor(100 / gridColumns)}%`, paddingHorizontal: Space.xs } : undefined}
+                >
+                  <GameCard
+                    icon={game.icon}
+                    title={game.name}
+                    description={game.description}
+                    onPress={() => handleGameSelect(game)}
+                    accentColor={game.accentColor}
+                  />
                 </View>
-              </TouchableOpacity>
-            ))}
-            {visibleGames.length === 0 ? (
-              <Text style={styles.emptyGamesText}>All games are hidden. Enable one in Settings.</Text>
-            ) : null}
-          </ScrollView>
+              ))}
+            </ScrollView>
+          ) : (
+            <Text style={styles.emptyGamesText}>
+              All games are hidden. Enable one in Settings.
+            </Text>
+          )}
         </View>
 
-        <TouchableOpacity
-          style={styles.settingsButton}
-          onPress={() => navigation.navigate('Settings' as never)}
-        >
-          <Text style={styles.settingsButtonText}>Settings</Text>
-        </TouchableOpacity>
+        <View style={styles.footer}>
+          <AppButton
+            label="⚙️  Settings"
+            variant="secondary"
+            size="lg"
+            onPress={() => navigation.navigate('Settings' as never)}
+            accessibilityHint="Opens app settings"
+          />
+        </View>
       </View>
 
-      <Modal
-        animationType="slide"
-        transparent={true}
+      <AppModal
         visible={showDifficultySelector}
-        onRequestClose={handleCloseModal}
+        onClose={handleCloseModal}
+        title={selectedGame?.name}
+        showClose
+        closeLabel="Cancel"
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{selectedGame?.name}</Text>
-            <Text style={styles.modalSubtitle}>
-              Select difficulty
-              {settings.difficulty && ` (last played: ${getDifficultyLabel(settings.difficulty)})`}
-            </Text>
-            
-            <View style={styles.optionsList}>
-              {DIFFICULTY_OPTIONS.map(({ value, label, description }) => (
-                <TouchableOpacity
-                  key={value}
-                  style={[
-                    styles.optionButton,
-                    settings.difficulty === value ? styles.optionButtonActive : undefined,
-                  ]}
-                  onPress={() => handleDifficultySelect(value)}
-                >
-                  <View style={styles.optionContent}>
-                    <View style={styles.optionHeader}>
-                      <Text
-                        style={[
-                          styles.optionLabel,
-                          settings.difficulty === value ? styles.optionTextActive : undefined,
-                        ]}
-                      >
-                        {label}
-                      </Text>
-                      {settings.difficulty === value && (
-                        <Text style={styles.lastPlayedBadge}>Last Played</Text>
-                      )}
-                    </View>
-                    <Text
-                      style={[
-                        styles.optionDescription,
-                          settings.difficulty === value ? styles.optionTextActive : undefined,
-                      ]}
-                    >
-                      {description}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={handleCloseModal}
-            >
-              <Text style={styles.closeButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
+        <Text style={styles.modalSubtitle}>
+          Select difficulty
+          {settings.difficulty && ` (last: ${getDifficultyLabel(settings.difficulty)})`}
+        </Text>
+        <View style={styles.optionsList}>
+          {DIFFICULTY_OPTIONS.map(({ value, label, description }) => (
+            <AppButton
+              key={value}
+              label={`${label}  ·  ${description}`}
+              variant={settings.difficulty === value ? 'primary' : 'ghost'}
+              size="md"
+              fullWidth
+              onPress={() => handleDifficultySelect(value)}
+              style={{ marginBottom: Space.sm }}
+              accessibilityLabel={`${label} difficulty, ${description}`}
+            />
+          ))}
         </View>
-      </Modal>
-    </SafeAreaView>
+      </AppModal>
+    </AppScreen>
   );
 };
 
 const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   content: {
     flex: 1,
-    justifyContent: 'flex-start',
+    padding: Space.xl,
+    paddingTop: Space.lg,
+  },
+  titleArea: {
     alignItems: 'center',
-    padding: 32,
-    paddingTop: 24,
+    marginBottom: Space['2xl'],
   },
   title: {
-    fontSize: 42,
-    fontWeight: '700',
+    ...TypeStyle.h1,
     color: colors.text,
-    marginBottom: 8,
     textAlign: 'center',
+    marginBottom: Space.xs,
   },
   subtitle: {
-    fontSize: 18,
+    ...TypeStyle.body,
     color: colors.textLight,
-    marginBottom: 48,
     textAlign: 'center',
   },
   gamesContainer: {
-    width: '100%',
     flex: 1,
     flexShrink: 1,
     minHeight: 0,
-    marginBottom: 32,
+    marginBottom: Space.lg,
   },
   gamesScroll: {
     flex: 1,
   },
   gamesScrollContent: {
-    paddingBottom: 8,
+    paddingBottom: Space.sm,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  scrollHint: {
-    fontSize: 13,
-    color: colors.textLight,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  gameCard: {
-    backgroundColor: colors.cardFront,
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 16,
+  gamesGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  gameIcon: {
-    fontSize: 48,
-    marginRight: 16,
-  },
-  gameInfo: {
-    flex: 1,
-  },
-  gameName: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: resolvedMode === 'dark' ? colors.background : colors.text,
-    marginBottom: 4,
-  },
-  gameDescription: {
-    fontSize: 14,
-    color: resolvedMode === 'dark' ? colors.cardBack : colors.textLight,
+    flexWrap: 'wrap',
   },
   emptyGamesText: {
-    marginTop: 8,
-    fontSize: 15,
+    ...TypeStyle.body,
     textAlign: 'center',
     color: colors.textLight,
+    marginTop: Space.lg,
   },
-  settingsButton: {
-    backgroundColor: colors.secondary,
-    paddingHorizontal: 48,
-    paddingVertical: 18,
-    borderRadius: 30,
-    shadowColor: colors.secondary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  settingsButtonText: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: colors.cardFront,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
+  footer: {
     alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: colors.background,
-    borderRadius: 20,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.text,
-    textAlign: 'center',
-    marginBottom: 8,
+    paddingBottom: Space.sm,
   },
   modalSubtitle: {
-    fontSize: 14,
+    ...TypeStyle.bodySm,
     color: colors.textLight,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: Space.base,
   },
   optionsList: {
-    marginBottom: 16,
-  },
-  optionButton: {
-    backgroundColor: colors.cardFront,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: colors.cardBack,
-    marginBottom: 12,
-  },
-  optionButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  optionContent: {
-    flexDirection: 'column',
-  },
-  optionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  optionLabel: {
-    fontSize: 20,
-    color: resolvedMode === 'dark' ? colors.background : colors.text,
-    fontWeight: '600',
-  },
-  optionDescription: {
-    fontSize: 14,
-    color: resolvedMode === 'dark' ? colors.cardBack : colors.textLight,
-  },
-  optionTextActive: {
-    color: colors.cardFront,
-  },
-  lastPlayedBadge: {
-    fontSize: 12,
-    color: colors.cardFront,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  closeButton: {
-    backgroundColor: colors.cardBack,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 25,
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
+    marginBottom: Space.sm,
   },
 });

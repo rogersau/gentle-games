@@ -3,6 +3,7 @@ import { TouchableOpacity, Text, StyleSheet, Animated, View } from 'react-native
 import { ThemeColors, Tile as TileType } from '../types';
 import { useSettings } from '../context/SettingsContext';
 import { useThemeColors } from '../utils/theme';
+import { Radius } from '../ui/tokens';
 
 interface TileProps {
   tile: TileType;
@@ -45,12 +46,21 @@ const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
 
   const tileStyle = tile.isMatched ? styles.tileMatched : (showFront ? styles.tileFront : styles.tileBack);
 
+  const accessibilityLabel = tile.isMatched
+    ? `${tile.value}, matched`
+    : tile.isFlipped
+    ? `${tile.value}, face up`
+    : 'Card, face down';
+
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={tile.isFlipped || tile.isMatched}
       style={[styles.container, { width: size, height: size }]}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={!tile.isFlipped && !tile.isMatched ? 'Double tap to flip this card' : undefined}
     >
       <Animated.View
         style={[
@@ -88,7 +98,7 @@ const createStyles = (colors: ThemeColors) =>
     tile: {
       width: '100%',
       height: '100%',
-      borderRadius: 12,
+      borderRadius: Radius.md,
       justifyContent: 'center',
       alignItems: 'center',
       overflow: 'hidden',
