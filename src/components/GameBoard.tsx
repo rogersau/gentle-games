@@ -194,45 +194,48 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
             </Text>
           </View>
         }
+        style={styles.header}
       />
 
-      <View
-        testID="memory-board"
-        style={[
-          styles.board,
-          {
-            width: boardWidth,
-            height: boardHeight,
-          },
-        ]}
-      >
-        {tiles.map(tile => (
-          <Tile
-            key={tile.id}
-            tile={tile}
-            onPress={() => handleTilePress(tile.id)}
-            size={tileSize}
-          />
-        ))}
-      </View>
+      <View style={styles.inner}>
+        <View
+          testID="memory-board"
+          style={[
+            styles.board,
+            {
+              width: boardWidth,
+              height: boardHeight,
+            },
+          ]}
+        >
+          {tiles.map(tile => (
+            <Tile
+              key={tile.id}
+              tile={tile}
+              onPress={() => handleTilePress(tile.id)}
+              size={tileSize}
+            />
+          ))}
+        </View>
 
-      <AppModal
-        visible={isGameComplete}
-        title="Well Done! 🎉"
-        onClose={() => undefined}
-        showClose={false}
-        dismissOnBackdropPress={false}
-      >
-        <Text style={styles.completeText} accessibilityRole="text">
-          You finished in {formatTime(elapsed)}!
-        </Text>
-        <AppButton
-          label="Play Again"
-          variant="primary"
-          onPress={startNewGame}
-          accessibilityHint="Start a new game"
-        />
-      </AppModal>
+        <AppModal
+          visible={isGameComplete}
+          title="Well Done! 🎉"
+          onClose={() => undefined}
+          showClose={false}
+          dismissOnBackdropPress={false}
+        >
+          <Text style={styles.completeText} accessibilityRole="text">
+            You finished in {formatTime(elapsed)}!
+          </Text>
+          <AppButton
+            label="Play Again"
+            variant="primary"
+            onPress={startNewGame}
+            accessibilityHint="Start a new game"
+          />
+        </AppModal>
+      </View>
     </View>
   );
 };
@@ -241,7 +244,6 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      alignItems: 'center',
       padding: Space.base,
     },
     headerInfo: {
@@ -270,5 +272,13 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       color: colors.text,
       textAlign: 'center',
       marginBottom: Space.lg,
+    },
+    // new helpers
+    header: {
+      alignSelf: 'stretch',
+    },
+    inner: {
+      flex: 1,
+      alignItems: 'center',
     },
   });
