@@ -200,7 +200,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   );
 
   return (
-    <View style={[styles.container, { width, height }]} accessible={true} accessibilityLabel="Category matching game">
+    <View style={[styles.container, { width, height }]} accessibilityLabel="Category matching game">
       <Text style={styles.promptText} accessibilityRole="text">Drag to the matching category</Text>
 
       <Animated.View
