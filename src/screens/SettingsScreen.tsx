@@ -69,6 +69,7 @@ export const SettingsScreen: React.FC = () => {
       />
 
       <ScrollView
+        style={styles.scroll}
         contentContainerStyle={[
           styles.scrollContent,
           isTablet && { maxWidth: contentWidth, alignSelf: 'center', width: '100%' },
@@ -194,6 +195,10 @@ const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
     scrollContent: {
       padding: Space.xl,
+    },
+    scroll: {
+      flex: 1,
+      minHeight: 0,
     },
     section: {
       marginBottom: Space.xl,

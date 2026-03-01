@@ -30,6 +30,7 @@ const AppNavigator: React.FC = () => {
         <Stack.Navigator
           screenOptions={{
             headerShown: false,
+            cardStyle: { flex: 1, minHeight: 0 },
           }}
         >
           <Stack.Screen name="Home" component={HomeScreen} />

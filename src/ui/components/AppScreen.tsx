@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, ScrollView, ViewStyle } from 'react-native';
+import { StyleSheet, View, ScrollView, ViewStyle, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../../utils/theme';
 
@@ -25,21 +25,42 @@ export const AppScreen: React.FC<AppScreenProps> = ({
   testID,
 }) => {
   const { colors } = useThemeColors();
+  const isWeb = Platform.OS === 'web';
 
   const containerStyle = [styles.container, { backgroundColor: colors.background }, style];
 
   if (scroll) {
+    const scrollContent = (
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
+        showsVerticalScrollIndicator
+        keyboardShouldPersistTaps="handled"
+      >
+        {children}
+      </ScrollView>
+    );
+
+    if (isWeb) {
+      return (
+        <View style={containerStyle} testID={testID}>
+          {scrollContent}
+        </View>
+      );
+    }
+
     return (
       <SafeAreaView style={containerStyle} edges={edges} testID={testID}>
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
-          showsVerticalScrollIndicator
-          keyboardShouldPersistTaps="handled"
-        >
-          {children}
-        </ScrollView>
+        {scrollContent}
       </SafeAreaView>
+    );
+  }
+
+  if (isWeb) {
+    return (
+      <View style={containerStyle} testID={testID}>
+        <View style={styles.inner}>{children}</View>
+      </View>
     );
   }
 
@@ -53,9 +74,12 @@ export const AppScreen: React.FC<AppScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    height: '100%',
   },
   inner: {
     flex: 1,
+    minHeight: 0,
+    overflow: 'hidden',
   },
   scroll: {
     flex: 1,

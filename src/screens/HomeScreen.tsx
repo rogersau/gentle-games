@@ -229,10 +229,12 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   },
   gamesContainer: {
     flex: 1,
+    flexShrink: 1,
     minHeight: 0,
     marginBottom: Space.lg,
   },
   gamesScroll: {
+    flex: 1,
   },
   gamesScrollContent: {
     paddingBottom: Space.sm,
