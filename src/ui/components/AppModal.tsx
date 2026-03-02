@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, Modal, TouchableOpacity, ViewStyle } from 'reac
 import { useThemeColors } from '../../utils/theme';
 import { Space, Radius, Shadow, TypeStyle, HitTarget } from '../tokens';
 import { ThemeColors } from '../../types';
+import { useTranslation } from 'react-i18next';
 
 interface AppModalProps {
   visible: boolean;
@@ -25,11 +26,14 @@ export const AppModal: React.FC<AppModalProps> = ({
   children,
   contentStyle,
   showClose = true,
-  closeLabel = 'Close',
+  closeLabel,
   dismissOnBackdropPress = true,
 }) => {
   const { colors } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { t } = useTranslation();
+
+  const displayedCloseLabel = closeLabel ?? t('common.close');
 
   return (
     <Modal
@@ -45,7 +49,7 @@ export const AppModal: React.FC<AppModalProps> = ({
             style={StyleSheet.absoluteFill}
             onPress={onClose}
             activeOpacity={1}
-            accessibilityLabel="Close dialog"
+            accessibilityLabel={t('common.close') }
             accessibilityRole="button"
           />
         )}
@@ -60,10 +64,10 @@ export const AppModal: React.FC<AppModalProps> = ({
             <TouchableOpacity
               style={styles.closeButton}
               onPress={onClose}
-              accessibilityLabel={closeLabel}
+              accessibilityLabel={displayedCloseLabel}
               accessibilityRole="button"
             >
-              <Text style={styles.closeText}>{closeLabel}</Text>
+              <Text style={styles.closeText}>{displayedCloseLabel}</Text>
             </TouchableOpacity>
           )}
         </View>

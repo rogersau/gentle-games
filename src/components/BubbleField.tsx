@@ -4,6 +4,7 @@ import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { ThemeColors } from '../types';
 import { Bubble, ensureMinimumBubbles, spawnBubbles, stepBubbles } from '../utils/bubbleLogic';
 import { useThemeColors } from '../utils/theme';
+import { useTranslation } from 'react-i18next';
 import { Radius } from '../ui/tokens';
 
 interface PopIndicator {
@@ -34,6 +35,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
 }) => {
   const { colors } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { t } = useTranslation();
   const [bubbles, setBubbles] = useState<Bubble[]>(() =>
     ensureMinimumBubbles([], minActiveBubbles, width, height, maxActiveBubbles)
   );
@@ -159,7 +161,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
     <View
       style={[styles.container, { width, height }]}
       accessible={true}
-      accessibilityLabel="Bubble field, tap bubbles to pop them"
+      accessibilityLabel={t('games.bubblePop.accessibility')}
     >
       <Svg width={width} height={height}>
         {bubbles.map((bubble) => (
@@ -202,7 +204,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
               textAnchor="middle"
               opacity={indicator.life}
             >
-              Pop!
+              {t('games.bubblePop.pop')}
             </SvgText>
           </React.Fragment>
         ))}

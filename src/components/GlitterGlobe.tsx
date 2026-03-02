@@ -11,6 +11,7 @@ import { Accelerometer } from 'expo-sensors';
 import Svg, { Circle, Defs, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { getMotionForce, shouldTriggerShake } from '../utils/glitterMotion';
 import { useThemeColors } from '../utils/theme';
+import { useTranslation } from 'react-i18next';
 
 type GlitterShape = 'circle' | 'square' | 'diamond' | 'star';
 
@@ -325,6 +326,7 @@ const applyFingerImpulse = (
 export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
   ({ width, height, initialCount = 36, maxParticles = 120 }, ref) => {
     const { colors } = useThemeColors();
+    const { t } = useTranslation();
     const [particles, setParticles] = useState<GlitterParticle[]>(() =>
       createParticles(initialCount, width, height)
     );
@@ -565,7 +567,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
       <View
         style={[styles.container, { width, height }]}
         accessible={true}
-        accessibilityLabel="Glitter globe. Swipe or shake to move glitter particles."
+        accessibilityLabel={t('games.glitterFall.accessibility')}
       >
         <Svg width={width} height={height}>
           <Defs>

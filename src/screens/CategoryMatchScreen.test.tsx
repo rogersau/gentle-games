@@ -63,7 +63,7 @@ describe('CategoryMatchScreen', () => {
 
   it('goes back when the back button is pressed', () => {
     const screen = render(<CategoryMatchScreen />);
-    fireEvent.press(screen.getByText('← Back'));
+    fireEvent.press(screen.getByText('Back to Home'));
 
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });

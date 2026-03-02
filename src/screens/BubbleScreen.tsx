@@ -36,10 +36,10 @@ export const BubbleScreen: React.FC = () => {
 
       <View style={styles.content}>
         <Text style={styles.subtitle} accessibilityRole="text">
-          Tap the falling bubbles to pop them.
+          {t('games.bubblePop.subtitle')}
         </Text>
-        <Text style={styles.counter} accessibilityLabel={`Popped ${poppedCount} bubbles`}>
-          Popped: {poppedCount}
+        <Text style={styles.counter} accessibilityLabel={t('games.bubblePop.popped', { count: poppedCount })}>
+          {t('games.bubblePop.popped', { count: poppedCount })}
         </Text>
 
         <View style={styles.boardWrap}>

@@ -5,6 +5,7 @@ import { Space, TypeStyle } from '../tokens';
 import { ThemeColors } from '../../types';
 import { AppCard } from './AppCard';
 import { IconBadge } from './IconBadge';
+import { useTranslation } from 'react-i18next';
 
 interface GameCardProps {
   icon: string;
@@ -28,6 +29,7 @@ export const GameCard: React.FC<GameCardProps> = ({
 }) => {
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
+  const { t } = useTranslation();
 
   return (
     <AppCard
@@ -36,7 +38,7 @@ export const GameCard: React.FC<GameCardProps> = ({
       accentColor={accentColor}
       style={StyleSheet.flatten([styles.card, style])}
       accessibilityLabel={`${title}. ${description}`}
-      accessibilityHint="Double tap to play this game"
+      accessibilityHint={t('accessibility.gameCardHint')}
       testID={testID}
     >
       <View style={styles.row}>

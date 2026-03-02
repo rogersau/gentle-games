@@ -5,6 +5,7 @@ import { useThemeColors } from '../../utils/theme';
 import { Space, Radius, TypeStyle, HitTarget } from '../tokens';
 import { ThemeColors } from '../../types';
 import { ResolvedThemeMode } from '../../utils/theme';
+import { useTranslation } from 'react-i18next';
 
 interface AppHeaderProps {
   title: string;
@@ -21,12 +22,15 @@ interface AppHeaderProps {
 export const AppHeader: React.FC<AppHeaderProps> = ({
   title,
   onBack,
-  backLabel = '← Back',
+  backLabel,
   rightAction,
   style,
 }) => {
   const { colors, resolvedMode } = useThemeColors();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
+
+  const displayedBackLabel = backLabel ?? t('common.back');
 
   return (
     <View style={[styles.container, style]}>
@@ -34,11 +38,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         <TouchableOpacity
           style={styles.backButton}
           onPress={onBack}
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('common.back') }
           accessibilityRole="button"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.backText}>{backLabel}</Text>
+          <Text style={styles.backText}>{displayedBackLabel}</Text>
         </TouchableOpacity>
       ) : (
         <View style={styles.placeholder} />

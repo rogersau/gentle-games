@@ -6,6 +6,7 @@ import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { useSettings } from '../context/SettingsContext';
 import { playFlipSound, playMatchSound } from '../utils/sounds';
 import { Radius, Space, TypeStyle } from '../ui/tokens';
+import { useTranslation } from 'react-i18next';
 
 interface CategoryMatchBoardProps {
   width: number;
@@ -35,6 +36,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   onIncorrectMatch,
 }) => {
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const [round, setRound] = useState(() => createCategoryMatchRound(undefined, 0));
@@ -163,7 +165,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
           if (isCategoryMatchCorrect(round.item, droppedZone.category)) {
             const matchedItem = round.item;
             snapTokenBack();
-            showFeedback('Great match!', true);
+            showFeedback(t('games.categoryMatch.greatMatch'), true);
             void playMatchSound(settings);
             playCorrectPulse();
             setRoundsCompleted((previousCount) => {
@@ -173,7 +175,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
             });
             onCorrectMatch?.(matchedItem, droppedZone.category);
           } else {
-            showFeedback('Try a different category', false);
+            showFeedback(t('games.categoryMatch.tryDifferent'), false);
             void playFlipSound(settings);
             onIncorrectMatch?.();
             springTokenBack();
@@ -200,14 +202,14 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   );
 
   return (
-    <View style={[styles.container, { width, height }]} accessibilityLabel="Category matching game">
-      <Text style={styles.promptText} accessibilityRole="text">Drag to the matching category</Text>
+    <View style={[styles.container, { width, height }]} accessibilityLabel={t('games.categoryMatch.accessibilityLabel') }>
+      <Text style={styles.promptText} accessibilityRole="text">{t('games.categoryMatch.dragToMatchingCategory')}</Text>
 
       <Animated.View
         testID="category-draggable-token"
         accessibilityRole="button"
-        accessibilityLabel={`${round.item.emoji}, drag to matching category`}
-        accessibilityHint="Press and drag to the correct category zone"
+        accessibilityLabel={`${round.item.emoji}, ${t('games.categoryMatch.dragToMatchingCategory')}`}
+        accessibilityHint={t('games.categoryMatch.dragInstruction')}
         style={[
           styles.draggableToken,
             {

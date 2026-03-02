@@ -7,5 +7,6 @@ export { GameCard } from './GameCard';
 export { AppModal } from './AppModal';
 export { SettingToggle } from './SettingToggle';
 export { SegmentedControl } from './SegmentedControl';
+export { SelectBox } from './SelectBox';
 export { VolumeControl } from './VolumeControl';
 export { SectionHeader } from './SectionHeader';

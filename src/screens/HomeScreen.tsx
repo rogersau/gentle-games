@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useSettings } from "../context/SettingsContext";
 import { Difficulty, PASTEL_COLORS, ThemeColors, UNFINISHED_GAMES } from "../types";
 import { ResolvedThemeMode, useThemeColors } from "../utils/theme";
+import { TranslationKey } from "../i18n/types";
 import {
   AppScreen,
   AppButton,
@@ -17,8 +18,8 @@ import { useLayout } from "../ui/useLayout";
 
 interface Game {
   id: string;
-  nameKey: string;
-  descriptionKey: string;
+  nameKey: TranslationKey;
+  descriptionKey: TranslationKey;
   icon: string;
   accentColor?: string;
 }

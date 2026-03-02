@@ -41,9 +41,9 @@ export const KeepyUppyScreen: React.FC = () => {
           {t('games.keepyUppy.subtitle')}
         </Text>
         <View style={styles.statsRow}>
-          <Text style={styles.statText} accessibilityLabel={`${score} taps`}>Taps: {score}</Text>
-          <Text style={styles.statText} accessibilityLabel={`${balloonCount} balloons`}>Balloons: {balloonCount}</Text>
-          <Text style={styles.statText} accessibilityLabel={`${popped} popped`}>Popped: {popped}</Text>
+          <Text style={styles.statText} accessibilityLabel={t('games.keepyUppy.taps', { count: score })}>{t('games.keepyUppy.taps', { count: score })}</Text>
+          <Text style={styles.statText} accessibilityLabel={t('games.keepyUppy.balloons', { count: balloonCount })}>{t('games.keepyUppy.balloons', { count: balloonCount })}</Text>
+          <Text style={styles.statText} accessibilityLabel={t('games.keepyUppy.popped', { count: popped })}>{t('games.keepyUppy.popped', { count: popped })}</Text>
         </View>
         <AppButton
           label={t('games.keepyUppy.addBalloon')}
