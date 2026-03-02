@@ -2,7 +2,7 @@
   "common": {
     "save": "Save",
     "cancel": "Cancel",
-    "back": "Back to Home",
+    "back": "← Back",
     "play": "Play",
     "settings": "Settings",
     "close": "Close",
@@ -36,7 +36,9 @@
       "selectDifficulty": "Select difficulty",
       "lastUsed": "last",
       "timeLabel": "Time {{time}}",
-      "moves": "Moves: {{count}}"
+"moves": "Moves: {{count}}",
+      "goHome": "Home",
+      "goHomeHint": "Return to main screen"
     },
 
     "drawing": {
@@ -135,8 +137,10 @@
       "resetSession": "Reset Session",
       "inhale": "Breathe In",
       "exhale": "Breathe Out",
-      "changeColor": "Change Color ({{color}})",
-      "cycles": "Cycles: {{count}}"
+      "changeColor": "Change Colour ({{color}})",
+      "cycles": "Cycles: {{count}}",
+      "musicOn": "Turn Music On 🔊",
+      "musicOff": "Turn Music Off 🔇"
     },
     "patternTrain": {
       "name": "Pattern Train",

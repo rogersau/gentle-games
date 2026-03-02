@@ -232,12 +232,21 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
           <Text style={styles.completeText} accessibilityRole="text">
             You finished in {formatTime(elapsed)}!
           </Text>
-          <AppButton
-            label={t('games.memorySnap.playAgain')}
-            variant="primary"
-            onPress={startNewGame}
-            accessibilityHint={t('games.memorySnap.playAgainHint')}
-          />
+          <View style={styles.buttonRow}>
+            <AppButton
+              label={t('games.memorySnap.goHome')}
+              variant="secondary"
+              onPress={() => onBackPress?.()}
+              accessibilityHint={t('games.memorySnap.goHomeHint')}
+            />
+            <View style={{ width: Space.md }} />
+            <AppButton
+              label={t('games.memorySnap.playAgain')}
+              variant="primary"
+              onPress={startNewGame}
+              accessibilityHint={t('games.memorySnap.playAgainHint')}
+            />
+          </View>
         </AppModal>
       </View>
     </View>
@@ -282,5 +291,10 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       alignItems: 'center',
       paddingHorizontal: Space.base,
       paddingTop: Space.base,
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
     },
   });

@@ -39,6 +39,7 @@ interface BreathingBallProps {
   autoStart?: boolean;
   onPhaseChange?: (phase: BreathingGardenPhase) => void;
   onCycleComplete?: (cycleCount: number) => void;
+  onProgress?: (progress: number) => void;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -53,6 +54,7 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
       autoStart = true,
       onPhaseChange,
       onCycleComplete,
+      onProgress,
     },
     ref
   ) => {
@@ -97,6 +99,11 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
         }
       }
     }, [cycleCount, onCycleComplete]);
+
+    // Report progress
+    useEffect(() => {
+      onProgress?.(phaseProgress);
+    }, [phaseProgress, onProgress]);
 
     useImperativeHandle(
       ref,
@@ -148,6 +155,39 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
 
     const center = size / 2;
     const ballRadius = ballSize / 2;
+    // Rings expand to the edge of the container (size/2 minus padding for stroke)
+    const maxRingRadius = (size / 2) - 2;
+
+    // Generate breathing rings that expand outward
+    const ringCount = 5;
+    const rings = useMemo(() => {
+      return Array.from({ length: ringCount }, (_, index) => {
+        // Each ring is offset in the breathing cycle
+        const ringOffset = (index / ringCount) * 0.9; // 0 to 0.9 offset
+        const adjustedProgress = (phaseProgress + ringOffset) % 1;
+
+        // Ring expands during inhale, contracts/fades during exhale
+        const ringPhase = phase === 'inhale' ? adjustedProgress : 1 - adjustedProgress;
+        // Apply easing for smoother growth - faster at start, slower at end
+        const easedPhase = Math.pow(ringPhase, 0.5);
+        const ringRadius = ballRadius + easedPhase * (maxRingRadius - ballRadius);
+        // Opacity fades to zero as ring reaches the edge
+        const baseOpacity = phase === 'inhale'
+          ? (1 - adjustedProgress)
+          : adjustedProgress;
+        // Additional fade based on how close to edge (0 at edge, 1 at center)
+        const edgeFade = 1 - (ringRadius / maxRingRadius);
+        const ringOpacity = baseOpacity * edgeFade * 0.6;
+        const ringStrokeWidth = 5 * (1 - adjustedProgress * 0.7);
+
+        return {
+          key: `ring-${index}`,
+          r: Math.max(0, ringRadius),
+          opacity: Math.max(0, ringOpacity),
+          strokeWidth: Math.max(0.5, ringStrokeWidth),
+        };
+      });
+    }, [phase, phaseProgress, ballRadius, maxRingRadius]);
 
     return (
       <View
@@ -165,6 +205,21 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
             </RadialGradient>
           </Defs>
 
+          {/* Expanding breathing rings - render behind the main ball */}
+          {rings.map((ring) => (
+            <Circle
+              key={ring.key}
+              cx={center}
+              cy={center}
+              r={ring.r}
+              fill="none"
+              stroke={colorScheme.accent}
+              strokeWidth={ring.strokeWidth}
+              opacity={ring.opacity}
+            />
+          ))}
+
+          {/* Main breathing ball */}
           <Circle
             cx={center}
             cy={center}

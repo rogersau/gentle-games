@@ -49,7 +49,7 @@ describe('KeepyUppyScreen', () => {
 
   it('goes back when back button is pressed', () => {
     const screen = render(<KeepyUppyScreen />);
-    fireEvent.press(screen.getByText('Back to Home'));
+    fireEvent.press(screen.getByText('← Back'));
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 
