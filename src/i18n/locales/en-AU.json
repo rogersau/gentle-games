@@ -12,6 +12,7 @@
     "next": "Next",
     "continue": "Continue",
     "loading": "Loading...",
+    "timerNotStarted": "Timer not started",
     "on": "On",
     "off": "Off"
   },
@@ -31,8 +32,11 @@
       "playAgain": "Play Again",
       "playAgainHint": "Start a new game",
       "selectDifficulty": "Select difficulty",
-      "lastUsed": "last"
+      "lastUsed": "last",
+      "timeLabel": "Time {{time}}",
+      "moves": "Moves: {{count}}"
     },
+
     "drawing": {
       "name": "Drawing Pad",
       "description": "Draw with colours and erase",
@@ -52,8 +56,21 @@
       "undo": "Undo",
       "clearCanvas": "Clear canvas",
       "clearHint": "Opens confirmation to clear the drawing",
-      "symmetryHint": "Cycle through symmetry modes"
+      "symmetryHint": "Cycle through symmetry modes",
+      "shape": {
+        "circle": "Circle",
+        "square": "Square",
+        "triangle": "Triangle"
+      },
+      "shapeTool": "Shape tool",
+      "clearConfirmMessage": "This will remove everything on the canvas.",
+      "size": "Size: {{size}}",
+      "sizeSmall": "Small",
+      "sizeMedium": "Medium",
+      "sizeLarge": "Large",
+      "symmetry": "Symmetry: {{mode}}"
     },
+
     "glitterFall": {
       "name": "Glitter Fall",
       "description": "Snow globe glitter play",
@@ -61,12 +78,17 @@
       "addGlitter": "Add Glitter",
       "addGlitterHint": "Add glitter particles to the globe",
       "clearGlitter": "Clear Glitter",
-      "clearGlitterHint": "Remove all glitter from the globe"
+      "clearGlitterHint": "Remove all glitter from the globe",
+      "accessibility": "Glitter globe. Swipe or shake to move glitter particles."
     },
     "bubblePop": {
       "name": "Bubble Pop",
       "description": "Tap falling bubbles",
-      "title": "Bubble Pop"
+      "title": "Bubble Pop",
+      "subtitle": "Tap the falling bubbles to pop them.",
+      "popped": "Popped: {{count}}",
+      "pop": "Pop!",
+      "accessibility": "Bubble field, tap bubbles to pop them"
     },
     "categoryMatch": {
       "name": "Category Match",
@@ -74,7 +96,11 @@
       "title": "Category Match",
       "greatStreak": "Great streak!",
       "startSorting": "Start Sorting",
-      "startSortingHint": "Begin the category sorting game"
+      "startSortingHint": "Begin the category sorting game",
+      "dragToMatchingCategory": "Drag to the matching category",
+      "accessibilityLabel": "Category matching game",
+      "greatMatch": "Great match!",
+      "tryDifferent": "Try a different category"
     },
     "keepyUppy": {
       "name": "Keepy Uppy",
@@ -82,7 +108,11 @@
       "title": "Keepy Uppy",
       "subtitle": "Keep the balloon in the air!",
       "addBalloon": "Add Balloon",
-      "addBalloonHint": "Add another balloon to the game"
+      "addBalloonHint": "Add another balloon to the game",
+      "taps": "Taps: {{count}}",
+      "balloons": "Balloons: {{count}}",
+      "popped": "Popped: {{count}}",
+      "balloonAccessibility": "Balloon, tap to keep it up"
     },
     "breathingGarden": {
       "name": "Breathing Garden",
@@ -90,7 +120,9 @@
       "title": "Breathing Garden",
       "resetSession": "Reset Session",
       "inhale": "Breathe In",
-      "exhale": "Breathe Out"
+      "exhale": "Breathe Out",
+      "changeColor": "Change Color ({{color}})",
+      "cycles": "Cycles: {{count}}"
     },
     "patternTrain": {
       "name": "Pattern Train",

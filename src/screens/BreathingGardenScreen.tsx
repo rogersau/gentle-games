@@ -55,12 +55,12 @@ export const BreathingGardenScreen: React.FC = () => {
         </AppCard>
 
         <View style={styles.statsRow}>
-          <Text style={styles.statText}>Cycles: {cycles}</Text>
+          <Text style={styles.statText}>{t('games.breathingGarden.cycles', { count: cycles })}</Text>
         </View>
 
         <View style={styles.actionsRow}>
           <AppButton
-            label={`Change Color (${ballColors.name})`}
+            label={t('games.breathingGarden.changeColor', { color: ballColors.name })}
             onPress={cycleColors}
             variant="secondary"
             style={styles.actionButton}

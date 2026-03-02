@@ -4,6 +4,7 @@ import { useThemeColors } from '../../utils/theme';
 import { Space, Radius, TypeStyle, HitTarget } from '../tokens';
 import { ThemeColors } from '../../types';
 import { ResolvedThemeMode } from '../../utils/theme';
+import { useTranslation } from 'react-i18next';
 
 interface VolumeControlProps {
   value: number;
@@ -17,6 +18,7 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
   steps = 10,
 }) => {
   const { colors, resolvedMode } = useThemeColors();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
 
   const stepValues = Array.from({ length: steps }, (_, i) => (i + 1) / steps);
@@ -37,7 +39,7 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
         style={styles.button}
         onPress={decrease}
         disabled={value <= 0}
-        accessibilityLabel="Decrease volume"
+        accessibilityLabel={t('settings.volume.decrease') }
         accessibilityRole="button"
       >
         <Text style={[styles.buttonText, value <= 0 && styles.buttonTextDisabled]}>−</Text>
@@ -58,7 +60,7 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
         style={styles.button}
         onPress={increase}
         disabled={value >= 1}
-        accessibilityLabel="Increase volume"
+        accessibilityLabel={t('settings.volume.increase') }
         accessibilityRole="button"
       >
         <Text style={[styles.buttonText, value >= 1 && styles.buttonTextDisabled]}>+</Text>

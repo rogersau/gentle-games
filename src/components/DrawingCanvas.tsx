@@ -8,6 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { AppModal, AppButton } from '../ui/components';
+import { useTranslation } from 'react-i18next';
 import Svg, { Path, Circle, Rect, Polygon, Line } from 'react-native-svg';
 import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
@@ -129,6 +130,7 @@ const applySymmetry = (point: Point, width: number, height: number, xMult: numbe
 export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
   ({ width, height, bottomInset = 0, initialHistory = [], onHistoryChange, canvasBackgroundColor = '#FFFFFF' }, ref) => {
     const { colors } = useThemeColors();
+    const { t } = useTranslation();
     const themedStyles = useMemo(() => createThemedStyles(colors), [colors]);
     // Unified ordered history — preserves exact draw order for correct undo
     const [history, setHistory] = useState<HistoryEntry[]>(initialHistory);
@@ -524,7 +526,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               style={[styles.toolButton, tool === 'pen' ? themedStyles.toolButtonActive : undefined]}
               onPress={() => handleToolSelect('pen')}
               accessibilityRole="button"
-              accessibilityLabel="Pen tool"
+              accessibilityLabel={t('games.drawing.penTool') }
               accessibilityState={{ selected: tool === 'pen' }}
             >
               <Text style={styles.toolButtonText}>✏️</Text>
@@ -534,7 +536,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               style={[styles.toolButton, tool === 'shape' ? themedStyles.toolButtonActive : undefined]}
               onPress={() => handleToolSelect('shape')}
               accessibilityRole="button"
-              accessibilityLabel={`Shape tool, ${shapeType}`}
+              accessibilityLabel={`${t('games.drawing.shapeTool')}, ${t(`games.drawing.shape.${shapeType}`)}` }
               accessibilityState={{ selected: tool === 'shape' }}
             >
               <Text style={styles.toolButtonText}>
@@ -548,7 +550,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               style={[styles.toolButton, symmetryMode !== 'none' ? themedStyles.toolButtonActive : undefined]}
               onPress={cycleSymmetryMode}
               accessibilityRole="button"
-              accessibilityLabel={`Symmetry: ${symmetryMode}`}
+              accessibilityLabel={t('games.drawing.symmetry', { mode: symmetryMode }) }
               accessibilityHint="Cycle through symmetry modes"
             >
               <Text style={styles.toolButtonText}>
@@ -562,7 +564,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               style={[styles.toolButton, tool === 'eraser' ? themedStyles.toolButtonActive : undefined]}
               onPress={() => handleToolSelect('eraser')}
               accessibilityRole="button"
-              accessibilityLabel="Eraser tool"
+              accessibilityLabel={t('games.drawing.eraserTool') }
               accessibilityState={{ selected: tool === 'eraser' }}
             >
               <Text style={styles.toolButtonText}>🧹</Text>
@@ -573,7 +575,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               onPress={handleUndo}
               disabled={!canUndo}
               accessibilityRole="button"
-              accessibilityLabel="Undo"
+              accessibilityLabel={t('games.drawing.undo') }
               accessibilityState={{ disabled: !canUndo }}
             >
               <Text style={[styles.toolButtonText, !canUndo ? styles.disabledText : undefined]}>↩️</Text>
@@ -584,7 +586,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               style={styles.toolButton}
               onPress={handleClear}
               accessibilityRole="button"
-              accessibilityLabel="Clear canvas"
+              accessibilityLabel={t('games.drawing.clearCanvas') }
               accessibilityHint="Opens confirmation to clear the drawing"
             >
               <Text style={styles.toolButtonText}>🗑️</Text>
@@ -597,21 +599,21 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
         <AppModal
           visible={showClearConfirm}
           onClose={handleCancelClear}
-          title="Clear drawing?"
+          title={t('games.drawing.clearTitle') }
           showClose={false}
           dismissOnBackdropPress={false}
         >
-          <Text style={styles.modalText}>This will remove everything on the canvas.</Text>
+          <Text style={styles.modalText}>{t('games.drawing.clearConfirmMessage')}</Text>
 
           <View style={[styles.modalButtons, { gap: 12 }]}>  
             <AppButton
-              label="Cancel"
+              label={t('common.cancel')}
               variant="secondary"
               onPress={handleCancelClear}
               testID="clear-confirm-cancel"
             />
             <AppButton
-              label="Clear"
+              label={t('games.drawing.clearConfirm')}
               variant="danger"
               onPress={handleConfirmClear}
               testID="clear-confirm-accept"
@@ -623,7 +625,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
         <AppModal
           visible={showColorPicker}
           onClose={handleCustomColorSelect}
-          title="Pick a Color"
+          title={t('games.drawing.pickColour')}
           showClose={false}
           dismissOnBackdropPress={false}
         >
@@ -648,13 +650,13 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
           <View style={[styles.modalButtons]}>  
             <AppButton
-              label="Cancel"
+              label={t('common.cancel')}
               variant="secondary"
               onPress={() => setShowColorPicker(false)}
               style={{ flex: 1, marginRight: Space.sm }}
             />
             <AppButton
-              label="Use Color"
+              label={t('games.drawing.useColour')}
               variant="primary"
               onPress={handleCustomColorSelect}
               testID="confirm-custom-color"
@@ -667,7 +669,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
         <AppModal
           visible={showShapePicker}
           onClose={() => setShowShapePicker(false)}
-          title="Choose Shape"
+          title={t('games.drawing.chooseShape')}
           showClose={false}
           dismissOnBackdropPress={false}
           contentStyle={{ maxHeight: '80%' }}
@@ -678,7 +680,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               onPress={() => handleShapeSelect('circle')}
             >
               <Text style={styles.shapeIcon}>🔴</Text>
-              <Text style={styles.shapeLabel}>Circle</Text>
+              <Text style={styles.shapeLabel}>{t('games.drawing.shape.circle')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -686,7 +688,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               onPress={() => handleShapeSelect('square')}
             >
               <Text style={styles.shapeIcon}>🟦</Text>
-              <Text style={styles.shapeLabel}>Square</Text>
+              <Text style={styles.shapeLabel}>{t('games.drawing.shape.square')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -694,34 +696,34 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               onPress={() => handleShapeSelect('triangle')}
             >
               <Text style={styles.shapeIcon}>🔺</Text>
-              <Text style={styles.shapeLabel}>Triangle</Text>
+              <Text style={styles.shapeLabel}>{t('games.drawing.shape.triangle')}</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.sizeLabel}>Size: {shapeSize}</Text>
+          <Text style={styles.sizeLabel}>{t('games.drawing.size', { size: shapeSize })}</Text>
           <View style={styles.sizeSlider}>
             <TouchableOpacity
               style={styles.sizeControlButton}
               onPress={() => setShapeSize(30)}
             >
-              <Text style={styles.sizeControlText}>Small</Text>
+              <Text style={styles.sizeControlText}>{t('games.drawing.sizeSmall')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.sizeControlButton}
               onPress={() => setShapeSize(60)}
             >
-              <Text style={styles.sizeControlText}>Medium</Text>
+              <Text style={styles.sizeControlText}>{t('games.drawing.sizeMedium')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.sizeControlButton}
               onPress={() => setShapeSize(100)}
             >
-              <Text style={styles.sizeControlText}>Large</Text>
+              <Text style={styles.sizeControlText}>{t('games.drawing.sizeLarge')}</Text>
             </TouchableOpacity>
           </View>
 
           <AppButton
-            label="Done"
+            label={t('common.done')}
             variant="primary"
             onPress={() => setShowShapePicker(false)}
           />

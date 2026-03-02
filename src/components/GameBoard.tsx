@@ -8,6 +8,7 @@ import { useSettings } from '../context/SettingsContext';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { AppButton, AppModal } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
+import { useTranslation } from 'react-i18next';
 
 interface GameBoardProps {
   onGameComplete: (time: number) => void;
@@ -20,6 +21,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const { settings } = useSettings();
   const { colors, resolvedMode } = useThemeColors();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const [tiles, setTiles] = useState<TileType[]>([]);
   const [selectedTiles, setSelectedTiles] = useState<string[]>([]);
@@ -186,11 +188,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
 
   const defaultRenderStats = ({ time, moves }: { time: string; moves: number }) => (
     <View style={styles.headerInfo}>
-      <Text style={styles.timerText} accessibilityLabel={startTime ? `Time ${time}` : 'Timer not started'}>
+      <Text style={styles.timerText} accessibilityLabel={startTime ? t('games.memorySnap.timeLabel', { time }) : t('common.timerNotStarted')}>
         {time}
       </Text>
-      <Text style={styles.movesText} accessibilityLabel={`${moves} moves`}>
-        Moves: {moves}
+      <Text style={styles.movesText} accessibilityLabel={t('games.memorySnap.moves', { count: moves })}>
+        {t('games.memorySnap.moves', { count: moves })}
       </Text>
     </View>
   );

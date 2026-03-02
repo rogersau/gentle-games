@@ -17,6 +17,7 @@ import {
   AppButton,
   SettingToggle,
   SegmentedControl,
+  SelectBox,
   VolumeControl,
   SectionHeader,
 } from '../ui/components';
@@ -86,11 +87,10 @@ export const SettingsScreen: React.FC = () => {
         {/* Language */}
         <View style={styles.section}>
           <SectionHeader title={t('settings.language.title')} />
-          <SegmentedControl
+          <SelectBox
             options={LANGUAGE_OPTIONS}
             value={settings.language}
             onValueChange={(value) => updateSettings({ language: value })}
-            wrap
           />
           <Text style={styles.description}>
             {t('settings.language.description')}

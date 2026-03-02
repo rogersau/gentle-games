@@ -19,6 +19,7 @@ import {
   tapBalloon,
 } from '../utils/keepyUppyLogic';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
+import { useTranslation } from 'react-i18next';
 import { ThemeColors } from '../types';
 
 export interface KeepyUppyBoardRef {
@@ -49,6 +50,7 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
     ref
   ) => {
     const { colors, resolvedMode } = useThemeColors();
+    const { t } = useTranslation();
     const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
     const [score, setScore] = useState(0);
     const [popped, setPopped] = useState(0);
@@ -180,7 +182,7 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
             <TouchableOpacity
               key={balloon.id}
               accessibilityRole="button"
-              accessibilityLabel={`Balloon, tap to keep it up`}
+              accessibilityLabel={t('games.keepyUppy.balloonAccessibility') }
               testID={`balloon-${balloon.id}`}
               onPressIn={(event) => {
                 touchStartRef.current[balloon.id] = {
