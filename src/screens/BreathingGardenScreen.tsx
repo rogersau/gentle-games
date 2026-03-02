@@ -8,18 +8,19 @@ import { useThemeColors } from '../utils/theme';
 import { AppScreen, AppHeader, AppButton, AppCard } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 
-const colorSchemes: BallColorScheme[] = [
-  { primary: '#A8D8EA', accent: '#D4A9E6', name: 'Ocean' },
-  { primary: '#FFB6C1', accent: '#FF9E9E', name: 'Rose' },
-  { primary: '#B8E6B8', accent: '#98FB98', name: 'Mint' },
-  { primary: '#F4A460', accent: '#DDA0DD', name: 'Sunset' },
-  { primary: '#C9B1FF', accent: '#87CEFA', name: 'Lavender' },
+const getColorSchemes = (colors: ThemeColors): BallColorScheme[] => [
+  { primary: colors.primary, accent: colors.secondary, name: 'Ocean' },
+  { primary: colors.secondary, accent: colors.primary, name: 'Rose' },
+  { primary: colors.primary, accent: colors.background, name: 'Mint' },
+  { primary: colors.secondary, accent: colors.background, name: 'Sunset' },
+  { primary: colors.background, accent: colors.primary, name: 'Lavender' },
 ];
 
 export const BreathingGardenScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useThemeColors();
   const { t } = useTranslation();
+  const colorSchemes = React.useMemo(() => getColorSchemes(colors as ThemeColors), [colors]);
   const [colorIndex, setColorIndex] = useState(0);
   const ballColors = colorSchemes[colorIndex];
   const styles = useStyles();
