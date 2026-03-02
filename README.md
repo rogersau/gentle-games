@@ -109,7 +109,7 @@ A gentle balloon-tapping game where players try to keep a balloon afloat by tapp
   - Last played pair count remembered
   - Dynamic grid sizing based on screen size
 - **Keepy Uppy Specific**
-  - Easy mode toggle can be enabled in Settings for slower-falling balloons
+  - Easy mode toggle can be enabled in Settings to make taps lift balloons more
 
 ## Tech Stack
 
