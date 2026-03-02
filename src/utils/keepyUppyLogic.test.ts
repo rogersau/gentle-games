@@ -15,10 +15,10 @@ const bounds = { width: 320, height: 480 };
 describe('keepyUppyLogic', () => {
   it('adds balloons up to the max cap of three', () => {
     const rng = () => 0.5;
-    const first = addBalloon([], bounds, PASTEL_COLORS, rng);
-    const second = addBalloon(first, bounds, PASTEL_COLORS, rng);
-    const third = addBalloon(second, bounds, PASTEL_COLORS, rng);
-    const fourth = addBalloon(third, bounds, PASTEL_COLORS, rng);
+    const first = addBalloon([], bounds, { colors: PASTEL_COLORS, rng });
+    const second = addBalloon(first, bounds, { colors: PASTEL_COLORS, rng });
+    const third = addBalloon(second, bounds, { colors: PASTEL_COLORS, rng });
+    const fourth = addBalloon(third, bounds, { colors: PASTEL_COLORS, rng });
 
     expect(third).toHaveLength(MAX_BALLOONS);
     expect(fourth).toHaveLength(MAX_BALLOONS);
@@ -159,8 +159,8 @@ describe('keepyUppyLogic', () => {
     expect(palette).not.toContain(theme.cardFront);
     expect(palette).not.toContain(theme.cardBack);
 
-    const first = addBalloon([], bounds, theme, () => 0);
-    const second = addBalloon(first, bounds, theme, () => 0);
+    const first = addBalloon([], bounds, { colors: theme, rng: () => 0 });
+    const second = addBalloon(first, bounds, { colors: theme, rng: () => 0 });
     // second contains two balloons; make sure the newly appended one differs
     expect(second[0].color).not.toBe(second[1].color);
   });
