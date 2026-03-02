@@ -10,7 +10,10 @@
     "clear": "Clear",
     "reset": "Reset",
     "next": "Next",
-    "continue": "Continue"
+    "continue": "Continue",
+    "loading": "Loading...",
+    "on": "On",
+    "off": "Off"
   },
   "home": {
     "title": "Gentle Games",
