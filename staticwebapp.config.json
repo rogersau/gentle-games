@@ -43,9 +43,7 @@
     "rewrite": "/index.html",
     "exclude": [
       "/docs/*",
-      "/docs/**/*",
       "/icons/*",
-      "/icons/**/*",
       "/manifest.webmanifest",
       "/sw.js",
       "/*.js",
