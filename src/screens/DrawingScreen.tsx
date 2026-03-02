@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DrawingCanvas, DrawingCanvasRef, HistoryEntry } from '../components/DrawingCanvas';
 import { ThemeColors } from '../types';
@@ -23,6 +24,7 @@ export const DRAWING_LAYOUT_PADDING = 32;
 export const DrawingScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useThemeColors();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -133,7 +135,7 @@ export const DrawingScreen: React.FC = () => {
     return (
       <AppScreen>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading...</Text>
+          <Text style={styles.loadingText}>{t('common.loading')}</Text>
         </View>
       </AppScreen>
     );
@@ -142,7 +144,7 @@ export const DrawingScreen: React.FC = () => {
   return (
     <AppScreen>
       <AppHeader
-        title="Drawing Pad"
+        title={t('games.drawing.title')}
         onBack={handleBackPress}
       />
       
@@ -164,26 +166,26 @@ export const DrawingScreen: React.FC = () => {
       <AppModal
         visible={showContinueModal}
         onClose={handleContinue}
-        title="Welcome Back! 🎨"
+        title={t('games.drawing.welcomeBack')}
         showClose={false}
       >
         <Text style={styles.modalText}>
-          You have a saved drawing. Would you like to continue where you left off?
+          {t('games.drawing.continuePrompt')}
         </Text>
         <View style={styles.modalButtons}>
           <AppButton
-            label="New Drawing"
+            label={t('games.drawing.newDrawing')}
             variant="ghost"
             onPress={handleNewDrawing}
             style={{ flex: 1 }}
-            accessibilityHint="Start a blank canvas"
+            accessibilityHint={t('games.drawing.newDrawingHint')}
           />
           <AppButton
-            label="Continue"
+            label={t('games.drawing.continueDrawing')}
             variant="primary"
             onPress={handleContinue}
             style={{ flex: 1 }}
-            accessibilityHint="Resume your saved drawing"
+            accessibilityHint={t('games.drawing.continueHint')}
           />
         </View>
       </AppModal>

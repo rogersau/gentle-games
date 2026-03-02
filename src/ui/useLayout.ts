@@ -39,14 +39,8 @@ const getContentWidth = (screenWidth: number, breakpoint: LayoutBreakpoint): num
 };
 
 const getGridColumns = (breakpoint: LayoutBreakpoint): number => {
-  switch (breakpoint) {
-    case 'expanded':
-      return 3;
-    case 'medium':
-      return 2;
-    default:
-      return 1;
-  }
+  // always use two columns once width exceeds compact threshold
+  return breakpoint === 'compact' ? 1 : 2;
 };
 
 export const useLayout = (): LayoutInfo => {

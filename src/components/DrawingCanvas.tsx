@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   Text,
   ScrollView,
-  Modal,
 } from 'react-native';
+import { AppModal, AppButton } from '../ui/components';
 import Svg, { Path, Circle, Rect, Polygon, Line } from 'react-native-svg';
 import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
@@ -592,189 +592,140 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           </View>
         </View>
 
-        {/* Shape tool indicator */}
-        {tool === 'shape' && (
-          <View style={styles.toolIndicator}>
-            <Text style={styles.toolIndicatorText}>
-              Tap to place {shapeType} (size: {shapeSize})
-            </Text>
-            <View style={styles.sizeControls}>
-              <TouchableOpacity
-                style={styles.sizeButton}
-                onPress={() => setShapeSize(Math.max(20, shapeSize - 10))}
-              >
-                <Text style={styles.sizeButtonText}>−</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.sizeButton}
-                onPress={() => setShapeSize(Math.min(150, shapeSize + 10))}
-              >
-                <Text style={styles.sizeButtonText}>+</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
 
-        <Modal
-          animationType="fade"
-          transparent={true}
+
+        <AppModal
           visible={showClearConfirm}
-          onRequestClose={handleCancelClear}
+          onClose={handleCancelClear}
+          title="Clear drawing?"
+          showClose={false}
+          dismissOnBackdropPress={false}
         >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            onPress={handleCancelClear}
-            activeOpacity={1}
-          >
-            <TouchableOpacity style={styles.modalContent} onPress={(e) => e.stopPropagation()} activeOpacity={1}>
-              <Text style={styles.modalTitle}>Clear drawing?</Text>
-              <Text style={styles.modalText}>This will remove everything on the canvas.</Text>
+          <Text style={styles.modalText}>This will remove everything on the canvas.</Text>
 
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  testID="clear-confirm-cancel"
-                  style={styles.cancelButton}
-                  onPress={handleCancelClear}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  testID="clear-confirm-accept"
-                  style={styles.selectButton}
-                  onPress={handleConfirmClear}
-                >
-                  <Text style={styles.selectButtonText}>Clear</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </Modal>
+          <View style={[styles.modalButtons, { gap: 12 }]}>  
+            <AppButton
+              label="Cancel"
+              variant="secondary"
+              onPress={handleCancelClear}
+              testID="clear-confirm-cancel"
+            />
+            <AppButton
+              label="Clear"
+              variant="danger"
+              onPress={handleConfirmClear}
+              testID="clear-confirm-accept"
+            />
+          </View>
+        </AppModal>
 
         {/* Color Picker Modal */}
-        <Modal
-          animationType="slide"
-          transparent={true}
+        <AppModal
           visible={showColorPicker}
-          onRequestClose={handleCustomColorSelect}
+          onClose={handleCustomColorSelect}
+          title="Pick a Color"
+          showClose={false}
+          dismissOnBackdropPress={false}
         >
-          <TouchableOpacity 
-            style={styles.modalOverlay}
-            onPress={handleCustomColorSelect}
-            activeOpacity={1}
-          >
-            <TouchableOpacity style={styles.modalContent} onPress={(e) => e.stopPropagation()} activeOpacity={1}>
-              <Text style={styles.modalTitle}>Pick a Color</Text>
+          <View style={styles.previewContainer}>
+            <View style={[styles.colorPreview, { backgroundColor: pickerColor }]} />
+            <Text style={styles.colorHex}>{pickerColor.toUpperCase()}</Text>
+          </View>
 
-              <View style={styles.previewContainer}>
-                <View style={[styles.colorPreview, { backgroundColor: pickerColor }]} />
-                <Text style={styles.colorHex}>{pickerColor.toUpperCase()}</Text>
-              </View>
+          <View style={styles.colorGrid}>
+            {PRESET_COLORS.map((color) => (
+              <TouchableOpacity
+                key={color}
+                style={[
+                  styles.gridColorButton,
+                  { backgroundColor: color },
+                  pickerColor === color ? styles.gridColorSelected : undefined,
+                ]}
+                onPress={() => setPickerColor(color)}
+              />
+            ))}
+          </View>
 
-              <View style={styles.colorGrid}>
-                {PRESET_COLORS.map((color) => (
-                  <TouchableOpacity
-                    key={color}
-                    style={[
-                      styles.gridColorButton,
-                      { backgroundColor: color },
-                      pickerColor === color ? styles.gridColorSelected : undefined,
-                    ]}
-                    onPress={() => setPickerColor(color)}
-                  />
-                ))}
-              </View>
-
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={() => setShowColorPicker(false)}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  testID="confirm-custom-color"
-                  style={styles.selectButton}
-                  onPress={handleCustomColorSelect}
-                >
-                  <Text style={styles.selectButtonText}>Use Color</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </Modal>
+          <View style={[styles.modalButtons]}>  
+            <AppButton
+              label="Cancel"
+              variant="secondary"
+              onPress={() => setShowColorPicker(false)}
+              style={{ flex: 1, marginRight: Space.sm }}
+            />
+            <AppButton
+              label="Use Color"
+              variant="primary"
+              onPress={handleCustomColorSelect}
+              testID="confirm-custom-color"
+              style={{ flex: 1, marginLeft: Space.sm }}
+            />
+          </View>
+        </AppModal>
 
         {/* Shape Picker Modal */}
-        <Modal
-          animationType="slide"
-          transparent={true}
+        <AppModal
           visible={showShapePicker}
-          onRequestClose={() => setShowShapePicker(false)}
+          onClose={() => setShowShapePicker(false)}
+          title="Choose Shape"
+          showClose={false}
+          dismissOnBackdropPress={false}
+          contentStyle={{ maxHeight: '80%' }}
         >
-          <TouchableOpacity 
-            style={styles.modalOverlay}
-            onPress={() => setShowShapePicker(false)}
-            activeOpacity={1}
-          >
-            <TouchableOpacity style={styles.modalContent} onPress={(e) => e.stopPropagation()} activeOpacity={1}>
-              <Text style={styles.modalTitle}>Choose Shape</Text>
-
-              <View style={styles.shapeGrid}>
-                <TouchableOpacity
-                  style={[styles.shapeButton, shapeType === 'circle' ? styles.shapeButtonActive : undefined]}
-                  onPress={() => handleShapeSelect('circle')}
-                >
-                  <Text style={styles.shapeIcon}>🔴</Text>
-                  <Text style={styles.shapeLabel}>Circle</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.shapeButton, shapeType === 'square' ? styles.shapeButtonActive : undefined]}
-                  onPress={() => handleShapeSelect('square')}
-                >
-                  <Text style={styles.shapeIcon}>🟦</Text>
-                  <Text style={styles.shapeLabel}>Square</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.shapeButton, shapeType === 'triangle' ? styles.shapeButtonActive : undefined]}
-                  onPress={() => handleShapeSelect('triangle')}
-                >
-                  <Text style={styles.shapeIcon}>🔺</Text>
-                  <Text style={styles.shapeLabel}>Triangle</Text>
-                </TouchableOpacity>
-              </View>
-
-              <Text style={styles.sizeLabel}>Size: {shapeSize}</Text>
-              <View style={styles.sizeSlider}>
-                <TouchableOpacity
-                  style={styles.sizeControlButton}
-                  onPress={() => setShapeSize(30)}
-                >
-                  <Text style={styles.sizeControlText}>Small</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.sizeControlButton}
-                  onPress={() => setShapeSize(60)}
-                >
-                  <Text style={styles.sizeControlText}>Medium</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.sizeControlButton}
-                  onPress={() => setShapeSize(100)}
-                >
-                  <Text style={styles.sizeControlText}>Large</Text>
-                </TouchableOpacity>
-              </View>
-
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setShowShapePicker(false)}
-              >
-                <Text style={styles.cancelButtonText}>Done</Text>
-              </TouchableOpacity>
+          <View style={styles.shapeGrid}>
+            <TouchableOpacity
+              style={[styles.shapeButton, shapeType === 'circle' ? styles.shapeButtonActive : undefined]}
+              onPress={() => handleShapeSelect('circle')}
+            >
+              <Text style={styles.shapeIcon}>🔴</Text>
+              <Text style={styles.shapeLabel}>Circle</Text>
             </TouchableOpacity>
-          </TouchableOpacity>
-        </Modal>
+
+            <TouchableOpacity
+              style={[styles.shapeButton, shapeType === 'square' ? styles.shapeButtonActive : undefined]}
+              onPress={() => handleShapeSelect('square')}
+            >
+              <Text style={styles.shapeIcon}>🟦</Text>
+              <Text style={styles.shapeLabel}>Square</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.shapeButton, shapeType === 'triangle' ? styles.shapeButtonActive : undefined]}
+              onPress={() => handleShapeSelect('triangle')}
+            >
+              <Text style={styles.shapeIcon}>🔺</Text>
+              <Text style={styles.shapeLabel}>Triangle</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.sizeLabel}>Size: {shapeSize}</Text>
+          <View style={styles.sizeSlider}>
+            <TouchableOpacity
+              style={styles.sizeControlButton}
+              onPress={() => setShapeSize(30)}
+            >
+              <Text style={styles.sizeControlText}>Small</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.sizeControlButton}
+              onPress={() => setShapeSize(60)}
+            >
+              <Text style={styles.sizeControlText}>Medium</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.sizeControlButton}
+              onPress={() => setShapeSize(100)}
+            >
+              <Text style={styles.sizeControlText}>Large</Text>
+            </TouchableOpacity>
+          </View>
+
+          <AppButton
+            label="Done"
+            variant="primary"
+            onPress={() => setShowShapePicker(false)}
+          />
+        </AppModal>
       </View>
     );
   }

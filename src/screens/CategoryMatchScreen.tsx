@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import {
   CATEGORY_MATCH_LAND,
   CATEGORY_MATCH_CATEGORIES,
@@ -18,6 +19,7 @@ import { Space, TypeStyle } from '../ui/tokens';
 export const CategoryMatchScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useThemeColors();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [correctCount, setCorrectCount] = useState(0);
   const [streakCount, setStreakCount] = useState(0);
@@ -53,28 +55,28 @@ export const CategoryMatchScreen: React.FC = () => {
 
   return (
     <AppScreen>
-      <AppHeader title="Category Match" onBack={() => navigation.goBack()} />
+      <AppHeader title={t('games.categoryMatch.title')} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
         <Text style={styles.subtitle} accessibilityRole="text">
-          Sort each emoji into Sky, Land, or Ocean.
+          {t('games.categoryMatch.subtitle')}
         </Text>
-        <Text style={styles.counter} accessibilityLabel={`${correctCount} correct matches`}>
-          Correct: {correctCount}
+        <Text style={styles.counter} accessibilityLabel={`${correctCount} ${t('games.categoryMatch.correct')}`}>
+          {t('games.categoryMatch.correct')}: {correctCount}
         </Text>
         {streakCount >= 3 ? (
-          <Text style={styles.encouragement} accessibilityLabel="Great streak!">
-            You're on a roll! ✨
+          <Text style={styles.encouragement} accessibilityLabel={t('games.categoryMatch.greatStreak')}>
+            {t('games.categoryMatch.streakMessage')} ✨
           </Text>
         ) : null}
 
         {showPreview ? (
           <AppCard variant="outlined" style={styles.previewCard}>
             <Text style={styles.previewTitle} accessibilityRole="header">
-              Quick Preview
+              {t('games.categoryMatch.quickPreview')}
             </Text>
             <Text style={styles.previewText}>
-              Drag each emoji into the matching category.
+              {t('games.categoryMatch.dragInstruction')}
             </Text>
             {CATEGORY_MATCH_CATEGORIES.map((category) => (
               <View key={category.id} style={styles.previewRow}>
@@ -85,11 +87,11 @@ export const CategoryMatchScreen: React.FC = () => {
               </View>
             ))}
             <AppButton
-              label="Start Sorting"
+              label={t('games.categoryMatch.startSorting')}
               variant="primary"
               onPress={() => setShowPreview(false)}
               fullWidth
-              accessibilityHint="Begin the category sorting game"
+              accessibilityHint={t('games.categoryMatch.startSortingHint')}
             />
           </AppCard>
         ) : (

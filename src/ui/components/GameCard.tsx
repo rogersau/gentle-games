@@ -42,8 +42,8 @@ export const GameCard: React.FC<GameCardProps> = ({
       <View style={styles.row}>
         <IconBadge icon={icon} size="md" accessibilityLabel={title} />
         <View style={styles.info}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.description}>{description}</Text>
+          <Text style={styles.title} numberOfLines={2}>{title}</Text>
+          <Text style={styles.description} numberOfLines={2}>{description}</Text>
         </View>
       </View>
     </AppCard>
@@ -54,6 +54,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
     card: {
       marginBottom: Space.md,
+      justifyContent: 'center',
     },
     row: {
       flexDirection: 'row',

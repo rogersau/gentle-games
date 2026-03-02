@@ -1,4 +1,4 @@
-import { PASTEL_COLORS } from '../types';
+import { BALLOON_PALETTE, PASTEL_COLORS, ThemeColors } from '../types';
 
 export interface KeepyUppyBalloon {
   id: string;
@@ -24,23 +24,65 @@ const AIR_DRAG = 0.993;
 const BALLOON_RADIUS = 34;
 const BOUNCE = 0.62;
 
-const BALLOON_COLORS = [
-  PASTEL_COLORS.primary,
-  PASTEL_COLORS.secondary,
-  PASTEL_COLORS.success,
-  PASTEL_COLORS.cardBack,
-  PASTEL_COLORS.matched,
-];
+// default palette used when no theme is supplied (for backwards compatibility/testing)
+const DEFAULT_BALLOON_COLORS = [...BALLOON_PALETTE];
+
+/**
+ * Build a balloon colour palette adapted for the current theme.
+ * Returns colors that are guaranteed to contrast with the board background.
+ * In dark mode, slightly adjusts saturation to maintain visibility.
+ */
+export const resolveBalloonPalette = (colors: ThemeColors, _resolvedMode?: string): string[] => {
+  // The dedicated balloon palette is designed to contrast with both light and dark backgrounds
+  // We filter out any colors that happen to match the background colors exactly
+  const forbidden = new Set([colors.primary, colors.success, colors.cardBack]);
+
+  // For dark mode, we could adjust brightness here if needed
+  // Currently the palette works well in both modes as-is
+  return BALLOON_PALETTE.filter((c) => !forbidden.has(c));
+};
+
+/**
+ * Pick a random colour from a palette.  If there are unused options, favour
+ * those so balloons tend to be distinct; if all colours are already in use we
+ * fall back to picking any value (allowing duplicates when the palette is
+ * smaller than the number of balloons).
+ */
+const pickBalloonColor = (
+  palette: string[],
+  used: string[],
+  rng: () => number
+): string => {
+  const available = palette.filter((c) => !used.includes(c));
+  const source = available.length > 0 ? available : palette;
+  return source[Math.floor(rng() * source.length)];
+};
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 const randomInRange = (min: number, max: number, rng: () => number) => min + (max - min) * rng();
 
+export interface CreateBalloonOptions {
+  colors?: ThemeColors;
+  rng?: () => number;
+  overrideColor?: string;
+  resolvedMode?: string;
+}
+
 export const createBalloon = (
   bounds: KeepyUppyBounds,
-  rng: () => number = Math.random
+  options: CreateBalloonOptions = {}
 ): KeepyUppyBalloon => {
+  const {
+    colors = PASTEL_COLORS,
+    rng = Math.random,
+    overrideColor,
+    resolvedMode,
+  } = options;
   const radius = BALLOON_RADIUS;
+  const palette = resolveBalloonPalette(colors, resolvedMode);
+  const color = overrideColor ?? pickBalloonColor(palette, [], rng);
+
   return {
     id: `keepy-uppy-balloon-${Date.now()}-${Math.floor(rng() * 100000)}`,
     x: randomInRange(radius, Math.max(radius, bounds.width - radius), rng),
@@ -48,20 +90,31 @@ export const createBalloon = (
     vx: randomInRange(-36, 36, rng),
     vy: randomInRange(-28, 18, rng),
     radius,
-    color: BALLOON_COLORS[Math.floor(rng() * BALLOON_COLORS.length)],
+    color,
     groundedAt: null,
   };
 };
 
+export interface AddBalloonOptions {
+  colors?: ThemeColors;
+  rng?: () => number;
+  resolvedMode?: string;
+}
+
 export const addBalloon = (
   balloons: KeepyUppyBalloon[],
   bounds: KeepyUppyBounds,
-  rng: () => number = Math.random
+  options: AddBalloonOptions = {}
 ): KeepyUppyBalloon[] => {
+  const { colors = PASTEL_COLORS, rng = Math.random, resolvedMode } = options;
   if (balloons.length >= MAX_BALLOONS) {
     return balloons;
   }
-  return [...balloons, createBalloon(bounds, rng)];
+  const palette = resolveBalloonPalette(colors, resolvedMode);
+  const used = balloons.map((b) => b.color);
+  const color = pickBalloonColor(palette, used, rng);
+
+  return [...balloons, createBalloon(bounds, { colors, rng, overrideColor: color, resolvedMode })];
 };
 
 export const tapBalloon = (

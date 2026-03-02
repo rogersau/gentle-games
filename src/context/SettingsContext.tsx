@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ColorMode, Settings } from '../types';
+import { SupportedLanguage, DEFAULT_LANGUAGE } from '../types/i18n';
+import { changeLanguage } from '../i18n';
 
 interface SettingsContextType {
   settings: Settings;
@@ -19,6 +21,8 @@ const defaultSettings: Settings = {
   colorMode: 'system',
   hiddenGames: [],
   parentTimerMinutes: 0,
+  enableUnfinishedGames: false,
+  language: DEFAULT_LANGUAGE,
 };
 
 const toBoolean = (value: unknown, fallback: boolean): boolean => {
@@ -64,6 +68,11 @@ const toParentTimerMinutes = (value: unknown): number => {
   return Math.floor(value);
 };
 
+const toLanguage = (value: unknown): SupportedLanguage => {
+  if (value === 'en-AU' || value === 'en-US') return value;
+  return DEFAULT_LANGUAGE;
+};
+
 const sanitizeSettings = (candidate: unknown): Settings => {
   if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return defaultSettings;
@@ -82,6 +91,8 @@ const sanitizeSettings = (candidate: unknown): Settings => {
     colorMode: toColorMode(parsed.colorMode, defaultSettings.colorMode),
     hiddenGames: toHiddenGames(parsed.hiddenGames),
     parentTimerMinutes: toParentTimerMinutes(parsed.parentTimerMinutes),
+    enableUnfinishedGames: toBoolean(parsed.enableUnfinishedGames, defaultSettings.enableUnfinishedGames),
+    language: toLanguage(parsed.language),
   };
 };
 
@@ -100,7 +111,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const savedSettings = await AsyncStorage.getItem('gentleMatchSettings');
       if (savedSettings) {
         const parsed = JSON.parse(savedSettings);
-        setSettings(sanitizeSettings(parsed));
+        const sanitized = sanitizeSettings(parsed);
+        setSettings(sanitized);
+        // Initialize i18n with saved language
+        void changeLanguage(sanitized.language);
       }
     } catch (error) {
       console.warn('Failed to load settings:', error);
@@ -117,6 +131,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const updated = { ...settings, ...normalized };
       setSettings(updated);
       await AsyncStorage.setItem('gentleMatchSettings', JSON.stringify(updated));
+      // Update i18n language if it changed
+      if (newSettings.language && newSettings.language !== settings.language) {
+        void changeLanguage(newSettings.language);
+      }
     } catch (error) {
       console.warn('Failed to save settings:', error);
     }

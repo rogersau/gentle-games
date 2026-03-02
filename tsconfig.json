@@ -1,6 +1,13 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true
-  }
+    "strict": true,
+    "resolveJsonModule": true,
+    "types": ["jest"]            // ← add jest types for the language service
+  },
+  "include": [
+    "src/**/*",
+    "**/*.test.ts",              // make sure the language server loads them
+    "**/*.test.tsx"
+  ]
 }

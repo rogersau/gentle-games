@@ -43,6 +43,46 @@ export interface Settings {
   colorMode: ColorMode;
   hiddenGames: string[];
   parentTimerMinutes: number;
+  enableUnfinishedGames: boolean;
+  language: import('./i18n').SupportedLanguage;
+}
+
+export const UNFINISHED_GAMES: string[] = [
+  'pattern-train',
+  'number-picnic',
+  'letter-lanterns',
+  'star-path',
+];
+
+export type BreathingGardenPhase = 'inhale' | 'exhale';
+
+export interface PatternTrainRound {
+  sequence: string[];
+  display: string[];
+  choices: string[];
+  answer: string;
+  patternLabel: string;
+}
+
+export interface NumberPicnicPrompt {
+  itemEmoji: string;
+  itemName: string;
+  targetCount: number;
+}
+
+export interface LetterLanternRound {
+  targetLetter: string;
+  choices: string[];
+}
+
+export interface StarPathPoint {
+  x: number;
+  y: number;
+}
+
+export interface StarPathCollectible extends StarPathPoint {
+  id: string;
+  collected: boolean;
 }
 
 export type CategoryMatchCategory = 'sky' | 'land' | 'ocean';
@@ -210,6 +250,39 @@ export const CATEGORY_MATCH_ITEMS: CategoryMatchItem[] = [
   ...CATEGORY_MATCH_LAND,
   ...CATEGORY_MATCH_OCEAN,
 ];
+
+export const PATTERN_TRAIN_EMOJIS = ['🚂', '🌟', '🌈', '🌸', '☁️', '🫧', '🍓', '🧸'];
+
+export const NUMBER_PICNIC_ITEMS = [
+  { emoji: '🍓', name: 'berries' },
+  { emoji: '🍎', name: 'apples' },
+  { emoji: '🥕', name: 'carrots' },
+  { emoji: '⭐', name: 'stars' },
+  { emoji: '🌼', name: 'flowers' },
+];
+
+export const LETTER_LANTERN_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+/**
+ * Dedicated balloon palette for KeepyUppy with guaranteed contrast against both
+ * light and dark theme backgrounds. These colors are chosen to stand out against:
+ * - Light mode: primary (#A8D8EA - light blue), success (#B8E6B8 - light green)
+ * - Dark mode: primary (#7FB1C1 - muted blue), success (#95C5A3 - muted green)
+ *
+ * Colors are warm/coral/peach/pink/purple tones that contrast well with blue backgrounds.
+ */
+export const BALLOON_PALETTE = [
+  '#FF8B7B', // Coral - high contrast against blue
+  '#FFB67B', // Peach - warm contrast
+  '#FFE17B', // Soft yellow - bright contrast
+  '#FFB6C1', // Pastel pink - gentle but distinct
+  '#DDA0DD', // Plum - purple contrast
+  '#C9B1FF', // Lavender - distinct from blue
+  '#FF9E9E', // Salmon pink - warm contrast
+  '#F4A460', // Sandy brown - earthy contrast
+  '#98FB98', // Mint green - fresh contrast
+  '#87CEFA', // Light sky blue - lighter than background
+] as const;
 
 export const PASTEL_COLORS: ThemeColors = {
   background: '#FFFEF7',

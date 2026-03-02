@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { BubbleField } from '../components/BubbleField';
 import { ThemeColors } from '../types';
 import { useSettings } from '../context/SettingsContext';
@@ -13,6 +14,7 @@ export const BubbleScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings } = useSettings();
   const { colors } = useThemeColors();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [poppedCount, setPoppedCount] = useState(0);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
@@ -30,7 +32,7 @@ export const BubbleScreen: React.FC = () => {
 
   return (
     <AppScreen>
-      <AppHeader title="Bubble Pop" onBack={() => navigation.goBack()} />
+      <AppHeader title={t('games.bubblePop.title')} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
         <Text style={styles.subtitle} accessibilityRole="text">

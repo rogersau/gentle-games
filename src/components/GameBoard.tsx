@@ -6,16 +6,17 @@ import { playFlipSound, playMatchSound, playCompleteSound } from '../utils/sound
 import { Tile } from './Tile';
 import { useSettings } from '../context/SettingsContext';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
-import { AppHeader, AppButton, AppModal } from '../ui/components';
+import { AppButton, AppModal } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 
 interface GameBoardProps {
   onGameComplete: (time: number) => void;
-  onBackPress: () => void;
+  onBackPress?: () => void;
   bottomInset?: number;
+  renderStats?: (stats: { time: string; moves: number }) => React.ReactNode;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPress, bottomInset = 0 }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPress, bottomInset = 0, renderStats }) => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const { settings } = useSettings();
   const { colors, resolvedMode } = useThemeColors();
@@ -112,7 +113,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
 
     // Start timer on first flip
     if (!startTime) {
-      setStartTime(Date.now());
+      const now = Date.now();
+      setStartTime(now);
+      setCurrentTime(now); // Ensure currentTime is synchronized to prevent negative timer
     }
 
     const newSelected = [...selectedTiles, tileId];
@@ -179,60 +182,62 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
     ? currentTime - startTime
     : 0;
 
+  const timeString = startTime ? formatTime(elapsed) : '—';
+
+  const defaultRenderStats = ({ time, moves }: { time: string; moves: number }) => (
+    <View style={styles.headerInfo}>
+      <Text style={styles.timerText} accessibilityLabel={startTime ? `Time ${time}` : 'Timer not started'}>
+        {time}
+      </Text>
+      <Text style={styles.movesText} accessibilityLabel={`${moves} moves`}>
+        Moves: {moves}
+      </Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <AppHeader
-        title=""
-        onBack={onBackPress}
-        rightAction={
-          <View style={styles.headerInfo}>
-            <Text style={styles.timerText} accessibilityLabel={startTime ? `Time ${formatTime(elapsed)}` : 'Timer not started'}>
-              {startTime ? formatTime(elapsed) : '—'}
-            </Text>
-            <Text style={styles.movesText} accessibilityLabel={`${moves} moves`}>
-              Moves: {moves}
-            </Text>
-          </View>
-        }
-      />
+      {(renderStats ?? defaultRenderStats)({ time: timeString, moves })}  
 
-      <View
-        testID="memory-board"
-        style={[
-          styles.board,
-          {
-            width: boardWidth,
-            height: boardHeight,
-          },
-        ]}
-      >
-        {tiles.map(tile => (
-          <Tile
-            key={tile.id}
-            tile={tile}
-            onPress={() => handleTilePress(tile.id)}
-            size={tileSize}
+      <View style={styles.inner}>
+        <View
+          testID="memory-board"
+          style={[
+            styles.board,
+            {
+              width: boardWidth,
+              height: boardHeight,
+            },
+          ]}
+        >
+          {tiles.map(tile => (
+            <Tile
+              key={tile.id}
+              tile={tile}
+              onPress={() => handleTilePress(tile.id)}
+              size={tileSize}
+            />
+          ))}
+        </View>
+
+        <AppModal
+          visible={isGameComplete}
+          title="Well Done! 🎉"
+          onClose={() => undefined}
+          showClose={false}
+          dismissOnBackdropPress={false}
+        >
+          <Text style={styles.completeText} accessibilityRole="text">
+            You finished in {formatTime(elapsed)}!
+          </Text>
+          <AppButton
+            label="Play Again"
+            variant="primary"
+            onPress={startNewGame}
+            accessibilityHint="Start a new game"
           />
-        ))}
+        </AppModal>
       </View>
-
-      <AppModal
-        visible={isGameComplete}
-        title="Well Done! 🎉"
-        onClose={() => undefined}
-        showClose={false}
-        dismissOnBackdropPress={false}
-      >
-        <Text style={styles.completeText} accessibilityRole="text">
-          You finished in {formatTime(elapsed)}!
-        </Text>
-        <AppButton
-          label="Play Again"
-          variant="primary"
-          onPress={startNewGame}
-          accessibilityHint="Start a new game"
-        />
-      </AppModal>
     </View>
   );
 };
@@ -242,7 +247,6 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     container: {
       flex: 1,
       alignItems: 'center',
-      padding: Space.base,
     },
     headerInfo: {
       flexDirection: 'row',
@@ -270,5 +274,11 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       color: colors.text,
       textAlign: 'center',
       marginBottom: Space.lg,
+    },
+    inner: {
+      flex: 1,
+      alignItems: 'center',
+      paddingHorizontal: Space.base,
+      paddingTop: Space.base,
     },
   });

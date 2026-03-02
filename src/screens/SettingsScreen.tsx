@@ -6,9 +6,11 @@ import {
   ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
-import { ColorMode, ThemeColors } from '../types';
+import { ColorMode, ThemeColors, UNFINISHED_GAMES } from '../types';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
+import { LANGUAGE_OPTIONS } from '../types/i18n';
 import {
   AppScreen,
   AppHeader,
@@ -21,28 +23,18 @@ import {
 import { Space, TypeStyle } from '../ui/tokens';
 import { useLayout } from '../ui/useLayout';
 
-const COLOR_MODE_OPTIONS: { value: ColorMode; label: string }[] = [
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-  { value: 'system', label: 'System' },
-];
-
-const TIMER_OPTIONS: { value: number; label: string }[] = [
-  { value: 0, label: 'Off' },
-  { value: 5, label: '5 min' },
-  { value: 10, label: '10 min' },
-  { value: 15, label: '15 min' },
-  { value: 20, label: '20 min' },
-  { value: 30, label: '30 min' },
-];
-
-const ALL_GAMES: { id: string; name: string; icon: string }[] = [
-  { id: 'memory-snap', name: 'Memory Snap', icon: '🧩' },
-  { id: 'drawing', name: 'Drawing Pad', icon: '🎨' },
-  { id: 'glitter-fall', name: 'Glitter Fall', icon: '✨' },
-  { id: 'bubble-pop', name: 'Bubble Pop', icon: '🫧' },
-  { id: 'category-match', name: 'Category Match', icon: '🗂️' },
-  { id: 'keepy-uppy', name: 'Keepy Uppy', icon: '🎈' },
+const ALL_GAMES: { id: string; nameKey: string; icon: string }[] = [
+  { id: 'memory-snap', nameKey: 'games.memorySnap.name', icon: '🧩' },
+  { id: 'drawing', nameKey: 'games.drawing.name', icon: '🎨' },
+  { id: 'glitter-fall', nameKey: 'games.glitterFall.name', icon: '✨' },
+  { id: 'bubble-pop', nameKey: 'games.bubblePop.name', icon: '🫧' },
+  { id: 'category-match', nameKey: 'games.categoryMatch.name', icon: '🗂️' },
+  { id: 'keepy-uppy', nameKey: 'games.keepyUppy.name', icon: '🎈' },
+  { id: 'breathing-garden', nameKey: 'games.breathingGarden.name', icon: '🌸' },
+  { id: 'pattern-train', nameKey: 'games.patternTrain.name', icon: '🚂' },
+  { id: 'number-picnic', nameKey: 'games.numberPicnic.name', icon: '🧺' },
+  { id: 'letter-lanterns', nameKey: 'games.letterLanterns.name', icon: '🏮' },
+  { id: 'star-path', nameKey: 'games.starPath.name', icon: '⭐' },
 ];
 
 export const SettingsScreen: React.FC = () => {
@@ -51,19 +43,35 @@ export const SettingsScreen: React.FC = () => {
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const { contentWidth, isTablet } = useLayout();
+  const { t } = useTranslation();
+
+  const colorModeOptions: { value: ColorMode; label: string }[] = [
+    { value: 'light', label: t('settings.appearance.light') },
+    { value: 'dark', label: t('settings.appearance.dark') },
+    { value: 'system', label: t('settings.appearance.system') },
+  ];
+
+  const timerOptions: { value: number; label: string }[] = [
+    { value: 0, label: t('settings.parentTimer.off') },
+    { value: 5, label: '5 min' },
+    { value: 10, label: '10 min' },
+    { value: 15, label: '15 min' },
+    { value: 20, label: '20 min' },
+    { value: 30, label: '30 min' },
+  ];
 
   return (
     <AppScreen>
       <AppHeader
-        title="Settings"
+        title={t('settings.title')}
         onBack={() => navigation.goBack()}
         rightAction={
           <AppButton
-            label="Save"
+            label={t('common.save')}
             variant="primary"
             size="sm"
             onPress={() => navigation.goBack()}
-            accessibilityHint="Save settings and return home"
+            accessibilityHint={t('settings.saveHint')}
           />
         }
       />
@@ -75,24 +83,38 @@ export const SettingsScreen: React.FC = () => {
           isTablet && { maxWidth: contentWidth, alignSelf: 'center', width: '100%' },
         ]}
       >
+        {/* Language */}
+        <View style={styles.section}>
+          <SectionHeader title={t('settings.language.title')} />
+          <SegmentedControl
+            options={LANGUAGE_OPTIONS}
+            value={settings.language}
+            onValueChange={(value) => updateSettings({ language: value })}
+            wrap
+          />
+          <Text style={styles.description}>
+            {t('settings.language.description')}
+          </Text>
+        </View>
+
         {/* Appearance */}
         <View style={styles.section}>
-          <SectionHeader title="Appearance" />
+          <SectionHeader title={t('settings.appearance.title')} />
           <SegmentedControl
-            options={COLOR_MODE_OPTIONS}
+            options={colorModeOptions}
             value={settings.colorMode}
             onValueChange={(value) => updateSettings({ colorMode: value })}
           />
           <Text style={styles.description}>
-            Soft pastel tones are used in both light and dark modes
+            {t('settings.appearance.description')}
           </Text>
         </View>
 
         {/* Card Preview */}
         <View style={styles.section}>
           <SettingToggle
-            label="Show Card Preview"
-            description="Show all cards for 2 seconds before the game starts"
+            label={t('settings.cardPreview.label')}
+            description={t('settings.cardPreview.description')}
             value={!!settings.showCardPreview}
             onValueChange={(value) => updateSettings({ showCardPreview: value })}
           />
@@ -101,8 +123,8 @@ export const SettingsScreen: React.FC = () => {
         {/* Animations */}
         <View style={styles.section}>
           <SettingToggle
-            label="Animations"
-            description="Enable card flip and UI animations"
+            label={t('settings.animations.label')}
+            description={t('settings.animations.description')}
             value={!!settings.animationsEnabled}
             onValueChange={(value) => updateSettings({ animationsEnabled: value })}
           />
@@ -111,18 +133,28 @@ export const SettingsScreen: React.FC = () => {
         {/* Keepy Uppy Easy Mode */}
         <View style={styles.section}>
           <SettingToggle
-            label="Keepy Uppy Easy Mode"
-            description="Any tap gives a gentle lift while good taps still go higher"
+            label={t('settings.keepyUppyEasyMode.label')}
+            description={t('settings.keepyUppyEasyMode.description')}
             value={!!settings.keepyUppyEasyMode}
             onValueChange={(value) => updateSettings({ keepyUppyEasyMode: value })}
+          />
+        </View>
+
+        {/* Enable Unfinished Games */}
+        <View style={styles.section}>
+          <SettingToggle
+            label={t('settings.unfinishedGames.label')}
+            description={t('settings.unfinishedGames.description')}
+            value={!!settings.enableUnfinishedGames}
+            onValueChange={(value) => updateSettings({ enableUnfinishedGames: value })}
           />
         </View>
 
         {/* Sound */}
         <View style={styles.section}>
           <SettingToggle
-            label="Sound"
-            description="Enable gentle sound effects"
+            label={t('settings.sound.label')}
+            description={t('settings.sound.description')}
             value={!!settings.soundEnabled}
             onValueChange={(value) => updateSettings({ soundEnabled: value })}
           />
@@ -131,7 +163,7 @@ export const SettingsScreen: React.FC = () => {
         {/* Volume */}
         {settings.soundEnabled && (
           <View style={styles.section}>
-            <SectionHeader title="Volume" />
+            <SectionHeader title={t('settings.volume.title')} />
             <VolumeControl
               value={settings.soundVolume}
               onValueChange={(value) => updateSettings({ soundVolume: value })}
@@ -142,48 +174,50 @@ export const SettingsScreen: React.FC = () => {
 
         {/* Games on Home Screen */}
         <View style={styles.section}>
-          <SectionHeader title="Games on Home Screen" />
-          {ALL_GAMES.map((game) => {
-            const isVisible = !settings.hiddenGames.includes(game.id);
-            return (
-              <SettingToggle
-                key={game.id}
-                label={`${game.icon}  ${game.name}`}
-                value={isVisible}
-                onValueChange={(value) => {
-                  const updated = value
-                    ? settings.hiddenGames.filter((id) => id !== game.id)
-                    : [...settings.hiddenGames, game.id];
-                  updateSettings({ hiddenGames: updated });
-                }}
-              />
-            );
-          })}
+          <SectionHeader title={t('settings.gamesOnHomeScreen.title')} />
+          {ALL_GAMES
+            .filter((game) => settings.enableUnfinishedGames || !UNFINISHED_GAMES.includes(game.id))
+            .map((game) => {
+              const isVisible = !settings.hiddenGames.includes(game.id);
+              return (
+                <SettingToggle
+                  key={game.id}
+                  label={`${game.icon}  ${t(game.nameKey)}`}
+                  value={isVisible}
+                  onValueChange={(value) => {
+                    const updated = value
+                      ? settings.hiddenGames.filter((id) => id !== game.id)
+                      : [...settings.hiddenGames, game.id];
+                    updateSettings({ hiddenGames: updated });
+                  }}
+                />
+              );
+            })}
           <Text style={styles.description}>
-            Hide games you don't want on the home screen
+            {t('settings.gamesOnHomeScreen.description')}
           </Text>
         </View>
 
         {/* Parent Timer */}
         <View style={styles.section}>
-          <SectionHeader title="Parent Timer" />
+          <SectionHeader title={t('settings.parentTimer.title')} />
           <SegmentedControl
-            options={TIMER_OPTIONS}
+            options={timerOptions}
             value={settings.parentTimerMinutes}
             onValueChange={(value) => updateSettings({ parentTimerMinutes: value })}
             wrap
           />
           <Text style={styles.description}>
-            After the set time, a maths question pauses play until a grown-up answers
+            {t('settings.parentTimer.description')}
           </Text>
         </View>
 
         <View style={styles.bottomAction}>
           <AppButton
-            label="Back to Home"
+            label={t('common.back')}
             variant="secondary"
             onPress={() => navigation.goBack()}
-            accessibilityHint="Return to the home screen"
+            accessibilityHint={t('settings.backHint')}
           />
         </View>
       </ScrollView>

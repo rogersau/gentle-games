@@ -2,7 +2,9 @@
 
 ## Project Overview
 
-**Gentle Games** is a sensory-friendly Expo (React Native) app for children ages 4–10. It contains two games: Memory Snap (tile-matching) and Drawing Pad (freehand SVG canvas). The design philosophy is calm, pastel, non-competitive, and accessibility-first.
+**Gentle Games** is a sensory-friendly Expo (React Native) app for children ages 4–10. It includes six mini-games — Memory Snap (tile-matching), Drawing Pad (freehand SVG canvas), Glitter Fall (snow-globe glitter), Bubble Pop (tap floating bubbles), Category Match (drag-to-sort), and Keepy Uppy (balloon tap) — all built with calm pastels, gentle audio, and optional animations.
+
+> **Note to the agent:** always consult the source code in the workspace first when implementing or explaining features. The instructions in this document are secondary and may lag behind the actual code.
 
 ## Commands
 
@@ -21,30 +23,20 @@ There are no test or lint scripts configured.
 
 ## Architecture
 
-```
-App.tsx                          # Entry: NavigationContainer + SettingsProvider + sound init
-src/
-  types/index.ts                 # All TypeScript types AND shared data constants
-  context/SettingsContext.tsx    # Global settings state (React Context + AsyncStorage)
-  utils/
-    gameLogic.ts                 # Pure functions: tile generation, match checking, grid config
-    sounds.ts                    # Module-level sound state; initialized once in App.tsx
-  screens/                       # Screen components; consume useSettings() + useNavigation()
-  components/                    # Game components; GameBoard owns all Memory Snap state
-```
+Gentle Games is a React Native app built with Expo. It uses a collection of screens and reusable components, supported by utility modules for game logic, animations, and audio. Most configuration and shared constants live in a central types file, while persistent user preferences are handled by a context/provider.
 
-**Data flow**: `SettingsContext` is the single source of truth for user preferences. Screens read `settings` and call `updateSettings()` which persists to AsyncStorage under the key `'gentleMatchSettings'`.
+**Data flow**: A single `SettingsContext` holds user preferences (sound, animations, pair count, easy mode). Screens read from it and update it; settings are stored in AsyncStorage under `'gentleMatchSettings'`.
 
-**Navigation**: Stack navigator with four routes — `Home`, `Game`, `Settings`, `Drawing`. Screens navigate with `navigation.navigate('RouteName' as never)`.
+**Navigation**: A stack navigator defines routes for home, each of the mini–games, and settings. Components navigate using `navigation.navigate` with the route name string.
 
-**Sound**: Sounds are loaded once at app start (`initializeSounds`) and reused via `setPositionAsync(0)` before each play. Volume is capped at 50% internally; the user-facing slider maps 100% → 50% actual volume.
+**Sound**: Audio assets are initialized once and reused; volume is limited to a safe maximum.
 
-**Memory Snap timer**: Starts on the player's first tile flip, not on screen mount.
+**Timing**: Game timers typically start on the first user interaction rather than on mount.
 
 ## Key Conventions
 
 ### Colors — always use `PASTEL_COLORS`
-All UI colors should come from the `PASTEL_COLORS` constant in `src/types/index.ts`. Do not introduce high-contrast or saturated colors; the app targets children with visual sensitivities.
+All UI colors should come from a shared pastel color constant rather than hard‑coding values. The palette avoids high‑contrast or saturated hues to suit visually sensitive users.
 
 ```typescript
 import { PASTEL_COLORS } from '../types';
@@ -58,7 +50,7 @@ All screens and components use named exports (`export const Foo: React.FC = ...`
 Each file ends with a `const styles = StyleSheet.create({...})` block. Inline styles are avoided.
 
 ### SafeAreaView
-Always import from `react-native-safe-area-context` (not `react-native`) and pass the `edges` prop:
+Use the `SafeAreaView` component from `react-native-safe-area-context` with appropriate edge props to handle notch/sensor areas.
 ```typescript
 import { SafeAreaView } from 'react-native-safe-area-context';
 <SafeAreaView style={...} edges={['top', 'bottom']}>
