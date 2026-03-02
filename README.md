@@ -84,7 +84,7 @@ A gentle balloon-tapping game where players try to keep a balloon afloat by tapp
 **Features:**
 - Balloons drift slowly downward and are kept aloft with taps
 - Tap anywhere on the balloon to register a hit
-- Easy mode toggle in settings reduces gravity for younger players
+- Easy mode toggle in settings makes each tap give a gentle, reliable upward lift for younger players
 - Endless play with soft background motion and simple pop counter
 
 ## Features (All Games)
