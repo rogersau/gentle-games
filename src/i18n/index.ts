@@ -6,6 +6,9 @@ import { DEFAULT_LANGUAGE } from '../types/i18n';
 import enAU from './locales/en-AU.json';
 import enUS from './locales/en-US.json';
 
+// Import type definitions to enable type-safe translations
+import './types';
+
 const resources = {
   'en-AU': {
     translation: enAU,

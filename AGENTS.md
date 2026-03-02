@@ -12,7 +12,7 @@ Generally speaking, you should browse the codebase to figure out what is going o
 - **Clear, predictable navigation** - Consistent UI patterns throughout
 - **Sensory-friendly design** - Adjustable colors, sounds, and animations
 - **Inclusive language** - Simple, positive wording suitable for all reading levels
-- **internationalization-ready** - All text goes through a translation function, even if only English is currently supported
+- **Internationalization-ready** - All text goes through a translation function, even if only English is currently supported
 - **Offline-first** - Works without internet connection
 
 ### Design Philosophy

@@ -1,115 +1,34 @@
 # Gentle Games
 
-A collection of six calm, sensory-friendly games designed for children ages 4-10 with visual and auditory sensitivities.
+A calm, sensory-friendly mobile application designed for children with sensory sensitivities, particularly those with autism spectrum disorder (ASD). Built with accessibility and inclusion at its core.
 
-## Games
+## Mission
 
-### 🧩 Memory Snap
-A calm memory matching game where players flip tiles to find matching pairs.
+To provide a safe, predictable, and stress-free digital space where children can play, create, and explore at their own pace. Every interaction is designed with sensory needs in mind—no ads, no time pressure, no overwhelming stimuli, and no hidden paywalls.
 
-**Features:**
-- **Multiple Difficulty Levels**
-  - Easy: 6-10 pairs
-  - Medium: 12-18 pairs  
-  - Hard: 20-30 pairs
+## Core Principles
 
-- **Three Themes**
-  - Animals (bunnies, bears, cats, and more)
-  - Shapes (stars, hearts, moons, and more)
-  - Mixed (animal-first with a few shapes/places like houses and castles)
+- **Sensory-Friendly**: Soft color palettes, optional audio, smooth animations, and zero flashing lights or jarring visuals
+- **Predictable & Calm**: Consistent UI patterns, clear navigation, and gameplay that never rushes the player
+- **Fully Accessible**: Light/dark mode support, animation toggles, sound controls, large touch targets, and internationalization-ready design
+- **Offline-First**: Works without an internet connection so play is always available
+- **Truly Free**: No ads, no in-app purchases, no subscriptions—just gentle games
 
-- **Game Features**
-  - Live timer showing elapsed time
-  - Move counter
-  - Back button to return to menu
-  - Gentle completion celebration
-  - Even grid layouts for all pair counts
+## What You'll Find
 
-### 🎨 Drawing Pad
-A simple drawing canvas where kids can draw, add shapes, and be creative.
+The app offers a collection of calm, creative activities including memory games, creative drawing tools, sensory experiences, and simple interactive toys. Each activity is designed to be:
 
-**Features:**
-- **Drawing Tools**
-  - Pen tool for freehand drawing
-  - Eraser tool to remove drawings
-  - Shape tool to add geometric shapes
+- Non-competitive and pressure-free
+- Adjustable to individual comfort levels
+- Immediately accessible without tutorials or gates
+- Safe for independent play
 
-- **9 Preset Colors**
-  - Red, teal, blue, green, yellow
-  - Plum, mint, pink, gray
-  - Plus 30 additional preset colors
-  - Custom color picker
+## Who It's For
 
-- **3 Shape Types**
-  - Circle 🔴
-  - Square 🟦
-  - Triangle 🔺
-  - Resizable (20px - 100px)
-
-- **Canvas Features**
-  - Undo (removes last stroke or shape)
-  - Clear all
-  - Theme-aware canvas background (white in light mode, soft grey in dark mode)
-  - Maximum screen space utilization
-
-### ✨ Glitter Fall
-A calming snow globe where kids can sprinkle glitter and watch it drift.
-
-**Features:**
-- Add glitter with simple tap controls
-- Shake device on mobile to create playful motion bursts
-- Touch and swirl through the globe to move nearby glitter
-- Touch-only fallback on web when motion sensors are unavailable
-
-### 🫧 Bubble Pop
-A calm tapping game where bubbles drift down from the top of the screen.
-
-**Features:**
-- Endless mode with continuous bubble spawning
-- Mixed bubble sizes and gentle falling motion
-- Tap to pop bubbles and track a simple pop count
-- Active bubble guard that keeps at least 2 bubbles on screen
-
-### 🗂️ Category Match
-A calm sorting game where kids drag each emoji into the right category.
-
-**Features:**
-- Endless rounds with one emoji at a time
-- Three friendly categories in a fixed row: Sky, Land, Ocean
-- Gentle correct/try-again feedback with a running correct counter
-
-### 🎈 Keepy Uppy
-A gentle balloon-tapping game where players try to keep a balloon afloat by tapping it repeatedly.
-
-**Features:**
-- Balloons drift slowly downward and are kept aloft with taps
-- Tap anywhere on the balloon to register a hit
-- Easy mode toggle in settings makes each tap give a gentle, reliable upward lift for younger players
-- Endless play with soft background motion and simple pop counter
-
-## Features (All Games)
-
-- **Sensory-Friendly Design**
-  - Soft pastel color palette (no high contrast)
-  - Optional gentle sound effects
-  - Toggleable animations
-  - No flashing lights or jarring visuals
-  - Calm, non-competitive gameplay
-
-- **Accessibility**
-  - Light / Dark / System appearance modes with pastel palettes
-  - Animation on/off toggle
-  - Sound on/off with volume control
-  - Large touch targets for small fingers
-  - Clear visual feedback
-  - Gentle completion celebration
-
-- **Memory Snap Specific**
-  - Matched tiles stay visible (dimmed) for progress tracking
-  - Last played pair count remembered
-  - Dynamic grid sizing based on screen size
-- **Keepy Uppy Specific**
-  - Easy mode toggle can be enabled in Settings to make taps lift balloons more
+- Children ages 4-10 with sensory processing differences
+- Parents and caregivers seeking calm, appropriate screen time
+- Therapists and educators supporting neurodivergent children
+- Anyone who benefits from gentle, predictable digital experiences
 
 ## Tech Stack
 
@@ -271,45 +190,17 @@ eas build --platform android
 ```
 gentle-games/
 ├── src/
-│   ├── components/
-│   │   ├── GameBoard.tsx       # Memory Snap game board
-│   │   ├── Tile.tsx            # Memory tile component
-│   │   ├── DrawingCanvas.tsx   # Drawing canvas with tools
-│   │   ├── GlitterGlobe.tsx    # Glitter Fall particle globe
-│   │   ├── BubbleField.tsx     # Bubble Pop falling bubble field
-│   │   └── CategoryMatchBoard.tsx # Category Match drag/drop board
-│   ├── screens/
-│   │   ├── HomeScreen.tsx      # Game selection menu
-│   │   ├── GameScreen.tsx      # Memory Snap screen
-│   │   ├── DrawingScreen.tsx   # Drawing Pad screen
-│   │   ├── GlitterScreen.tsx   # Glitter Fall screen
-│   │   ├── BubbleScreen.tsx    # Bubble Pop screen
-│   │   ├── CategoryMatchScreen.tsx # Category Match screen
-│   │   └── SettingsScreen.tsx  # App settings
-│   ├── context/
-│   │   └── SettingsContext.tsx # Global settings state
-│   ├── utils/
-│   │   ├── gameLogic.ts        # Memory game logic
-│   │   ├── bubbleLogic.ts      # Bubble Pop spawn + movement logic
-│   │   ├── glitterMotion.ts    # Shake and motion helpers
-│   │   ├── categoryMatchLogic.ts # Category Match round logic
-│   │   └── sounds.ts           # Audio management
-│   └── types/
-│       └── index.ts            # TypeScript types & data
-├── App.tsx                     # Main app entry
-├── app.json                    # Expo configuration
+│   ├── components/        # Reusable game components
+│   ├── screens/           # Screen components
+│   ├── context/           # Global state (settings, etc.)
+│   ├── utils/             # Game logic and helpers
+│   └── types/             # TypeScript definitions
+├── App.tsx                # Main app entry
+├── app.json               # Expo configuration
 └── package.json
 ```
 
 ## Customization
-
-### Adding New Animals or Shapes (Memory Snap)
-
-Edit `src/types/index.ts` and add to `ANIMALS` or `SHAPES` arrays:
-
-```typescript
-{ emoji: '🦁', name: 'lion', color: '#F0E68C' }
-```
 
 ### Changing Colors
 
@@ -330,9 +221,11 @@ export const PASTEL_COLORS = {
 
 ## Development Tips
 
-- **Grid Layout**: Memory Snap automatically calculates even grid dimensions based on pair count and screen size
-- **Sound Files**: Place MP3 files in `assets/sounds/` for custom sounds (flip.mp3, match.mp3, complete.mp3)
-- **Canvas**: Drawing Pad uses SVG for smooth rendering and supports both strokes and shapes
+- All text must go through the translation function for internationalization
+- Use soft pastel colors—avoid high contrast and bright colors
+- Keep interactions predictable and feedback gentle
+- Test with animation and sound toggled off
+- Support both light and dark mode
 
 ## License
 

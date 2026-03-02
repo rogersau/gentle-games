@@ -11,6 +11,7 @@ import { useSettings } from '../context/SettingsContext';
 import { ColorMode, ThemeColors, UNFINISHED_GAMES } from '../types';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { LANGUAGE_OPTIONS } from '../types/i18n';
+import { TranslationKey } from '../i18n/types';
 import {
   AppScreen,
   AppHeader,
@@ -24,7 +25,7 @@ import {
 import { Space, TypeStyle } from '../ui/tokens';
 import { useLayout } from '../ui/useLayout';
 
-const ALL_GAMES: { id: string; nameKey: string; icon: string }[] = [
+const ALL_GAMES: { id: string; nameKey: TranslationKey; icon: string }[] = [
   { id: 'memory-snap', nameKey: 'games.memorySnap.name', icon: '🧩' },
   { id: 'drawing', nameKey: 'games.drawing.name', icon: '🎨' },
   { id: 'glitter-fall', nameKey: 'games.glitterFall.name', icon: '✨' },
