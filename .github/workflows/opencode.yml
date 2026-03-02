@@ -28,6 +28,6 @@ jobs:
       - name: Run opencode
         uses: anomalyco/opencode/github@latest
         env:
-          kimi-for-coding_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
+          KIMI_FOR_CODING_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
         with:
           model: kimi-for-coding/k2p5
