@@ -87,6 +87,31 @@ jest.mock('react-i18next', () => ({
         'games.categoryMatch.subtitle': 'Sort each emoji into Sky, Land, or Ocean.',
         'games.categoryMatch.startSorting': 'Start Sorting',
         'games.categoryMatch.correct': 'Correct',
+        // Bubble Pop
+        'games.bubblePop.title': 'Bubble Pop',
+        'games.bubblePop.subtitle': 'Tap the falling bubbles to pop them.',
+        'games.bubblePop.popped': 'Popped: {{count}}',
+        // Glitter Fall  
+        'games.glitterFall.title': 'Glitter Fall',
+        'games.glitterFall.subtitle': 'Shake or swipe to make the glitter sparkle',
+        'games.glitterFall.addGlitter': '⭐ Sprinkle',
+        'games.glitterFall.addGlitterHint': 'Add glitter particles to the globe',
+        'games.glitterFall.clearGlitter': '🧹 Clear',
+        'games.glitterFall.clearGlitterHint': 'Remove all glitter from the globe',
+        // Keepy Uppy
+        'games.keepyUppy.title': 'Keepy Uppy',
+        'games.keepyUppy.taps': 'Taps: {{count}}',
+        'games.keepyUppy.balloons': 'Balloons: {{count}}',
+        'games.keepyUppy.popped': 'Popped: {{count}}',
+        // Category Match
+        'games.categoryMatch.title': 'Category Match',
+        'games.categoryMatch.quickPreview': 'Quick Preview',
+        'games.categoryMatch.dragInstruction': 'Drag each item to the correct category box',
+        'games.categoryMatch.startSortingHint': 'Begin the category sorting game',
+        // Memory Snap
+        'games.memorySnap.moves': '{{count}} moves',
+        'games.memorySnap.timeLabel': 'Time: {{time}}',
+        'common.timerNotStarted': 'Timer not started',
       };
       
       const translation = translations[key] || key;
