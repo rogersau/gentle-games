@@ -1,95 +1,67 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ThemeColors } from '../types';
-import {
-  getBreathingPhase,
-  getBreathingPhaseProgress,
-  getCompletedBreathingCycles,
-  isCalmBreathPress,
-} from '../utils/breathingGardenLogic';
+import { BreathingBall, BreathingBallRef, BallColorScheme } from '../components/BreathingBall';
 import { useThemeColors } from '../utils/theme';
 import { AppScreen, AppHeader, AppButton, AppCard } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 
+const colorSchemes: BallColorScheme[] = [
+  { primary: '#A8D8EA', accent: '#D4A9E6', name: 'Ocean' },
+  { primary: '#FFB6C1', accent: '#FF9E9E', name: 'Rose' },
+  { primary: '#B8E6B8', accent: '#98FB98', name: 'Mint' },
+  { primary: '#F4A460', accent: '#DDA0DD', name: 'Sunset' },
+  { primary: '#C9B1FF', accent: '#87CEFA', name: 'Lavender' },
+];
+
 export const BreathingGardenScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  const [sessionStartAt, setSessionStartAt] = useState(() => Date.now());
-  const [clockNow, setClockNow] = useState(() => Date.now());
-  const [petalsBloomed, setPetalsBloomed] = useState(0);
-  const [message, setMessage] = useState('Breathe in slowly, then breathe out softly.');
-  const pressStartAtRef = useRef<number | null>(null);
+  const [colorIndex, setColorIndex] = useState(0);
+  const ballColors = colorSchemes[colorIndex];
+  const styles = useStyles();
+  const ballRef = useRef<BreathingBallRef>(null);
+  const [phase, setPhase] = useState<'inhale' | 'exhale'>('inhale');
+  const [cycles, setCycles] = useState(0);
 
-  React.useEffect(() => {
-    const timer = setInterval(() => {
-      setClockNow(Date.now());
-    }, 120);
-    return () => clearInterval(timer);
-  }, []);
-
-  const elapsedMs = Math.max(0, clockNow - sessionStartAt);
-  const phase = getBreathingPhase(elapsedMs);
-  const phaseProgress = getBreathingPhaseProgress(elapsedMs);
-  const completedCycles = getCompletedBreathingCycles(elapsedMs);
-  const circleSize = 120 + (phase === 'inhale' ? phaseProgress : 1 - phaseProgress) * 90;
-
-  const handleBreathPressStart = () => {
-    pressStartAtRef.current = Date.now();
-  };
-
-  const handleBreathPressEnd = () => {
-    const pressStart = pressStartAtRef.current;
-    pressStartAtRef.current = null;
-    if (!pressStart) return;
-    const holdDuration = Date.now() - pressStart;
-    if (isCalmBreathPress(phase, holdDuration)) {
-      setPetalsBloomed((current) => current + 1);
-      setMessage('Lovely breathing. Your garden is blooming.');
-    } else {
-      setMessage(phase === 'exhale' ? 'Soft exhale now. You are doing great.' : 'Gentle and steady breaths.');
-    }
+  const cycleColors = () => {
+    setColorIndex((prev) => (prev + 1) % colorSchemes.length);
   };
 
   const resetSession = () => {
-    setSessionStartAt(Date.now());
-    setClockNow(Date.now());
-    setPetalsBloomed(0);
-    setMessage('Breathe in slowly, then breathe out softly.');
+    ballRef.current?.reset();
   };
 
   return (
     <AppScreen>
       <AppHeader title="Breathing Garden" onBack={() => navigation.goBack()} />
       <View style={styles.content}>
-        <Text style={styles.subtitle} accessibilityRole="text">
-          Follow the rhythm and press during inhale.
-        </Text>
-
         <AppCard variant="elevated" style={styles.breathCard}>
           <Text style={styles.phaseLabel}>{phase === 'inhale' ? 'Breathe In' : 'Breathe Out'}</Text>
-          <View style={[styles.breathCircle, { width: circleSize, height: circleSize, borderRadius: circleSize / 2 }]} />
-          <Text style={styles.message}>{message}</Text>
+          <View style={styles.ballContainer}>
+            <BreathingBall
+              ref={ballRef}
+              size={250}
+              colorScheme={ballColors}
+              autoStart={true}
+              onPhaseChange={setPhase}
+              onCycleComplete={setCycles}
+            />
+          </View>
         </AppCard>
 
         <View style={styles.statsRow}>
-          <Text style={styles.statText}>Cycles: {completedCycles}</Text>
-          <Text style={styles.statText}>Blooms: {petalsBloomed}</Text>
+          <Text style={styles.statText}>Cycles: {cycles}</Text>
         </View>
 
         <View style={styles.actionsRow}>
-          <TouchableOpacity
-            style={styles.gentlePressButton}
-            onPressIn={handleBreathPressStart}
-            onPressOut={handleBreathPressEnd}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityLabel="Gentle Press"
-            accessibilityHint="Hold briefly during inhale to bloom the garden"
-          >
-            <Text style={styles.gentlePressLabel}>🌸 Gentle Press</Text>
-          </TouchableOpacity>
+          <AppButton
+            label={`Change Color (${ballColors.name})`}
+            onPress={cycleColors}
+            variant="secondary"
+            style={styles.actionButton}
+          />
           <AppButton
             label="Reset Session"
             onPress={resetSession}
@@ -102,8 +74,10 @@ export const BreathingGardenScreen: React.FC = () => {
   );
 };
 
-const createStyles = (colors: ThemeColors) =>
-  StyleSheet.create({
+const useStyles = () => {
+  const { colors } = useThemeColors();
+  
+  return StyleSheet.create({
     content: {
       flex: 1,
       alignItems: 'center',
@@ -111,15 +85,11 @@ const createStyles = (colors: ThemeColors) =>
       paddingTop: Space.base,
       paddingBottom: Space.lg,
     },
-    subtitle: {
-      ...TypeStyle.bodySm,
-      color: colors.textLight,
-      textAlign: 'center',
-      marginBottom: Space.base,
-    },
     breathCard: {
       width: '100%',
+      flex: 1,
       alignItems: 'center',
+      justifyContent: 'center',
       marginBottom: Space.lg,
       gap: Space.base,
     },
@@ -128,16 +98,11 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.text,
       textAlign: 'center',
     },
-    breathCircle: {
-      backgroundColor: colors.primary,
-      borderWidth: 4,
-      borderColor: colors.accent,
-      opacity: 0.9,
-    },
-    message: {
-      ...TypeStyle.bodySm,
-      color: colors.textLight,
-      textAlign: 'center',
+    ballContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 250,
     },
     statsRow: {
       flexDirection: 'row',
@@ -152,20 +117,8 @@ const createStyles = (colors: ThemeColors) =>
       width: '100%',
       gap: Space.sm,
     },
-    gentlePressButton: {
-      backgroundColor: colors.primary,
-      borderRadius: 999,
-      minHeight: 50,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: Space.lg,
-      paddingVertical: Space.md,
-    },
-    gentlePressLabel: {
-      ...TypeStyle.button,
-      color: colors.surface,
-    },
     actionButton: {
       width: '100%',
     },
   });
+};

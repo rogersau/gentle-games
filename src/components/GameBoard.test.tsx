@@ -143,4 +143,50 @@ describe('GameBoard', () => {
     const boardStyle = StyleSheet.flatten(screen.getByTestId('memory-board').props.style);
     expect(boardStyle.height).toBeGreaterThanOrEqual(renderedTileSize * 4);
   });
+
+  it('never shows negative timer when first card is selected after delay', async () => {
+    jest.useFakeTimers();
+    const now = Date.now();
+    let mockTime = now;
+    
+    // Mock Date.now to return controlled times
+    jest.spyOn(Date, 'now').mockImplementation(() => mockTime);
+
+    try {
+      const screen = render(
+        <GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />
+      );
+
+      // Simulate 3 seconds passing before user clicks first card
+      mockTime = now + 3000;
+
+      // Click first tile
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('tile-1a'));
+      });
+
+      // Wait for re-render
+      await waitFor(() => {
+        expect(screen.queryByText('—')).toBeNull();
+      });
+
+      // Get the timer by accessibility label
+      const timerElement = screen.queryByLabelText(/Time/);
+      expect(timerElement).toBeTruthy();
+      
+      // Get the displayed time text - it should never start with minus
+      const timerText = timerElement?.props?.children;
+      
+      // Convert to string if it's a number or array
+      const timerString = Array.isArray(timerText) ? timerText.join('') : String(timerText);
+      
+      // The timer should show 0:00 or positive time, never negative
+      // The bug causes it to show negative because currentTime is stale
+      expect(timerString).not.toMatch(/^-/); // Should not start with minus sign
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+      jest.restoreAllMocks();
+    }
+  });
 });

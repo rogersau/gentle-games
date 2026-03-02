@@ -1,5 +1,7 @@
 import { BreathingGardenPhase } from '../types';
 
+export { BreathingGardenPhase };
+
 export const BREATHING_PHASE_DURATION_MS = 3500;
 export const BREATHING_CYCLE_DURATION_MS = BREATHING_PHASE_DURATION_MS * 2;
 

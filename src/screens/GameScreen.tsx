@@ -1,13 +1,16 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GameBoard } from '../components/GameBoard';
-import { AppScreen } from '../ui/components';
+import { AppScreen, AppHeader } from '../ui/components';
+import { Space, TypeStyle } from '../ui/tokens';
+import { useThemeColors } from '../utils/theme';
 
 export const GameScreen: React.FC = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const { colors } = useThemeColors();
 
   const handleGameComplete = (_time: number) => {
     // Extension point for future analytics
@@ -19,11 +22,19 @@ export const GameScreen: React.FC = () => {
 
   return (
     <AppScreen>
+      <AppHeader title="Memory Snap" onBack={handleBackPress} />
       <View style={styles.content}>
         <GameBoard
           onGameComplete={handleGameComplete}
-          onBackPress={handleBackPress}
           bottomInset={insets.bottom}
+          renderStats={({ time, moves }) => (
+            <Text
+              style={[styles.stats, { color: colors.text }]}
+              accessibilityLabel={`Time ${time}, ${moves} moves`}
+            >
+              Time: {time} · Moves: {moves}
+            </Text>
+          )}
         />
       </View>
     </AppScreen>
@@ -33,5 +44,13 @@ export const GameScreen: React.FC = () => {
 const styles = StyleSheet.create({
   content: {
     flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: Space.md,
+    paddingTop: Space.base,
+    paddingBottom: Space.md,
+  },
+  stats: {
+    ...TypeStyle.label,
+    marginBottom: Space.md,
   },
 });
