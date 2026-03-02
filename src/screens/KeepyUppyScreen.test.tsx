@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor, act } from '@testing-library/react-native';
 import { KeepyUppyScreen } from './KeepyUppyScreen';
 
 const mockGoBack = jest.fn();
@@ -53,16 +53,43 @@ describe('KeepyUppyScreen', () => {
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 
-  it('adds balloons up to a max of three', () => {
+  it('adds balloons up to a max of three', async () => {
     const screen = render(<KeepyUppyScreen />);
     const addButton = screen.getByText('+ Balloon');
 
     expect(screen.getByText('Balloons: 1')).toBeTruthy();
-    fireEvent.press(addButton);
-    expect(screen.getByText('Balloons: 2')).toBeTruthy();
-    fireEvent.press(addButton);
-    expect(screen.getByText('Balloons: 3')).toBeTruthy();
-    fireEvent.press(addButton);
-    expect(screen.getByText('Balloons: 3')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(addButton);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Balloons: 2')).toBeTruthy();
+    });
+
+    await act(async () => {
+      fireEvent.press(addButton);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Balloons: 3')).toBeTruthy();
+    });
+
+    await act(async () => {
+      fireEvent.press(addButton);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Balloons: 3')).toBeTruthy();
+    });
+
+    // Press button again - should stay at 3 balloons
+    await act(async () => {
+      fireEvent.press(addButton);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Balloons: 3')).toBeTruthy();
+    });
   });
 });
