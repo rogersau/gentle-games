@@ -23,7 +23,7 @@ export const BreathingGardenScreen: React.FC = () => {
   const colorSchemes = React.useMemo(() => getColorSchemes(colors as ThemeColors), [colors]);
   const [colorIndex, setColorIndex] = useState(0);
   const ballColors = colorSchemes[colorIndex];
-  const styles = useStyles();
+  const styles = React.useMemo(() => createStyles(colors as ThemeColors), [colors]);
   const ballRef = useRef<BreathingBallRef>(null);
   const [phase, setPhase] = useState<'inhale' | 'exhale'>('inhale');
   const [cycles, setCycles] = useState(0);
@@ -77,10 +77,8 @@ export const BreathingGardenScreen: React.FC = () => {
   );
 };
 
-const useStyles = () => {
-  const { colors } = useThemeColors();
-  
-  return StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
     content: {
       flex: 1,
       alignItems: 'center',
@@ -124,4 +122,3 @@ const useStyles = () => {
       width: '100%',
     },
   });
-};

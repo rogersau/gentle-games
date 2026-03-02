@@ -103,7 +103,7 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
         },
         getBalloonCount: () => balloons.length,
       }),
-      [bounds, colors, balloons.length, onScoreChange, onPoppedChange, onBalloonCountChange]
+      [bounds, colors, resolvedMode, balloons.length, onScoreChange, onPoppedChange, onBalloonCountChange]
     );
 
     const toBoardPoint = useCallback(

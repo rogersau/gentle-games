@@ -61,6 +61,7 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
     const lastTimeRef = useRef<number>(0);
     const frameRef = useRef<number | null>(null);
     const previousPhaseRef = useRef<BreathingGardenPhase | null>(null);
+    const previousCycleRef = useRef<number>(0);
 
     const { phase, phaseProgress, cycleCount } = useMemo(() => {
       const currentPhase = getBreathingPhase(elapsedMs);
@@ -89,13 +90,13 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
 
     // Handle cycle completion
     useEffect(() => {
-      const previousCycle = Math.floor(
-        (elapsedMs - (lastTimeRef.current || elapsedMs)) / BREATHING_CYCLE_DURATION_MS
-      );
-      if (cycleCount > previousCycle && cycleCount > 0) {
-        onCycleComplete?.(cycleCount);
+      if (cycleCount > previousCycleRef.current) {
+        previousCycleRef.current = cycleCount;
+        if (cycleCount > 0) {
+          onCycleComplete?.(cycleCount);
+        }
       }
-    }, [cycleCount, elapsedMs, onCycleComplete]);
+    }, [cycleCount, onCycleComplete]);
 
     useImperativeHandle(
       ref,
