@@ -209,7 +209,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
         testID="category-draggable-token"
         accessibilityRole="button"
         accessibilityLabel={`${round.item.emoji}, ${t('games.categoryMatch.dragToMatchingCategory')}`}
-        accessibilityHint="Press and drag to the correct category zone"
+        accessibilityHint={t('games.categoryMatch.dragToMatchingCategory')}
         style={[
           styles.draggableToken,
             {

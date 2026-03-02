@@ -233,10 +233,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
             You finished in {formatTime(elapsed)}!
           </Text>
           <AppButton
-            label="Play Again"
+            label={t('games.memorySnap.playAgain')}
             variant="primary"
             onPress={startNewGame}
-            accessibilityHint="Start a new game"
+            accessibilityHint={t('games.memorySnap.playAgainHint')}
           />
         </AppModal>
       </View>

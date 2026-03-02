@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Animated,
   Modal,
@@ -111,6 +112,7 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, [userAnswer, mathChallenge.answer, settings.parentTimerMinutes, shakeAnim]);
 
+  const { t } = useTranslation();
   const styles = React.useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
 
   return (
@@ -124,13 +126,13 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       >
         <View style={styles.lockContainer}>
           <Text style={styles.lockIcon}>⏰</Text>
-          <Text style={styles.lockTitle}>Time for a Break!</Text>
+          <Text style={styles.lockTitle}>{t('parentTimer.lockTitle')}</Text>
           <Text style={styles.lockSubtitle}>
-            Ask a grown-up to solve this to keep playing
+            {t('parentTimer.lockSubtitle')}
           </Text>
 
           <Animated.View style={[styles.challengeCard, { transform: [{ translateX: shakeAnim }] }]}>
-            <Text style={styles.challengeLabel}>What is</Text>
+            <Text style={styles.challengeLabel}>{t('parentTimer.challengeLabel')}</Text>
             <Text style={styles.challengeQuestion}>{mathChallenge.question} = ?</Text>
             <TextInput
               style={styles.answerInput}
@@ -140,14 +142,14 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
                 setShowError(false);
               }}
               keyboardType="number-pad"
-              placeholder="Answer"
+              placeholder={t('parentTimer.answerPlaceholder')}
               placeholderTextColor={colors.textLight}
               autoFocus
               onSubmitEditing={handleUnlock}
               testID="parent-timer-answer-input"
             />
             {showError && (
-              <Text style={styles.errorText}>Not quite — try again!</Text>
+              <Text style={styles.errorText}>{t('parentTimer.error')}</Text>
             )}
           </Animated.View>
 
@@ -156,7 +158,7 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
             onPress={handleUnlock}
             testID="parent-timer-unlock-button"
           >
-            <Text style={styles.unlockButtonText}>Continue Playing</Text>
+            <Text style={styles.unlockButtonText}>{t('parentTimer.continue')}</Text>
           </TouchableOpacity>
         </View>
       </Modal>

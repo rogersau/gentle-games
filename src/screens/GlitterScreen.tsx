@@ -37,14 +37,14 @@ export const GlitterScreen: React.FC = () => {
 
         <View style={styles.controls}>
           <AppButton
-            label="⭐ Sprinkle"
+            label={t('games.glitterFall.addGlitter')}
             variant="secondary"
             onPress={() => globeRef.current?.addGlitter(12)}
             accessibilityHint={t('games.glitterFall.addGlitterHint')}
             style={{ flex: 1 }}
           />
           <AppButton
-            label="🧹 Clear"
+            label={t('games.glitterFall.clearGlitter')}
             variant="primary"
             onPress={() => globeRef.current?.clearGlitter()}
             accessibilityHint={t('games.glitterFall.clearGlitterHint')}

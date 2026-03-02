@@ -14,7 +14,8 @@
     "loading": "Loading...",
     "timerNotStarted": "Timer not started",
     "on": "On",
-    "off": "Off"
+    "off": "Off",
+    "openOptions": "Open options"
   },
   "home": {
     "title": "Gentle Games",
@@ -214,6 +215,14 @@
       "title": "Language",
       "description": "Choose your preferred language"
     }
+  },
+  "parentTimer": {
+    "lockTitle": "Time for a Break!",
+    "lockSubtitle": "Ask a grown-up to solve this to keep playing",
+    "challengeLabel": "What is",
+    "answerPlaceholder": "Answer",
+    "error": "Not quite — try again!",
+    "continue": "Continue Playing"
   },
   "accessibility": {
     "gameCardHint": "Double tap to play this game"

@@ -11,6 +11,7 @@ import { useThemeColors } from '../../utils/theme';
 import { Space, Radius, TypeStyle, HitTarget, Shadow } from '../tokens';
 import { ThemeColors } from '../../types';
 import { ResolvedThemeMode } from '../../utils/theme';
+import { useTranslation } from 'react-i18next';
 
 interface SelectOption<T extends string | number> {
   value: T;
@@ -33,6 +34,7 @@ export const SelectBox = <T extends string | number>({
   const [isOpen, setIsOpen] = useState(false);
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
+  const { t } = useTranslation();
 
   const selectedOption = options.find((option) => option.value === value);
   const displayValue = selectedOption?.label ?? placeholder;
@@ -49,7 +51,7 @@ export const SelectBox = <T extends string | number>({
         onPress={() => setIsOpen(true)}
         accessibilityRole="button"
         accessibilityLabel={displayValue}
-        accessibilityHint="Opens selection options"
+        accessibilityHint={t('common.openOptions') }
       >
         <Text style={styles.selectText} numberOfLines={1}>
           {displayValue}
@@ -69,7 +71,7 @@ export const SelectBox = <T extends string | number>({
             style={StyleSheet.absoluteFill}
             onPress={() => setIsOpen(false)}
             activeOpacity={1}
-            accessibilityLabel="Close selection"
+            accessibilityLabel={t('common.close') }
           />
           <View style={styles.modalContent}>
             <ScrollView style={styles.optionsList}>

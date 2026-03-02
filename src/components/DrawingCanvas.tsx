@@ -551,7 +551,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               onPress={cycleSymmetryMode}
               accessibilityRole="button"
               accessibilityLabel={t('games.drawing.symmetry', { mode: symmetryMode }) }
-              accessibilityHint="Cycle through symmetry modes"
+              accessibilityHint={t('games.drawing.symmetryHint') }
             >
               <Text style={styles.toolButtonText}>
                 {symmetryMode === 'none' && '🦋'}
@@ -587,7 +587,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               onPress={handleClear}
               accessibilityRole="button"
               accessibilityLabel={t('games.drawing.clearCanvas') }
-              accessibilityHint="Opens confirmation to clear the drawing"
+              accessibilityHint={t('games.drawing.clearHint') }
             >
               <Text style={styles.toolButtonText}>🗑️</Text>
             </TouchableOpacity>
