@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSettings } from '../context/SettingsContext';
-import { ColorMode, ThemeColors } from '../types';
+import { ColorMode, ThemeColors, UNFINISHED_GAMES } from '../types';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import {
   AppScreen,
@@ -123,6 +123,16 @@ export const SettingsScreen: React.FC = () => {
           />
         </View>
 
+        {/* Enable Unfinished Games */}
+        <View style={styles.section}>
+          <SettingToggle
+            label="Enable Unfinished Games"
+            description="Show games that are still in development (Pattern Train, Number Picnic, Letter Lanterns, Star Path)"
+            value={!!settings.enableUnfinishedGames}
+            onValueChange={(value) => updateSettings({ enableUnfinishedGames: value })}
+          />
+        </View>
+
         {/* Sound */}
         <View style={styles.section}>
           <SettingToggle
@@ -148,22 +158,24 @@ export const SettingsScreen: React.FC = () => {
         {/* Games on Home Screen */}
         <View style={styles.section}>
           <SectionHeader title="Games on Home Screen" />
-          {ALL_GAMES.map((game) => {
-            const isVisible = !settings.hiddenGames.includes(game.id);
-            return (
-              <SettingToggle
-                key={game.id}
-                label={`${game.icon}  ${game.name}`}
-                value={isVisible}
-                onValueChange={(value) => {
-                  const updated = value
-                    ? settings.hiddenGames.filter((id) => id !== game.id)
-                    : [...settings.hiddenGames, game.id];
-                  updateSettings({ hiddenGames: updated });
-                }}
-              />
-            );
-          })}
+          {ALL_GAMES
+            .filter((game) => settings.enableUnfinishedGames || !UNFINISHED_GAMES.includes(game.id))
+            .map((game) => {
+              const isVisible = !settings.hiddenGames.includes(game.id);
+              return (
+                <SettingToggle
+                  key={game.id}
+                  label={`${game.icon}  ${game.name}`}
+                  value={isVisible}
+                  onValueChange={(value) => {
+                    const updated = value
+                      ? settings.hiddenGames.filter((id) => id !== game.id)
+                      : [...settings.hiddenGames, game.id];
+                    updateSettings({ hiddenGames: updated });
+                  }}
+                />
+              );
+            })}
           <Text style={styles.description}>
             Hide games you don't want on the home screen
           </Text>

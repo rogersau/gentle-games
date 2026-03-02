@@ -43,7 +43,15 @@ export interface Settings {
   colorMode: ColorMode;
   hiddenGames: string[];
   parentTimerMinutes: number;
+  enableUnfinishedGames: boolean;
 }
+
+export const UNFINISHED_GAMES: string[] = [
+  'pattern-train',
+  'number-picnic',
+  'letter-lanterns',
+  'star-path',
+];
 
 export type BreathingGardenPhase = 'inhale' | 'exhale';
 

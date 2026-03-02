@@ -19,6 +19,7 @@ const defaultSettings: Settings = {
   colorMode: 'system',
   hiddenGames: [],
   parentTimerMinutes: 0,
+  enableUnfinishedGames: false,
 };
 
 const toBoolean = (value: unknown, fallback: boolean): boolean => {
@@ -82,6 +83,7 @@ const sanitizeSettings = (candidate: unknown): Settings => {
     colorMode: toColorMode(parsed.colorMode, defaultSettings.colorMode),
     hiddenGames: toHiddenGames(parsed.hiddenGames),
     parentTimerMinutes: toParentTimerMinutes(parsed.parentTimerMinutes),
+    enableUnfinishedGames: toBoolean(parsed.enableUnfinishedGames, defaultSettings.enableUnfinishedGames),
   };
 };
 

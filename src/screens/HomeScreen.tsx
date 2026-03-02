@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSettings } from "../context/SettingsContext";
-import { Difficulty, PASTEL_COLORS, ThemeColors } from "../types";
+import { Difficulty, PASTEL_COLORS, ThemeColors, UNFINISHED_GAMES } from "../types";
 import { ResolvedThemeMode, useThemeColors } from "../utils/theme";
 import {
   AppScreen,
@@ -139,8 +139,12 @@ export const HomeScreen: React.FC = () => {
   const [showDifficultySelector, setShowDifficultySelector] = useState(false);
 
   const visibleGames = useMemo(
-    () => GAMES.filter((game) => !settings.hiddenGames.includes(game.id)),
-    [settings.hiddenGames],
+    () => GAMES.filter((game) => {
+      if (settings.hiddenGames.includes(game.id)) return false;
+      if (!settings.enableUnfinishedGames && UNFINISHED_GAMES.includes(game.id)) return false;
+      return true;
+    }),
+    [settings.hiddenGames, settings.enableUnfinishedGames],
   );
 
   const handleGameSelect = (game: Game) => {
