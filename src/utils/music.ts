@@ -2,7 +2,7 @@ import { AudioPlayer, AudioSource, createAudioPlayer, setAudioModeAsync } from '
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Music tracks configuration
-// Add your MP3 files to src/assets/sounds/music/ as track1.mp3, track2.mp3, track3.mp3
+// Add your MP3 files to src/assets/sounds/music/ as track1.mp3, track2.mp3, track3.mp3, track4.mp3
 // See README.md in that folder for detailed instructions
 
 const loadMusicTracks = (): Record<string, AudioSource> => {
@@ -13,6 +13,7 @@ const loadMusicTracks = (): Record<string, AudioSource> => {
     try { tracks.track1 = require('../assets/sounds/music/track1.mp3'); } catch { /* not found */ }
     try { tracks.track2 = require('../assets/sounds/music/track2.mp3'); } catch { /* not found */ }
     try { tracks.track3 = require('../assets/sounds/music/track3.mp3'); } catch { /* not found */ }
+    try { tracks.track4 = require('../assets/sounds/music/track4.mp3'); } catch { /* not found */ }
     
     if (Object.keys(tracks).length === 0) {
       console.log('Music: No tracks found. Add MP3 files to src/assets/sounds/music/ to enable music.');

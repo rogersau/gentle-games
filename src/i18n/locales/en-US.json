@@ -135,8 +135,8 @@
       "resetSession": "Reset Session",
       "inhale": "Breathe In",
       "exhale": "Breathe Out",
-      "changeColor": "Change Color ({{color}})",
-      "cycles": "Cycles: {{count}}",
+      "changeColor": "Change Color",
+      "breaths": "Breaths: {{count}}",
       "musicOn": "Turn Music On 🔊",
       "musicOff": "Turn Music Off 🔇"
     },

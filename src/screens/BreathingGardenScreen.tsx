@@ -12,25 +12,26 @@ import { Space, TypeStyle } from '../ui/tokens';
 const { width: screenWidth } = Dimensions.get('window');
 const BALL_SIZE = Math.min(250, screenWidth * 0.5);
 
-const getColorSchemes = (colors: ThemeColors): BallColorScheme[] => [
-  { primary: colors.primary, accent: colors.secondary, name: 'Ocean' },
-  { primary: colors.secondary, accent: colors.primary, name: 'Rose' },
-  { primary: colors.primary, accent: colors.background, name: 'Mint' },
-  { primary: colors.secondary, accent: colors.background, name: 'Sunset' },
-  { primary: colors.background, accent: colors.primary, name: 'Lavender' },
+// Calming, sensory-friendly color schemes that match their names
+const getColorSchemes = (): BallColorScheme[] => [
+  { primary: '#B4D7E8', accent: '#7FB3D5', name: 'Ocean' },      // Soft blues like calm water
+  { primary: '#F5C6D6', accent: '#E8A4C9', name: 'Rose' },       // Gentle pinks
+  { primary: '#C8E6C9', accent: '#A5D6A7', name: 'Mint' },       // Fresh soft greens
+  { primary: '#FFE0B2', accent: '#FFCC80', name: 'Sunset' },     // Warm soft orange/peach
+  { primary: '#E1BEE7', accent: '#CE93D8', name: 'Lavender' },   // Soft purples
 ];
 
 export const BreathingGardenScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useThemeColors();
   const { t } = useTranslation();
-  const colorSchemes = React.useMemo(() => getColorSchemes(colors as ThemeColors), [colors]);
+  const colorSchemes = React.useMemo(() => getColorSchemes(), []);
   const [colorIndex, setColorIndex] = useState(0);
   const ballColors = colorSchemes[colorIndex];
   const styles = React.useMemo(() => createStyles(colors as ThemeColors), [colors]);
   const [phase, setPhase] = useState<'inhale' | 'exhale'>('inhale');
   const [displayedPhase, setDisplayedPhase] = useState<'inhale' | 'exhale'>('inhale');
-  const [cycles, setCycles] = useState(0);
+  const [breaths, setBreaths] = useState(0);
   const [progress, setProgress] = useState(0);
   const countOpacity = useRef(new Animated.Value(0)).current;
   const phaseOpacity = useRef(new Animated.Value(1)).current;
@@ -100,7 +101,7 @@ export const BreathingGardenScreen: React.FC = () => {
               colorScheme={ballColors}
               autoStart={true}
               onPhaseChange={setPhase}
-              onCycleComplete={setCycles}
+              onCycleComplete={setBreaths}
               onProgress={setProgress}
             />
             <Animated.Text style={[styles.countText, { opacity: countOpacity }]}>
@@ -110,12 +111,12 @@ export const BreathingGardenScreen: React.FC = () => {
         </AppCard>
 
         <View style={styles.statsRow}>
-          <Text style={styles.statText}>{t('games.breathingGarden.cycles', { count: cycles })}</Text>
+          <Text style={styles.statText}>{t('games.breathingGarden.breaths', { count: breaths })}</Text>
         </View>
 
         <View style={styles.actionsRow}>
           <AppButton
-            label={t('games.breathingGarden.changeColor', { color: ballColors.name })}
+            label={t('games.breathingGarden.changeColor')}
             onPress={cycleColors}
             variant="primary"
             style={styles.colorButton}

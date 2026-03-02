@@ -24,11 +24,11 @@ export interface BallColorScheme {
 }
 
 export const defaultColorSchemes: BallColorScheme[] = [
-  { primary: '#A8D8EA', accent: '#D4A9E6', name: 'Ocean' },
-  { primary: '#FFB6C1', accent: '#FF9E9E', name: 'Rose' },
-  { primary: '#B8E6B8', accent: '#98FB98', name: 'Mint' },
-  { primary: '#F4A460', accent: '#DDA0DD', name: 'Sunset' },
-  { primary: '#C9B1FF', accent: '#87CEFA', name: 'Lavender' },
+  { primary: '#B4D7E8', accent: '#7FB3D5', name: 'Ocean' },
+  { primary: '#F5C6D6', accent: '#E8A4C9', name: 'Rose' },
+  { primary: '#C8E6C9', accent: '#A5D6A7', name: 'Mint' },
+  { primary: '#FFE0B2', accent: '#FFCC80', name: 'Sunset' },
+  { primary: '#E1BEE7', accent: '#CE93D8', name: 'Lavender' },
 ];
 
 interface BreathingBallProps {
