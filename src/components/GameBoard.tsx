@@ -182,7 +182,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
   return (
     <View style={styles.container}>
       <AppHeader
-        title=""
+        title="Memory Snap"
         onBack={onBackPress}
         rightAction={
           <View style={styles.headerInfo}>
@@ -244,7 +244,6 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      padding: Space.base,
     },
     headerInfo: {
       flexDirection: 'row',
@@ -280,5 +279,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     inner: {
       flex: 1,
       alignItems: 'center',
+      paddingHorizontal: Space.base,
+      paddingTop: Space.base,
     },
   });

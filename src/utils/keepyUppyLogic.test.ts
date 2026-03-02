@@ -6,17 +6,19 @@ import {
   KeepyUppyBalloon,
   stepBalloons,
   tapBalloon,
+  resolveBalloonPalette,
 } from './keepyUppyLogic';
+import { PASTEL_COLORS, ThemeColors } from '../types';
 
 const bounds = { width: 320, height: 480 };
 
 describe('keepyUppyLogic', () => {
   it('adds balloons up to the max cap of three', () => {
     const rng = () => 0.5;
-    const first = addBalloon([], bounds, rng);
-    const second = addBalloon(first, bounds, rng);
-    const third = addBalloon(second, bounds, rng);
-    const fourth = addBalloon(third, bounds, rng);
+    const first = addBalloon([], bounds, PASTEL_COLORS, rng);
+    const second = addBalloon(first, bounds, PASTEL_COLORS, rng);
+    const third = addBalloon(second, bounds, PASTEL_COLORS, rng);
+    const fourth = addBalloon(third, bounds, PASTEL_COLORS, rng);
 
     expect(third).toHaveLength(MAX_BALLOONS);
     expect(fourth).toHaveLength(MAX_BALLOONS);
@@ -130,5 +132,36 @@ describe('keepyUppyLogic', () => {
     expect(separation).toBeGreaterThanOrEqual(nextFirst.radius + nextSecond.radius - 0.001);
     expect(nextFirst.vx).toBeLessThan(first.vx);
     expect(nextSecond.vx).toBeGreaterThan(second.vx);
+  });
+
+  it('generates a palette that excludes background tokens and keeps new balloons unique', () => {
+    const theme: ThemeColors = {
+      background: '#000',
+      cardBack: '#CCCCCC',
+      cardFront: '#FFFFFF',
+      text: '#111111',
+      textLight: '#222222',
+      primary: '#AAA',
+      secondary: '#BBB',
+      success: '#SSSS',
+      matched: '#MMM',
+      surfaceGame: '#SUR',
+      surface: '#SUR2',
+      surfaceElevated: '#SUR3',
+      border: '#BORD',
+      borderSubtle: '#BORD2',
+      overlay: '#OL',
+      accent: '#ACC',
+      danger: '#DNG',
+    };
+    const palette = resolveBalloonPalette(theme);
+    expect(palette).not.toContain(theme.success);
+    expect(palette).not.toContain(theme.cardFront);
+    expect(palette).not.toContain(theme.cardBack);
+
+    const first = addBalloon([], bounds, theme, () => 0);
+    const second = addBalloon(first, bounds, theme, () => 0);
+    // second contains two balloons; make sure the newly appended one differs
+    expect(second[0].color).not.toBe(second[1].color);
   });
 });

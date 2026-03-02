@@ -7,7 +7,7 @@ import {
   Text,
   ScrollView,
 } from 'react-native';
-import { AppModal } from '../ui/components';
+import { AppModal, AppButton } from '../ui/components';
 import Svg, { Path, Circle, Rect, Polygon, Line } from 'react-native-svg';
 import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
@@ -603,21 +603,19 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
         >
           <Text style={styles.modalText}>This will remove everything on the canvas.</Text>
 
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              testID="clear-confirm-cancel"
-              style={styles.cancelButton}
+          <View style={[styles.modalButtons, { gap: 12 }]}>  
+            <AppButton
+              label="Cancel"
+              variant="secondary"
               onPress={handleCancelClear}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              testID="clear-confirm-accept"
-              style={styles.selectButton}
+              testID="clear-confirm-cancel"
+            />
+            <AppButton
+              label="Clear"
+              variant="danger"
               onPress={handleConfirmClear}
-            >
-              <Text style={styles.selectButtonText}>Clear</Text>
-            </TouchableOpacity>
+              testID="clear-confirm-accept"
+            />
           </View>
         </AppModal>
 
@@ -626,6 +624,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           visible={showColorPicker}
           onClose={handleCustomColorSelect}
           title="Pick a Color"
+          showClose={false}
           dismissOnBackdropPress={false}
         >
           <View style={styles.previewContainer}>
@@ -647,20 +646,20 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             ))}
           </View>
 
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={styles.cancelButton}
+          <View style={[styles.modalButtons]}>  
+            <AppButton
+              label="Cancel"
+              variant="secondary"
               onPress={() => setShowColorPicker(false)}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              testID="confirm-custom-color"
-              style={styles.selectButton}
+              style={{ flex: 1, marginRight: Space.sm }}
+            />
+            <AppButton
+              label="Use Color"
+              variant="primary"
               onPress={handleCustomColorSelect}
-            >
-              <Text style={styles.selectButtonText}>Use Color</Text>
-            </TouchableOpacity>
+              testID="confirm-custom-color"
+              style={{ flex: 1, marginLeft: Space.sm }}
+            />
           </View>
         </AppModal>
 
@@ -721,12 +720,11 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={styles.cancelButton}
+          <AppButton
+            label="Done"
+            variant="primary"
             onPress={() => setShowShapePicker(false)}
-          >
-            <Text style={styles.cancelButtonText}>Done</Text>
-          </TouchableOpacity>
+          />
         </AppModal>
       </View>
     );

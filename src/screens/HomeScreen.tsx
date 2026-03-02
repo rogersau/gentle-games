@@ -1,17 +1,18 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from "react";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { useSettings } from "../context/SettingsContext";
+import { Difficulty, PASTEL_COLORS, ThemeColors } from "../types";
+import { ResolvedThemeMode, useThemeColors } from "../utils/theme";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useSettings } from '../context/SettingsContext';
-import { Difficulty, PASTEL_COLORS, ThemeColors } from '../types';
-import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
-import { AppScreen, AppButton, AppModal, GameCard, SegmentedControl } from '../ui/components';
-import { Space, TypeStyle } from '../ui/tokens';
-import { useLayout } from '../ui/useLayout';
+  AppScreen,
+  AppButton,
+  AppModal,
+  GameCard,
+  SegmentedControl,
+} from "../ui/components";
+import { Space, TypeStyle } from "../ui/tokens";
+import { useLayout } from "../ui/useLayout";
 
 interface Game {
   id: string;
@@ -23,121 +24,128 @@ interface Game {
 
 const GAMES: Game[] = [
   {
-    id: 'memory-snap',
-    name: 'Memory Snap',
-    description: 'A calm memory matching game',
-    icon: '🧩',
+    id: "memory-snap",
+    name: "Memory Snap",
+    description: "A calm memory matching game",
+    icon: "🧩",
     accentColor: PASTEL_COLORS.primary,
   },
   {
-    id: 'drawing',
-    name: 'Drawing Pad',
-    description: 'Draw with colors and erase',
-    icon: '🎨',
+    id: "drawing",
+    name: "Drawing Pad",
+    description: "Draw with colors and erase",
+    icon: "🎨",
     accentColor: PASTEL_COLORS.secondary,
   },
   {
-    id: 'glitter-fall',
-    name: 'Glitter Fall',
-    description: 'Snow globe glitter play',
-    icon: '✨',
+    id: "glitter-fall",
+    name: "Glitter Fall",
+    description: "Snow globe glitter play",
+    icon: "✨",
     accentColor: PASTEL_COLORS.accent,
   },
   {
-    id: 'bubble-pop',
-    name: 'Bubble Pop',
-    description: 'Tap falling bubbles',
-    icon: '🫧',
+    id: "bubble-pop",
+    name: "Bubble Pop",
+    description: "Tap falling bubbles",
+    icon: "🫧",
     accentColor: PASTEL_COLORS.success,
   },
   {
-    id: 'category-match',
-    name: 'Category Match',
-    description: 'Drag to sort by category',
-    icon: '🗂️',
+    id: "category-match",
+    name: "Category Match",
+    description: "Drag to sort by category",
+    icon: "🗂️",
     accentColor: PASTEL_COLORS.cardBack,
   },
   {
-    id: 'keepy-uppy',
-    name: 'Keepy Uppy',
-    description: 'Tap balloons in the backyard',
-    icon: '🎈',
+    id: "keepy-uppy",
+    name: "Keepy Uppy",
+    description: "Tap balloons in the backyard",
+    icon: "🎈",
     accentColor: PASTEL_COLORS.secondary,
   },
   {
-    id: 'breathing-garden',
-    name: 'Breathing Garden',
-    description: 'Follow calm breathing rhythms',
-    icon: '🌸',
+    id: "breathing-garden",
+    name: "Breathing Garden",
+    description: "Follow calm breathing rhythms",
+    icon: "🌸",
     accentColor: PASTEL_COLORS.accent,
   },
   {
-    id: 'pattern-train',
-    name: 'Pattern Train',
-    description: 'Complete cozy pattern sequences',
-    icon: '🚂',
+    id: "pattern-train",
+    name: "Pattern Train",
+    description: "Complete cozy pattern sequences",
+    icon: "🚂",
     accentColor: PASTEL_COLORS.primary,
   },
   {
-    id: 'number-picnic',
-    name: 'Number Picnic',
-    description: 'Count and fill the basket',
-    icon: '🧺',
+    id: "number-picnic",
+    name: "Number Picnic",
+    description: "Count and fill the basket",
+    icon: "🧺",
     accentColor: PASTEL_COLORS.success,
   },
   {
-    id: 'letter-lanterns',
-    name: 'Letter Lanterns',
-    description: 'Tap the matching glowing letter',
-    icon: '🏮',
+    id: "letter-lanterns",
+    name: "Letter Lanterns",
+    description: "Tap the matching glowing letter",
+    icon: "🏮",
     accentColor: PASTEL_COLORS.secondary,
   },
   {
-    id: 'star-path',
-    name: 'Star Path',
-    description: 'Guide a star to moonlight tokens',
-    icon: '⭐',
+    id: "star-path",
+    name: "Star Path",
+    description: "Guide a star to moonlight tokens",
+    icon: "⭐",
     accentColor: PASTEL_COLORS.cardBack,
   },
 ];
 
-const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; description: string }[] = [
-  { value: 'easy', label: 'Easy', description: '3×4 grid (12 cards)' },
-  { value: 'medium', label: 'Medium', description: '4×5 grid (20 cards)' },
-  { value: 'hard', label: 'Hard', description: '5×6 grid (30 cards)' },
+const DIFFICULTY_OPTIONS: {
+  value: Difficulty;
+  label: string;
+  description: string;
+}[] = [
+  { value: "easy", label: "Easy", description: "3×4 grid (12 cards)" },
+  { value: "medium", label: "Medium", description: "4×5 grid (20 cards)" },
+  { value: "hard", label: "Hard", description: "5×6 grid (30 cards)" },
 ];
 
 const ROUTE_MAP: Record<string, string> = {
-  'memory-snap': 'Game',
-  drawing: 'Drawing',
-  'glitter-fall': 'Glitter',
-  'bubble-pop': 'Bubble',
-  'category-match': 'CategoryMatch',
-  'keepy-uppy': 'KeepyUppy',
-  'breathing-garden': 'BreathingGarden',
-  'pattern-train': 'PatternTrain',
-  'number-picnic': 'NumberPicnic',
-  'letter-lanterns': 'LetterLantern',
-  'star-path': 'StarPath',
+  "memory-snap": "Game",
+  drawing: "Drawing",
+  "glitter-fall": "Glitter",
+  "bubble-pop": "Bubble",
+  "category-match": "CategoryMatch",
+  "keepy-uppy": "KeepyUppy",
+  "breathing-garden": "BreathingGarden",
+  "pattern-train": "PatternTrain",
+  "number-picnic": "NumberPicnic",
+  "letter-lanterns": "LetterLantern",
+  "star-path": "StarPath",
 };
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings, updateSettings } = useSettings();
   const { colors, resolvedMode } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
+  const styles = useMemo(
+    () => createStyles(colors, resolvedMode),
+    [colors, resolvedMode],
+  );
   const { gridColumns, contentWidth, isTablet } = useLayout();
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [showDifficultySelector, setShowDifficultySelector] = useState(false);
 
   const visibleGames = useMemo(
     () => GAMES.filter((game) => !settings.hiddenGames.includes(game.id)),
-    [settings.hiddenGames]
+    [settings.hiddenGames],
   );
 
   const handleGameSelect = (game: Game) => {
     setSelectedGame(game);
-    if (game.id === 'memory-snap') {
+    if (game.id === "memory-snap") {
       setShowDifficultySelector(true);
     } else {
       const route = ROUTE_MAP[game.id];
@@ -149,7 +157,7 @@ export const HomeScreen: React.FC = () => {
   const handleDifficultySelect = async (difficulty: Difficulty) => {
     await updateSettings({ difficulty });
     setShowDifficultySelector(false);
-    navigation.navigate('Game' as never);
+    navigation.navigate("Game" as never);
     setSelectedGame(null);
   };
 
@@ -159,15 +167,26 @@ export const HomeScreen: React.FC = () => {
   };
 
   const getDifficultyLabel = (difficulty: Difficulty) => {
-    const option = DIFFICULTY_OPTIONS.find(opt => opt.value === difficulty);
+    const option = DIFFICULTY_OPTIONS.find((opt) => opt.value === difficulty);
     return option?.label || difficulty;
   };
 
   return (
     <AppScreen testID="home-screen">
-      <View style={[styles.content, isTablet && { maxWidth: contentWidth, alignSelf: 'center', width: '100%' }]}>
+      <View
+        style={[
+          styles.content,
+          isTablet && {
+            maxWidth: contentWidth,
+            alignSelf: "center",
+            width: "100%",
+          },
+        ]}
+      >
         <View style={styles.titleArea}>
-          <Text style={styles.title} accessibilityRole="header">Gentle Games</Text>
+          <Text style={styles.title} accessibilityRole="header">
+            Gentle Games
+          </Text>
           <Text style={styles.subtitle}>Calm games for little ones</Text>
         </View>
 
@@ -185,7 +204,16 @@ export const HomeScreen: React.FC = () => {
               {visibleGames.map((game) => (
                 <View
                   key={game.id}
-                  style={isTablet ? { width: `${Math.floor(100 / gridColumns)}%`, paddingHorizontal: Space.xs } : undefined}
+                  style={
+                    isTablet
+                      ? {
+                          width: `${Math.floor(100 / gridColumns)}%`,
+                          paddingHorizontal: Space.xs,
+                          justifyContent: "center",
+                          // no special height enforcement under new two-column scheme
+                        }
+                      : undefined
+                  }
                 >
                   <GameCard
                     icon={game.icon}
@@ -193,6 +221,11 @@ export const HomeScreen: React.FC = () => {
                     description={game.description}
                     onPress={() => handleGameSelect(game)}
                     accentColor={game.accentColor}
+                    style={
+                      gridColumns === 1
+                        ? { padding: Space.md }
+                        : undefined
+                    }
                   />
                 </View>
               ))}
@@ -209,7 +242,7 @@ export const HomeScreen: React.FC = () => {
             label="⚙️  Settings"
             variant="secondary"
             size="lg"
-            onPress={() => navigation.navigate('Settings' as never)}
+            onPress={() => navigation.navigate("Settings" as never)}
             accessibilityHint="Opens app settings"
           />
         </View>
@@ -224,14 +257,15 @@ export const HomeScreen: React.FC = () => {
       >
         <Text style={styles.modalSubtitle}>
           Select difficulty
-          {settings.difficulty && ` (last: ${getDifficultyLabel(settings.difficulty)})`}
+          {settings.difficulty &&
+            ` (last: ${getDifficultyLabel(settings.difficulty)})`}
         </Text>
         <View style={styles.optionsList}>
           {DIFFICULTY_OPTIONS.map(({ value, label, description }) => (
             <AppButton
               key={value}
               label={`${label}  ·  ${description}`}
-              variant={settings.difficulty === value ? 'primary' : 'ghost'}
+              variant={settings.difficulty === value ? "primary" : "ghost"}
               size="md"
               fullWidth
               onPress={() => handleDifficultySelect(value)}
@@ -247,59 +281,59 @@ export const HomeScreen: React.FC = () => {
 
 const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
-  content: {
-    flex: 1,
-    padding: Space.xl,
-    paddingTop: Space.lg,
-  },
-  titleArea: {
-    alignItems: 'center',
-    marginBottom: Space['2xl'],
-  },
-  title: {
-    ...TypeStyle.h1,
-    color: colors.text,
-    textAlign: 'center',
-    marginBottom: Space.xs,
-  },
-  subtitle: {
-    ...TypeStyle.body,
-    color: colors.textLight,
-    textAlign: 'center',
-  },
-  gamesContainer: {
-    flex: 1,
-    flexShrink: 1,
-    minHeight: 0,
-    marginBottom: Space.lg,
-  },
-  gamesScroll: {
-    flex: 1,
-  },
-  gamesScrollContent: {
-    paddingBottom: Space.sm,
-  },
-  gamesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  emptyGamesText: {
-    ...TypeStyle.body,
-    textAlign: 'center',
-    color: colors.textLight,
-    marginTop: Space.lg,
-  },
-  footer: {
-    alignItems: 'center',
-    paddingBottom: Space.sm,
-  },
-  modalSubtitle: {
-    ...TypeStyle.bodySm,
-    color: colors.textLight,
-    textAlign: 'center',
-    marginBottom: Space.base,
-  },
-  optionsList: {
-    marginBottom: Space.sm,
-  },
-});
+    content: {
+      flex: 1,
+      padding: Space.xl,
+      paddingTop: Space.lg,
+    },
+    titleArea: {
+      alignItems: "center",
+      marginBottom: Space["2xl"],
+    },
+    title: {
+      ...TypeStyle.h1,
+      color: colors.text,
+      textAlign: "center",
+      marginBottom: Space.xs,
+    },
+    subtitle: {
+      ...TypeStyle.body,
+      color: colors.textLight,
+      textAlign: "center",
+    },
+    gamesContainer: {
+      flex: 1,
+      flexShrink: 1,
+      minHeight: 0,
+      marginBottom: Space.lg,
+    },
+    gamesScroll: {
+      flex: 1,
+    },
+    gamesScrollContent: {
+      paddingBottom: Space.sm,
+    },
+    gamesGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+    },
+    emptyGamesText: {
+      ...TypeStyle.body,
+      textAlign: "center",
+      color: colors.textLight,
+      marginTop: Space.lg,
+    },
+    footer: {
+      alignItems: "center",
+      paddingBottom: Space.sm,
+    },
+    modalSubtitle: {
+      ...TypeStyle.bodySm,
+      color: colors.textLight,
+      textAlign: "center",
+      marginBottom: Space.base,
+    },
+    optionsList: {
+      marginBottom: Space.sm,
+    },
+  });

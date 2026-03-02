@@ -1,4 +1,4 @@
-import { PASTEL_COLORS } from '../types';
+import { PASTEL_COLORS, ThemeColors } from '../types';
 
 export interface KeepyUppyBalloon {
   id: string;
@@ -24,13 +24,51 @@ const AIR_DRAG = 0.993;
 const BALLOON_RADIUS = 34;
 const BOUNCE = 0.62;
 
-const BALLOON_COLORS = [
+// default palette used when no theme is supplied (for backwards compatibility/testing)
+const DEFAULT_BALLOON_COLORS = [
   PASTEL_COLORS.primary,
   PASTEL_COLORS.secondary,
-  PASTEL_COLORS.success,
-  PASTEL_COLORS.cardBack,
+  PASTEL_COLORS.accent,
+  PASTEL_COLORS.danger,
   PASTEL_COLORS.matched,
 ];
+
+/**
+ * Build a balloon colour palette from the current theme.  We deliberately omit
+ * any tokens that are used for the board background (sun/ground use
+ * `success`, clouds/grass use `cardFront`/`cardBack`).  The resulting list is
+ * still pastel but guaranteed to contrast with the field.
+ */
+export const resolveBalloonPalette = (colors: ThemeColors): string[] => {
+  const forbidden = new Set([colors.success, colors.cardFront, colors.cardBack]);
+  const candidates = [
+    colors.primary,
+    colors.secondary,
+    colors.accent,
+    colors.danger,
+    colors.matched,
+  ];
+  // filter out forbidden tokens, duplicates, and empty values
+  return Array.from(
+    new Set(candidates.filter((c) => c && !forbidden.has(c)))
+  );
+};
+
+/**
+ * Pick a random colour from a palette.  If there are unused options, favour
+ * those so balloons tend to be distinct; if all colours are already in use we
+ * fall back to picking any value (allowing duplicates when the palette is
+ * smaller than the number of balloons).
+ */
+const pickBalloonColor = (
+  palette: string[],
+  used: string[],
+  rng: () => number
+): string => {
+  const available = palette.filter((c) => !used.includes(c));
+  const source = available.length > 0 ? available : palette;
+  return source[Math.floor(rng() * source.length)];
+};
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
@@ -38,9 +76,17 @@ const randomInRange = (min: number, max: number, rng: () => number) => min + (ma
 
 export const createBalloon = (
   bounds: KeepyUppyBounds,
-  rng: () => number = Math.random
+  // theme colours used for generating the palette; defaults to the static
+  // pastel map so existing tests continue to work without modification
+  colors: ThemeColors = PASTEL_COLORS,
+  rng: () => number = Math.random,
+  // optional override used by addBalloon when enforcing uniqueness
+  overrideColor?: string
 ): KeepyUppyBalloon => {
   const radius = BALLOON_RADIUS;
+  const palette = colors === PASTEL_COLORS ? DEFAULT_BALLOON_COLORS : resolveBalloonPalette(colors);
+  const color = overrideColor ?? pickBalloonColor(palette, [], rng);
+
   return {
     id: `keepy-uppy-balloon-${Date.now()}-${Math.floor(rng() * 100000)}`,
     x: randomInRange(radius, Math.max(radius, bounds.width - radius), rng),
@@ -48,7 +94,7 @@ export const createBalloon = (
     vx: randomInRange(-36, 36, rng),
     vy: randomInRange(-28, 18, rng),
     radius,
-    color: BALLOON_COLORS[Math.floor(rng() * BALLOON_COLORS.length)],
+    color,
     groundedAt: null,
   };
 };
@@ -56,12 +102,17 @@ export const createBalloon = (
 export const addBalloon = (
   balloons: KeepyUppyBalloon[],
   bounds: KeepyUppyBounds,
+  colors: ThemeColors = PASTEL_COLORS,
   rng: () => number = Math.random
 ): KeepyUppyBalloon[] => {
   if (balloons.length >= MAX_BALLOONS) {
     return balloons;
   }
-  return [...balloons, createBalloon(bounds, rng)];
+  const palette = colors === PASTEL_COLORS ? DEFAULT_BALLOON_COLORS : resolveBalloonPalette(colors);
+  const used = balloons.map((b) => b.color);
+  const color = pickBalloonColor(palette, used, rng);
+
+  return [...balloons, createBalloon(bounds, colors, rng, color)];
 };
 
 export const tapBalloon = (

@@ -40,13 +40,13 @@ export const KeepyUppyScreen: React.FC = () => {
     return { width, height };
   }, [screenHeight, screenWidth]);
 
-  const [balloons, setBalloons] = useState<KeepyUppyBalloon[]>(() => [createBalloon(bounds)]);
+  const [balloons, setBalloons] = useState<KeepyUppyBalloon[]>(() => [createBalloon(bounds, colors)]);
 
   useEffect(() => {
     if (balloons.length === 0) {
-      setBalloons([createBalloon(bounds)]);
+      setBalloons([createBalloon(bounds, colors)]);
     }
-  }, [balloons.length, bounds]);
+  }, [balloons.length, bounds, colors]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -64,8 +64,8 @@ export const KeepyUppyScreen: React.FC = () => {
   }, [bounds]);
 
   const handleAddBalloon = useCallback(() => {
-    setBalloons((previous) => addBalloon(previous, bounds));
-  }, [bounds]);
+    setBalloons((previous) => addBalloon(previous, bounds, colors));
+  }, [bounds, colors]);
 
   const toBoardPoint = useCallback((balloon: KeepyUppyBalloon, locationX: number, locationY: number) => {
     const balloonW = balloon.radius * BALLOON_WIDTH_RATIO;
