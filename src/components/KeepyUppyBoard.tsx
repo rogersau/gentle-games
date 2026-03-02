@@ -60,7 +60,10 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
 
     useEffect(() => {
       if (balloons.length === 0) {
-        setBalloons([createBalloon(bounds, { colors, resolvedMode })]);
+        const nextBalloons = [createBalloon(bounds, { colors, resolvedMode })];
+        setBalloons(nextBalloons);
+        onBalloonCountChange?.(nextBalloons.length);
+        return;
       }
       onBalloonCountChange?.(balloons.length);
     }, [balloons.length, bounds, colors, resolvedMode, onBalloonCountChange]);
