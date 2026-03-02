@@ -13,6 +13,7 @@ import Svg, { Path, Circle, Rect, Polygon, Line } from 'react-native-svg';
 import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
 import { Space, Radius } from '../ui/tokens';
+import type { TranslationKey } from '../i18n/types';
 
 export interface Point {
   x: number;
@@ -50,6 +51,18 @@ export type HistoryEntry = Stroke | Shape | ErasedRegion;
 type Tool = 'pen' | 'eraser' | 'shape';
 type ShapeType = 'circle' | 'square' | 'triangle';
 type SymmetryMode = 'none' | 'half' | 'quarter';
+
+const SHAPE_TRANSLATION_KEYS: Record<ShapeType, TranslationKey> = {
+  circle: 'games.drawing.shape.circle',
+  square: 'games.drawing.shape.square',
+  triangle: 'games.drawing.shape.triangle',
+};
+
+const SYMMETRY_MODE_TRANSLATION_KEYS: Record<SymmetryMode, TranslationKey> = {
+  none: 'games.drawing.symmetryMode.none',
+  half: 'games.drawing.symmetryMode.half',
+  quarter: 'games.drawing.symmetryMode.quarter',
+};
 
 const COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
@@ -536,7 +549,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               style={[styles.toolButton, tool === 'shape' ? themedStyles.toolButtonActive : undefined]}
               onPress={() => handleToolSelect('shape')}
               accessibilityRole="button"
-              accessibilityLabel={`${t('games.drawing.shapeTool')}, ${t(`games.drawing.shape.${shapeType}`)}` }
+              accessibilityLabel={`${t('games.drawing.shapeTool')}, ${t(SHAPE_TRANSLATION_KEYS[shapeType])}` }
               accessibilityState={{ selected: tool === 'shape' }}
             >
               <Text style={styles.toolButtonText}>
@@ -550,7 +563,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               style={[styles.toolButton, symmetryMode !== 'none' ? themedStyles.toolButtonActive : undefined]}
               onPress={cycleSymmetryMode}
               accessibilityRole="button"
-              accessibilityLabel={t('games.drawing.symmetry', { mode: symmetryMode }) }
+              accessibilityLabel={t('games.drawing.symmetry', { mode: t(SYMMETRY_MODE_TRANSLATION_KEYS[symmetryMode]) }) }
               accessibilityHint={t('games.drawing.symmetryHint') }
             >
               <Text style={styles.toolButtonText}>

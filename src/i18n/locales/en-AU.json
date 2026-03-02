@@ -15,7 +15,8 @@
     "timerNotStarted": "Timer not started",
     "on": "On",
     "off": "Off",
-    "openOptions": "Open options"
+    "openOptions": "Open options",
+    "selectOption": "Select an option"
   },
   "home": {
     "title": "Gentle Games",
@@ -70,6 +71,11 @@
       "sizeMedium": "Medium",
       "sizeLarge": "Large",
       "symmetry": "Symmetry: {{mode}}",
+      "symmetryMode": {
+        "none": "None",
+        "half": "Half",
+        "quarter": "Quarter"
+      },
       "continuePrompt": "You have a drawing in progress. Would you like to continue where you left off?"
     },
 

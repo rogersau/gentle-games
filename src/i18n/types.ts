@@ -1,4 +1,4 @@
-import enAU from './locales/en-AU.json';
+import type enAU from './locales/en-AU.json';
 
 // Define the translation resource type based on en-AU (the source of truth)
 export type TranslationResources = typeof enAU;
@@ -19,12 +19,3 @@ type Leaves<T, D extends number = 10> = [D] extends [never] ? never : T extends 
 
 // Export all valid translation keys as a union type
 export type TranslationKey = Leaves<TranslationResources>;
-
-// Extend i18next types for type-safe translations
-declare module 'i18next' {
-  interface CustomTypeOptions {
-    resources: {
-      translation: TranslationResources;
-    };
-  }
-}

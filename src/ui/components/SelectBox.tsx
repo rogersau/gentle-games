@@ -29,15 +29,16 @@ export const SelectBox = <T extends string | number>({
   options,
   value,
   onValueChange,
-  placeholder = 'Select an option',
+  placeholder,
 }: SelectBoxProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const { t } = useTranslation();
+  const effectivePlaceholder = placeholder ?? t('common.selectOption');
 
   const selectedOption = options.find((option) => option.value === value);
-  const displayValue = selectedOption?.label ?? placeholder;
+  const displayValue = selectedOption?.label ?? effectivePlaceholder;
 
   const handleSelect = (newValue: T) => {
     onValueChange(newValue);

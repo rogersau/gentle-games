@@ -22,7 +22,7 @@ interface AppHeaderProps {
 export const AppHeader: React.FC<AppHeaderProps> = ({
   title,
   onBack,
-  backLabel = '← Back',
+  backLabel,
   rightAction,
   style,
 }) => {
@@ -30,7 +30,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
 
-  const displayedBackLabel = backLabel === '← Back' ? t('common.back') : backLabel;
+  const displayedBackLabel = backLabel ?? t('common.back');
 
   return (
     <View style={[styles.container, style]}>

@@ -26,14 +26,14 @@ export const AppModal: React.FC<AppModalProps> = ({
   children,
   contentStyle,
   showClose = true,
-  closeLabel = 'Close',
+  closeLabel,
   dismissOnBackdropPress = true,
 }) => {
   const { colors } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { t } = useTranslation();
 
-  const displayedCloseLabel = closeLabel === 'Close' ? t('common.close') : closeLabel;
+  const displayedCloseLabel = closeLabel ?? t('common.close');
 
   return (
     <Modal
