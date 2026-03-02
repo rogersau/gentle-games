@@ -5,6 +5,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+// Initialize i18n before app renders
+import './src/i18n';
 import { SettingsProvider } from './src/context/SettingsContext';
 import { ParentTimerProvider } from './src/context/ParentTimerContext';
 import { HomeScreen } from './src/screens/HomeScreen';

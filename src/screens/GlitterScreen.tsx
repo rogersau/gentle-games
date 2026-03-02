@@ -1,6 +1,7 @@
 import React, { useMemo, useRef } from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { GlitterGlobe, GlitterGlobeRef } from '../components/GlitterGlobe';
 import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
@@ -10,6 +11,7 @@ import { Space, TypeStyle } from '../ui/tokens';
 export const GlitterScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useThemeColors();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const globeRef = useRef<GlitterGlobeRef>(null);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
@@ -22,11 +24,11 @@ export const GlitterScreen: React.FC = () => {
 
   return (
     <AppScreen>
-      <AppHeader title="Glitter Fall" onBack={() => navigation.goBack()} />
+      <AppHeader title={t('games.glitterFall.title')} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
         <Text style={styles.subtitle} accessibilityRole="text">
-          Tap buttons to add glitter, then shake or swirl your finger.
+          {t('games.glitterFall.subtitle')}
         </Text>
 
         <View style={styles.globeWrap}>
@@ -38,14 +40,14 @@ export const GlitterScreen: React.FC = () => {
             label="⭐ Sprinkle"
             variant="secondary"
             onPress={() => globeRef.current?.addGlitter(12)}
-            accessibilityHint="Add glitter particles to the globe"
+            accessibilityHint={t('games.glitterFall.addGlitterHint')}
             style={{ flex: 1 }}
           />
           <AppButton
             label="🧹 Clear"
             variant="primary"
             onPress={() => globeRef.current?.clearGlitter()}
-            accessibilityHint="Remove all glitter from the globe"
+            accessibilityHint={t('games.glitterFall.clearGlitterHint')}
             style={{ flex: 1 }}
           />
         </View>

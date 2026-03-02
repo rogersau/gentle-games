@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { GameBoard } from '../components/GameBoard';
 import { AppScreen, AppHeader } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
@@ -11,6 +12,7 @@ export const GameScreen: React.FC = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { colors } = useThemeColors();
+  const { t } = useTranslation();
 
   const handleGameComplete = (_time: number) => {
     // Extension point for future analytics
@@ -22,7 +24,7 @@ export const GameScreen: React.FC = () => {
 
   return (
     <AppScreen>
-      <AppHeader title="Memory Snap" onBack={handleBackPress} />
+      <AppHeader title={t('games.memorySnap.title')} onBack={handleBackPress} />
       <View style={styles.content}>
         <GameBoard
           onGameComplete={handleGameComplete}

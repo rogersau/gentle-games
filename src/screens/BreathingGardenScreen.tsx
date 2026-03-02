@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { ThemeColors } from '../types';
 import { BreathingBall, BreathingBallRef, BallColorScheme } from '../components/BreathingBall';
 import { useThemeColors } from '../utils/theme';
@@ -18,6 +19,7 @@ const colorSchemes: BallColorScheme[] = [
 export const BreathingGardenScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useThemeColors();
+  const { t } = useTranslation();
   const [colorIndex, setColorIndex] = useState(0);
   const ballColors = colorSchemes[colorIndex];
   const styles = useStyles();
@@ -35,10 +37,10 @@ export const BreathingGardenScreen: React.FC = () => {
 
   return (
     <AppScreen>
-      <AppHeader title="Breathing Garden" onBack={() => navigation.goBack()} />
+      <AppHeader title={t('games.breathingGarden.title')} onBack={() => navigation.goBack()} />
       <View style={styles.content}>
         <AppCard variant="elevated" style={styles.breathCard}>
-          <Text style={styles.phaseLabel}>{phase === 'inhale' ? 'Breathe In' : 'Breathe Out'}</Text>
+          <Text style={styles.phaseLabel}>{phase === 'inhale' ? t('games.breathingGarden.inhale') : t('games.breathingGarden.exhale')}</Text>
           <View style={styles.ballContainer}>
             <BreathingBall
               ref={ballRef}
@@ -63,7 +65,7 @@ export const BreathingGardenScreen: React.FC = () => {
             style={styles.actionButton}
           />
           <AppButton
-            label="Reset Session"
+            label={t('games.breathingGarden.resetSession')}
             onPress={resetSession}
             variant="secondary"
             style={styles.actionButton}

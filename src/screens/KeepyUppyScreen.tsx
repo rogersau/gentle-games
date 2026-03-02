@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
 import { KeepyUppyBoard, KeepyUppyBoardRef } from '../components/KeepyUppyBoard';
 import { KeepyUppyBounds, MAX_BALLOONS } from '../utils/keepyUppyLogic';
@@ -13,6 +14,7 @@ export const KeepyUppyScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings } = useSettings();
   const { colors } = useThemeColors();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const boardRef = useRef<KeepyUppyBoardRef>(null);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
@@ -32,11 +34,11 @@ export const KeepyUppyScreen: React.FC = () => {
 
   return (
     <AppScreen>
-      <AppHeader title="Keepy Uppy" onBack={() => navigation.goBack()} />
+      <AppHeader title={t('games.keepyUppy.title')} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
         <Text style={styles.subtitle} accessibilityRole="text">
-          Tap balloons to keep them in the air.
+          {t('games.keepyUppy.subtitle')}
         </Text>
         <View style={styles.statsRow}>
           <Text style={styles.statText} accessibilityLabel={`${score} taps`}>Taps: {score}</Text>
@@ -44,12 +46,12 @@ export const KeepyUppyScreen: React.FC = () => {
           <Text style={styles.statText} accessibilityLabel={`${popped} popped`}>Popped: {popped}</Text>
         </View>
         <AppButton
-          label="+ Balloon"
+          label={t('games.keepyUppy.addBalloon')}
           variant="secondary"
           size="sm"
           onPress={handleAddBalloon}
           disabled={balloonCount >= MAX_BALLOONS}
-          accessibilityHint="Add another balloon to the game"
+          accessibilityHint={t('games.keepyUppy.addBalloonHint')}
           style={{ marginBottom: Space.sm }}
         />
 

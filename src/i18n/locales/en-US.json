@@ -1,0 +1,186 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back to Home",
+    "play": "Play",
+    "settings": "Settings",
+    "close": "Close",
+    "done": "Done",
+    "clear": "Clear",
+    "reset": "Reset",
+    "next": "Next",
+    "continue": "Continue"
+  },
+  "home": {
+    "title": "Gentle Games",
+    "subtitle": "Calm games for little ones",
+    "emptyGames": "All games are hidden. Enable one in Settings.",
+    "settingsButton": "⚙️  Settings",
+    "settingsHint": "Opens app settings"
+  },
+  "games": {
+    "memorySnap": {
+      "name": "Memory Snap",
+      "description": "A calm memory matching game",
+      "title": "Memory Snap",
+      "wellDone": "Well Done! 🎉",
+      "playAgain": "Play Again",
+      "playAgainHint": "Start a new game",
+      "selectDifficulty": "Select difficulty",
+      "lastUsed": "last"
+    },
+    "drawing": {
+      "name": "Drawing Pad",
+      "description": "Draw with colors and erase",
+      "title": "Drawing Pad",
+      "welcomeBack": "Welcome Back! 🎨",
+      "newDrawing": "New Drawing",
+      "newDrawingHint": "Start a blank canvas",
+      "continueDrawing": "Continue",
+      "continueHint": "Resume your saved drawing",
+      "clearTitle": "Clear drawing?",
+      "clearConfirm": "Clear",
+      "pickColour": "Pick a Color",
+      "useColour": "Use Color",
+      "chooseShape": "Choose Shape",
+      "penTool": "Pen tool",
+      "eraserTool": "Eraser tool",
+      "undo": "Undo",
+      "clearCanvas": "Clear canvas",
+      "clearHint": "Opens confirmation to clear the drawing",
+      "symmetryHint": "Cycle through symmetry modes"
+    },
+    "glitterFall": {
+      "name": "Glitter Fall",
+      "description": "Snow globe glitter play",
+      "title": "Glitter Fall",
+      "addGlitter": "Add Glitter",
+      "addGlitterHint": "Add glitter particles to the globe",
+      "clearGlitter": "Clear Glitter",
+      "clearGlitterHint": "Remove all glitter from the globe"
+    },
+    "bubblePop": {
+      "name": "Bubble Pop",
+      "description": "Tap falling bubbles",
+      "title": "Bubble Pop"
+    },
+    "categoryMatch": {
+      "name": "Category Match",
+      "description": "Drag to sort by category",
+      "title": "Category Match",
+      "greatStreak": "Great streak!",
+      "startSorting": "Start Sorting",
+      "startSortingHint": "Begin the category sorting game"
+    },
+    "keepyUppy": {
+      "name": "Keepy Uppy",
+      "description": "Tap balloons in the backyard",
+      "title": "Keepy Uppy",
+      "subtitle": "Keep the balloon in the air!",
+      "addBalloon": "Add Balloon",
+      "addBalloonHint": "Add another balloon to the game"
+    },
+    "breathingGarden": {
+      "name": "Breathing Garden",
+      "description": "Follow calm breathing rhythms",
+      "title": "Breathing Garden",
+      "resetSession": "Reset Session",
+      "inhale": "Breathe In",
+      "exhale": "Breathe Out"
+    },
+    "patternTrain": {
+      "name": "Pattern Train",
+      "description": "Complete cozy pattern sequences",
+      "title": "Pattern Train",
+      "nextPattern": "Next Pattern"
+    },
+    "numberPicnic": {
+      "name": "Number Picnic",
+      "description": "Count and fill the basket",
+      "title": "Number Picnic",
+      "nextPicnic": "Next Picnic"
+    },
+    "letterLanterns": {
+      "name": "Letter Lanterns",
+      "description": "Tap the matching glowing letter",
+      "title": "Letter Lanterns",
+      "nextLetter": "Next Letter"
+    },
+    "starPath": {
+      "name": "Star Path",
+      "description": "Guide a star to moonlight tokens",
+      "title": "Star Path",
+      "resetPath": "Reset Path"
+    }
+  },
+  "difficulty": {
+    "title": "Select Difficulty",
+    "easy": {
+      "label": "Easy",
+      "description": "3×4 grid (12 cards)"
+    },
+    "medium": {
+      "label": "Medium",
+      "description": "4×5 grid (20 cards)"
+    },
+    "hard": {
+      "label": "Hard",
+      "description": "5×6 grid (30 cards)"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "saveHint": "Save settings and return home",
+    "backHint": "Return to the home screen",
+    "appearance": {
+      "title": "Appearance",
+      "colorMode": "Color Mode",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System",
+      "description": "Soft pastel tones are used in both light and dark modes"
+    },
+    "cardPreview": {
+      "label": "Show Card Preview",
+      "description": "Show all cards for 2 seconds before the game starts"
+    },
+    "animations": {
+      "label": "Animations",
+      "description": "Enable card flip and UI animations"
+    },
+    "keepyUppyEasyMode": {
+      "label": "Keepy Uppy Easy Mode",
+      "description": "Any tap gives a gentle lift while good taps still go higher"
+    },
+    "unfinishedGames": {
+      "label": "Enable Unfinished Games",
+      "description": "Show games that are still in development (Pattern Train, Number Picnic, Letter Lanterns, Star Path)"
+    },
+    "sound": {
+      "label": "Sound",
+      "description": "Enable gentle sound effects"
+    },
+    "volume": {
+      "title": "Volume",
+      "decrease": "Decrease volume",
+      "increase": "Increase volume"
+    },
+    "gamesOnHomeScreen": {
+      "title": "Games on Home Screen",
+      "description": "Hide games you don't want on the home screen"
+    },
+    "parentTimer": {
+      "title": "Parent Timer",
+      "off": "Off",
+      "description": "After the set time, a maths question pauses play until a grown-up answers"
+    },
+    "language": {
+      "title": "Language",
+      "description": "Choose your preferred language"
+    }
+  },
+  "accessibility": {
+    "gameCardHint": "Double tap to play this game"
+  }
+}

@@ -15,6 +15,7 @@ let mockSettings = {
   colorMode: 'system' as const,
   hiddenGames: [] as string[],
   parentTimerMinutes: 0,
+  language: 'en-AU' as const,
 };
 
 jest.mock('@react-navigation/native', () => ({
@@ -44,6 +45,7 @@ describe('SettingsScreen', () => {
       colorMode: 'system',
       hiddenGames: [],
       parentTimerMinutes: 0,
+      language: 'en-AU',
     };
   });
 
@@ -97,8 +99,8 @@ describe('SettingsScreen', () => {
   it('toggles game visibility via switch', () => {
     const screen = render(<SettingsScreen />);
     const switches = screen.getAllByRole('switch');
-    // First 4 switches: Card Preview, Animations, Keepy Uppy Easy Mode, Sound. Next 6: game toggles.
-    const memorySnapSwitch = switches[4];
+    // First 5 switches: Card Preview, Animations, Keepy Uppy Easy Mode, Enable Unfinished Games, Sound. Next 6: game toggles.
+    const memorySnapSwitch = switches[5];
     fireEvent(memorySnapSwitch, 'valueChange', false);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { ThemeColors } from '../types';
 import { useSettings } from '../context/SettingsContext';
 import { generateLetterLanternRound, isLetterLanternMatch } from '../utils/letterLanternLogic';
@@ -12,33 +13,34 @@ export const LetterLanternScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings } = useSettings();
   const { colors } = useThemeColors();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [round, setRound] = useState(() => generateLetterLanternRound(settings.difficulty));
   const [litCount, setLitCount] = useState(0);
-  const [feedback, setFeedback] = useState('Find the glowing target letter.');
+  const [feedback, setFeedback] = useState(t('games.letterLanterns.feedback.initial'));
 
   const handleSelectLetter = (letter: string) => {
     if (isLetterLanternMatch(round, letter)) {
-      setFeedback(`Wonderful! ${letter} is the right lantern.`);
+      setFeedback(t('games.letterLanterns.feedback.correct', { letter }));
       setLitCount((count) => count + 1);
     } else {
-      setFeedback('Gentle try again. Look for the target shape.');
+      setFeedback(t('games.letterLanterns.feedback.incorrect'));
     }
   };
 
   const nextRound = () => {
     setRound(generateLetterLanternRound(settings.difficulty));
-    setFeedback('Find the glowing target letter.');
+    setFeedback(t('games.letterLanterns.feedback.initial'));
   };
 
   return (
     <AppScreen>
-      <AppHeader title="Letter Lanterns" onBack={() => navigation.goBack()} />
+      <AppHeader title={t('games.letterLanterns.title')} onBack={() => navigation.goBack()} />
       <View style={styles.content}>
-        <Text style={styles.subtitle}>Tap the lantern with letter {round.targetLetter}.</Text>
+        <Text style={styles.subtitle}>{t('games.letterLanterns.subtitle', { letter: round.targetLetter })}</Text>
 
         <AppCard variant="elevated" style={styles.targetCard}>
-          <Text style={styles.targetLabel}>Target Letter</Text>
+          <Text style={styles.targetLabel}>{t('games.letterLanterns.targetLabel')}</Text>
           <Text style={styles.targetLetter}>{round.targetLetter}</Text>
           <Text style={styles.feedback}>{feedback}</Text>
         </AppCard>
@@ -55,8 +57,8 @@ export const LetterLanternScreen: React.FC = () => {
           ))}
         </View>
 
-        <Text style={styles.litCount}>Lanterns lit: {litCount}</Text>
-        <AppButton label="Next Letter" variant="ghost" onPress={nextRound} style={styles.nextButton} />
+        <Text style={styles.litCount}>{t('games.letterLanterns.lanternsLit')}: {litCount}</Text>
+        <AppButton label={t('games.letterLanterns.nextLetter')} variant="ghost" onPress={nextRound} style={styles.nextButton} />
       </View>
     </AppScreen>
   );

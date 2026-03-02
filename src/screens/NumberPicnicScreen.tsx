@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { ThemeColors } from '../types';
 import { useSettings } from '../context/SettingsContext';
 import {
@@ -16,6 +17,7 @@ export const NumberPicnicScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings } = useSettings();
   const { colors } = useThemeColors();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [prompt, setPrompt] = useState(() => generateNumberPicnicPrompt(settings.difficulty));
   const [basketCount, setBasketCount] = useState(0);
@@ -35,33 +37,33 @@ export const NumberPicnicScreen: React.FC = () => {
 
   return (
     <AppScreen>
-      <AppHeader title="Number Picnic" onBack={() => navigation.goBack()} />
+      <AppHeader title={t('games.numberPicnic.title')} onBack={() => navigation.goBack()} />
       <View style={styles.content}>
-        <Text style={styles.subtitle}>Count and place items in the picnic basket.</Text>
+        <Text style={styles.subtitle}>{t('games.numberPicnic.subtitle')}</Text>
 
         <AppCard variant="elevated" style={styles.promptCard}>
           <Text style={styles.promptText}>
-            Place <Text style={styles.promptStrong}>{prompt.targetCount}</Text> {prompt.itemName}
+            {t('games.numberPicnic.place')} <Text style={styles.promptStrong}>{prompt.targetCount}</Text> {prompt.itemName}
           </Text>
-          <Text style={styles.basketCount} accessibilityLabel={`Basket count ${basketCount}`}>
-            Basket: {basketCount}
+          <Text style={styles.basketCount} accessibilityLabel={`${t('games.numberPicnic.basket')} ${basketCount}`}>
+            {t('games.numberPicnic.basket')}: {basketCount}
           </Text>
           <Text style={styles.previewItems}>
             {basketCount > 0 ? `${prompt.itemEmoji} `.repeat(Math.min(12, basketCount)).trim() : '—'}
           </Text>
           <Text style={styles.feedback}>
-            {isComplete ? 'Great counting! Your picnic is ready.' : 'Tap plus or minus to match the count.'}
+            {isComplete ? t('games.numberPicnic.feedback.complete') : t('games.numberPicnic.feedback.incomplete')}
           </Text>
         </AppCard>
 
         <View style={styles.controls}>
-          <AppButton label="− Remove" variant="secondary" onPress={() => adjustCount(-1)} style={styles.controlButton} />
-          <AppButton label="+ Add" variant="primary" onPress={() => adjustCount(1)} style={styles.controlButton} />
+          <AppButton label={t('games.numberPicnic.remove')} variant="secondary" onPress={() => adjustCount(-1)} style={styles.controlButton} />
+          <AppButton label={t('games.numberPicnic.add')} variant="primary" onPress={() => adjustCount(1)} style={styles.controlButton} />
         </View>
 
-        <Text style={styles.completed}>Picnics completed: {completedPicnics}</Text>
+        <Text style={styles.completed}>{t('games.numberPicnic.completed')}: {completedPicnics}</Text>
         {isComplete && (
-          <AppButton label="Next Picnic" variant="ghost" onPress={nextPicnic} style={styles.nextButton} />
+          <AppButton label={t('games.numberPicnic.nextPicnic')} variant="ghost" onPress={nextPicnic} style={styles.nextButton} />
         )}
       </View>
     </AppScreen>

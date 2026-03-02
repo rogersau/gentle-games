@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 import { useSettings } from "../context/SettingsContext";
 import { Difficulty, PASTEL_COLORS, ThemeColors, UNFINISHED_GAMES } from "../types";
 import { ResolvedThemeMode, useThemeColors } from "../utils/theme";
@@ -16,8 +17,8 @@ import { useLayout } from "../ui/useLayout";
 
 interface Game {
   id: string;
-  name: string;
-  description: string;
+  nameKey: string;
+  descriptionKey: string;
   icon: string;
   accentColor?: string;
 }
@@ -25,91 +26,81 @@ interface Game {
 const GAMES: Game[] = [
   {
     id: "memory-snap",
-    name: "Memory Snap",
-    description: "A calm memory matching game",
+    nameKey: "games.memorySnap.name",
+    descriptionKey: "games.memorySnap.description",
     icon: "🧩",
     accentColor: PASTEL_COLORS.primary,
   },
   {
     id: "drawing",
-    name: "Drawing Pad",
-    description: "Draw with colors and erase",
+    nameKey: "games.drawing.name",
+    descriptionKey: "games.drawing.description",
     icon: "🎨",
     accentColor: PASTEL_COLORS.secondary,
   },
   {
     id: "glitter-fall",
-    name: "Glitter Fall",
-    description: "Snow globe glitter play",
+    nameKey: "games.glitterFall.name",
+    descriptionKey: "games.glitterFall.description",
     icon: "✨",
     accentColor: PASTEL_COLORS.accent,
   },
   {
     id: "bubble-pop",
-    name: "Bubble Pop",
-    description: "Tap falling bubbles",
+    nameKey: "games.bubblePop.name",
+    descriptionKey: "games.bubblePop.description",
     icon: "🫧",
     accentColor: PASTEL_COLORS.success,
   },
   {
     id: "category-match",
-    name: "Category Match",
-    description: "Drag to sort by category",
+    nameKey: "games.categoryMatch.name",
+    descriptionKey: "games.categoryMatch.description",
     icon: "🗂️",
     accentColor: PASTEL_COLORS.cardBack,
   },
   {
     id: "keepy-uppy",
-    name: "Keepy Uppy",
-    description: "Tap balloons in the backyard",
+    nameKey: "games.keepyUppy.name",
+    descriptionKey: "games.keepyUppy.description",
     icon: "🎈",
     accentColor: PASTEL_COLORS.secondary,
   },
   {
     id: "breathing-garden",
-    name: "Breathing Garden",
-    description: "Follow calm breathing rhythms",
+    nameKey: "games.breathingGarden.name",
+    descriptionKey: "games.breathingGarden.description",
     icon: "🌸",
     accentColor: PASTEL_COLORS.accent,
   },
   {
     id: "pattern-train",
-    name: "Pattern Train",
-    description: "Complete cozy pattern sequences",
+    nameKey: "games.patternTrain.name",
+    descriptionKey: "games.patternTrain.description",
     icon: "🚂",
     accentColor: PASTEL_COLORS.primary,
   },
   {
     id: "number-picnic",
-    name: "Number Picnic",
-    description: "Count and fill the basket",
+    nameKey: "games.numberPicnic.name",
+    descriptionKey: "games.numberPicnic.description",
     icon: "🧺",
     accentColor: PASTEL_COLORS.success,
   },
   {
     id: "letter-lanterns",
-    name: "Letter Lanterns",
-    description: "Tap the matching glowing letter",
+    nameKey: "games.letterLanterns.name",
+    descriptionKey: "games.letterLanterns.description",
     icon: "🏮",
     accentColor: PASTEL_COLORS.secondary,
   },
   {
     id: "star-path",
-    name: "Star Path",
-    description: "Guide a star to moonlight tokens",
+    nameKey: "games.starPath.name",
+    descriptionKey: "games.starPath.description",
     icon: "⭐",
     accentColor: PASTEL_COLORS.cardBack,
   },
-];
-
-const DIFFICULTY_OPTIONS: {
-  value: Difficulty;
-  label: string;
-  description: string;
-}[] = [
-  { value: "easy", label: "Easy", description: "3×4 grid (12 cards)" },
-  { value: "medium", label: "Medium", description: "4×5 grid (20 cards)" },
-  { value: "hard", label: "Hard", description: "5×6 grid (30 cards)" },
 ];
 
 const ROUTE_MAP: Record<string, string> = {
@@ -135,8 +126,19 @@ export const HomeScreen: React.FC = () => {
     [colors, resolvedMode],
   );
   const { gridColumns, contentWidth, isTablet } = useLayout();
+  const { t } = useTranslation();
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [showDifficultySelector, setShowDifficultySelector] = useState(false);
+
+  const difficultyOptions: {
+    value: Difficulty;
+    label: string;
+    description: string;
+  }[] = [
+    { value: "easy", label: t("difficulty.easy.label"), description: t("difficulty.easy.description") },
+    { value: "medium", label: t("difficulty.medium.label"), description: t("difficulty.medium.description") },
+    { value: "hard", label: t("difficulty.hard.label"), description: t("difficulty.hard.description") },
+  ];
 
   const visibleGames = useMemo(
     () => GAMES.filter((game) => {
@@ -171,7 +173,7 @@ export const HomeScreen: React.FC = () => {
   };
 
   const getDifficultyLabel = (difficulty: Difficulty) => {
-    const option = DIFFICULTY_OPTIONS.find((opt) => opt.value === difficulty);
+    const option = difficultyOptions.find((opt) => opt.value === difficulty);
     return option?.label || difficulty;
   };
 
@@ -189,9 +191,9 @@ export const HomeScreen: React.FC = () => {
       >
         <View style={styles.titleArea}>
           <Text style={styles.title} accessibilityRole="header">
-            Gentle Games
+            {t("home.title")}
           </Text>
-          <Text style={styles.subtitle}>Calm games for little ones</Text>
+          <Text style={styles.subtitle}>{t("home.subtitle")}</Text>
         </View>
 
         <View style={styles.gamesContainer} testID="home-games-container">
@@ -214,15 +216,14 @@ export const HomeScreen: React.FC = () => {
                           width: `${Math.floor(100 / gridColumns)}%`,
                           paddingHorizontal: Space.xs,
                           justifyContent: "center",
-                          // no special height enforcement under new two-column scheme
                         }
                       : undefined
                   }
                 >
                   <GameCard
                     icon={game.icon}
-                    title={game.name}
-                    description={game.description}
+                    title={t(game.nameKey)}
+                    description={t(game.descriptionKey)}
                     onPress={() => handleGameSelect(game)}
                     accentColor={game.accentColor}
                     style={
@@ -236,18 +237,18 @@ export const HomeScreen: React.FC = () => {
             </ScrollView>
           ) : (
             <Text style={styles.emptyGamesText}>
-              All games are hidden. Enable one in Settings.
+              {t("home.emptyGames")}
             </Text>
           )}
         </View>
 
         <View style={styles.footer}>
           <AppButton
-            label="⚙️  Settings"
+            label={t("home.settingsButton")}
             variant="secondary"
             size="lg"
             onPress={() => navigation.navigate("Settings" as never)}
-            accessibilityHint="Opens app settings"
+            accessibilityHint={t("home.settingsHint")}
           />
         </View>
       </View>
@@ -255,17 +256,17 @@ export const HomeScreen: React.FC = () => {
       <AppModal
         visible={showDifficultySelector}
         onClose={handleCloseModal}
-        title={selectedGame?.name}
+        title={selectedGame ? t(selectedGame.nameKey) : undefined}
         showClose
-        closeLabel="Cancel"
+        closeLabel={t("common.cancel")}
       >
         <Text style={styles.modalSubtitle}>
-          Select difficulty
+          {t("difficulty.title")}
           {settings.difficulty &&
-            ` (last: ${getDifficultyLabel(settings.difficulty)})`}
+            ` (${t("games.memorySnap.lastUsed")}: ${getDifficultyLabel(settings.difficulty)})`}
         </Text>
         <View style={styles.optionsList}>
-          {DIFFICULTY_OPTIONS.map(({ value, label, description }) => (
+          {difficultyOptions.map(({ value, label, description }) => (
             <AppButton
               key={value}
               label={`${label}  ·  ${description}`}

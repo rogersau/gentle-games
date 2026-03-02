@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { Accelerometer } from 'expo-sensors';
 import { ThemeColors } from '../types';
 import {
@@ -16,6 +17,7 @@ import { Space, TypeStyle } from '../ui/tokens';
 export const StarPathScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useThemeColors();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const [tiltEnabled, setTiltEnabled] = useState(false);
@@ -113,13 +115,13 @@ export const StarPathScreen: React.FC = () => {
 
   return (
     <AppScreen>
-      <AppHeader title="Star Path" onBack={() => navigation.goBack()} />
+      <AppHeader title={t('games.starPath.title')} onBack={() => navigation.goBack()} />
       <View style={styles.content}>
-        <Text style={styles.subtitle}>Guide the star to collect every moonlight token.</Text>
+        <Text style={styles.subtitle}>{t('games.starPath.subtitle')}</Text>
         <View style={styles.metaRow}>
-          <Text style={styles.metaText}>Collected: {collectedCount}/{totalCollectibles}</Text>
+          <Text style={styles.metaText}>{t('games.starPath.collected')}: {collectedCount}/{totalCollectibles}</Text>
           <Text style={styles.metaText}>
-            Tilt: {tiltEnabled && tiltAvailable ? 'On' : 'Off'}
+            {t('games.starPath.tilt')}: {tiltEnabled && tiltAvailable ? t('common.on') : t('common.off')}
           </Text>
         </View>
 
@@ -155,9 +157,9 @@ export const StarPathScreen: React.FC = () => {
         </View>
 
         <View style={styles.actions}>
-          <AppButton label="Reset Path" variant="secondary" onPress={resetScene} style={styles.actionButton} />
+          <AppButton label={t('games.starPath.resetPath')} variant="secondary" onPress={resetScene} style={styles.actionButton} />
           <AppButton
-            label={tiltEnabled ? 'Tilt Off' : 'Tilt On'}
+            label={tiltEnabled ? t('games.starPath.tiltOff') : t('games.starPath.tiltOn')}
             variant="ghost"
             onPress={() => setTiltEnabled((current) => !current)}
             disabled={!tiltAvailable}
@@ -165,7 +167,7 @@ export const StarPathScreen: React.FC = () => {
           />
         </View>
         {isComplete && (
-          <Text style={styles.completeText}>You found all the moonlight tokens. Beautiful guiding! ✨</Text>
+          <Text style={styles.completeText}>{t('games.starPath.complete')}</Text>
         )}
       </View>
     </AppScreen>

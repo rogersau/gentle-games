@@ -25,10 +25,93 @@ jest.mock('./src/context/SettingsContext', () => {
         keepyUppyEasyMode: true,
         hiddenGames: [],
         parentTimerMinutes: 0,
+        language: 'en-AU',
       },
       updateSettings: jest.fn(),
     }),
   };
 });
+
+// Mock react-i18next
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: Record<string, unknown>) => {
+      // Return English translations for game names and common strings
+      const translations: Record<string, string> = {
+        'home.title': 'Gentle Games',
+        'home.subtitle': 'Calm games for little ones',
+        'home.settingsButton': '⚙️  Settings',
+        'common.save': 'Save',
+        'common.cancel': 'Cancel',
+        'common.back': 'Back to Home',
+        'games.memorySnap.name': 'Memory Snap',
+        'games.memorySnap.description': 'A calm memory matching game',
+        'games.drawing.name': 'Drawing Pad',
+        'games.drawing.description': 'Draw with colours and erase',
+        'games.glitterFall.name': 'Glitter Fall',
+        'games.glitterFall.description': 'Snow globe glitter play',
+        'games.bubblePop.name': 'Bubble Pop',
+        'games.bubblePop.description': 'Tap falling bubbles',
+        'games.categoryMatch.name': 'Category Match',
+        'games.categoryMatch.description': 'Drag to sort by category',
+        'games.keepyUppy.name': 'Keepy Uppy',
+        'games.keepyUppy.description': 'Tap balloons in the backyard',
+        'games.breathingGarden.name': 'Breathing Garden',
+        'games.patternTrain.name': 'Pattern Train',
+        'games.numberPicnic.name': 'Number Picnic',
+        'games.letterLanterns.name': 'Letter Lanterns',
+        'games.starPath.name': 'Star Path',
+        'difficulty.title': 'Select difficulty',
+        'difficulty.easy.label': 'Easy',
+        'difficulty.medium.label': 'Medium',
+        'difficulty.hard.label': 'Hard',
+        'settings.title': 'Settings',
+        'settings.language.title': 'Language',
+        'settings.language.description': 'Choose your preferred language',
+        'settings.saveHint': 'Save settings and return home',
+        'settings.backHint': 'Return to the home screen',
+        'settings.appearance.title': 'Appearance',
+        'settings.appearance.light': 'Light',
+        'settings.appearance.dark': 'Dark',
+        'settings.appearance.system': 'System',
+        'settings.cardPreview.label': 'Show Card Preview',
+        'settings.animations.label': 'Animations',
+        'settings.keepyUppyEasyMode.label': 'Keepy Uppy Easy Mode',
+        'settings.sound.label': 'Sound',
+        'settings.volume.title': 'Volume',
+        'settings.gamesOnHomeScreen.title': 'Games on Home Screen',
+        'settings.parentTimer.title': 'Parent Timer',
+        'settings.parentTimer.off': 'Off',
+        'games.keepyUppy.addBalloon': '+ Balloon',
+        'games.keepyUppy.subtitle': 'Keep the balloon in the air!',
+        'games.categoryMatch.subtitle': 'Sort each emoji into Sky, Land, or Ocean.',
+        'games.categoryMatch.startSorting': 'Start Sorting',
+        'games.categoryMatch.correct': 'Correct',
+      };
+      
+      const translation = translations[key] || key;
+      
+      // Simple interpolation for values like {{letter}}
+      if (options && typeof options === 'object') {
+        let result = translation;
+        Object.entries(options).forEach(([k, v]) => {
+          result = result.replace(`{{${k}}}`, String(v));
+        });
+        return result;
+      }
+      
+      return translation;
+    },
+    i18n: {
+      changeLanguage: jest.fn(),
+      language: 'en-AU',
+    },
+  }),
+  I18nextProvider: ({ children }: { children: React.ReactNode }) => children,
+  initReactI18next: {
+    type: '3rdParty',
+    init: jest.fn(),
+  },
+}));
 
 export {};

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { ThemeColors } from '../types';
 import { useSettings } from '../context/SettingsContext';
 import { generatePatternTrainRound, isPatternTrainChoiceCorrect } from '../utils/patternTrainLogic';
@@ -12,31 +13,32 @@ export const PatternTrainScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings } = useSettings();
   const { colors } = useThemeColors();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [round, setRound] = useState(() => generatePatternTrainRound(settings.difficulty));
-  const [feedback, setFeedback] = useState('Find the missing train car pattern.');
+  const [feedback, setFeedback] = useState(t('games.patternTrain.feedback.initial'));
   const [completedRounds, setCompletedRounds] = useState(0);
 
   const handleChoice = (choice: string) => {
     if (isPatternTrainChoiceCorrect(round, choice)) {
-      setFeedback('Perfect pattern! Ready for another train.');
+      setFeedback(t('games.patternTrain.feedback.correct'));
       setCompletedRounds((current) => current + 1);
     } else {
-      setFeedback('Nice try. Look for the repeating rhythm.');
+      setFeedback(t('games.patternTrain.feedback.incorrect'));
     }
   };
 
   const nextRound = () => {
     setRound(generatePatternTrainRound(settings.difficulty));
-    setFeedback('Find the missing train car pattern.');
+    setFeedback(t('games.patternTrain.feedback.initial'));
   };
 
   return (
     <AppScreen>
-      <AppHeader title="Pattern Train" onBack={() => navigation.goBack()} />
+      <AppHeader title={t('games.patternTrain.title')} onBack={() => navigation.goBack()} />
       <View style={styles.content}>
-        <Text style={styles.subtitle}>Complete the pattern with a gentle tap.</Text>
-        <Text style={styles.meta}>Mode: {round.patternLabel}</Text>
+        <Text style={styles.subtitle}>{t('games.patternTrain.subtitle')}</Text>
+        <Text style={styles.meta}>{t('games.patternTrain.mode')}: {round.patternLabel}</Text>
 
         <AppCard variant="elevated" style={styles.sequenceCard}>
           <View style={styles.sequenceRow}>
@@ -61,8 +63,8 @@ export const PatternTrainScreen: React.FC = () => {
           ))}
         </View>
 
-        <Text style={styles.meta}>Completed rounds: {completedRounds}</Text>
-        <AppButton label="Next Pattern" variant="primary" onPress={nextRound} style={styles.nextButton} />
+        <Text style={styles.meta}>{t('games.patternTrain.completedRounds')}: {completedRounds}</Text>
+        <AppButton label={t('games.patternTrain.nextPattern')} variant="primary" onPress={nextRound} style={styles.nextButton} />
       </View>
     </AppScreen>
   );
