@@ -45,12 +45,11 @@ export interface Settings {
   parentTimerMinutes: number;
   enableUnfinishedGames: boolean;
   language: import('./i18n').SupportedLanguage;
+  reducedMotionEnabled: boolean;
 }
 
 export const UNFINISHED_GAMES: string[] = [
   'number-picnic',
-  'letter-lanterns',
-  'star-path',
 ];
 
 export type BreathingGardenPhase = 'inhale' | 'exhale';
@@ -79,21 +78,7 @@ export interface NumberPicnicPrompt {
   itemEmoji: string;
   itemName: string;
   targetCount: number;
-}
-
-export interface LetterLanternRound {
-  targetLetter: string;
-  choices: string[];
-}
-
-export interface StarPathPoint {
-  x: number;
-  y: number;
-}
-
-export interface StarPathCollectible extends StarPathPoint {
-  id: string;
-  collected: boolean;
+  visualDots: string[];
 }
 
 export type CategoryMatchCategory = 'sky' | 'land' | 'ocean';
@@ -271,8 +256,6 @@ export const NUMBER_PICNIC_ITEMS = [
   { emoji: '⭐', name: 'stars' },
   { emoji: '🌼', name: 'flowers' },
 ];
-
-export const LETTER_LANTERN_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 /**
  * Dedicated balloon palette for KeepyUppy with guaranteed contrast against both

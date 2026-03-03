@@ -65,7 +65,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
 };
 
 const sizeMap = {
-  sm: { paddingVertical: Space.sm, paddingHorizontal: Space.base, minHeight: HitTarget.min - 4 },
+  sm: { paddingVertical: Space.base, paddingHorizontal: Space.base, minHeight: HitTarget.min - 4 },
   md: { paddingVertical: Space.md, paddingHorizontal: Space.xl, minHeight: HitTarget.min },
   lg: { paddingVertical: Space.base, paddingHorizontal: Space['2xl'], minHeight: HitTarget.min + 8 },
 };

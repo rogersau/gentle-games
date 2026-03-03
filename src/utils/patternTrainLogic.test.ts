@@ -57,18 +57,50 @@ describe('patternTrainLogic', () => {
     it('removes wrong choices correctly', () => {
       const choices = ['🚂', '🌟', '🌈', '🌸'];
       const answer = '🚂';
-      
+
       const afterOneRemoval = removeWrongChoices(choices, answer, 1);
       expect(afterOneRemoval).toHaveLength(3);
       expect(afterOneRemoval).toContain(answer);
-      
+
       const afterTwoRemovals = removeWrongChoices(choices, answer, 2);
       expect(afterTwoRemovals).toHaveLength(2);
       expect(afterTwoRemovals).toContain(answer);
-      
+
       const afterThreeRemovals = removeWrongChoices(choices, answer, 3);
       expect(afterThreeRemovals).toHaveLength(1);
       expect(afterThreeRemovals[0]).toBe(answer);
+    });
+
+    it('prioritizes removing the specific wrong choice when provided', () => {
+      const choices = ['🚂', '🌟', '🌈', '🌸'];
+      const answer = '🚂';
+      const specificWrong = '🌟';
+
+      const result = removeWrongChoices(choices, answer, 1, specificWrong);
+      expect(result).toHaveLength(3);
+      expect(result).toContain(answer);
+      expect(result).not.toContain(specificWrong);
+    });
+
+    it('removes specific wrong choice first, then others when count > 1', () => {
+      const choices = ['🚂', '🌟', '🌈', '🌸'];
+      const answer = '🚂';
+      const specificWrong = '🌟';
+
+      const result = removeWrongChoices(choices, answer, 2, specificWrong);
+      expect(result).toHaveLength(2);
+      expect(result).toContain(answer);
+      expect(result).not.toContain(specificWrong);
+    });
+
+    it('falls back to default behavior when specific choice is not in wrong choices', () => {
+      const choices = ['🚂', '🌟', '🌈', '🌸'];
+      const answer = '🚂';
+      const specificWrong = '🚂'; // This is the answer, not a wrong choice
+
+      const result = removeWrongChoices(choices, answer, 1, specificWrong);
+      expect(result).toHaveLength(3);
+      expect(result).toContain(answer);
     });
   });
 

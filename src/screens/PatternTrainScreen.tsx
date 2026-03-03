@@ -139,18 +139,31 @@ export const PatternTrainScreen: React.FC = () => {
     trainPosition.setValue(SCREEN_WIDTH);
     trainOpacity.setValue(0);
 
-    Animated.parallel([
-      Animated.timing(trainPosition, {
-        toValue: 0,
-        duration: TRAIN_ANIMATION.ENTRY_DURATION,
-        useNativeDriver: true,
-      }),
-      Animated.timing(trainOpacity, {
-        toValue: 1,
-        duration: TRAIN_ANIMATION.ENTRY_DURATION * 0.5,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
+    if (settings.animationsEnabled) {
+      Animated.parallel([
+        Animated.timing(trainPosition, {
+          toValue: 0,
+          duration: TRAIN_ANIMATION.ENTRY_DURATION,
+          useNativeDriver: true,
+        }),
+        Animated.timing(trainOpacity, {
+          toValue: 1,
+          duration: TRAIN_ANIMATION.ENTRY_DURATION * 0.5,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setTrainPhase('waiting');
+        if (entryPattern) {
+          AccessibilityInfo.announceForAccessibility(
+            t('games.patternTrain.train.arrived', {
+              pattern: entryPattern.carriages.map(c => c.isMissing ? 'missing' : c.emoji).join(', '),
+            })
+          );
+        }
+      });
+    } else {
+      trainPosition.setValue(0);
+      trainOpacity.setValue(1);
       setTrainPhase('waiting');
       if (entryPattern) {
         AccessibilityInfo.announceForAccessibility(
@@ -159,8 +172,8 @@ export const PatternTrainScreen: React.FC = () => {
           })
         );
       }
-    });
-  }, [t, trainOpacity, trainPosition]);
+    }
+  }, [t, trainOpacity, trainPosition, settings.animationsEnabled]);
 
   // Initialize train entry animation only if difficulty selector is not showing
   useEffect(() => {
@@ -179,45 +192,62 @@ export const PatternTrainScreen: React.FC = () => {
     setFeedback(t('games.patternTrain.feedback.initial'));
     setFeedbackType('initial');
 
-    Animated.timing(feedbackOpacity, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
+    if (settings.animationsEnabled) {
+      Animated.timing(feedbackOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      feedbackOpacity.setValue(1);
+    }
 
-  }, [settings.difficulty, t, feedbackOpacity]);
+  }, [settings.difficulty, t, feedbackOpacity, settings.animationsEnabled]);
 
   const startTrainExit = useCallback(() => {
     setTrainPhase('exiting');
 
-    // Fade out platform carriages
-    draggableCarriages.forEach((c) => {
-      if (c.isAvailable) {
-        Animated.timing(c.opacity, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }).start();
-      }
-    });
+    if (settings.animationsEnabled) {
+      // Fade out platform carriages
+      draggableCarriages.forEach((c) => {
+        if (c.isAvailable) {
+          Animated.timing(c.opacity, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          }).start();
+        }
+      });
 
-    // Move train off screen with fade out
-    Animated.parallel([
-      Animated.timing(trainPosition, {
-        toValue: -SCREEN_WIDTH,
-        duration: TRAIN_ANIMATION.EXIT_DURATION,
-        useNativeDriver: true,
-      }),
-      Animated.timing(trainOpacity, {
-        toValue: 0,
-        duration: TRAIN_ANIMATION.EXIT_DURATION,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
+      // Move train off screen with fade out
+      Animated.parallel([
+        Animated.timing(trainPosition, {
+          toValue: -SCREEN_WIDTH,
+          duration: TRAIN_ANIMATION.EXIT_DURATION,
+          useNativeDriver: true,
+        }),
+        Animated.timing(trainOpacity, {
+          toValue: 0,
+          duration: TRAIN_ANIMATION.EXIT_DURATION,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setTrainPhase('offscreen');
+        startNewRound();
+      });
+    } else {
+      // Instant transition - set values directly
+      draggableCarriages.forEach((c) => {
+        if (c.isAvailable) {
+          c.opacity.setValue(0);
+        }
+      });
+      trainPosition.setValue(-SCREEN_WIDTH);
+      trainOpacity.setValue(0);
       setTrainPhase('offscreen');
       startNewRound();
-    });
-  }, [draggableCarriages, startNewRound]);
+    }
+  }, [draggableCarriages, startNewRound, settings.animationsEnabled]);
 
   const measureTrainZone = useCallback(() => {
     if (trainZoneRef.current) {
@@ -323,11 +353,12 @@ export const PatternTrainScreen: React.FC = () => {
         }).start();
 
         if (newWrongAttempts < 3 && pattern) {
-          // Remove one wrong choice
+          // Remove the wrong choice that was dragged (specifically the one attempted)
           const remainingChoices = removeWrongChoices(
             pattern.choices,
             pattern.answer,
-            1
+            1,
+            carriage.emoji
           );
 
           // Fade out removed carriages

@@ -35,8 +35,6 @@ const ALL_GAMES: { id: string; nameKey: TranslationKey; icon: string }[] = [
   { id: 'breathing-garden', nameKey: 'games.breathingGarden.name', icon: '🌸' },
   { id: 'pattern-train', nameKey: 'games.patternTrain.name', icon: '🚂' },
   { id: 'number-picnic', nameKey: 'games.numberPicnic.name', icon: '🧺' },
-  { id: 'letter-lanterns', nameKey: 'games.letterLanterns.name', icon: '🏮' },
-  { id: 'star-path', nameKey: 'games.starPath.name', icon: '⭐' },
 ];
 
 export const SettingsScreen: React.FC = () => {
@@ -109,6 +107,16 @@ export const SettingsScreen: React.FC = () => {
           <Text style={styles.description}>
             {t('settings.appearance.description')}
           </Text>
+        </View>
+
+        {/* Reduced Motion */}
+        <View style={styles.section}>
+          <SettingToggle
+            label={t('settings.reducedMotion.label')}
+            description={t('settings.reducedMotion.description')}
+            value={!!settings.reducedMotionEnabled}
+            onValueChange={(value) => updateSettings({ reducedMotionEnabled: value })}
+          />
         </View>
 
         {/* Card Preview */}

@@ -88,12 +88,16 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   };
 
   const springTokenBack = () => {
-    Animated.spring(dragPosition, {
-      toValue: { x: 0, y: 0 },
-      friction: 7,
-      tension: 80,
-      useNativeDriver: true,
-    }).start();
+    if (settings.animationsEnabled) {
+      Animated.spring(dragPosition, {
+        toValue: { x: 0, y: 0 },
+        friction: 7,
+        tension: 80,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      dragPosition.setValue({ x: 0, y: 0 });
+    }
   };
 
   const showFeedback = (message: string, isSuccess: boolean) => {
@@ -108,18 +112,22 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   };
 
   const playCorrectPulse = () => {
-    Animated.sequence([
-      Animated.timing(tokenScale, {
-        toValue: 1.08,
-        duration: 90,
-        useNativeDriver: true,
-      }),
-      Animated.timing(tokenScale, {
-        toValue: 1,
-        duration: 120,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    if (settings.animationsEnabled) {
+      Animated.sequence([
+        Animated.timing(tokenScale, {
+          toValue: 1.08,
+          duration: 90,
+          useNativeDriver: true,
+        }),
+        Animated.timing(tokenScale, {
+          toValue: 1,
+          duration: 120,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      tokenScale.setValue(1);
+    }
   };
 
   const getDropTarget = useCallback(

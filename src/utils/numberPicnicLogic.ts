@@ -13,11 +13,13 @@ export const generateNumberPicnicPrompt = (
   const item = NUMBER_PICNIC_ITEMS[Math.floor(rng() * NUMBER_PICNIC_ITEMS.length)];
   const max = getNumberPicnicMaxCount(difficulty);
   const targetCount = Math.floor(rng() * max) + 1;
+  const visualDots = Array(Math.min(targetCount, 12)).fill('🟢');
 
   return {
     itemEmoji: item.emoji,
     itemName: item.name,
     targetCount,
+    visualDots,
   };
 };
 
