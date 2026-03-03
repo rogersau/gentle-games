@@ -50,8 +50,6 @@ export interface Settings {
 
 export const UNFINISHED_GAMES: string[] = [
   'number-picnic',
-  'letter-lanterns',
-  'star-path',
 ];
 
 export type BreathingGardenPhase = 'inhale' | 'exhale';
@@ -81,22 +79,6 @@ export interface NumberPicnicPrompt {
   itemName: string;
   targetCount: number;
   visualDots: string[];
-}
-
-export interface LetterLanternRound {
-  targetLetter: string;
-  choices: string[];
-  hintItems: string[];
-}
-
-export interface StarPathPoint {
-  x: number;
-  y: number;
-}
-
-export interface StarPathCollectible extends StarPathPoint {
-  id: string;
-  collected: boolean;
 }
 
 export type CategoryMatchCategory = 'sky' | 'land' | 'ocean';
@@ -274,37 +256,6 @@ export const NUMBER_PICNIC_ITEMS = [
   { emoji: '⭐', name: 'stars' },
   { emoji: '🌼', name: 'flowers' },
 ];
-
-export const LETTER_LANTERN_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-
-export const LETTER_LANTERN_ITEMS: Record<string, string[]> = {
-  A: ['🍎', '✈️', '🐜'],
-  B: ['⚽', '🐝', '🍌'],
-  C: ['🐱', '🚗', '☁️'],
-  D: ['🐶', '🎲', '🥟'],
-  E: ['🥚', '🐘', '⭐'],
-  F: ['🐟', '🔥', '🍋'],
-  G: ['🍇', '🎸', '� Goose'],
-  H: ['🏠', '🍦', '🎩'],
-  I: ['🍦', '🧊', '🎁'],
-  J: ['🧢', '😃', '🎷'],
-  K: ['🔑', '🥝', '🪁'],
-  L: ['🦁', '💡', '🚁'],
-  M: ['🍎', '🎵', '🌙'],
-  N: ['🥜', '🌺', '🚗'],
-  O: ['🥚', '🧅', '🍊'],
-  P: ['🐧', '🍕', '🥞'],
-  Q: ['👑', '🥯', '🫧'],
-  R: ['🌈', '🚀', '🐰'],
-  S: ['⭐', '🐍', '☀️'],
-  T: ['🐢', '🚜', '🍅'],
-  U: ['☂️', '🦄', '🍇'],
-  V: ['🎻', '🥬', '🐄'],
-  W: ['🍉', '🌊', '🦋'],
-  X: ['❌', '🦊', '🥕'],
-  Y: ['🥚', '🧒', '🏖️'],
-  Z: ['🦓', '⚡', '🪙'],
-};
 
 /**
  * Dedicated balloon palette for KeepyUppy with guaranteed contrast against both
