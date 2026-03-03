@@ -1,4 +1,4 @@
-import { Difficulty, LETTER_LANTERN_ALPHABET, LetterLanternRound } from '../types';
+import { Difficulty, LETTER_LANTERN_ALPHABET, LETTER_LANTERN_ITEMS, LetterLanternRound } from '../types';
 
 const shuffle = <T,>(items: T[], rng: () => number): T[] => {
   const next = [...items];
@@ -26,10 +26,13 @@ export const generateLetterLanternRound = (
     rng
   ).slice(0, Math.max(0, choiceCount - 1));
   const choices = shuffle([targetLetter, ...distractors], rng);
+  
+  const hintItems = LETTER_LANTERN_ITEMS[targetLetter] || [];
 
   return {
     targetLetter,
     choices,
+    hintItems,
   };
 };
 

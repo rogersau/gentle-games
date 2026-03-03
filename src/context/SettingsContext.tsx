@@ -21,7 +21,7 @@ const defaultSettings: Settings = {
   colorMode: 'system',
   hiddenGames: [],
   parentTimerMinutes: 0,
-  enableUnfinishedGames: false,
+  enableUnfinishedGames: true,
   language: DEFAULT_LANGUAGE,
 };
 

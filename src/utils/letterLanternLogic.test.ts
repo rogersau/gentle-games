@@ -18,7 +18,7 @@ describe('letterLanternLogic', () => {
   });
 
   it('validates correct letter choice', () => {
-    const round = { targetLetter: 'B', choices: ['A', 'B', 'C'] };
+    const round = { targetLetter: 'B', choices: ['A', 'B', 'C'], hintItems: ['⚽', '🐝', '🍌'] };
     expect(isLetterLanternMatch(round, 'B')).toBe(true);
     expect(isLetterLanternMatch(round, 'A')).toBe(false);
   });

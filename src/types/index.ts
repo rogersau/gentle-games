@@ -79,11 +79,13 @@ export interface NumberPicnicPrompt {
   itemEmoji: string;
   itemName: string;
   targetCount: number;
+  visualDots: string[];
 }
 
 export interface LetterLanternRound {
   targetLetter: string;
   choices: string[];
+  hintItems: string[];
 }
 
 export interface StarPathPoint {
@@ -273,6 +275,35 @@ export const NUMBER_PICNIC_ITEMS = [
 ];
 
 export const LETTER_LANTERN_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+export const LETTER_LANTERN_ITEMS: Record<string, string[]> = {
+  A: ['🍎', '✈️', '🐜'],
+  B: ['⚽', '🐝', '🍌'],
+  C: ['🐱', '🚗', '☁️'],
+  D: ['🐶', '🎲', '🥟'],
+  E: ['🥚', '🐘', '⭐'],
+  F: ['🐟', '🔥', '🍋'],
+  G: ['🍇', '🎸', '� Goose'],
+  H: ['🏠', '🍦', '🎩'],
+  I: ['🍦', '🧊', '🎁'],
+  J: ['🧢', '😃', '🎷'],
+  K: ['🔑', '🥝', '🪁'],
+  L: ['🦁', '💡', '🚁'],
+  M: ['🍎', '🎵', '🌙'],
+  N: ['🥜', '🌺', '🚗'],
+  O: ['🥚', '🧅', '🍊'],
+  P: ['🐧', '🍕', '🥞'],
+  Q: ['👑', '🥯', '🫧'],
+  R: ['🌈', '🚀', '🐰'],
+  S: ['⭐', '🐍', '☀️'],
+  T: ['🐢', '🚜', '🍅'],
+  U: ['☂️', '🦄', '🍇'],
+  V: ['🎻', '🥬', '🐄'],
+  W: ['🍉', '🌊', '🦋'],
+  X: ['❌', '🦊', '🥕'],
+  Y: ['🥚', '🧒', '🏖️'],
+  Z: ['🦓', '⚡', '🪙'],
+};
 
 /**
  * Dedicated balloon palette for KeepyUppy with guaranteed contrast against both

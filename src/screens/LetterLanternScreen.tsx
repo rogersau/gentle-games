@@ -42,6 +42,9 @@ export const LetterLanternScreen: React.FC = () => {
         <AppCard variant="elevated" style={styles.targetCard}>
           <Text style={styles.targetLabel}>{t('games.letterLanterns.targetLabel')}</Text>
           <Text style={styles.targetLetter}>{round.targetLetter}</Text>
+          <Text style={styles.hintItems}>
+            {round.hintItems.join(' ')}
+          </Text>
           <Text style={styles.feedback}>{feedback}</Text>
         </AppCard>
 
@@ -92,6 +95,11 @@ const createStyles = (colors: ThemeColors) =>
     targetLetter: {
       ...TypeStyle.h1,
       color: colors.primary,
+    },
+    hintItems: {
+      fontSize: 28,
+      textAlign: 'center',
+      marginTop: Space.xs,
     },
     feedback: {
       ...TypeStyle.bodySm,

@@ -45,6 +45,9 @@ export const NumberPicnicScreen: React.FC = () => {
           <Text style={styles.promptText}>
             {t('games.numberPicnic.place')} <Text style={styles.promptStrong}>{prompt.targetCount}</Text> {prompt.itemName}
           </Text>
+          <Text style={styles.visualDots}>
+            {prompt.visualDots.join(' ')}
+          </Text>
           <Text style={styles.basketCount} accessibilityLabel={`${t('games.numberPicnic.basket')} ${basketCount}`}>
             {t('games.numberPicnic.basket')}: {basketCount}
           </Text>
@@ -99,6 +102,12 @@ const createStyles = (colors: ThemeColors) =>
     promptStrong: {
       ...TypeStyle.h3,
       color: colors.primary,
+    },
+    visualDots: {
+      fontSize: 32,
+      textAlign: 'center',
+      color: colors.success,
+      marginVertical: Space.xs,
     },
     basketCount: {
       ...TypeStyle.h4,
