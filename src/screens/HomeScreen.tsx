@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Linking, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../context/SettingsContext";
@@ -120,10 +120,10 @@ export const HomeScreen: React.FC = () => {
     label: string;
     description: string;
   }[] = [
-    { value: "easy", label: t("difficulty.easy.label"), description: t("difficulty.easy.description") },
-    { value: "medium", label: t("difficulty.medium.label"), description: t("difficulty.medium.description") },
-    { value: "hard", label: t("difficulty.hard.label"), description: t("difficulty.hard.description") },
-  ];
+      { value: "easy", label: t("difficulty.easy.label"), description: t("difficulty.easy.description") },
+      { value: "medium", label: t("difficulty.medium.label"), description: t("difficulty.medium.description") },
+      { value: "hard", label: t("difficulty.hard.label"), description: t("difficulty.hard.description") },
+    ];
 
   const visibleGames = useMemo(
     () => GAMES.filter((game) => {
@@ -198,10 +198,10 @@ export const HomeScreen: React.FC = () => {
                   style={
                     isTablet
                       ? {
-                          width: `${Math.floor(100 / gridColumns)}%`,
-                          paddingHorizontal: Space.xs,
-                          justifyContent: "center",
-                        }
+                        width: `${Math.floor(100 / gridColumns)}%`,
+                        paddingHorizontal: Space.xs,
+                        justifyContent: "center",
+                      }
                       : undefined
                   }
                 >
@@ -235,6 +235,14 @@ export const HomeScreen: React.FC = () => {
             onPress={() => navigation.navigate("Settings" as never)}
             accessibilityHint={t("home.settingsHint")}
           />
+          <TouchableOpacity
+            onPress={() => Linking.openURL('https://gentlegames.org')}
+            style={styles.websiteLinkContainer}
+            accessibilityRole="link"
+            accessibilityLabel={t("home.websiteLink")}
+          >
+            <Text style={styles.websiteLinkText}>{t("home.websiteLink")}</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -316,6 +324,16 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     footer: {
       alignItems: "center",
       paddingBottom: Space.sm,
+      gap: Space.md,
+    },
+    websiteLinkContainer: {
+      paddingVertical: Space.xs,
+    },
+    websiteLinkText: {
+      ...TypeStyle.bodySm,
+      color: colors.textLight,
+      textDecorationLine: "underline",
+      opacity: 0.6,
     },
     modalSubtitle: {
       ...TypeStyle.bodySm,

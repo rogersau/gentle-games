@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
+import { isSentryEnabled } from '../utils/sentry';
 import { AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 
@@ -74,6 +75,11 @@ export class GentleErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    if (!isSentryEnabled) {
+      console.log('[Sentry] Error boundary caught error but Sentry is disabled:', error.message);
+      return;
+    }
+
     // Report to Sentry with screen context
     Sentry.captureException(error, {
       tags: {

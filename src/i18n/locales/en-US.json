@@ -23,7 +23,8 @@
     "subtitle": "Calm games for little ones",
     "emptyGames": "All games are hidden. Enable one in Settings.",
     "settingsButton": "⚙️  Settings",
-    "settingsHint": "Opens app settings"
+    "settingsHint": "Opens app settings",
+    "websiteLink": "Visit gentlegames.org"
   },
   "errorBoundary": {
     "iconAccessibilityLabel": "Gentle cloud icon",
@@ -44,7 +45,7 @@
       "selectDifficulty": "Select difficulty",
       "lastUsed": "last",
       "timeLabel": "Time {{time}}",
-"moves": "Moves: {{count}}",
+      "moves": "Moves: {{count}}",
       "goHome": "Home",
       "goHomeHint": "Return to main screen"
     },
