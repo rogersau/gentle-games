@@ -1,4 +1,4 @@
-import type enAU from './locales/en-AU.json';
+import enAU from './locales/en-AU.json';
 
 // Define the translation resource type based on en-AU (the source of truth)
 export type TranslationResources = typeof enAU;
