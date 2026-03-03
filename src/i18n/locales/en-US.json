@@ -235,32 +235,6 @@
         "complete": "Great counting!",
         "incomplete": "Keep adding items"
       }
-    },
-    "letterLanterns": {
-      "name": "Letter Lanterns",
-      "description": "Tap the matching glowing letter",
-      "title": "Letter Lanterns",
-      "nextLetter": "Next Letter",
-      "subtitle": "Find the letter {{letter}}",
-      "targetLabel": "Target Letter",
-      "lanternsLit": "Lanterns lit",
-      "feedback": {
-        "initial": "Tap the matching letter",
-        "correct": "Great! You found {{letter}}",
-        "incorrect": "Try again!"
-      }
-    },
-    "starPath": {
-      "name": "Star Path",
-      "description": "Guide a star to moonlight tokens",
-      "title": "Star Path",
-      "resetPath": "Reset Path",
-      "subtitle": "Guide the star to collect moonlight tokens",
-      "collected": "Collected",
-      "tilt": "Tilt",
-      "tiltOff": "Turn Tilt Off",
-      "tiltOn": "Turn Tilt On",
-      "complete": "You collected all the tokens!"
     }
   },
   "difficulty": {
@@ -309,7 +283,7 @@
     },
     "unfinishedGames": {
       "label": "Enable Unfinished Games",
-      "description": "Show games that are still in development (Number Picnic, Letter Lanterns, Star Path)"
+      "description": "Show games that are still in development (Number Picnic)"
     },
     "sound": {
       "label": "Sound",
