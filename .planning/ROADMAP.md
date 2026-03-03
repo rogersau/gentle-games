@@ -62,6 +62,12 @@
 - CLEAN-03: Update game lists and navigation
 - CLEAN-04: Remove dead imports and types
 
+**Plans:**
+- [ ] 03-01: Remove LetterLantern and StarPath game references
+- [ ] 03-02: Install and configure Sentry SDK
+- [ ] 03-03: Error boundaries and privacy-safe reporting
+- [ ] 03-04: Source map generation and upload
+
 **Success Criteria:**
 1. Errors are automatically captured and sent to Sentry dashboard
 2. Source maps provide readable stack traces for debugging
@@ -88,7 +94,7 @@
 |-------|-----------|----------------|--------|-----------|
 | 1. Complete Learning Games | v1.0 | 1/1 | Complete | 2026-03-03 |
 | 2. Polish & Accessibility | v1.0 | 3/3 | Complete | 2026-03-03 |
-| 3. Error Monitoring | v1.1 | 0/1 | In Progress | - |
+| 3. Error Monitoring | v1.1 | 0/4 | In Progress | - |
 | 4. Internationalization | v1.1 | 0/1 | Planned | - |
 
 ---
