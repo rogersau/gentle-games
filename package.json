@@ -13,6 +13,7 @@
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --runInBand --coverage --watchAll=false",
     "test:single": "jest --runInBand",
+    "test:i18n": "jest --testPathPattern=translationValidation",
     "typecheck": "tsc --noEmit",
     "validate:android": "expo export --platform android --output-dir dist/android",
     "validate:ios": "expo export --platform ios --output-dir dist/ios"
