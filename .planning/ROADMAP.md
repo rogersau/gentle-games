@@ -66,7 +66,7 @@
 - [x] 03-01: Remove LetterLantern and StarPath game references
 - [x] 03-02: Install and configure Sentry SDK
 - [x] 03-03: Error boundaries and privacy-safe reporting
-- [ ] 03-04: Source map generation and upload
+- [x] 03-04: Source map generation and upload
 
 **Success Criteria:**
 1. Errors are automatically captured and sent to Sentry dashboard
@@ -94,9 +94,9 @@
 |-------|-----------|----------------|--------|-----------|
 | 1. Complete Learning Games | v1.0 | 1/1 | Complete | 2026-03-03 |
 | 2. Polish & Accessibility | v1.0 | 3/3 | Complete | 2026-03-03 |
-| 3. Error Monitoring | v1.1 | 3/4 | In Progress | - |
+| 3. Error Monitoring | v1.1 | 4/4 | Complete | 2026-03-03 |
 | 4. Internationalization | v1.1 | 0/1 | Planned | - |
 
 ---
 
-*Roadmap last updated: 2026-03-03 after 03-03 complete*
+*Roadmap last updated: 2026-03-03 after 03-04 complete*
