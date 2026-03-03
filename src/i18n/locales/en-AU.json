@@ -25,6 +25,14 @@
     "settingsButton": "⚙️  Settings",
     "settingsHint": "Opens app settings"
   },
+  "errorBoundary": {
+    "iconAccessibilityLabel": "Gentle cloud icon",
+    "title": "Oops, something went soft",
+    "message": "Don't worry! Let's go back home and try again.",
+    "goHome": "🏠 Go Home",
+    "goHomeAccessibilityLabel": "Return to home screen",
+    "goHomeAccessibilityHint": "Navigate back to the main menu"
+  },
   "games": {
     "memorySnap": {
       "name": "Memory Snap",

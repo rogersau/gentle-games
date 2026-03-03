@@ -35,9 +35,13 @@ export const useReducedMotion = (): boolean => {
   const [systemPrefersReducedMotion, setSystemPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      setSystemPrefersReducedMotion(enabled);
-    });
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((enabled) => {
+        setSystemPrefersReducedMotion(enabled);
+      })
+      .catch((error: unknown) => {
+        console.warn('Unable to read system reduced motion preference.', error);
+      });
 
     const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
       setSystemPrefersReducedMotion(enabled);

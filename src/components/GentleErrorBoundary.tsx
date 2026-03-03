@@ -2,7 +2,8 @@ import React, { Component, ReactNode } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import * as Sentry from '@sentry/react-native';
 import { useNavigation } from '@react-navigation/native';
-import { ThemeColors, PASTEL_COLORS, DARK_PASTEL_COLORS } from '../types';
+import { useTranslation } from 'react-i18next';
+import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
 import { AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
@@ -21,13 +22,11 @@ interface State {
  * Gentle error fallback UI - child-friendly and non-scary.
  * Consistent with app's calm, sensory-friendly design.
  */
-const GentleErrorFallback: React.FC<{ onReset: () => void; screenName: string }> = ({ 
-  onReset, 
-  screenName 
-}) => {
+const GentleErrorFallback: React.FC<{ onReset: () => void }> = ({ onReset }) => {
   const navigation = useNavigation();
-  const { colors, resolvedMode } = useThemeColors();
-  const styles = createStyles(colors, resolvedMode);
+  const { t } = useTranslation();
+  const { colors } = useThemeColors();
+  const styles = createStyles(colors);
 
   const handleGoHome = () => {
     // Navigate home and clear the error state
@@ -38,22 +37,22 @@ const GentleErrorFallback: React.FC<{ onReset: () => void; screenName: string }>
   return (
     <View style={styles.container} testID="error-boundary-fallback">
       <View style={styles.content}>
-        <Text style={styles.icon} accessibilityLabel="Gentle cloud icon">
+        <Text style={styles.icon} accessibilityLabel={t('errorBoundary.iconAccessibilityLabel')}>
           ☁️
         </Text>
         <Text style={styles.title} accessibilityRole="header">
-          Oops, something went soft
+          {t('errorBoundary.title')}
         </Text>
         <Text style={styles.message}>
-          Don&apos;t worry! Let&apos;s go back home and try again.
+          {t('errorBoundary.message')}
         </Text>
         <AppButton
-          label="🏠 Go Home"
+          label={t('errorBoundary.goHome')}
           variant="primary"
           size="lg"
           onPress={handleGoHome}
-          accessibilityLabel="Return to home screen"
-          accessibilityHint="Navigate back to the main menu"
+          accessibilityLabel={t('errorBoundary.goHomeAccessibilityLabel')}
+          accessibilityHint={t('errorBoundary.goHomeAccessibilityHint')}
         />
       </View>
     </View>
@@ -107,10 +106,7 @@ export class GentleErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <GentleErrorFallback 
-          onReset={this.handleReset} 
-          screenName={this.props.screenName} 
-        />
+        <GentleErrorFallback onReset={this.handleReset} />
       );
     }
 
@@ -118,7 +114,7 @@ export class GentleErrorBoundary extends Component<Props, State> {
   }
 }
 
-const createStyles = (colors: ThemeColors, resolvedMode: 'light' | 'dark') =>
+const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,

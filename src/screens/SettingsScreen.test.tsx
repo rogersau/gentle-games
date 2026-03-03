@@ -68,9 +68,8 @@ describe('SettingsScreen', () => {
 
   it('toggles card preview setting', () => {
     const screen = render(<SettingsScreen />);
-
-    const switches = screen.getAllByRole('switch');
-    fireEvent(switches[1], 'valueChange', false);
+    const cardPreviewSwitch = screen.getByRole('switch', { name: /Show Card Preview/i });
+    fireEvent(cardPreviewSwitch, 'valueChange', false);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({ showCardPreview: false });
   });
@@ -84,9 +83,8 @@ describe('SettingsScreen', () => {
 
   it('toggles Keepy Uppy easy mode setting', () => {
     const screen = render(<SettingsScreen />);
-
-    const switches = screen.getAllByRole('switch');
-    fireEvent(switches[3], 'valueChange', false);
+    const keepyUppySwitch = screen.getByRole('switch', { name: /Keepy Uppy Easy Mode/i });
+    fireEvent(keepyUppySwitch, 'valueChange', false);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({ keepyUppyEasyMode: false });
   });
@@ -100,9 +98,7 @@ describe('SettingsScreen', () => {
 
   it('toggles game visibility via switch', () => {
     const screen = render(<SettingsScreen />);
-    const switches = screen.getAllByRole('switch');
-    // First 6 switches: Reduced Motion, Card Preview, Animations, Keepy Uppy Easy Mode, Enable Unfinished Games, Sound. Next 6: game toggles.
-    const memorySnapSwitch = switches[6];
+    const memorySnapSwitch = screen.getByRole('switch', { name: /Memory Snap/i });
     fireEvent(memorySnapSwitch, 'valueChange', false);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({

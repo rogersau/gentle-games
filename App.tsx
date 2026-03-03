@@ -29,7 +29,9 @@ import { useFonts } from './src/ui/fonts';
 import { GentleErrorBoundary } from './src/components/GentleErrorBoundary';
 
 // Initialize Sentry before React mounts (production only)
-void initSentry();
+void initSentry().catch((error: unknown) => {
+  console.warn('Sentry initialization failed. Continuing without error monitoring.', error);
+});
 
 void SplashScreen.preventAutoHideAsync().catch((error) => {
   console.warn('Unable to keep splash screen visible during app startup.', error);

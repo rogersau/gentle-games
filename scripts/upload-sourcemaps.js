@@ -10,7 +10,6 @@
  *   - SENTRY_AUTH_TOKEN
  *   - SENTRY_ORG
  *   - SENTRY_PROJECT
- *   - SENTRY_DSN (for release association)
  *
  * This script uploads source maps to Sentry for readable stack traces.
  * Usually handled automatically by @sentry/react-native/expo plugin,

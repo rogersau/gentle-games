@@ -353,11 +353,12 @@ export const PatternTrainScreen: React.FC = () => {
         }).start();
 
         if (newWrongAttempts < 3 && pattern) {
-          // Remove one wrong choice
+          // Remove the wrong choice that was dragged (specifically the one attempted)
           const remainingChoices = removeWrongChoices(
             pattern.choices,
             pattern.answer,
-            1
+            1,
+            carriage.emoji
           );
 
           // Fade out removed carriages

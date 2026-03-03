@@ -101,9 +101,23 @@ export const generateTrainPattern = (
 export const isTrainChoiceCorrect = (pattern: TrainPattern, choice: string): boolean =>
   pattern.answer === choice;
 
-export const removeWrongChoices = (choices: string[], answer: string, count: number): string[] => {
+export const removeWrongChoices = (choices: string[], answer: string, count: number, specificWrongChoice?: string): string[] => {
   const wrongChoices = choices.filter((choice) => choice !== answer);
-  const choicesToRemove = wrongChoices.slice(0, count);
+  
+  // If a specific wrong choice is provided, prioritize removing it first
+  let choicesToRemove: string[] = [];
+  if (specificWrongChoice && wrongChoices.includes(specificWrongChoice)) {
+    choicesToRemove.push(specificWrongChoice);
+    // Remove the specific choice from wrongChoices so we don't pick it again
+    const remainingWrongChoices = wrongChoices.filter((c) => c !== specificWrongChoice);
+    // Fill the rest from other wrong choices
+    const additionalToRemove = remainingWrongChoices.slice(0, count - 1);
+    choicesToRemove = [...choicesToRemove, ...additionalToRemove];
+  } else {
+    // Fall back to removing from the beginning of wrong choices
+    choicesToRemove = wrongChoices.slice(0, count);
+  }
+  
   return choices.filter((choice) => !choicesToRemove.includes(choice));
 };
 

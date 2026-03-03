@@ -15,7 +15,7 @@ async function getInstallId(): Promise<string | null> {
     let installId = await AsyncStorage.getItem(INSTALL_ID_KEY);
     if (!installId) {
       // Generate random ID (not derived from any device info)
-      installId = `install_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      installId = `install_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
       await AsyncStorage.setItem(INSTALL_ID_KEY, installId);
     }
     return installId;

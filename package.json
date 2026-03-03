@@ -1,6 +1,6 @@
 {
   "name": "gentle-games",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
@@ -15,7 +15,7 @@
     "typecheck": "tsc --noEmit",
     "validate:android": "expo export --platform android --output-dir dist/android",
     "validate:ios": "expo export --platform ios --output-dir dist/ios",
-    "build:web": "expo export --platform web --output-dir dist/web --clear",
+    "build:web": "expo export --platform web --output-dir dist --clear",
     "build:pwa": "npm run build:web && node scripts/prepare-pwa.js",
     "build:android": "expo export --platform android --output-dir dist/android --clear",
     "build:ios": "expo export --platform ios --output-dir dist/ios --clear",
