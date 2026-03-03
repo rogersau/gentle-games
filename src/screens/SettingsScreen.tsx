@@ -35,8 +35,6 @@ const ALL_GAMES: { id: string; nameKey: TranslationKey; icon: string }[] = [
   { id: 'breathing-garden', nameKey: 'games.breathingGarden.name', icon: '🌸' },
   { id: 'pattern-train', nameKey: 'games.patternTrain.name', icon: '🚂' },
   { id: 'number-picnic', nameKey: 'games.numberPicnic.name', icon: '🧺' },
-  { id: 'letter-lanterns', nameKey: 'games.letterLanterns.name', icon: '🏮' },
-  { id: 'star-path', nameKey: 'games.starPath.name', icon: '⭐' },
 ];
 
 export const SettingsScreen: React.FC = () => {
