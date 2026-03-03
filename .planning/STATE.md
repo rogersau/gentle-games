@@ -7,19 +7,25 @@
 See: `.planning/PROJECT.md` (updated 2026-03-03)
 
 **Core Value:** A safe, predictable, and stress-free digital space where children can play, create, and explore at their own pace.
+**Current Version:** v1.0 MVP (shipped 2026-03-03)
+**Focus:** Planning v1.1 — error monitoring, i18n, deleted games resolution
 
 ## Current Status
 
 **Initialized:** 2026-03-03
 **Mode:** YOLO
 **Depth:** Quick
+**Last Milestone:** v1.0 MVP (2026-03-03)
 
 ### Phase Progress
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | Complete Learning Games | Complete |
-| 2 | Polish & Accessibility | Complete |
+| 1 | Complete Learning Games | Complete (v1.0) |
+| 2 | Polish & Accessibility | Complete (v1.0) |
+| 3 | Error Monitoring | Planned (v1.1) |
+| 4 | Internationalization | Planned (v1.1) |
+| 5 | Deleted Games Resolution | Planned (v1.1) |
 
 ## Recent Activity
 
@@ -33,6 +39,8 @@ See: `.planning/PROJECT.md` (updated 2026-03-03)
 - 2026-03-03: Phase 2 context gathered
 - 2026-03-03: Phase 2 planned (3 plans)
 - 2026-03-03: Phase 2 executed and complete
+- 2026-03-03: Milestone audit completed (gaps found)
+- 2026-03-03: Milestone v1.0 archived and tagged
 
 ## Context
 

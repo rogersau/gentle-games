@@ -1,9 +1,13 @@
 # Roadmap: Gentle Games
 
-**Created:** 2026-03-03
-**Mode:** YOLO | **Depth:** Quick
+## Milestones
+
+- ✅ **v1.0 MVP** — Phases 1-2 (shipped 2026-03-03) — [Archive](.planning/milestones/v1.0-ROADMAP.md)
 
 ## Phases
+
+<details>
+<summary>✅ v1.0 MVP (Phases 1-2) — SHIPPED 2026-03-03</summary>
 
 ### Phase 1: Complete Learning Games ✓
 
@@ -16,21 +20,12 @@
 - LEARN-04: LetterLantern visuals
 - LEARN-05: StarPath game
 
-**Success Criteria:**
-1. NumberPicnic is playable with numbers 1-10
-2. NumberPicnic shows visual representations (dots, fingers, etc.)
-3. LetterLantern is playable with letters A-Z
-4. LetterLantern shows visual representations (items starting with letter)
-5. StarPath allows star collection through simple interactions
-
-**Wave 1:**
-- Complete NumberPicnic game implementation
-- Complete LetterLantern game implementation  
-- Complete StarPath game implementation
+**Plans:**
+- [x] 01-01: Complete all three learning games with visuals
 
 ---
 
-### Phase 2: Polish & Accessibility
+### Phase 2: Polish & Accessibility ✓
 
 **Goal:** Ensure all games work for all accessibility needs
 
@@ -42,29 +37,33 @@
 - ACCESS-02: Light/dark mode support
 - ACCESS-03: Reduced motion support
 
-**Success Criteria:**
-1. All existing and new games work with animations disabled
-2. All existing and new games work with sound disabled
-3. Consistent navigation and interaction patterns across all games
-4. All touch targets meet minimum size requirements
-5. App responds to system theme preference
-6. App respects prefers-reduced-motion
-
 **Plans:**
-- [x] 02-01-PLAN.md — Animation + Sound handling
-- [x] 02-02-PLAN.md — Reduced motion setting
-- [x] 02-03-PLAN.md — Touch targets + UI consistency
+- [x] 02-01: Animation + Sound handling
+- [x] 02-02: Reduced motion setting
+- [x] 02-03: Touch targets + UI consistency
+
+</details>
 
 ---
 
-## Summary
+### 🚧 v1.1 (Planned)
 
-| Phase | Name | Requirements | Status |
-|-------|------|--------------|--------|
-| 1 | Complete Learning Games | 5 | ✓ Complete |
-| 2 | Polish & Accessibility | 6 | ✓ Complete |
-
-**Total:** 2 phases | 11 requirements | 5 complete
+- [ ] Phase 3: Error Monitoring — Add production error tracking
+- [ ] Phase 4: Internationalization — Additional languages
+- [ ] Phase 5: Deleted Games Resolution — Restore or remove LetterLantern/StarPath
 
 ---
-*Roadmap created: 2026-03-03*
+
+## Progress
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Complete Learning Games | v1.0 | 1/1 | Complete | 2026-03-03 |
+| 2. Polish & Accessibility | v1.0 | 3/3 | Complete | 2026-03-03 |
+| 3. Error Monitoring | v1.1 | 0/1 | Planned | - |
+| 4. Internationalization | v1.1 | 0/1 | Planned | - |
+| 5. Deleted Games | v1.1 | 0/1 | Planned | - |
+
+---
+
+*Roadmap last updated: 2026-03-03*
