@@ -20,8 +20,6 @@ import { KeepyUppyScreen } from './src/screens/KeepyUppyScreen';
 import { BreathingGardenScreen } from './src/screens/BreathingGardenScreen';
 import { PatternTrainScreen } from './src/screens/PatternTrainScreen';
 import { NumberPicnicScreen } from './src/screens/NumberPicnicScreen';
-import { LetterLanternScreen } from './src/screens/LetterLanternScreen';
-import { StarPathScreen } from './src/screens/StarPathScreen';
 import { initializeSounds, unloadSounds } from './src/utils/sounds';
 import { installPwaBackNavigationGuard } from './src/utils/pwaBackGuard';
 import { PASTEL_COLORS } from './src/types';
@@ -57,8 +55,6 @@ const AppNavigator: React.FC = () => {
           <Stack.Screen name="BreathingGarden" component={BreathingGardenScreen} />
           <Stack.Screen name="PatternTrain" component={PatternTrainScreen} />
           <Stack.Screen name="NumberPicnic" component={NumberPicnicScreen} />
-          <Stack.Screen name="LetterLantern" component={LetterLanternScreen} />
-          <Stack.Screen name="StarPath" component={StarPathScreen} />
         </Stack.Navigator>
         <StatusBar style={resolvedMode === 'dark' ? 'light' : 'dark'} />
       </NavigationContainer>
