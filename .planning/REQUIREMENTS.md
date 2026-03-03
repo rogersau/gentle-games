@@ -17,10 +17,10 @@ Requirements for error monitoring and cleanup milestone.
 
 ### Cleanup (CLEAN)
 
-- [ ] **CLEAN-01**: Remove LetterLantern screen and all references
-- [ ] **CLEAN-02**: Remove StarPath screen and all references
-- [ ] **CLEAN-03**: Update game lists and navigation
-- [ ] **CLEAN-04**: Remove dead imports and types
+- [x] **CLEAN-01**: Remove LetterLantern screen and all references
+- [x] **CLEAN-02**: Remove StarPath screen and all references
+- [x] **CLEAN-03**: Update game lists and navigation
+- [x] **CLEAN-04**: Remove dead imports and types
 
 ## v2 Requirements
 
@@ -52,10 +52,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SENTRY-03 | Phase 3 | Pending |
 | SENTRY-04 | Phase 3 | Pending |
 | SENTRY-05 | Phase 3 | Pending |
-| CLEAN-01 | Phase 3 | Pending |
-| CLEAN-02 | Phase 3 | Pending |
-| CLEAN-03 | Phase 3 | Pending |
-| CLEAN-04 | Phase 3 | Pending |
+| CLEAN-01 | Phase 3 | ✓ Complete |
+| CLEAN-02 | Phase 3 | ✓ Complete |
+| CLEAN-03 | Phase 3 | ✓ Complete |
+| CLEAN-04 | Phase 3 | ✓ Complete |
 
 **Coverage:**
 - v1.1 requirements: 9 total
@@ -64,4 +64,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-03*
-*Last updated: 2026-03-03 after v1.1 milestone started*
+*Last updated: 2026-03-03 after 03-01 complete*
