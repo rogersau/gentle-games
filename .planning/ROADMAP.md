@@ -3,6 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** — Phases 1-2 (shipped 2026-03-03) — [Archive](.planning/milestones/v1.0-ROADMAP.md)
+- 🚧 **v1.1 Error Logging** — Phase 3 (in progress)
 
 ## Phases
 
@@ -46,11 +47,38 @@
 
 ---
 
-### 🚧 v1.1 (Planned)
+### Phase 3: Error Monitoring
 
-- [ ] Phase 3: Error Monitoring — Add production error tracking
-- [ ] Phase 4: Internationalization — Additional languages
-- [ ] Phase 5: Deleted Games Resolution — Restore or remove LetterLantern/StarPath
+**Goal:** Add Sentry error logging using free tier for production monitoring
+
+**Requirements:**
+- SENTRY-01: Sentry SDK installed and initialized in Expo app
+- SENTRY-02: Error boundaries configured to catch React errors
+- SENTRY-03: Free tier configured (event limits, sampling rate)
+- SENTRY-04: Source maps uploaded for readable stack traces
+- SENTRY-05: Privacy-respecting (no PII, child-safe data handling)
+- CLEAN-01: Remove LetterLantern screen and all references
+- CLEAN-02: Remove StarPath screen and all references
+- CLEAN-03: Update game lists and navigation
+- CLEAN-04: Remove dead imports and types
+
+**Success Criteria:**
+1. Errors are automatically captured and sent to Sentry dashboard
+2. Source maps provide readable stack traces for debugging
+3. Free tier limits are respected (event sampling configured)
+4. No personally identifiable information is collected
+5. LetterLantern and StarPath references are fully removed
+6. App continues to work normally after cleanup
+
+---
+
+### Phase 4: Internationalization (Planned)
+
+**Goal:** Add Spanish and French language support
+
+**Requirements:**
+- I18N-01: Spanish translations
+- I18N-02: French translations
 
 ---
 
@@ -60,9 +88,8 @@
 |-------|-----------|----------------|--------|-----------|
 | 1. Complete Learning Games | v1.0 | 1/1 | Complete | 2026-03-03 |
 | 2. Polish & Accessibility | v1.0 | 3/3 | Complete | 2026-03-03 |
-| 3. Error Monitoring | v1.1 | 0/1 | Planned | - |
+| 3. Error Monitoring | v1.1 | 0/1 | In Progress | - |
 | 4. Internationalization | v1.1 | 0/1 | Planned | - |
-| 5. Deleted Games | v1.1 | 0/1 | Planned | - |
 
 ---
 
