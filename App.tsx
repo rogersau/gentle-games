@@ -26,9 +26,10 @@ import { initSentry } from './src/utils/sentry';
 import { PASTEL_COLORS } from './src/types';
 import { useThemeColors } from './src/utils/theme';
 import { useFonts } from './src/ui/fonts';
+import { GentleErrorBoundary } from './src/components/GentleErrorBoundary';
 
 // Initialize Sentry before React mounts (production only)
-initSentry();
+void initSentry();
 
 void SplashScreen.preventAutoHideAsync().catch((error) => {
   console.warn('Unable to keep splash screen visible during app startup.', error);
@@ -48,17 +49,83 @@ const AppNavigator: React.FC = () => {
             cardStyle: { flex: 1, minHeight: 0 },
           }}
         >
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="Game" component={GameScreen} />
-          <Stack.Screen name="Settings" component={SettingsScreen} />
-          <Stack.Screen name="Drawing" component={DrawingScreen} />
-          <Stack.Screen name="Glitter" component={GlitterScreen} />
-          <Stack.Screen name="Bubble" component={BubbleScreen} />
-          <Stack.Screen name="CategoryMatch" component={CategoryMatchScreen} />
-          <Stack.Screen name="KeepyUppy" component={KeepyUppyScreen} />
-          <Stack.Screen name="BreathingGarden" component={BreathingGardenScreen} />
-          <Stack.Screen name="PatternTrain" component={PatternTrainScreen} />
-          <Stack.Screen name="NumberPicnic" component={NumberPicnicScreen} />
+          <Stack.Screen name="Home">
+            {() => (
+              <GentleErrorBoundary screenName="Home">
+                <HomeScreen />
+              </GentleErrorBoundary>
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="Game">
+            {() => (
+              <GentleErrorBoundary screenName="Game">
+                <GameScreen />
+              </GentleErrorBoundary>
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="Settings">
+            {() => (
+              <GentleErrorBoundary screenName="Settings">
+                <SettingsScreen />
+              </GentleErrorBoundary>
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="Drawing">
+            {() => (
+              <GentleErrorBoundary screenName="Drawing">
+                <DrawingScreen />
+              </GentleErrorBoundary>
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="Glitter">
+            {() => (
+              <GentleErrorBoundary screenName="Glitter">
+                <GlitterScreen />
+              </GentleErrorBoundary>
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="Bubble">
+            {() => (
+              <GentleErrorBoundary screenName="Bubble">
+                <BubbleScreen />
+              </GentleErrorBoundary>
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="CategoryMatch">
+            {() => (
+              <GentleErrorBoundary screenName="CategoryMatch">
+                <CategoryMatchScreen />
+              </GentleErrorBoundary>
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="KeepyUppy">
+            {() => (
+              <GentleErrorBoundary screenName="KeepyUppy">
+                <KeepyUppyScreen />
+              </GentleErrorBoundary>
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="BreathingGarden">
+            {() => (
+              <GentleErrorBoundary screenName="BreathingGarden">
+                <BreathingGardenScreen />
+              </GentleErrorBoundary>
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="PatternTrain">
+            {() => (
+              <GentleErrorBoundary screenName="PatternTrain">
+                <PatternTrainScreen />
+              </GentleErrorBoundary>
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="NumberPicnic">
+            {() => (
+              <GentleErrorBoundary screenName="NumberPicnic">
+                <NumberPicnicScreen />
+              </GentleErrorBoundary>
+            )}
+          </Stack.Screen>
         </Stack.Navigator>
         <StatusBar style={resolvedMode === 'dark' ? 'light' : 'dark'} />
       </NavigationContainer>
