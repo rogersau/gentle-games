@@ -113,13 +113,61 @@ A safe, predictable, and stress-free digital space where children can play, crea
 
 ---
 
-## Next Milestone Goals (v1.1)
+## Current Milestone: v1.1 Error Logging
 
-1. **Resolve deleted games** — Restore LetterLantern/StarPath or officially remove
-2. **Production monitoring** — Add error logging (Sentry or similar)
-3. **Internationalization** — Add 1-2 additional languages
-4. **Polish** — Bug fixes from user feedback
+**Goal:** Add Sentry error logging using their free tier for production monitoring
+
+**Target features:**
+- Sentry SDK integration for error tracking
+- Free tier configuration (limited events, proper sampling)
+- Official removal of LetterLantern and StarPath (files deleted, not restoring)
 
 ---
 
-*Last updated: 2026-03-03 after v1.0 milestone completion*
+## Requirements
+
+### Validated (v1.0)
+
+- ✓ Memory Snap, Bubble Pop, Drawing Canvas, Glitter Globe, Keepy Uppy, Breathing Garden, Pattern Train, Category Match — v1.0
+- ✓ NumberPicnic with visual representations — v1.0
+- ✓ Settings (theme, sound, animation, reduced motion) — v1.0
+- ✓ Parent Timer — v1.0
+- ✓ i18n support (English) — v1.0
+- ✓ 48dp touch targets — v1.0
+- ✓ Light/dark mode — v1.0
+- ✓ Reduced motion support — v1.0
+
+### Active (v1.1)
+
+- [ ] Sentry error logging integration
+- [ ] Free tier configuration with event limits
+- [ ] Officially remove LetterLantern and StarPath references
+
+### Out of Scope
+
+- Real-time multiplayer — high complexity, not core to value
+- User accounts/profiles — adds complexity, privacy considerations
+- Cloud sync — offline-first is a feature, not a limitation
+- Social features — not aligned with core value of calm, private play
+- ~~LetterLantern/StarPath~~ — completed then deleted, now officially removed
+- ~~Additional languages~~ — deferred to v1.2
+- ~~Polish/bug fixes~~ — deferred unless blocking Sentry
+
+---
+
+## Key Decisions
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Expo/React Native | Cross-platform from single codebase | ✓ Good — works on all platforms |
+| AsyncStorage for settings | Simple, offline persistence | ✓ Good — reliable, no backend needed |
+| i18next for translations | Internationalization-ready | ✓ Good — extensible for more languages |
+| No user accounts | Simplicity, privacy, no data collection | ✓ Good — aligns with core value |
+| Games hidden behind setting | Originally "unfinished" | ✓ Lesson learned — they were already done |
+| Reduced motion system detection | Respects user system preferences | ✓ Good — accessibility best practice |
+| Sentry free tier | Cost-effective error monitoring, sufficient for current scale | — Pending |
+| Remove LetterLantern/StarPath | Files deleted, not worth restoring for v1.1 scope | — Pending |
+
+---
+
+*Last updated: 2026-03-03 after v1.1 milestone started*
