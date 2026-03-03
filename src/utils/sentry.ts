@@ -1,7 +1,9 @@
 import * as Sentry from '@sentry/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
-const SENTRY_DSN = process.env.SENTRY_DSN;
+// Get Sentry DSN from Expo Constants (set in app.config.js extra)
+const SENTRY_DSN = Constants.expoConfig?.extra?.sentryDsn as string | undefined;
 const INSTALL_ID_KEY = '@gentle_games_install_id';
 
 /**
