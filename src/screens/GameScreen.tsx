@@ -28,6 +28,7 @@ export const GameScreen: React.FC = () => {
       <View style={styles.content}>
         <GameBoard
           onGameComplete={handleGameComplete}
+          onBackPress={handleBackPress}
           bottomInset={insets.bottom}
           renderStats={({ time, moves }) => (
             <Text

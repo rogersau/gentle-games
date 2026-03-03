@@ -48,7 +48,6 @@ export interface Settings {
 }
 
 export const UNFINISHED_GAMES: string[] = [
-  'pattern-train',
   'number-picnic',
   'letter-lanterns',
   'star-path',
@@ -61,6 +60,18 @@ export interface PatternTrainRound {
   display: string[];
   choices: string[];
   answer: string;
+  patternLabel: string;
+}
+
+export interface TrainCarriageType {
+  emoji: string;
+  isMissing: boolean;
+}
+
+export interface TrainPatternType {
+  carriages: TrainCarriageType[];
+  answer: string;
+  choices: string[];
   patternLabel: string;
 }
 

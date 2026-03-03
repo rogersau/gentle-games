@@ -2,7 +2,7 @@
   "common": {
     "save": "Save",
     "cancel": "Cancel",
-    "back": "Back to Home",
+    "back": "← Back",
     "play": "Play",
     "settings": "Settings",
     "close": "Close",
@@ -36,7 +36,9 @@
       "selectDifficulty": "Select difficulty",
       "lastUsed": "last",
       "timeLabel": "Time {{time}}",
-      "moves": "Moves: {{count}}"
+"moves": "Moves: {{count}}",
+      "goHome": "Home",
+      "goHomeHint": "Return to main screen"
     },
     "drawing": {
       "name": "Drawing Pad",
@@ -133,21 +135,89 @@
       "resetSession": "Reset Session",
       "inhale": "Breathe In",
       "exhale": "Breathe Out",
-      "changeColor": "Change Color ({{color}})",
-      "cycles": "Cycles: {{count}}"
+      "changeColor": "Change Color",
+      "breaths": "Breaths: {{count}}",
+      "musicOn": "Turn Music On 🔊",
+      "musicOff": "Turn Music Off 🔇"
     },
     "patternTrain": {
       "name": "Pattern Train",
       "description": "Complete cozy pattern sequences",
       "title": "Pattern Train",
       "nextPattern": "Next Pattern",
-      "subtitle": "Complete the pattern",
+      "subtitle": "Complete the train pattern",
       "mode": "Mode",
       "completedRounds": "Completed rounds",
+      "roundsAccessibilityLabel": "Completed rounds: {{count}}",
+      "skip": "Skip",
+      "skipHint": "Skip to the next train",
+      "header": {
+        "accessibilityLabel": "Pattern Train game screen"
+      },
+      "train": {
+        "accessibilityLabel": "Train on the track",
+        "arrived": "A train has arrived. Pattern: {{pattern}}. Drag or tap a carriage to complete the train."
+      },
+      "platform": {
+        "label": "Platform",
+        "accessibilityLabel": "Platform with {{count}} carriages available"
+      },
+      "carriage": {
+        "accessibilityLabel": "Carriage with {{emoji}}",
+        "accessibilityHint": "Drag to the train or double tap to select, then tap the train to attach"
+      },
+      "instructions": "Drag a carriage to the train or tap to select, then tap the train",
       "feedback": {
-        "initial": "What comes next in the pattern?",
+        "initial": "Drag the right carriage to complete the train!",
         "correct": "Well done!",
-        "incorrect": "Try again!"
+        "correctOptions": [
+          "Well done!",
+          "Great job!",
+          "Excellent!",
+          "You're getting it!",
+          "Perfect!",
+          "Fantastic!",
+          "Amazing!",
+          "You did it!"
+        ],
+        "incorrect": "Try again!",
+        "incorrectOptions": [
+          "Try again!",
+          "Not quite, give it another go!",
+          "Keep trying!",
+          "Almost! Try again!",
+          "Give it another try!"
+        ],
+        "reveal": "The answer was {{answer}}"
+      },
+      "difficulty": {
+        "easy": {
+          "label": "Easy",
+          "description": "Simple AB patterns (3 carriages)"
+        },
+        "medium": {
+          "label": "Medium",
+          "description": "ABC and AAB patterns (4 carriages)"
+        },
+        "hard": {
+          "label": "Hard",
+          "description": "AABB and complex patterns (5 carriages)"
+        }
+      },
+      "milestone": {
+        "title": "Amazing! 🌟 {{count}} Trains Completed!",
+        "default": "You're a train conductor!",
+        "messages": [
+          "You're a train conductor!",
+          "Fantastic work!",
+          "You're doing brilliantly!",
+          "Keep up the great work!",
+          "You're amazing at patterns!",
+          "Wonderful job!"
+        ],
+        "rounds": "You've completed {{count}} trains",
+        "continue": "Keep Going!",
+        "continueHint": "Continue playing Pattern Train"
       }
     },
     "numberPicnic": {
@@ -235,7 +305,7 @@
     },
     "unfinishedGames": {
       "label": "Enable Unfinished Games",
-      "description": "Show games that are still in development (Pattern Train, Number Picnic, Letter Lanterns, Star Path)"
+      "description": "Show games that are still in development (Number Picnic, Letter Lanterns, Star Path)"
     },
     "sound": {
       "label": "Sound",

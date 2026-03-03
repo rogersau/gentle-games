@@ -1,75 +1,131 @@
-import React, { useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useRef, useState, useEffect } from 'react';
+import { StyleSheet, Text, View, Animated, Dimensions } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { ThemeColors } from '../types';
-import { BreathingBall, BreathingBallRef, BallColorScheme } from '../components/BreathingBall';
+import { BreathingBall, BallColorScheme } from '../components/BreathingBall';
 import { useThemeColors } from '../utils/theme';
+import { useBackgroundMusic } from '../utils/music';
 import { AppScreen, AppHeader, AppButton, AppCard } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 
-const getColorSchemes = (colors: ThemeColors): BallColorScheme[] => [
-  { primary: colors.primary, accent: colors.secondary, name: 'Ocean' },
-  { primary: colors.secondary, accent: colors.primary, name: 'Rose' },
-  { primary: colors.primary, accent: colors.background, name: 'Mint' },
-  { primary: colors.secondary, accent: colors.background, name: 'Sunset' },
-  { primary: colors.background, accent: colors.primary, name: 'Lavender' },
+const { width: screenWidth } = Dimensions.get('window');
+const BALL_SIZE = Math.min(250, screenWidth * 0.5);
+
+// Calming, sensory-friendly color schemes that match their names
+const getColorSchemes = (): BallColorScheme[] => [
+  { primary: '#B4D7E8', accent: '#7FB3D5', name: 'Ocean' },      // Soft blues like calm water
+  { primary: '#F5C6D6', accent: '#E8A4C9', name: 'Rose' },       // Gentle pinks
+  { primary: '#C8E6C9', accent: '#A5D6A7', name: 'Mint' },       // Fresh soft greens
+  { primary: '#FFE0B2', accent: '#FFCC80', name: 'Sunset' },     // Warm soft orange/peach
+  { primary: '#E1BEE7', accent: '#CE93D8', name: 'Lavender' },   // Soft purples
 ];
 
 export const BreathingGardenScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useThemeColors();
   const { t } = useTranslation();
-  const colorSchemes = React.useMemo(() => getColorSchemes(colors as ThemeColors), [colors]);
+  const colorSchemes = React.useMemo(() => getColorSchemes(), []);
   const [colorIndex, setColorIndex] = useState(0);
   const ballColors = colorSchemes[colorIndex];
   const styles = React.useMemo(() => createStyles(colors as ThemeColors), [colors]);
-  const ballRef = useRef<BreathingBallRef>(null);
   const [phase, setPhase] = useState<'inhale' | 'exhale'>('inhale');
-  const [cycles, setCycles] = useState(0);
+  const [displayedPhase, setDisplayedPhase] = useState<'inhale' | 'exhale'>('inhale');
+  const [breaths, setBreaths] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const countOpacity = useRef(new Animated.Value(0)).current;
+  const phaseOpacity = useRef(new Animated.Value(1)).current;
+  const [currentCount, setCurrentCount] = useState(0);
+
+  // Handle phase transitions with fade animation
+  useEffect(() => {
+    if (phase !== displayedPhase) {
+      // Fade out
+      Animated.timing(phaseOpacity, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }).start(() => {
+        // Change text after fade out
+        setDisplayedPhase(phase);
+        // Fade in
+        Animated.timing(phaseOpacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }).start();
+      });
+    }
+  }, [phase, displayedPhase, phaseOpacity]);
+
+  // Calculate count (1-4) during both inhale and exhale based on progress
+  useEffect(() => {
+    // Map 0-1 progress to count 1-4 for both phases
+    const count = Math.min(4, Math.max(1, Math.ceil(progress * 4)));
+    setCurrentCount(count);
+    
+    // Fade in
+    Animated.timing(countOpacity, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [phase, progress, countOpacity]);
 
   const cycleColors = () => {
     setColorIndex((prev) => (prev + 1) % colorSchemes.length);
   };
 
-  const resetSession = () => {
-    ballRef.current?.reset();
-  };
+  const { isPlaying, toggleMusic, stopMusic } = useBackgroundMusic();
+
+  // Stop music when leaving the screen
+  useFocusEffect(
+    React.useCallback(() => {
+      return () => {
+        stopMusic();
+      };
+    }, [stopMusic])
+  );
 
   return (
     <AppScreen>
       <AppHeader title={t('games.breathingGarden.title')} onBack={() => navigation.goBack()} />
       <View style={styles.content}>
         <AppCard variant="elevated" style={styles.breathCard}>
-          <Text style={styles.phaseLabel}>{phase === 'inhale' ? t('games.breathingGarden.inhale') : t('games.breathingGarden.exhale')}</Text>
+          <Animated.Text style={[styles.phaseLabel, { opacity: phaseOpacity }]}>
+            {displayedPhase === 'inhale' ? t('games.breathingGarden.inhale') : t('games.breathingGarden.exhale')}
+          </Animated.Text>
           <View style={styles.ballContainer}>
             <BreathingBall
-              ref={ballRef}
-              size={250}
+              size={BALL_SIZE}
               colorScheme={ballColors}
               autoStart={true}
               onPhaseChange={setPhase}
-              onCycleComplete={setCycles}
+              onCycleComplete={setBreaths}
+              onProgress={setProgress}
             />
+            <Animated.Text style={[styles.countText, { opacity: countOpacity }]}>
+              {currentCount > 0 ? currentCount : ''}
+            </Animated.Text>
           </View>
         </AppCard>
 
         <View style={styles.statsRow}>
-          <Text style={styles.statText}>{t('games.breathingGarden.cycles', { count: cycles })}</Text>
+          <Text style={styles.statText}>{t('games.breathingGarden.breaths', { count: breaths })}</Text>
         </View>
 
         <View style={styles.actionsRow}>
           <AppButton
-            label={t('games.breathingGarden.changeColor', { color: ballColors.name })}
+            label={t('games.breathingGarden.changeColor')}
             onPress={cycleColors}
-            variant="secondary"
-            style={styles.actionButton}
+            variant="primary"
+            style={styles.colorButton}
           />
           <AppButton
-            label={t('games.breathingGarden.resetSession')}
-            onPress={resetSession}
+            label={isPlaying ? t('games.breathingGarden.musicOff') : t('games.breathingGarden.musicOn')}
+            onPress={toggleMusic}
             variant="secondary"
-            style={styles.actionButton}
+            style={styles.musicButton}
           />
         </View>
       </View>
@@ -103,7 +159,13 @@ const createStyles = (colors: ThemeColors) =>
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      minHeight: 250,
+      minHeight: BALL_SIZE,
+    },
+    countText: {
+      ...TypeStyle.h1,
+      color: colors.text,
+      marginTop: Space.lg,
+      textAlign: 'center',
     },
     statsRow: {
       flexDirection: 'row',
@@ -116,9 +178,18 @@ const createStyles = (colors: ThemeColors) =>
     },
     actionsRow: {
       width: '100%',
+      flexDirection: 'row',
       gap: Space.sm,
+      justifyContent: 'center',
+      maxWidth: 600,
+      alignSelf: 'center',
     },
-    actionButton: {
-      width: '100%',
+    colorButton: {
+      flex: 1,
+      maxWidth: 300,
+    },
+    musicButton: {
+      flex: 1,
+      maxWidth: 300,
     },
   });

@@ -43,7 +43,7 @@ jest.mock('react-i18next', () => ({
         'home.settingsButton': '⚙️  Settings',
         'common.save': 'Save',
         'common.cancel': 'Cancel',
-        'common.back': 'Back to Home',
+        'common.back': '← Back',
         'games.memorySnap.name': 'Memory Snap',
         'games.memorySnap.description': 'A calm memory matching game',
         'games.drawing.name': 'Drawing Pad',
@@ -111,6 +111,8 @@ jest.mock('react-i18next', () => ({
         // Memory Snap
         'games.memorySnap.moves': '{{count}} moves',
         'games.memorySnap.timeLabel': 'Time: {{time}}',
+        'games.memorySnap.goHome': 'Home',
+        'games.memorySnap.goHomeHint': 'Return to main screen',
         'common.timerNotStarted': 'Timer not started',
       };
       

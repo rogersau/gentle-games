@@ -6,6 +6,7 @@ import { Bubble, ensureMinimumBubbles, spawnBubbles, stepBubbles } from '../util
 import { useThemeColors } from '../utils/theme';
 import { useTranslation } from 'react-i18next';
 import { Radius } from '../ui/tokens';
+import { FontFamily } from '../ui/fonts';
 
 interface PopIndicator {
   id: string;
@@ -200,6 +201,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
               y={indicator.y - 2}
               fill={colors.secondary}
               fontSize={16}
+              fontFamily={FontFamily.bold}
               fontWeight="700"
               textAnchor="middle"
               opacity={indicator.life}
