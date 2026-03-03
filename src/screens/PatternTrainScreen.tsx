@@ -63,6 +63,7 @@ export const PatternTrainScreen: React.FC = () => {
   const [trainPhase, setTrainPhase] = useState<'entering' | 'waiting' | 'exiting' | 'offscreen'>('offscreen');
   const trainPosition = useRef<Animated.Value>(new Animated.Value(SCREEN_WIDTH)).current;
   const trainOpacity = useRef<Animated.Value>(new Animated.Value(0)).current;
+  const timeoutIdsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Draggable carriages state
   const [draggableCarriages, setDraggableCarriages] = useState<DraggableCarriage[]>([]);
@@ -94,8 +95,6 @@ export const PatternTrainScreen: React.FC = () => {
     const newPattern = generateTrainPattern(difficulty);
     setPattern(newPattern);
     setShowDifficultySelector(false);
-    // Start the game after difficulty is selected
-    startTrainEntry();
   };
 
   const handleCloseDifficultyModal = () => {
@@ -109,12 +108,18 @@ export const PatternTrainScreen: React.FC = () => {
   const platformRef = useRef<View>(null);
   const [trainZoneLayout, setTrainZoneLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
 
-  // Initialize train entry animation only if difficulty selector is not showing
-  useEffect(() => {
-    if (!showDifficultySelector) {
-      startTrainEntry();
-    }
-  }, [showDifficultySelector]);
+  const queueTimeout = useCallback((callback: () => void, delay: number) => {
+    const timeoutId = setTimeout(() => {
+      timeoutIdsRef.current = timeoutIdsRef.current.filter((id) => id !== timeoutId);
+      callback();
+    }, delay);
+    timeoutIdsRef.current.push(timeoutId);
+  }, []);
+
+  useEffect(() => () => {
+    timeoutIdsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
+    timeoutIdsRef.current = [];
+  }, []);
 
   // Initialize draggable carriages when pattern changes
   useEffect(() => {
@@ -129,7 +134,7 @@ export const PatternTrainScreen: React.FC = () => {
     setDraggableCarriages(carriages);
   }, [pattern]);
 
-  const startTrainEntry = useCallback(() => {
+  const startTrainEntry = useCallback((entryPattern: TrainPattern | null) => {
     setTrainPhase('entering');
     trainPosition.setValue(SCREEN_WIDTH);
     trainOpacity.setValue(0);
@@ -147,15 +152,22 @@ export const PatternTrainScreen: React.FC = () => {
       }),
     ]).start(() => {
       setTrainPhase('waiting');
-      if (pattern) {
+      if (entryPattern) {
         AccessibilityInfo.announceForAccessibility(
           t('games.patternTrain.train.arrived', {
-            pattern: pattern.carriages.map(c => c.isMissing ? 'missing' : c.emoji).join(', '),
+            pattern: entryPattern.carriages.map(c => c.isMissing ? 'missing' : c.emoji).join(', '),
           })
         );
       }
     });
-  }, [pattern, t]);
+  }, [t, trainOpacity, trainPosition]);
+
+  // Initialize train entry animation only if difficulty selector is not showing
+  useEffect(() => {
+    if (!showDifficultySelector && pattern) {
+      startTrainEntry(pattern);
+    }
+  }, [showDifficultySelector, pattern, startTrainEntry]);
 
   const startNewRound = useCallback(() => {
     const newPattern = generateTrainPattern(settings.difficulty);
@@ -173,11 +185,7 @@ export const PatternTrainScreen: React.FC = () => {
       useNativeDriver: true,
     }).start();
 
-    // Small delay before new train enters
-    setTimeout(() => {
-      startTrainEntry();
-    }, 300);
-  }, [settings.difficulty, t, startTrainEntry]);
+  }, [settings.difficulty, t, feedbackOpacity]);
 
   const startTrainExit = useCallback(() => {
     setTrainPhase('exiting');
@@ -298,7 +306,7 @@ export const PatternTrainScreen: React.FC = () => {
           setShowMilestoneModal(true);
         } else {
           // Exit train after success delay
-          setTimeout(() => {
+          queueTimeout(() => {
             startTrainExit();
           }, TRAIN_ANIMATION.SUCCESS_DELAY);
         }
@@ -323,14 +331,18 @@ export const PatternTrainScreen: React.FC = () => {
           );
 
           // Fade out removed carriages
-          draggableCarriages.forEach((c) => {
+          draggableCarriages.forEach((c, index) => {
             if (!remainingChoices.includes(c.emoji) && c.isAvailable) {
               Animated.timing(c.opacity, {
                 toValue: 0,
                 duration: TRAIN_ANIMATION.CHOICE_FADE_DURATION,
                 useNativeDriver: true,
               }).start(() => {
-                c.isAvailable = false;
+                setDraggableCarriages((prevCarriages) =>
+                  prevCarriages.map((prevCarriage, prevIndex) =>
+                    prevIndex === index ? { ...prevCarriage, isAvailable: false } : prevCarriage
+                  )
+                );
               });
             }
           });
@@ -348,7 +360,7 @@ export const PatternTrainScreen: React.FC = () => {
           setFeedbackType('reveal');
           AccessibilityInfo.announceForAccessibility(`${revealMessage}. Train leaving.`);
 
-          setTimeout(() => {
+          queueTimeout(() => {
             startTrainExit();
           }, TRAIN_ANIMATION.SUCCESS_DELAY);
         }
@@ -372,6 +384,7 @@ export const PatternTrainScreen: React.FC = () => {
     successBounce,
     t,
     startTrainExit,
+    queueTimeout,
   ]);
 
   const createPanResponder = useCallback((carriage: DraggableCarriage) => {

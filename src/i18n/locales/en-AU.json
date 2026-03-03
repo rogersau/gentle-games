@@ -148,7 +148,6 @@
       "title": "Pattern Train",
       "nextPattern": "Next Pattern",
       "subtitle": "Complete the train pattern",
-      "difficulty": "Difficulty",
       "mode": "Mode",
       "completedRounds": "Completed rounds",
       "roundsAccessibilityLabel": "Completed rounds: {{count}}",

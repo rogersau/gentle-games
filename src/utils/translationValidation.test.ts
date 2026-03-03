@@ -54,9 +54,8 @@ describe('Translation Validation', () => {
  * Call this function to scan all translation keys and find issues
  * Usage: Run in browser console or add to build script
  */
-export function scanAllTranslations(): { valid: string[]; invalid: string[] } {
+export function scanAllTranslations(): { valid: string[] } {
   const valid: string[] = [];
-  const invalid: string[] = [];
   
   function scanObject(obj: unknown, prefix = ''): void {
     if (typeof obj === 'string') {
@@ -74,7 +73,7 @@ export function scanAllTranslations(): { valid: string[]; invalid: string[] } {
   
   scanObject(enAU);
   
-  return { valid, invalid };
+  return { valid };
 }
 
 // Run this in your browser console to see all valid translation keys:

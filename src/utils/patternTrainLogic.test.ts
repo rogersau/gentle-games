@@ -102,26 +102,26 @@ describe('patternTrainLogic', () => {
 
   describe('pattern variety', () => {
     it('generates different patterns within same difficulty', () => {
-      const patterns = Array.from({ length: 10 }, () => generateTrainPattern('medium', Math.random));
-      const uniqueLabels = new Set(patterns.map(p => p.patternLabel));
-      expect(uniqueLabels.size).toBeGreaterThan(1);
+      const patternA = generateTrainPattern('medium', () => 0.0);
+      const patternB = generateTrainPattern('medium', () => 0.4);
+      const patternC = generateTrainPattern('medium', () => 0.9);
+
+      const uniqueLabels = new Set([
+        patternA.patternLabel,
+        patternB.patternLabel,
+        patternC.patternLabel,
+      ]);
+      expect(uniqueLabels.size).toBe(3);
     });
   });
 
   describe('easy mode missing position randomization', () => {
     it('can have missing carriage at position 2 or 3 in easy mode', () => {
-      // Run multiple times to test randomization
-      const missingPositions: number[] = [];
-      
-      for (let i = 0; i < 20; i++) {
-        const pattern = generateTrainPattern('easy', Math.random);
-        const missingIndex = pattern.carriages.findIndex(c => c.isMissing);
-        missingPositions.push(missingIndex);
-      }
-      
-      // Should have both position 2 and 3 (0-indexed)
-      expect(missingPositions).toContain(2);
-      expect(missingPositions).toContain(3);
+      const patternAtTwo = generateTrainPattern('easy', () => 0.1);
+      const patternAtThree = generateTrainPattern('easy', () => 0.9);
+
+      expect(patternAtTwo.carriages.findIndex(c => c.isMissing)).toBe(2);
+      expect(patternAtThree.carriages.findIndex(c => c.isMissing)).toBe(3);
     });
 
     it('has exactly one missing carriage', () => {
