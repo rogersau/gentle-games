@@ -9,9 +9,9 @@ Requirements for error monitoring and cleanup milestone.
 
 ### Error Monitoring (SENTRY)
 
-- [ ] **SENTRY-01**: Sentry SDK installed and initialized in Expo app
+- [x] **SENTRY-01**: Sentry SDK installed and initialized in Expo app
 - [ ] **SENTRY-02**: Error boundaries configured to catch React errors
-- [ ] **SENTRY-03**: Free tier configured (event limits, sampling rate)
+- [x] **SENTRY-03**: Free tier configured (event limits, sampling rate)
 - [ ] **SENTRY-04**: Source maps uploaded for readable stack traces
 - [ ] **SENTRY-05**: Privacy-respecting (no PII, child-safe data handling)
 
@@ -47,9 +47,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SENTRY-01 | Phase 3 | Pending |
+| SENTRY-01 | Phase 3 | ✓ Complete |
 | SENTRY-02 | Phase 3 | Pending |
-| SENTRY-03 | Phase 3 | Pending |
+| SENTRY-03 | Phase 3 | ✓ Complete |
 | SENTRY-04 | Phase 3 | Pending |
 | SENTRY-05 | Phase 3 | Pending |
 | CLEAN-01 | Phase 3 | ✓ Complete |
@@ -64,4 +64,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-03*
-*Last updated: 2026-03-03 after 03-01 complete*
+*Last updated: 2026-03-03 after 03-02 complete*

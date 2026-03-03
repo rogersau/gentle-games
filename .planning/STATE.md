@@ -13,13 +13,13 @@ See: `.planning/PROJECT.md` (updated 2026-03-03)
 ## Current Position
 
 Phase: 3 — Error Monitoring
-Plan: 02
-Status: In Progress - Plan 01 complete
-Last activity: 2026-03-03 — Completed 03-01 (LetterLantern/StarPath removal)
+Plan: 03
+Status: In Progress - Plan 02 complete
+Last activity: 2026-03-03 — Completed 03-02 (Sentry SDK installation and configuration)
 
 ## Session
 
-**Last Session:** 2026-03-03 (v1.1 milestone initialization)
+**Last Session:** 2026-03-03 (v1.1 milestone - Sentry SDK configured)
 
 ## Accumulated Context
 
@@ -34,7 +34,9 @@ Last activity: 2026-03-03 — Completed 03-01 (LetterLantern/StarPath removal)
 ### Known Issues Carried Forward
 
 - ✅ LetterLantern and StarPath officially removed (03-01 complete)
-- No production error monitoring — addressing in v1.1
+- ✅ Sentry SDK installed and configured (03-02 complete)
+- Need error boundaries for React error catching (03-03)
+- Need source map generation for readable stack traces (03-04)
 
 ### Tech Stack
 
@@ -43,6 +45,13 @@ Last activity: 2026-03-03 — Completed 03-01 (LetterLantern/StarPath removal)
 - AsyncStorage for offline persistence
 - i18next for internationalization
 - Jest + react-testing-library for testing
+- **@sentry/react-native** for error monitoring (new)
+
+### Key Decisions
+
+1. **Production-only Sentry**: Only initializes when `__DEV__` is false to respect free tier and keep dev clean
+2. **100% sampling**: Rely on low error volume rather than sampling (per project decision)
+3. **Early initialization**: Sentry initialized at module level before React mounts
 
 ---
-*State updated: 2026-03-03 after v1.1 milestone started*
+*State updated: 2026-03-03 after 03-02 complete*
