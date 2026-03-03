@@ -100,17 +100,22 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     } else {
       setShowError(true);
       setUserAnswer('');
-      Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 8, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -8, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
-      ]).start(() => {
+      if (settings.animationsEnabled) {
+        Animated.sequence([
+          Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: 8, duration: 50, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: -8, duration: 50, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+        ]).start(() => {
+          setMathChallenge(generateMathQuestion());
+        });
+      } else {
+        shakeAnim.setValue(0);
         setMathChallenge(generateMathQuestion());
-      });
+      }
     }
-  }, [userAnswer, mathChallenge.answer, settings.parentTimerMinutes, shakeAnim]);
+  }, [userAnswer, mathChallenge.answer, settings.parentTimerMinutes, shakeAnim, settings.animationsEnabled]);
 
   const { t } = useTranslation();
   const styles = React.useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);

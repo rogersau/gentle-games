@@ -16,6 +16,7 @@ let mockSettings = {
   hiddenGames: [] as string[],
   parentTimerMinutes: 0,
   language: 'en-AU' as const,
+  reducedMotionEnabled: false,
 };
 
 jest.mock('@react-navigation/native', () => ({
@@ -46,6 +47,7 @@ describe('SettingsScreen', () => {
       hiddenGames: [],
       parentTimerMinutes: 0,
       language: 'en-AU',
+      reducedMotionEnabled: false,
     };
   });
 
@@ -68,7 +70,7 @@ describe('SettingsScreen', () => {
     const screen = render(<SettingsScreen />);
 
     const switches = screen.getAllByRole('switch');
-    fireEvent(switches[0], 'valueChange', false);
+    fireEvent(switches[1], 'valueChange', false);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({ showCardPreview: false });
   });
@@ -84,7 +86,7 @@ describe('SettingsScreen', () => {
     const screen = render(<SettingsScreen />);
 
     const switches = screen.getAllByRole('switch');
-    fireEvent(switches[2], 'valueChange', false);
+    fireEvent(switches[3], 'valueChange', false);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({ keepyUppyEasyMode: false });
   });
@@ -99,8 +101,8 @@ describe('SettingsScreen', () => {
   it('toggles game visibility via switch', () => {
     const screen = render(<SettingsScreen />);
     const switches = screen.getAllByRole('switch');
-    // First 5 switches: Card Preview, Animations, Keepy Uppy Easy Mode, Enable Unfinished Games, Sound. Next 6: game toggles.
-    const memorySnapSwitch = switches[5];
+    // First 6 switches: Reduced Motion, Card Preview, Animations, Keepy Uppy Easy Mode, Enable Unfinished Games, Sound. Next 6: game toggles.
+    const memorySnapSwitch = switches[6];
     fireEvent(memorySnapSwitch, 'valueChange', false);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({

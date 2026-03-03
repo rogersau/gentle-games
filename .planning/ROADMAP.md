@@ -50,11 +50,10 @@
 5. App responds to system theme preference
 6. App respects prefers-reduced-motion
 
-**Wave 1:**
-- Audit and fix animation dependencies
-- Audit and fix sound dependencies
-- Audit touch targets across all screens
-- Implement reduced motion support
+**Plans:**
+- [x] 02-01-PLAN.md — Animation + Sound handling
+- [x] 02-02-PLAN.md — Reduced motion setting
+- [x] 02-03-PLAN.md — Touch targets + UI consistency
 
 ---
 
@@ -63,7 +62,7 @@
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
 | 1 | Complete Learning Games | 5 | ✓ Complete |
-| 2 | Polish & Accessibility | 6 | Not Started |
+| 2 | Polish & Accessibility | 6 | ✓ Complete |
 
 **Total:** 2 phases | 11 requirements | 5 complete
 

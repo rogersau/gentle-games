@@ -111,6 +111,16 @@ export const SettingsScreen: React.FC = () => {
           </Text>
         </View>
 
+        {/* Reduced Motion */}
+        <View style={styles.section}>
+          <SettingToggle
+            label={t('settings.reducedMotion.label')}
+            description={t('settings.reducedMotion.description')}
+            value={!!settings.reducedMotionEnabled}
+            onValueChange={(value) => updateSettings({ reducedMotionEnabled: value })}
+          />
+        </View>
+
         {/* Card Preview */}
         <View style={styles.section}>
           <SettingToggle

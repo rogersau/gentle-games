@@ -45,6 +45,7 @@ export interface Settings {
   parentTimerMinutes: number;
   enableUnfinishedGames: boolean;
   language: import('./i18n').SupportedLanguage;
+  reducedMotionEnabled: boolean;
 }
 
 export const UNFINISHED_GAMES: string[] = [

@@ -6,6 +6,7 @@ import { ThemeColors } from '../types';
 import { BreathingBall, BallColorScheme } from '../components/BreathingBall';
 import { useThemeColors } from '../utils/theme';
 import { useBackgroundMusic } from '../utils/music';
+import { useSettings } from '../context/SettingsContext';
 import { AppScreen, AppHeader, AppButton, AppCard } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 
@@ -24,6 +25,7 @@ const getColorSchemes = (): BallColorScheme[] => [
 export const BreathingGardenScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useThemeColors();
+  const { settings } = useSettings();
   const { t } = useTranslation();
   const colorSchemes = React.useMemo(() => getColorSchemes(), []);
   const [colorIndex, setColorIndex] = useState(0);
@@ -40,23 +42,29 @@ export const BreathingGardenScreen: React.FC = () => {
   // Handle phase transitions with fade animation
   useEffect(() => {
     if (phase !== displayedPhase) {
-      // Fade out
-      Animated.timing(phaseOpacity, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-      }).start(() => {
-        // Change text after fade out
-        setDisplayedPhase(phase);
-        // Fade in
+      if (settings.animationsEnabled) {
+        // Fade out
         Animated.timing(phaseOpacity, {
-          toValue: 1,
+          toValue: 0,
           duration: 400,
           useNativeDriver: true,
-        }).start();
-      });
+        }).start(() => {
+          // Change text after fade out
+          setDisplayedPhase(phase);
+          // Fade in
+          Animated.timing(phaseOpacity, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }).start();
+        });
+      } else {
+        // Instant transition
+        setDisplayedPhase(phase);
+        phaseOpacity.setValue(1);
+      }
     }
-  }, [phase, displayedPhase, phaseOpacity]);
+  }, [phase, displayedPhase, phaseOpacity, settings.animationsEnabled]);
 
   // Calculate count (1-4) during both inhale and exhale based on progress
   useEffect(() => {
@@ -64,13 +72,17 @@ export const BreathingGardenScreen: React.FC = () => {
     const count = Math.min(4, Math.max(1, Math.ceil(progress * 4)));
     setCurrentCount(count);
     
-    // Fade in
-    Animated.timing(countOpacity, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [phase, progress, countOpacity]);
+    if (settings.animationsEnabled) {
+      // Fade in
+      Animated.timing(countOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      countOpacity.setValue(1);
+    }
+  }, [phase, progress, countOpacity, settings.animationsEnabled]);
 
   const cycleColors = () => {
     setColorIndex((prev) => (prev + 1) % colorSchemes.length);

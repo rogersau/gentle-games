@@ -19,7 +19,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-03)
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Complete Learning Games | Complete |
-| 2 | Polish & Accessibility | Not Started |
+| 2 | Polish & Accessibility | Complete |
 
 ## Recent Activity
 
@@ -30,6 +30,9 @@ See: `.planning/PROJECT.md` (updated 2026-03-03)
 - 2026-03-03: Roadmap created
 - 2026-03-03: Phase 1 context gathered
 - 2026-03-03: Phase 1 executed and complete
+- 2026-03-03: Phase 2 context gathered
+- 2026-03-03: Phase 2 planned (3 plans)
+- 2026-03-03: Phase 2 executed and complete
 
 ## Context
 
@@ -40,13 +43,22 @@ See: `.planning/PROJECT.md` (updated 2026-03-03)
 
 ## Session
 
-**Last Session:** 2026-03-03 (Phase 1 execution complete)
+**Last Session:** 2026-03-03 (Phase 2 execution complete)
 
-Session: Phase 1 executed and complete
-- Enabled all learning games by default
-- Added dot representations to NumberPicnic
-- Added hint items to LetterLantern
-- All tests pass, TypeScript compiles
+Session: Phase 2 executed and complete
+- Added animation guards to PatternTrainScreen, BreathingGardenScreen, CategoryMatchBoard, ParentTimerContext
+- Verified sound already guarded in sounds.ts
+- Added reduced motion setting to Settings (type, context, UI, theme hook)
+- Fixed AppButton sm size padding
+- All tests pass
+
+## Accumulated Context
+
+### Pending Todos
+
+**Count:** 1
+
+1. **[Add remote error logging for clients]** (general) - Add remote error logging for clients to monitor issues without direct access to devices. Consider Sentry for error tracking.
 
 ## Notes
 

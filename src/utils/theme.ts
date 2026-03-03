@@ -1,4 +1,5 @@
-import { useColorScheme } from 'react-native';
+import { useColorScheme, AccessibilityInfo } from 'react-native';
+import { useEffect, useState } from 'react';
 import { useSettings } from '../context/SettingsContext';
 import { ColorMode, DARK_PASTEL_COLORS, PASTEL_COLORS, ThemeColors } from '../types';
 
@@ -27,5 +28,30 @@ export const useThemeColors = () => {
     resolvedMode,
     colorMode: settings.colorMode,
   };
+};
+
+export const useReducedMotion = (): boolean => {
+  const { settings } = useSettings();
+  const [systemPrefersReducedMotion, setSystemPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      setSystemPrefersReducedMotion(enabled);
+    });
+
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
+      setSystemPrefersReducedMotion(enabled);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  if (settings.reducedMotionEnabled) {
+    return true;
+  }
+
+  return systemPrefersReducedMotion;
 };
 

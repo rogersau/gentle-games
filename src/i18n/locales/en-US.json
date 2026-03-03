@@ -299,6 +299,10 @@
       "label": "Animations",
       "description": "Enable card flip and UI animations"
     },
+    "reducedMotion": {
+      "label": "Reduced Motion",
+      "description": "Use simpler, faster animations"
+    },
     "keepyUppyEasyMode": {
       "label": "Keepy Uppy Easy Mode",
       "description": "Any tap gives a gentle lift while good taps still go higher"
