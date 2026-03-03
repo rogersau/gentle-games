@@ -22,9 +22,13 @@ import { PatternTrainScreen } from './src/screens/PatternTrainScreen';
 import { NumberPicnicScreen } from './src/screens/NumberPicnicScreen';
 import { initializeSounds, unloadSounds } from './src/utils/sounds';
 import { installPwaBackNavigationGuard } from './src/utils/pwaBackGuard';
+import { initSentry } from './src/utils/sentry';
 import { PASTEL_COLORS } from './src/types';
 import { useThemeColors } from './src/utils/theme';
 import { useFonts } from './src/ui/fonts';
+
+// Initialize Sentry before React mounts (production only)
+initSentry();
 
 void SplashScreen.preventAutoHideAsync().catch((error) => {
   console.warn('Unable to keep splash screen visible during app startup.', error);
