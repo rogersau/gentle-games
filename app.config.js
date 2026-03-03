@@ -70,6 +70,7 @@ module.exports = {
   plugins: [
     'expo-audio',
     'expo-font',
+    'expo-localization',
     [
       '@sentry/react-native/expo',
       {
@@ -85,5 +86,11 @@ module.exports = {
   extra: {
     // Expose Sentry DSN to app (will be used by sentry.ts)
     sentryDsn: process.env.SENTRY_DSN,
+    // Enable Sentry in development mode for testing
+    sentryDebug: process.env.SENTRY_DEBUG === 'true',
+    // PostHog analytics
+    posthogApiKey: process.env.POSTHOG_API_KEY,
+    posthogHost: process.env.POSTHOG_HOST || 'https://eu.i.posthog.com',
+    posthogDebug: process.env.POSTHOG_DEBUG === 'true',
   },
 };

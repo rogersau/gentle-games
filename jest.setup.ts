@@ -115,9 +115,9 @@ jest.mock('react-i18next', () => ({
         'games.memorySnap.goHomeHint': 'Return to main screen',
         'common.timerNotStarted': 'Timer not started',
       };
-      
+
       const translation = translations[key] || key;
-      
+
       // Simple interpolation for values like {{letter}}
       if (options && typeof options === 'object') {
         let result = translation;
@@ -126,7 +126,7 @@ jest.mock('react-i18next', () => ({
         });
         return result;
       }
-      
+
       return translation;
     },
     i18n: {
@@ -141,4 +141,22 @@ jest.mock('react-i18next', () => ({
   },
 }));
 
-export {};
+jest.mock('posthog-react-native', () => {
+  const mockPostHog = {
+    capture: jest.fn(),
+    screen: jest.fn(),
+    identify: jest.fn(),
+    reset: jest.fn(),
+    flush: jest.fn(() => Promise.resolve()),
+    optIn: jest.fn(),
+    optOut: jest.fn(),
+  };
+  return {
+    __esModule: true,
+    default: jest.fn(() => mockPostHog),
+    PostHogProvider: ({ children }: { children: React.ReactNode }) => children,
+    usePostHog: () => mockPostHog,
+  };
+});
+
+export { };
