@@ -63,7 +63,7 @@
 - CLEAN-04: Remove dead imports and types
 
 **Plans:**
-- [x] 03-01: Remove LetterLantern and StarPath game references
+4/4 plans complete
 - [x] 03-02: Install and configure Sentry SDK
 - [x] 03-03: Error boundaries and privacy-safe reporting
 - [x] 03-04: Source map generation and upload
@@ -94,7 +94,7 @@
 |-------|-----------|----------------|--------|-----------|
 | 1. Complete Learning Games | v1.0 | 1/1 | Complete | 2026-03-03 |
 | 2. Polish & Accessibility | v1.0 | 3/3 | Complete | 2026-03-03 |
-| 3. Error Monitoring | v1.1 | 4/4 | Complete | 2026-03-03 |
+| 3. Error Monitoring | v1.1 | Complete    | 2026-03-03 | 2026-03-03 |
 | 4. Internationalization | v1.1 | 0/1 | Planned | - |
 
 ---
