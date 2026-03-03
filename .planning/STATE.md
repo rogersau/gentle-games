@@ -1,6 +1,6 @@
 # Project State
 
-**Last Updated:** 2026-03-03
+**Last Updated:** 2026-03-03 (after 03-03 complete)
 
 ## Project Reference
 
@@ -13,13 +13,19 @@ See: `.planning/PROJECT.md` (updated 2026-03-03)
 ## Current Position
 
 Phase: 3 — Error Monitoring
-Plan: 03
-Status: In Progress - Plan 02 complete
-Last activity: 2026-03-03 — Completed 03-02 (Sentry SDK installation and configuration)
+Plan: 04
+Status: In Progress - Plan 03 complete
+Last activity: 2026-03-03 — Completed 03-03 (Per-screen error boundaries with gentle UI)
 
 ## Session
 
-**Last Session:** 2026-03-03 (v1.1 milestone - Sentry SDK configured)
+**Last Session:** 2026-03-03 (v1.1 milestone - Error boundaries with gentle UI complete)
+
+## Performance Metrics
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| 03-03 | 15 min | 3 | 3 |
 
 ## Accumulated Context
 
@@ -35,7 +41,7 @@ Last activity: 2026-03-03 — Completed 03-02 (Sentry SDK installation and confi
 
 - ✅ LetterLantern and StarPath officially removed (03-01 complete)
 - ✅ Sentry SDK installed and configured (03-02 complete)
-- Need error boundaries for React error catching (03-03)
+- ✅ Error boundaries implemented with gentle UI (03-03 complete)
 - Need source map generation for readable stack traces (03-04)
 
 ### Tech Stack
@@ -52,6 +58,9 @@ Last activity: 2026-03-03 — Completed 03-02 (Sentry SDK installation and confi
 1. **Production-only Sentry**: Only initializes when `__DEV__` is false to respect free tier and keep dev clean
 2. **100% sampling**: Rely on low error volume rather than sampling (per project decision)
 3. **Early initialization**: Sentry initialized at module level before React mounts
+4. **Privacy-safe user ID**: Random install ID via Math.random() + timestamp, no device info collected
+5. **Per-screen error boundaries**: Each screen wrapped individually so one crash doesn't take down the app
+6. **Child-friendly error UI**: Gentle language ("something went soft"), cloud icon, simple "Go Home" recovery
 
 ---
-*State updated: 2026-03-03 after 03-02 complete*
+*State updated: 2026-03-03 after 03-03 complete*
