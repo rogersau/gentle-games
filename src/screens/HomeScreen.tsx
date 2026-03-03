@@ -88,20 +88,6 @@ const GAMES: Game[] = [
     icon: "🧺",
     accentColor: PASTEL_COLORS.success,
   },
-  {
-    id: "letter-lanterns",
-    nameKey: "games.letterLanterns.name",
-    descriptionKey: "games.letterLanterns.description",
-    icon: "🏮",
-    accentColor: PASTEL_COLORS.secondary,
-  },
-  {
-    id: "star-path",
-    nameKey: "games.starPath.name",
-    descriptionKey: "games.starPath.description",
-    icon: "⭐",
-    accentColor: PASTEL_COLORS.cardBack,
-  },
 ];
 
 const ROUTE_MAP: Record<string, string> = {
@@ -114,8 +100,6 @@ const ROUTE_MAP: Record<string, string> = {
   "breathing-garden": "BreathingGarden",
   "pattern-train": "PatternTrain",
   "number-picnic": "NumberPicnic",
-  "letter-lanterns": "LetterLantern",
-  "star-path": "StarPath",
 };
 
 export const HomeScreen: React.FC = () => {

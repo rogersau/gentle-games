@@ -21,8 +21,9 @@ const defaultSettings: Settings = {
   colorMode: 'system',
   hiddenGames: [],
   parentTimerMinutes: 0,
-  enableUnfinishedGames: false,
+  enableUnfinishedGames: true,
   language: DEFAULT_LANGUAGE,
+  reducedMotionEnabled: false,
 };
 
 const toBoolean = (value: unknown, fallback: boolean): boolean => {
@@ -93,6 +94,7 @@ const sanitizeSettings = (candidate: unknown): Settings => {
     parentTimerMinutes: toParentTimerMinutes(parsed.parentTimerMinutes),
     enableUnfinishedGames: toBoolean(parsed.enableUnfinishedGames, defaultSettings.enableUnfinishedGames),
     language: toLanguage(parsed.language),
+    reducedMotionEnabled: toBoolean(parsed.reducedMotionEnabled, defaultSettings.reducedMotionEnabled),
   };
 };
 
