@@ -30,10 +30,11 @@ jobs:
       - name: Build web export for Azure (root path)
         run: |
           # Temporarily use Azure-specific config without baseUrl for root deployment
-          mv app.json app.json.backup
+          mv app.config.js app.config.js.backup
           cp app.azure.json app.json
           npx expo export --platform web --output-dir dist --clear
-          mv app.json.backup app.json
+          rm app.json
+          mv app.config.js.backup app.config.js
 
       - name: Build PWA assets
         run: node scripts/prepare-pwa.js
