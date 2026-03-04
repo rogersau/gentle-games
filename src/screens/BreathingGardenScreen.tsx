@@ -64,14 +64,16 @@ export const BreathingGardenScreen: React.FC = () => {
         phaseOpacity.setValue(1);
       }
     }
-  }, [phase, displayedPhase, phaseOpacity, settings.animationsEnabled]);
+    // Note: phaseOpacity is a ref and should not be in deps to avoid infinite re-renders
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, displayedPhase, settings.animationsEnabled]);
 
   // Calculate count (1-4) during both inhale and exhale based on progress
   useEffect(() => {
     // Map 0-1 progress to count 1-4 for both phases
     const count = Math.min(4, Math.max(1, Math.ceil(progress * 4)));
     setCurrentCount(count);
-    
+
     if (settings.animationsEnabled) {
       // Fade in
       Animated.timing(countOpacity, {
@@ -82,7 +84,9 @@ export const BreathingGardenScreen: React.FC = () => {
     } else {
       countOpacity.setValue(1);
     }
-  }, [phase, progress, countOpacity, settings.animationsEnabled]);
+    // Note: countOpacity is a ref and should not be in deps to avoid infinite re-renders
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, progress, settings.animationsEnabled]);
 
   const cycleColors = () => {
     setColorIndex((prev) => (prev + 1) % colorSchemes.length);

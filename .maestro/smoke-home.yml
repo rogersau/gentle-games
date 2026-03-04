@@ -1,0 +1,6 @@
+appId: com.gentlegames.app
+---
+- launchApp
+- assertVisible: "Gentle Games"
+- tapOn: "⚙️  Settings"
+- assertVisible: "Settings"
