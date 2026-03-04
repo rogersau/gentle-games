@@ -3,7 +3,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { NavigationContainer, NavigationState } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React, { useCallback, useEffect, useRef } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PostHogProvider } from 'posthog-react-native';
 // Initialize i18n before app renders
@@ -62,6 +62,21 @@ const AppNavigator: React.FC = () => {
   const { resolvedMode } = useThemeColors();
   const routeNameRef = useRef<string | undefined>(undefined);
   const posthogClient = getPostHogClient() ?? undefined;
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const themeColor = resolvedMode === 'dark' ? '#2F333B' : '#FFFEF7';
+      const metaTag = document.querySelector('meta[name="theme-color"]');
+      if (metaTag) {
+        metaTag.setAttribute('content', themeColor);
+      } else {
+        const newMeta = document.createElement('meta');
+        newMeta.name = 'theme-color';
+        newMeta.content = themeColor;
+        document.head.appendChild(newMeta);
+      }
+    }
+  }, [resolvedMode]);
 
   const handleStateChange = useCallback((state: NavigationState | undefined) => {
     const currentRouteName = getActiveRouteName(state);

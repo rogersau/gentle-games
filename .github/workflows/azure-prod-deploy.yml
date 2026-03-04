@@ -1,9 +1,10 @@
-name: Deploy Dev to Azure Static Web Apps
+name: Deploy Prod to Azure Static Web Apps
 
 on:
   push:
     branches:
-      - dev
+      - master
+      - main
   workflow_dispatch:
 
 permissions:
@@ -13,7 +14,7 @@ permissions:
 jobs:
   build_and_deploy_job:
     runs-on: ubuntu-latest
-    name: Build and Deploy Dev
+    name: Build and Deploy Prod
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -34,14 +35,13 @@ jobs:
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST }}
         run: |
           npx expo export --platform web --output-dir dist --clear
 
       - name: Build PWA assets
         run: node scripts/prepare-pwa.js
-
-      - name: Copy docs to dist
-        run: cp -R docs dist/docs
 
       - name: Copy Azure config to dist
         run: cp staticwebapp.config.json dist/staticwebapp.config.json
@@ -50,14 +50,12 @@ jobs:
         run: |
           echo "Dist contents:"
           ls -la dist/
-          echo "Docs contents:"
-          ls -la dist/docs/
 
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GENTLE_GAMES_DEV }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GENTLE_GAMES_PROD }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "/dist"

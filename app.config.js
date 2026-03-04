@@ -65,7 +65,7 @@ module.exports = {
     ],
   },
   experiments: {
-    baseUrl: '/gentle-games',
+    baseUrl: process.env.EXPO_BASE_URL !== undefined ? process.env.EXPO_BASE_URL : '/gentle-games',
   },
   plugins: [
     'expo-audio',
