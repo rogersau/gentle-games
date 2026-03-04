@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 import { PanResponder, View } from 'react-native';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { GlitterGlobe, resolveParticleCollisions } from './GlitterGlobe';
@@ -87,7 +87,11 @@ describe('GlitterGlobe', () => {
       },
     });
 
-    expect(() => touchLayer?.props.onPanResponderGrant(pooledEvent)).not.toThrow();
+    expect(() =>
+      act(() => {
+        touchLayer?.props.onPanResponderGrant(pooledEvent);
+      })
+    ).not.toThrow();
   });
 });
 

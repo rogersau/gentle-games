@@ -102,29 +102,22 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
   // Handle item drop
   const handleItemDrop = useCallback((index: number) => {
     if (isProcessingRef.current) {
-      console.log('Drop ignored: isProcessing');
       return;
     }
 
     const max = getNumberPicnicMaxCount(difficulty);
     if (basketCountRef.current >= max) {
-      console.log('Drop ignored: basket full');
       return;
     }
 
-    console.log('Adding item to basket');
     setIsProcessing(true);
     
     // Add item to basket
     setBasketCount(prev => {
-      const newCount = Math.min(prev + 1, max);
-      console.log('Basket count:', prev, '->', newCount);
-      return newCount;
+      return Math.min(prev + 1, max);
     });
     setBlanketItemCount(prev => {
-      const newCount = prev - 1;
-      console.log('Blanket count:', prev, '->', newCount);
-      return newCount;
+      return prev - 1;
     });
     
     setTimeout(() => {

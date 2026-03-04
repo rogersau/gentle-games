@@ -161,8 +161,8 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
           }, 0);
           return newScore;
         });
-        setBalloons((previous) =
-          previous.map((current) =
+        setBalloons((previous) =>
+          previous.map((current) =>
             current.id === balloon.id
               ? tapBalloon(current, tapPoint.x, tapPoint.y, easyMode)
               : current
@@ -172,9 +172,6 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
       // Note: Using ref instead of callback in deps
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [easyMode, toBoardPoint]
-    );
-      },
-      [easyMode, onScoreChange, toBoardPoint]
     );
 
     const handleBalloonRelease = useCallback(

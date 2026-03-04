@@ -156,13 +156,13 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
       Animated.timing(dropHighlight, {
         toValue: 1,
         duration: 200,
-        useNativeDriver: Platform.OS !== 'web',
+        useNativeDriver: false,
       }).start();
     } else {
       Animated.timing(dropHighlight, {
         toValue: 0,
         duration: 200,
-        useNativeDriver: Platform.OS !== 'web',
+        useNativeDriver: false,
       }).start();
     }
   }, [isDropTarget, basketPhase]);

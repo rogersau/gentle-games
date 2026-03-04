@@ -9,6 +9,17 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   multiRemove: jest.fn(() => Promise.resolve()),
 }));
 
+const originalConsoleInfo = console.info;
+console.info = (...args: Parameters<typeof console.info>) => {
+  if (
+    typeof args[0] === 'string' &&
+    args[0].includes('i18next is maintained with support from Locize')
+  ) {
+    return;
+  }
+  originalConsoleInfo(...args);
+};
+
 jest.mock('./src/context/SettingsContext', () => {
   const actual = jest.requireActual('./src/context/SettingsContext');
   return {
