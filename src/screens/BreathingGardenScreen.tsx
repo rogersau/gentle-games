@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { StyleSheet, Text, View, Animated, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, Animated, Dimensions, Platform } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { ThemeColors } from '../types';
@@ -47,7 +47,7 @@ export const BreathingGardenScreen: React.FC = () => {
         Animated.timing(phaseOpacity, {
           toValue: 0,
           duration: 400,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }).start(() => {
           // Change text after fade out
           setDisplayedPhase(phase);
@@ -55,7 +55,7 @@ export const BreathingGardenScreen: React.FC = () => {
           Animated.timing(phaseOpacity, {
             toValue: 1,
             duration: 400,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
           }).start();
         });
       } else {
@@ -77,7 +77,7 @@ export const BreathingGardenScreen: React.FC = () => {
       Animated.timing(countOpacity, {
         toValue: 1,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start();
     } else {
       countOpacity.setValue(1);
