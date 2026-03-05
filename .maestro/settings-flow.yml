@@ -1,0 +1,27 @@
+appId: com.gentlegames.app
+---
+# Settings Flow E2E Test - Navigate to settings and change options
+- launchApp
+- assertVisible: "Gentle Games"
+
+# Navigate to Settings
+- tapOn: "⚙️  Settings"
+- assertVisible: "Settings"
+
+# Toggle Sound Effects
+- tapOn: "Sound Effects"
+- waitForAnimationToEnd
+
+# Change Difficulty
+- tapOn: "Difficulty"
+- tapOn: "Easy"
+- assertVisible: "Easy"
+
+# Change Theme
+- tapOn: "Card Theme"
+- tapOn: "Animals"
+- assertVisible: "Animals"
+
+# Go back to home
+- tapOn: "Back"
+- assertVisible: "Gentle Games"

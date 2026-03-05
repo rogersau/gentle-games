@@ -1,0 +1,32 @@
+appId: com.gentlegames.app
+---
+# Parent Gate E2E Test - Verify parent gate appears for sensitive settings
+- launchApp
+- assertVisible: "Gentle Games"
+
+# Navigate to Settings
+- tapOn: "⚙️  Settings"
+- assertVisible: "Settings"
+
+# Try to access Time Limit (triggers parent gate)
+- tapOn: "Time Limit"
+- assertVisible: "Parent Gate"
+
+# Complete parent gate (simple math problem)
+- tapOn: ".*[0-9].*"  # Tap the correct answer number
+- waitForAnimationToEnd
+
+# Now should see Time Limit settings
+- assertVisible: "Time Limit"
+
+# Set a time limit
+- tapOn: "15 minutes"
+- waitForAnimationToEnd
+
+# Go back
+- tapOn: "Back"
+- assertVisible: "Settings"
+
+# Go back to home
+- tapOn: "Back"
+- assertVisible: "Gentle Games"

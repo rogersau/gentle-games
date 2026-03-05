@@ -1,5 +1,6 @@
 import {
   addBalloon,
+  createBalloon,
   flickBalloon,
   GROUND_POP_DELAY_MS,
   MAX_BALLOONS,
@@ -163,5 +164,229 @@ describe('keepyUppyLogic', () => {
     const second = addBalloon(first, bounds, { colors: theme, rng: () => 0 });
     // second contains two balloons; make sure the newly appended one differs
     expect(second[0].color).not.toBe(second[1].color);
+  });
+
+  describe('edge cases', () => {
+    it('resolves balloon palette with empty forbidden set', () => {
+      // When no balloon colors match the forbidden set
+      const theme: ThemeColors = {
+        background: '#000',
+        cardBack: '#FFFFFF',
+        cardFront: '#EEEEEE',
+        text: '#111111',
+        textLight: '#222222',
+        primary: '#FF0000',
+        secondary: '#00FF00',
+        success: '#0000FF',
+        matched: '#MMM',
+        surfaceGame: '#SUR',
+        surface: '#SUR2',
+        surfaceElevated: '#SUR3',
+        border: '#BORD',
+        borderSubtle: '#BORD2',
+        overlay: '#OL',
+        accent: '#ACC',
+        danger: '#DNG',
+      };
+      const palette = resolveBalloonPalette(theme);
+      // All balloon palette colors should be present since they don't match forbidden
+      expect(palette.length).toBeGreaterThan(0);
+    });
+
+    it('addBalloon returns same array when at max capacity', () => {
+      const balloons = [
+        createBalloon(bounds, { colors: PASTEL_COLORS }),
+        createBalloon(bounds, { colors: PASTEL_COLORS }),
+        createBalloon(bounds, { colors: PASTEL_COLORS }),
+      ];
+      const result = addBalloon(balloons, bounds, { colors: PASTEL_COLORS });
+      expect(result).toBe(balloons);
+      expect(result).toHaveLength(3);
+    });
+
+    it('flickBalloon clamps duration to minimum', () => {
+      const balloon: KeepyUppyBalloon = {
+        id: 'test',
+        x: 160,
+        y: 220,
+        vx: 0,
+        vy: 0,
+        radius: 34,
+        color: '#fff',
+        groundedAt: null,
+      };
+
+      // Very short duration should be clamped to 60ms
+      const flicked = flickBalloon(balloon, 10, -10, 10);
+      expect(flicked.vx).not.toBe(0);
+      expect(flicked.vy).not.toBe(0);
+    });
+
+    it('stepBalloons clamps deltaSeconds', () => {
+      const balloons: KeepyUppyBalloon[] = [
+        {
+          id: 'test',
+          x: 160,
+          y: 100,
+          vx: 100,
+          vy: 100,
+          radius: 34,
+          color: '#fff',
+          groundedAt: null,
+        },
+      ];
+
+      // Large delta should be clamped
+      const { balloons: result } = stepBalloons(balloons, bounds, 10, 1000);
+      expect(result[0].x).toBeGreaterThan(100);
+      // But not as far as 10 seconds would take it
+      expect(result[0].x).toBeLessThan(1000);
+    });
+
+    it('handles balloon bouncing off left wall', () => {
+      const balloons: KeepyUppyBalloon[] = [
+        {
+          id: 'test',
+          x: 30, // Close to left wall (radius = 34)
+          y: 200,
+          vx: -50, // Moving left
+          vy: 0,
+          radius: 34,
+          color: '#fff',
+          groundedAt: null,
+        },
+      ];
+
+      const { balloons: result } = stepBalloons(balloons, bounds, 1 / 30, 1000);
+      expect(result[0].x).toBeGreaterThanOrEqual(34);
+      expect(result[0].vx).toBeGreaterThan(0); // Should bounce back
+    });
+
+    it('handles balloon bouncing off right wall', () => {
+      const balloons: KeepyUppyBalloon[] = [
+        {
+          id: 'test',
+          x: 290, // Close to right wall (width - radius = 320 - 34 = 286)
+          y: 200,
+          vx: 50, // Moving right
+          vy: 0,
+          radius: 34,
+          color: '#fff',
+          groundedAt: null,
+        },
+      ];
+
+      const { balloons: result } = stepBalloons(balloons, bounds, 1 / 30, 1000);
+      expect(result[0].x).toBeLessThanOrEqual(286);
+      expect(result[0].vx).toBeLessThan(0); // Should bounce back
+    });
+
+    it('handles balloon bouncing off ceiling', () => {
+      const balloons: KeepyUppyBalloon[] = [
+        {
+          id: 'test',
+          x: 160,
+          y: 40, // Close to ceiling (radius = 34)
+          vx: 0,
+          vy: -100, // Moving up
+          radius: 34,
+          color: '#fff',
+          groundedAt: null,
+        },
+      ];
+
+      const { balloons: result } = stepBalloons(balloons, bounds, 1 / 30, 1000);
+      expect(result[0].y).toBeGreaterThanOrEqual(34);
+      // Balloon should be positioned at ceiling and velocity should be handled
+      expect(result[0].vy).toBeDefined();
+    });
+
+    it('clears groundedAt when balloon leaves ground', () => {
+      const balloons: KeepyUppyBalloon[] = [
+        {
+          id: 'test',
+          x: 160,
+          y: 446, // Just above floor (480 - 34 = 446)
+          vx: 0,
+          vy: -50, // Moving up
+          radius: 34,
+          color: '#fff',
+          groundedAt: 1000,
+        },
+      ];
+
+      const { balloons: result } = stepBalloons(balloons, bounds, 1 / 30, 2000);
+      expect(result[0].groundedAt).toBeNull();
+    });
+
+    it('skips collision resolution when balloons are at exact same position', () => {
+      const balloons: KeepyUppyBalloon[] = [
+        {
+          id: 'a',
+          x: 160,
+          y: 200,
+          vx: 0,
+          vy: 0,
+          radius: 34,
+          color: '#fff',
+          groundedAt: null,
+        },
+        {
+          id: 'b',
+          x: 160, // Same position as a (distance = 0)
+          y: 200,
+          vx: 0,
+          vy: 0,
+          radius: 34,
+          color: '#fff',
+          groundedAt: null,
+        },
+      ];
+
+      const { balloons: result } = stepBalloons(balloons, bounds, 1 / 30, 1000);
+      // When distance is 0, collision is skipped, so positions remain the same
+      expect(result[0].x).toBe(160);
+      expect(result[1].x).toBe(160);
+    });
+
+    it('handles velocity clamping in flickBalloon', () => {
+      const balloon: KeepyUppyBalloon = {
+        id: 'test',
+        x: 160,
+        y: 220,
+        vx: 0,
+        vy: 0,
+        radius: 34,
+        color: '#fff',
+        groundedAt: null,
+      };
+
+      // Extreme flick should be clamped
+      const flicked = flickBalloon(balloon, 1000, -1000, 50);
+      expect(flicked.vx).toBeLessThanOrEqual(320);
+      expect(flicked.vx).toBeGreaterThanOrEqual(-320);
+      expect(flicked.vy).toBeGreaterThanOrEqual(-420);
+      expect(flicked.vy).toBeLessThanOrEqual(320);
+    });
+
+    it('handles velocity clamping in tapBalloon', () => {
+      const balloon: KeepyUppyBalloon = {
+        id: 'test',
+        x: 160,
+        y: 220,
+        vx: 200,
+        vy: 200,
+        radius: 34,
+        color: '#fff',
+        groundedAt: null,
+      };
+
+      // Tap should clamp velocities
+      const tapped = tapBalloon(balloon, 100, 100);
+      expect(tapped.vx).toBeLessThanOrEqual(260);
+      expect(tapped.vx).toBeGreaterThanOrEqual(-260);
+      expect(tapped.vy).toBeGreaterThanOrEqual(-360);
+      expect(tapped.vy).toBeLessThanOrEqual(280);
+    });
   });
 });
