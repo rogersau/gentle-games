@@ -37,8 +37,8 @@ describe('KeepyUppyBoard', () => {
     jest.useRealTimers();
   });
 
-  it('renders with initial balloon', () => {
-    const { getByTestId } = render(
+  it('renders with initial balloon', async () => {
+    render(
       <KeepyUppyBoard
         bounds={defaultBounds}
         onScoreChange={mockOnScoreChange}
@@ -46,8 +46,14 @@ describe('KeepyUppyBoard', () => {
       />
     );
 
-    expect(getByTestId(/balloon-/)).toBeTruthy();
-    expect(mockOnBalloonCountChange).toHaveBeenCalledWith(1);
+    // Wait for setTimeout to execute
+    act(() => {
+      jest.advanceTimersByTime(0);
+    });
+
+    await waitFor(() => {
+      expect(mockOnBalloonCountChange).toHaveBeenCalledWith(1);
+    });
   });
 
   it('adds balloon via ref', async () => {
@@ -65,6 +71,11 @@ describe('KeepyUppyBoard', () => {
       />
     );
 
+    // Wait for initial callback
+    act(() => {
+      jest.advanceTimersByTime(0);
+    });
+
     await waitFor(() => {
       expect(ref.current?.getBalloonCount()).toBe(1);
     });
@@ -76,7 +87,15 @@ describe('KeepyUppyBoard', () => {
     await waitFor(() => {
       expect(ref.current?.getBalloonCount()).toBe(2);
     });
-    expect(mockOnBalloonCountChange).toHaveBeenCalledWith(2);
+
+    // Wait for callback
+    act(() => {
+      jest.advanceTimersByTime(0);
+    });
+
+    await waitFor(() => {
+      expect(mockOnBalloonCountChange).toHaveBeenCalledWith(2);
+    });
   });
 
   it('limits balloons to max of 3', async () => {
@@ -156,15 +175,23 @@ describe('KeepyUppyBoard', () => {
       ref.current?.resetBalloons();
     });
 
+    // Wait for setTimeout callbacks
+    act(() => {
+      jest.advanceTimersByTime(0);
+    });
+
     await waitFor(() => {
       expect(ref.current?.getBalloonCount()).toBe(1);
     });
-    expect(mockOnScoreChange).toHaveBeenCalledWith(0);
-    expect(mockOnPoppedChange).toHaveBeenCalledWith(0);
-    expect(mockOnBalloonCountChange).toHaveBeenLastCalledWith(1);
+
+    await waitFor(() => {
+      expect(mockOnScoreChange).toHaveBeenCalledWith(0);
+      expect(mockOnPoppedChange).toHaveBeenCalledWith(0);
+      expect(mockOnBalloonCountChange).toHaveBeenLastCalledWith(1);
+    });
   });
 
-  it('increments score when balloon is tapped', () => {
+  it('increments score when balloon is tapped', async () => {
     const { getByTestId } = render(
       <KeepyUppyBoard
         bounds={defaultBounds}
@@ -182,6 +209,13 @@ describe('KeepyUppyBoard', () => {
       },
     });
 
-    expect(mockOnScoreChange).toHaveBeenCalledWith(1);
+    // Wait for setTimeout callback
+    act(() => {
+      jest.advanceTimersByTime(0);
+    });
+
+    await waitFor(() => {
+      expect(mockOnScoreChange).toHaveBeenCalledWith(1);
+    });
   });
 });

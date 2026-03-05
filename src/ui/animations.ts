@@ -1,6 +1,8 @@
 import { useRef, useCallback } from 'react';
-import { Animated, Easing } from 'react-native';
+import { Animated, Easing, Platform } from 'react-native';
 import { useSettings } from '../context/SettingsContext';
+
+const supportsNativeDriver = Platform.OS !== 'web';
 
 /** Returns whether animations are enabled in user settings */
 export const useAnimationEnabled = (): boolean => {
@@ -23,7 +25,7 @@ export const useFadeIn = (duration = 300) => {
       toValue: 1,
       duration,
       easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
+      useNativeDriver: supportsNativeDriver,
     }).start();
   }, [opacity, duration, enabled]);
 
@@ -42,13 +44,13 @@ export const useGentleBounce = () => {
         toValue: 1.05,
         duration: 120,
         easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: supportsNativeDriver,
       }),
       Animated.timing(scale, {
         toValue: 1,
         duration: 120,
         easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: supportsNativeDriver,
       }),
     ]).start();
   }, [scale, enabled]);
@@ -67,7 +69,7 @@ export const useScalePress = () => {
       toValue: 0.96,
       duration: 80,
       easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
+      useNativeDriver: supportsNativeDriver,
     }).start();
   }, [scale, enabled]);
 
@@ -77,7 +79,7 @@ export const useScalePress = () => {
       toValue: 1,
       duration: 100,
       easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
+      useNativeDriver: supportsNativeDriver,
     }).start();
   }, [scale, enabled]);
 

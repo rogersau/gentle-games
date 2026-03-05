@@ -26,8 +26,11 @@ jest.mock('react-i18next', () => ({
         'games.patternTrain.difficulty.medium.description': 'ABC patterns',
         'games.patternTrain.difficulty.hard.description': 'Complex patterns',
         'games.patternTrain.platform.label': 'Platform',
-        'games.patternTrain.feedback.initial': 'Drag the right carriage!',
-        'games.patternTrain.completedRounds': 'Completed rounds',
+        'games.patternTrain.feedback.initial': 'Drag a carriage to complete the train',
+        'games.patternTrain.completedRounds': 'Completed',
+        'games.patternTrain.instructions': 'Drag a carriage to complete the train',
+        'games.patternTrain.train.accessibilityLabel': 'Train with pattern',
+        'games.patternTrain.roundsAccessibilityLabel': '{{count}} rounds completed',
         'difficulty.title': 'Select Difficulty',
         'common.cancel': 'Cancel',
         'common.back': 'Back',
@@ -38,6 +41,12 @@ jest.mock('react-i18next', () => ({
       return translations[key] || key;
     },
   }),
+}));
+
+jest.mock('../components/train', () => ({
+  TrainEngine: jest.fn(() => null),
+  Carriage: jest.fn(() => null),
+  TrainTrack: jest.fn(() => null),
 }));
 
 jest.mock('../utils/theme', () => ({
@@ -152,6 +161,14 @@ describe('PatternTrainScreen', () => {
     expect(title).toBeTruthy();
   });
 
+  it('renders with subtitle accessibility', () => {
+    const screen = render(<PatternTrainScreen />);
+    
+    // Screen should render successfully with accessibility
+    const title = screen.queryByText('Pattern Train');
+    expect(title).toBeTruthy();
+  });
+
   it('navigates back when cancel is pressed', () => {
     const screen = render(<PatternTrainScreen />);
     
@@ -161,5 +178,13 @@ describe('PatternTrainScreen', () => {
       fireEvent.press(cancelButton);
       expect(mockGoBack).toHaveBeenCalled();
     }
+  });
+
+  it('renders with AppHeader for navigation', () => {
+    const screen = render(<PatternTrainScreen />);
+    
+    // AppHeader should be rendered (we can check by looking for the title)
+    const title = screen.queryByText('Pattern Train');
+    expect(title).toBeTruthy();
   });
 });

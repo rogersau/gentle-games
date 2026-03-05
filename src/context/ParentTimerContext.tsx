@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Animated,
   Modal,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -102,11 +103,11 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setUserAnswer('');
       if (settings.animationsEnabled) {
         Animated.sequence([
-          Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-          Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
-          Animated.timing(shakeAnim, { toValue: 8, duration: 50, useNativeDriver: true }),
-          Animated.timing(shakeAnim, { toValue: -8, duration: 50, useNativeDriver: true }),
-          Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: Platform.OS !== 'web' }),
+          Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: Platform.OS !== 'web' }),
+          Animated.timing(shakeAnim, { toValue: 8, duration: 50, useNativeDriver: Platform.OS !== 'web' }),
+          Animated.timing(shakeAnim, { toValue: -8, duration: 50, useNativeDriver: Platform.OS !== 'web' }),
+          Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: Platform.OS !== 'web' }),
         ]).start(() => {
           setMathChallenge(generateMathQuestion());
         });

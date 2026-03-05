@@ -1,0 +1,40 @@
+appId: com.gentlegames.app
+---
+# Accessibility Flow E2E Test - Verify app works with accessibility features
+- launchApp
+- assertVisible: "Gentle Games"
+
+# Verify home screen has accessible elements
+- assertVisible: "Memory Match"
+- assertVisible: "Category Match"
+- assertVisible: "Pattern Train"
+- assertVisible: "Keepy Uppy"
+- assertVisible: "Breathing Garden"
+- assertVisible: "Glitter Globe"
+- assertVisible: "Number Picnic"
+- assertVisible: "Drawing Board"
+
+# Navigate using accessible labels
+- tapOn: ".*Settings.*"
+- assertVisible: "Settings"
+
+# Verify settings have proper accessibility labels
+- assertVisible: "Sound Effects"
+- assertVisible: "Music"
+- assertVisible: "Animations"
+
+# Go back to home
+- tapOn: ".*Back.*"
+- assertVisible: "Gentle Games"
+
+# Test game with accessibility labels
+- tapOn: ".*Category Match.*"
+- assertVisible: "Category Match"
+
+# Start game
+- tapOn: ".*Start.*"
+- assertVisible: ".*Drag.*"
+
+# Go back to home
+- tapOn: ".*Back.*"
+- assertVisible: "Gentle Games"

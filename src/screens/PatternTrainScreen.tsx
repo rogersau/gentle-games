@@ -9,6 +9,7 @@ import {
   PanResponderGestureState,
   Dimensions,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -144,12 +145,12 @@ export const PatternTrainScreen: React.FC = () => {
         Animated.timing(trainPosition, {
           toValue: 0,
           duration: TRAIN_ANIMATION.ENTRY_DURATION,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(trainOpacity, {
           toValue: 1,
           duration: TRAIN_ANIMATION.ENTRY_DURATION * 0.5,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ]).start(() => {
         setTrainPhase('waiting');
@@ -196,7 +197,7 @@ export const PatternTrainScreen: React.FC = () => {
       Animated.timing(feedbackOpacity, {
         toValue: 1,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start();
     } else {
       feedbackOpacity.setValue(1);
@@ -214,7 +215,7 @@ export const PatternTrainScreen: React.FC = () => {
           Animated.timing(c.opacity, {
             toValue: 0,
             duration: 500,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
           }).start();
         }
       });
@@ -224,12 +225,12 @@ export const PatternTrainScreen: React.FC = () => {
         Animated.timing(trainPosition, {
           toValue: -SCREEN_WIDTH,
           duration: TRAIN_ANIMATION.EXIT_DURATION,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(trainOpacity, {
           toValue: 0,
           duration: TRAIN_ANIMATION.EXIT_DURATION,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ]).start(() => {
         setTrainPhase('offscreen');
@@ -305,7 +306,7 @@ export const PatternTrainScreen: React.FC = () => {
         Animated.timing(carriage.opacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }).start();
 
         const successMessage = getRandomFeedback('correct');
@@ -317,12 +318,12 @@ export const PatternTrainScreen: React.FC = () => {
           Animated.timing(feedbackOpacity, {
             toValue: 0,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
           }),
           Animated.timing(feedbackOpacity, {
             toValue: 1,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
           }),
         ]).start();
 
@@ -349,7 +350,7 @@ export const PatternTrainScreen: React.FC = () => {
         // Spring back to platform
         Animated.spring(carriage.position, {
           toValue: { x: 0, y: 0 },
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }).start();
 
         if (newWrongAttempts < 3 && pattern) {
@@ -367,7 +368,7 @@ export const PatternTrainScreen: React.FC = () => {
               Animated.timing(c.opacity, {
                 toValue: 0,
                 duration: TRAIN_ANIMATION.CHOICE_FADE_DURATION,
-                useNativeDriver: true,
+                useNativeDriver: Platform.OS !== 'web',
               }).start(() => {
                 setDraggableCarriages((prevCarriages) =>
                   prevCarriages.map((prevCarriage, prevIndex) =>
@@ -400,7 +401,7 @@ export const PatternTrainScreen: React.FC = () => {
       // Spring back to platform
       Animated.spring(carriage.position, {
         toValue: { x: 0, y: 0 },
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start();
     }
   }, [
@@ -425,7 +426,7 @@ export const PatternTrainScreen: React.FC = () => {
       onPanResponderGrant: () => {
         Animated.spring(carriage.scale, {
           toValue: 1.1,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }).start();
       },
       onPanResponderMove: (_, gestureState) => {
@@ -437,7 +438,7 @@ export const PatternTrainScreen: React.FC = () => {
       onPanResponderRelease: (_, gestureState) => {
         Animated.spring(carriage.scale, {
           toValue: 1,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }).start();
 
         handleCarriageDrop(carriage, gestureState);
@@ -467,11 +468,11 @@ export const PatternTrainScreen: React.FC = () => {
         Animated.timing(carriage.scale, {
           toValue: 1.15,
           duration: 100,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.spring(carriage.scale, {
           toValue: 1.1,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ]).start();
     }

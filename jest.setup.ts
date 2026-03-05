@@ -9,6 +9,48 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   multiRemove: jest.fn(() => Promise.resolve()),
 }));
 
+const originalConsoleInfo = console.info;
+console.info = (...args: Parameters<typeof console.info>) => {
+  if (
+    typeof args[0] === 'string' &&
+    args[0].includes('i18next is maintained with support from Locize')
+  ) {
+    return;
+  }
+  originalConsoleInfo(...args);
+};
+
+// Suppress expected warnings during tests
+const originalConsoleWarn = console.warn;
+console.warn = (...args: Parameters<typeof console.warn>) => {
+  // Suppress DrawingScreen error messages during intentional error testing
+  if (
+    typeof args[0] === 'string' &&
+    (args[0].includes('Error loading saved drawing:') ||
+      args[0].includes('Error saving drawing:') ||
+      args[0].includes('Error clearing saved drawing:') ||
+      args[0].includes('Error auto-saving drawing:'))
+  ) {
+    return;
+  }
+  originalConsoleWarn(...args);
+};
+
+// Suppress React act() warnings in test environment
+const originalConsoleError = console.error;
+console.error = (...args: Parameters<typeof console.error>) => {
+  // Suppress React act() warnings
+  if (
+    typeof args[0] === 'string' &&
+    (args[0].includes('was not wrapped in act') ||
+      args[0].includes('An update to') ||
+      args[0].includes('inside a test was not wrapped in act'))
+  ) {
+    return;
+  }
+  originalConsoleError(...args);
+};
+
 jest.mock('./src/context/SettingsContext', () => {
   const actual = jest.requireActual('./src/context/SettingsContext');
   return {
@@ -48,6 +90,13 @@ jest.mock('react-i18next', () => ({
         'games.memorySnap.description': 'A calm memory matching game',
         'games.drawing.name': 'Drawing Pad',
         'games.drawing.description': 'Draw with colours and erase',
+        'games.drawing.title': 'Drawing',
+        'games.drawing.welcomeBack': 'Welcome Back',
+        'games.drawing.continuePrompt': 'Continue where you left off?',
+        'games.drawing.newDrawing': 'New Drawing',
+        'games.drawing.continueDrawing': 'Continue',
+        'games.drawing.newDrawingHint': 'Start a new drawing',
+        'games.drawing.continueHint': 'Continue with saved drawing',
         'games.glitterFall.name': 'Glitter Fall',
         'games.glitterFall.description': 'Snow globe glitter play',
         'games.bubblePop.name': 'Bubble Pop',
@@ -114,6 +163,46 @@ jest.mock('react-i18next', () => ({
         'games.memorySnap.goHome': 'Home',
         'games.memorySnap.goHomeHint': 'Return to main screen',
         'common.timerNotStarted': 'Timer not started',
+        // Pattern Train
+        'games.patternTrain.title': 'Pattern Train',
+        'games.patternTrain.subtitle': 'Complete the train pattern',
+        'games.patternTrain.train.arrived': 'The train has arrived with pattern: {{pattern}}',
+        'games.patternTrain.feedback.initial': 'Drag a carriage to complete the train',
+        'games.patternTrain.feedback.correct': 'Correct! Well done!',
+        'games.patternTrain.feedback.incorrect': 'Not quite right. Try again!',
+        'games.patternTrain.feedback.correctOptions': 'Great job! Wonderful! Perfect!',
+        'games.patternTrain.feedback.incorrectOptions': 'Try again! Keep trying! Almost!',
+        'games.patternTrain.feedback.reveal': 'The answer was {{answer}}',
+        'games.patternTrain.milestone.default': 'Amazing! You completed 5 patterns!',
+        'games.patternTrain.milestone.messages': 'Fantastic work! Keep it up!',
+        'games.patternTrain.difficulty.easy.label': 'Easy',
+        'games.patternTrain.difficulty.easy.description': 'Simple AB patterns',
+        'games.patternTrain.difficulty.medium.label': 'Medium',
+        'games.patternTrain.difficulty.medium.description': 'ABC and AAB patterns',
+        'games.patternTrain.difficulty.hard.label': 'Hard',
+        'games.patternTrain.difficulty.hard.description': 'Complex patterns',
+        // Common UI strings
+        'common.selectOption': 'Select an option',
+        'common.openOptions': 'Open options',
+        'common.close': 'Close',
+        'common.on': 'On',
+        'common.off': 'Off',
+        // Settings volume
+        'settings.volume.decrease': 'Decrease volume',
+        'settings.volume.increase': 'Increase volume',
+        // Accessibility
+        'accessibility.gameCardHint': 'Tap to play this game',
+        // Glitter Fall accessibility
+        'games.glitterFall.accessibility': 'Glitter globe, shake or swipe to interact',
+        // Breathing Garden
+        'games.breathingGarden.title': 'Breathing Garden',
+        'games.breathingGarden.description': 'Gentle breathing exercise',
+        'games.breathingGarden.changeColor': 'Change color',
+        'games.breathingGarden.musicOn': 'Music on',
+        'games.breathingGarden.musicOff': 'Music off',
+        'games.breathingGarden.inhale': 'Breathe in',
+        'games.breathingGarden.exhale': 'Breathe out',
+        'games.breathingGarden.breaths': 'Breaths',
       };
 
       const translation = translations[key] || key;
@@ -159,4 +248,87 @@ jest.mock('posthog-react-native', () => {
   };
 });
 
+// Mock sounds
+jest.mock('./src/utils/sounds', () => ({
+  playMatchSound: jest.fn(() => Promise.resolve()),
+  playFlipSound: jest.fn(() => Promise.resolve()),
+  playCompleteSound: jest.fn(() => Promise.resolve()),
+}));
+
 export { };
+
+// Animation mocks for GlitterGlobe
+let mockRafId = 0;
+(global as unknown as Record<string, unknown>).requestAnimationFrame = jest.fn((callback: (time: number) => void) => {
+  mockRafId += 1;
+  return setTimeout(() => callback(mockRafId * 16), 16);
+});
+
+(global as unknown as Record<string, unknown>).cancelAnimationFrame = jest.fn((id: number) => {
+  clearTimeout(id);
+});
+
+// Mock performance.now()
+let mockPerformanceNow = 0;
+Object.defineProperty(global, 'performance', {
+  value: {
+    now: jest.fn(() => {
+      mockPerformanceNow += 16;
+      return mockPerformanceNow;
+    }),
+  },
+});
+
+// Mock expo-sensors Accelerometer
+jest.mock('expo-sensors', () => ({
+  Accelerometer: {
+    isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+    setUpdateInterval: jest.fn(),
+    addListener: jest.fn(() => ({
+      remove: jest.fn(),
+    })),
+  },
+}));
+
+// Note: ui/animations module is not mocked globally to allow tests to use real implementation
+// Individual tests can mock specific hooks as needed
+
+// Mock expo-constants
+jest.mock('expo-constants', () => ({
+  expoConfig: {
+    extra: {
+      sentryDsn: 'https://test-dsn.sentry.io/12345',
+      sentryDebug: false,
+    },
+  },
+}));
+
+// Mock @sentry/react-native
+jest.mock('@sentry/react-native', () => ({
+  init: jest.fn(),
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  setContext: jest.fn(),
+  addBreadcrumb: jest.fn(),
+  setUser: jest.fn(),
+  flush: jest.fn(() => Promise.resolve(true)),
+}));
+
+// Mock expo-audio
+jest.mock('expo-audio', () => ({
+  setAudioModeAsync: jest.fn(() => Promise.resolve()),
+  createAudioPlayer: jest.fn((source) => ({
+    source,
+    volume: 0.5,
+    loop: false,
+    play: jest.fn(),
+    pause: jest.fn(),
+    remove: jest.fn(),
+    seekTo: jest.fn(() => Promise.resolve()),
+  })),
+}));
+
+// Mock @expo-google-fonts/nunito
+jest.mock('@expo-google-fonts/nunito', () => ({
+  useFonts: jest.fn(() => [true, null]),
+}));

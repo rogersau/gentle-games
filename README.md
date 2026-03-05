@@ -79,6 +79,15 @@ The app offers a collection of calm, creative activities including memory games,
 ## Testing and Quality Checks
 
 ```bash
+# Full local CI pass (shared + cross-platform export checks)
+npm run ci:all
+
+# Shared checks used in PR CI gate
+npm run ci:shared
+
+# Cross-platform export validation (web + android + ios)
+npm run ci:platform
+
 # TypeScript regression check
 npm run typecheck
 
@@ -105,11 +114,19 @@ npm run ios
 # CI-friendly bundle validation for each platform
 npm run validate:android
 npm run validate:ios
+
+# Android runtime smoke test pieces (requires emulator + Maestro CLI)
+npm run smoke:android:build
+npm run smoke:android:install
+npm run smoke:android:test
 ```
 
 For GitHub Actions, use:
-- `CI` workflow for typecheck + regression tests on PRs
-- `Mobile Validation` workflow (manual trigger) to validate Android/iOS bundles
+- `CI` workflow on pull requests/pushes for:
+  - shared checks (`npm run ci:shared`)
+  - platform export validation (web, android, ios)
+  - Android emulator smoke test via Maestro
+- `Mobile Validation` workflow (manual trigger) for on-demand Android/iOS export checks
 
 ## Building for Production
 

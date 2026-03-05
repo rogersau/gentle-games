@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, PanResponder, StyleSheet, Text, View } from 'react-native';
+import { Animated, PanResponder, Platform, StyleSheet, Text, View } from 'react-native';
 import { CategoryMatchCategory, CategoryMatchItem, ThemeColors } from '../types';
 import { createCategoryMatchRound, isCategoryMatchCorrect } from '../utils/categoryMatchLogic';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
@@ -93,7 +93,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
         toValue: { x: 0, y: 0 },
         friction: 7,
         tension: 80,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start();
     } else {
       dragPosition.setValue({ x: 0, y: 0 });
@@ -117,12 +117,12 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
         Animated.timing(tokenScale, {
           toValue: 1.08,
           duration: 90,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(tokenScale, {
           toValue: 1,
           duration: 120,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ]).start();
     } else {

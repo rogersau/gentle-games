@@ -1,6 +1,10 @@
 import React from 'react';
 import { fireEvent, render, waitFor, act } from '@testing-library/react-native';
 import { KeepyUppyScreen } from './KeepyUppyScreen';
+import {
+  assertNoSetStateDuringRender,
+  createSetStateDuringRenderSpy,
+} from '../test-utils/setStateDetection';
 
 const mockGoBack = jest.fn();
 
@@ -38,13 +42,22 @@ jest.mock('../context/SettingsContext', () => ({
 }));
 
 describe('KeepyUppyScreen', () => {
+  let consoleErrorSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    consoleErrorSpy = createSetStateDuringRenderSpy();
   });
 
   afterEach(() => {
     jest.useRealTimers();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('renders without setState during render errors', () => {
+    render(<KeepyUppyScreen />);
+    assertNoSetStateDuringRender(consoleErrorSpy);
   });
 
   it('goes back when back button is pressed', () => {
@@ -91,5 +104,16 @@ describe('KeepyUppyScreen', () => {
     await waitFor(() => {
       expect(screen.getByText('Balloons: 3')).toBeTruthy();
     });
+  });
+
+  it('handles multiple renders without setState during render errors', () => {
+    const { rerender } = render(<KeepyUppyScreen />);
+
+    // Re-render multiple times to stress test for setState during render issues
+    for (let i = 0; i < 5; i++) {
+      rerender(<KeepyUppyScreen />);
+    }
+
+    assertNoSetStateDuringRender(consoleErrorSpy);
   });
 });

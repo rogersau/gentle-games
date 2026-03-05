@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, Animated, View } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, Animated, View, Platform } from 'react-native';
 import { ThemeColors, Tile as TileType } from '../types';
 import { useSettings } from '../context/SettingsContext';
 import { useThemeColors } from '../utils/theme';
@@ -29,13 +29,13 @@ const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
       Animated.timing(scaleAnim, {
         toValue: 0,
         duration: 120,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start(() => {
         setShowFront(!tile.isFlipped);
         Animated.timing(scaleAnim, {
           toValue: 1,
           duration: 120,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }).start();
       });
     } else {

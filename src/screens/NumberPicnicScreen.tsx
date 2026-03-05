@@ -1,17 +1,16 @@
-import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useRef } from 'react';
+import { StyleSheet, Text, View, ScrollView, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { ThemeColors } from '../types';
 import { useSettings } from '../context/SettingsContext';
-import {
-  generateNumberPicnicPrompt,
-  isNumberPicnicPromptComplete,
-  updateNumberPicnicCount,
-} from '../utils/numberPicnicLogic';
+import { useNumberPicnicGame } from '../utils/numberPicnicLogic';
 import { useThemeColors } from '../utils/theme';
-import { AppScreen, AppHeader, AppButton, AppCard } from '../ui/components';
+import { AppScreen, AppHeader, AppCard } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
+import { PicnicBasket, PicnicBlanket } from '../components/numberpicnic';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export const NumberPicnicScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -19,28 +18,37 @@ export const NumberPicnicScreen: React.FC = () => {
   const { colors } = useThemeColors();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [prompt, setPrompt] = useState(() => generateNumberPicnicPrompt(settings.difficulty));
-  const [basketCount, setBasketCount] = useState(0);
-  const [completedPicnics, setCompletedPicnics] = useState(0);
 
-  const isComplete = isNumberPicnicPromptComplete(basketCount, prompt);
+  const scrollViewRef = useRef<ScrollView>(null);
 
-  const adjustCount = (delta: number) => {
-    setBasketCount((current) => updateNumberPicnicCount(current, delta));
-  };
-
-  const nextPicnic = () => {
-    setPrompt(generateNumberPicnicPrompt(settings.difficulty));
-    setBasketCount(0);
-    setCompletedPicnics((current) => current + 1);
-  };
+  const {
+    prompt,
+    basketCount,
+    completedPicnics,
+    isProcessing,
+    isDragging,
+    isSuccess,
+    blanketItemCount,
+    basketItems,
+    isComplete,
+    handleItemDrop,
+    handleDropEnd,
+    startNewRound,
+  } = useNumberPicnicGame(settings.difficulty);
 
   return (
     <AppScreen>
       <AppHeader title={t('games.numberPicnic.title')} onBack={() => navigation.goBack()} />
-      <View style={styles.content}>
+      <ScrollView 
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={!isDragging}
+      >
         <Text style={styles.subtitle}>{t('games.numberPicnic.subtitle')}</Text>
 
+        {/* Instructions Card */}
         <AppCard variant="elevated" style={styles.promptCard}>
           <Text style={styles.promptText}>
             {t('games.numberPicnic.place')} <Text style={styles.promptStrong}>{prompt.targetCount}</Text> {prompt.itemName}
@@ -48,39 +56,68 @@ export const NumberPicnicScreen: React.FC = () => {
           <Text style={styles.visualDots}>
             {prompt.visualDots.join(' ')}
           </Text>
-          <Text style={styles.basketCount} accessibilityLabel={`${t('games.numberPicnic.basket')} ${basketCount}`}>
-            {t('games.numberPicnic.basket')}: {basketCount}
-          </Text>
-          <Text style={styles.previewItems}>
-            {basketCount > 0 ? `${prompt.itemEmoji} `.repeat(Math.min(12, basketCount)).trim() : '—'}
-          </Text>
-          <Text style={styles.feedback}>
-            {isComplete ? t('games.numberPicnic.feedback.complete') : t('games.numberPicnic.feedback.incomplete')}
-          </Text>
         </AppCard>
 
-        <View style={styles.controls}>
-          <AppButton label={t('games.numberPicnic.remove')} variant="secondary" onPress={() => adjustCount(-1)} style={styles.controlButton} />
-          <AppButton label={t('games.numberPicnic.add')} variant="primary" onPress={() => adjustCount(1)} style={styles.controlButton} />
+        {/* Picnic Basket with animation */}
+        <View style={styles.basketContainer}>
+          <PicnicBasket
+            key={`basket-${prompt.targetCount}-${completedPicnics}`}
+            items={basketItems}
+            targetCount={prompt.targetCount}
+            onPress={() => {}}
+            isDropTarget={isDragging}
+            isSuccess={isSuccess}
+            onAnimationComplete={startNewRound}
+            style={styles.basket}
+            accessibilityLabel={`Basket with ${basketCount} ${prompt.itemName}`}
+            accessibilityHint="Drag items from the blanket to fill the basket"
+            testID="picnic-basket"
+          />
         </View>
 
-        <Text style={styles.completed}>{t('games.numberPicnic.completed')}: {completedPicnics}</Text>
-        {isComplete && (
-          <AppButton label={t('games.numberPicnic.nextPicnic')} variant="ghost" onPress={nextPicnic} style={styles.nextButton} />
-        )}
-      </View>
+        {/* Feedback Text */}
+        <Text style={[
+          styles.feedback,
+          isComplete && styles.feedbackComplete
+        ]}>
+          {isComplete 
+            ? t('games.numberPicnic.feedback.complete') 
+            : t('games.numberPicnic.feedback.incomplete')
+          }
+        </Text>
+
+        {/* Picnic Blanket with draggable items */}
+        <PicnicBlanket
+          itemEmoji={prompt.itemEmoji}
+          itemCount={blanketItemCount}
+          targetCount={prompt.targetCount}
+          onItemDrop={handleItemDrop}
+          onDropStart={() => {}}
+          onDropEnd={handleDropEnd}
+          isProcessing={isProcessing}
+          style={styles.blanket}
+          testID="picnic-blanket"
+        />
+
+        {/* Completed Count */}
+        <Text style={styles.completed}>
+          {t('games.numberPicnic.completed')}: {completedPicnics}
+        </Text>
+      </ScrollView>
     </AppScreen>
   );
 };
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    content: {
+    scrollView: {
       flex: 1,
+    },
+    scrollContent: {
       alignItems: 'center',
       paddingHorizontal: Space.md,
       paddingTop: Space.base,
-      paddingBottom: Space.md,
+      paddingBottom: Space.xl,
     },
     subtitle: {
       ...TypeStyle.bodySm,
@@ -109,38 +146,33 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.success,
       marginVertical: Space.xs,
     },
-    basketCount: {
-      ...TypeStyle.h4,
-      color: colors.text,
+    basketContainer: {
+      width: '100%',
+      alignItems: 'center',
+      marginBottom: Space.md,
+      // Lower zIndex so blanket items can appear above when dragged
+      zIndex: 1,
     },
-    previewItems: {
-      fontSize: 28,
-      textAlign: 'center',
-      color: colors.text,
-      minHeight: 40,
+    basket: {
+      // Basket styles
+    },
+    blanket: {
+      marginBottom: Space.md,
     },
     feedback: {
-      ...TypeStyle.bodySm,
+      ...TypeStyle.body,
       color: colors.textLight,
       textAlign: 'center',
+      marginBottom: Space.sm,
+      minHeight: 24,
     },
-    controls: {
-      width: '100%',
-      flexDirection: 'row',
-      justifyContent: 'center',
-      gap: Space.sm,
-      marginBottom: Space.base,
-    },
-    controlButton: {
-      flex: 1,
+    feedbackComplete: {
+      color: colors.success,
+      fontWeight: 'bold',
     },
     completed: {
       ...TypeStyle.label,
       color: colors.text,
       marginBottom: Space.sm,
     },
-    nextButton: {
-      width: '100%',
-    },
   });
-

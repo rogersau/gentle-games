@@ -206,6 +206,8 @@ module.exports = {
   getCacheName,
   getManifestTag,
   getServiceWorkerTag,
+  writeManifest,
   writeServiceWorker,
   patchIndexHtml,
+  run,
 };

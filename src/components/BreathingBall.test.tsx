@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Button, View } from 'react-native';
-import { render, waitFor } from '@testing-library/react-native';
+import { act, render, waitFor } from '@testing-library/react-native';
 import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import {
   BreathingBall,
@@ -104,10 +104,14 @@ describe('BreathingBall', () => {
 
     const elapsedBefore = ref.current?.getElapsedMs() || 0;
 
-    ref.current?.pause();
+    act(() => {
+      ref.current?.pause();
+    });
     const elapsedAfterPause = ref.current?.getElapsedMs() || 0;
 
-    ref.current?.resume();
+    act(() => {
+      ref.current?.resume();
+    });
     const elapsedAfterResume = ref.current?.getElapsedMs() || 0;
 
     // Elapsed should be similar after pause/resume (no new frames)
@@ -128,7 +132,9 @@ describe('BreathingBall', () => {
 
     // Simulate time passing by forcing a re-render with elapsed time
     // This is tricky in tests, so we verify reset clears state
-    ref.current?.reset();
+    act(() => {
+      ref.current?.reset();
+    });
 
     expect(ref.current?.getPhase()).toBe('inhale');
     expect(ref.current?.getCycleCount()).toBe(0);
@@ -152,7 +158,9 @@ describe('BreathingBall', () => {
     expect(ref.current?.getPhase()).toBe('inhale');
 
     // Start and let it run (in real time this would change)
-    ref.current?.resume();
+    act(() => {
+      ref.current?.resume();
+    });
   });
 
   it('respects autoStart prop', () => {

@@ -60,15 +60,35 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
       createBalloon(bounds, { colors, resolvedMode }),
     ]);
 
+    // Use refs to avoid stale callbacks in effects while preventing re-render cycles
+    const onBalloonCountChangeRef = useRef(onBalloonCountChange);
+    const onScoreChangeRef = useRef(onScoreChange);
+    const onPoppedChangeRef = useRef(onPoppedChange);
+
+    // Update refs when callbacks change
+    useEffect(() => {
+      onBalloonCountChangeRef.current = onBalloonCountChange;
+      onScoreChangeRef.current = onScoreChange;
+      onPoppedChangeRef.current = onPoppedChange;
+    }, [onBalloonCountChange, onScoreChange, onPoppedChange]);
+
     useEffect(() => {
       if (balloons.length === 0) {
         const nextBalloons = [createBalloon(bounds, { colors, resolvedMode })];
         setBalloons(nextBalloons);
-        onBalloonCountChange?.(nextBalloons.length);
+        // Use setTimeout to defer the callback to avoid setState during render
+        setTimeout(() => {
+          onBalloonCountChangeRef.current?.(nextBalloons.length);
+        }, 0);
         return;
       }
-      onBalloonCountChange?.(balloons.length);
-    }, [balloons.length, bounds, colors, resolvedMode, onBalloonCountChange]);
+      // Use setTimeout to defer the callback to avoid setState during render
+      setTimeout(() => {
+        onBalloonCountChangeRef.current?.(balloons.length);
+      }, 0);
+      // Note: Intentionally omitting callback refs from deps to prevent loops
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [balloons.length, bounds, colors, resolvedMode]);
 
     useEffect(() => {
       const timer = setInterval(() => {
@@ -78,7 +98,10 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
           if (stepped.popped > 0) {
             setPopped((currentPopped) => {
               const newPopped = currentPopped + stepped.popped;
-              onPoppedChange?.(newPopped);
+              // Use setTimeout to defer the callback to avoid setState during render
+              setTimeout(() => {
+                onPoppedChangeRef.current?.(newPopped);
+              }, 0);
               return newPopped;
             });
           }
@@ -87,7 +110,9 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
       }, STEP_MS);
 
       return () => clearInterval(timer);
-    }, [bounds, onPoppedChange]);
+      // Note: Intentionally using ref instead of callback in deps
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [bounds]);
 
     useImperativeHandle(
       ref,
@@ -99,13 +124,18 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
           setBalloons([createBalloon(bounds, { colors, resolvedMode })]);
           setScore(0);
           setPopped(0);
-          onScoreChange?.(0);
-          onPoppedChange?.(0);
-          onBalloonCountChange?.(1);
+          // Defer callbacks to avoid setState during render
+          setTimeout(() => {
+            onScoreChangeRef.current?.(0);
+            onPoppedChangeRef.current?.(0);
+            onBalloonCountChangeRef.current?.(1);
+          }, 0);
         },
         getBalloonCount: () => balloons.length,
       }),
-      [bounds, colors, resolvedMode, balloons.length, onScoreChange, onPoppedChange, onBalloonCountChange]
+      // Note: Using stable refs instead of callbacks in deps
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [bounds, colors, resolvedMode, balloons.length]
     );
 
     const toBoardPoint = useCallback(
@@ -125,7 +155,10 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
         const tapPoint = toBoardPoint(balloon, locationX, locationY);
         setScore((currentScore) => {
           const newScore = currentScore + 1;
-          onScoreChange?.(newScore);
+          // Defer callback to avoid setState during render
+          setTimeout(() => {
+            onScoreChangeRef.current?.(newScore);
+          }, 0);
           return newScore;
         });
         setBalloons((previous) =>
@@ -136,7 +169,9 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
           )
         );
       },
-      [easyMode, onScoreChange, toBoardPoint]
+      // Note: Using ref instead of callback in deps
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [easyMode, toBoardPoint]
     );
 
     const handleBalloonRelease = useCallback(

@@ -32,6 +32,16 @@ const knownParentKeys = [
 ];
 
 describe('Translation Validation', () => {
+  let consoleErrorSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+  });
+
   it('all known leaf keys return strings', () => {
     for (const key of knownLeafKeys) {
       expect(() => validateTranslation(key)).not.toThrow();

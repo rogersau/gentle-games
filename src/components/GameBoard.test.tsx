@@ -93,9 +93,10 @@ describe('GameBoard', () => {
   it('shows completion state and calls onGameComplete after all matches', async () => {
     const onGameComplete = jest.fn();
     jest.useFakeTimers();
+    let screen!: ReturnType<typeof render>;
 
     try {
-      const screen = render(
+      screen = render(
         <GameBoard onGameComplete={onGameComplete} onBackPress={jest.fn()} />
       );
 
@@ -133,7 +134,10 @@ describe('GameBoard', () => {
       // so we need to check for the rendered text instead
       expect(screen.getByText(/moves/i)).toBeTruthy();
     } finally {
-      jest.runOnlyPendingTimers();
+      screen.unmount();
+      await act(async () => {
+        jest.runOnlyPendingTimers();
+      });
       jest.useRealTimers();
     }
   });
@@ -150,12 +154,13 @@ describe('GameBoard', () => {
     jest.useFakeTimers();
     const now = Date.now();
     let mockTime = now;
+    let screen!: ReturnType<typeof render>;
     
     // Mock Date.now to return controlled times
     jest.spyOn(Date, 'now').mockImplementation(() => mockTime);
 
     try {
-      const screen = render(
+      screen = render(
         <GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />
       );
 
@@ -191,7 +196,10 @@ describe('GameBoard', () => {
       // The bug causes it to show negative because currentTime is stale
       expect(timerString).not.toMatch(/^-/); // Should not start with minus sign
     } finally {
-      jest.runOnlyPendingTimers();
+      screen.unmount();
+      await act(async () => {
+        jest.runOnlyPendingTimers();
+      });
       jest.useRealTimers();
       jest.restoreAllMocks();
     }
