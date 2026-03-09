@@ -100,8 +100,11 @@ describe('prepare-pwa', () => {
       expect(manifest.short_name).toBe('Gentle Games');
       expect(manifest.start_url).toBe('./');
       expect(manifest.display).toBe('standalone');
+      expect(manifest.orientation).toBe('portrait');
       expect(manifest.background_color).toBe('#FFFEF7');
       expect(manifest.theme_color).toBe('#FFFEF7');
+      expect(manifest.categories).toEqual(['games', 'kids', 'education']);
+      expect(manifest.prefer_related_applications).toBe(false);
       expect(manifest.icons).toHaveLength(5);
     });
 
@@ -202,6 +205,20 @@ describe('prepare-pwa', () => {
       expect(writtenContent).toContain('navigator.serviceWorker');
     });
 
+    it('adds kid-safe viewport and installed-app meta tags', () => {
+      mockReadFileSync.mockReturnValue('<html><head></head><body></body></html>');
+
+      pwa.patchIndexHtml();
+
+      const writtenContent = mockWriteFileSync.mock.calls[0][1];
+      expect(writtenContent).toContain(
+        `<meta name="viewport" content="${pwa.VIEWPORT_CONTENT}" />`
+      );
+      expect(writtenContent).toContain('apple-mobile-web-app-capable');
+      expect(writtenContent).toContain('mobile-web-app-capable');
+      expect(writtenContent).toContain('format-detection');
+    });
+
     it('updates existing manifest link with version', () => {
       mockReadFileSync.mockReturnValue('<html><head><link rel="manifest" href="manifest.webmanifest" /></head><body></body></html>');
 
@@ -209,6 +226,30 @@ describe('prepare-pwa', () => {
 
       const writtenContent = mockWriteFileSync.mock.calls[0][1];
       expect(writtenContent).toContain('manifest.webmanifest?v=');
+    });
+
+    it('updates an existing viewport tag instead of duplicating it', () => {
+      mockReadFileSync.mockReturnValue(
+        '<html><head><meta name="viewport" content="width=device-width, initial-scale=1" /></head><body></body></html>'
+      );
+
+      pwa.patchIndexHtml();
+
+      const writtenContent = mockWriteFileSync.mock.calls[0][1];
+      expect(writtenContent.match(/name="viewport"/g)).toHaveLength(1);
+      expect(writtenContent).toContain(pwa.VIEWPORT_CONTENT);
+    });
+
+    it('deduplicates repeated theme-color tags', () => {
+      mockReadFileSync.mockReturnValue(
+        '<html><head><meta name="theme-color" content="#FFFFFF" /><meta name="theme-color" content="#000000" /></head><body></body></html>'
+      );
+
+      pwa.patchIndexHtml();
+
+      const writtenContent = mockWriteFileSync.mock.calls[0][1];
+      expect(writtenContent.match(/name="theme-color"/g)).toHaveLength(1);
+      expect(writtenContent).toContain('content="#FFFEF7"');
     });
 
     it('updates existing service worker registration', () => {

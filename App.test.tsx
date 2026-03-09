@@ -22,6 +22,10 @@ jest.mock('./src/utils/pwaBackGuard', () => ({
   installPwaBackNavigationGuard: jest.fn(() => jest.fn()),
 }));
 
+jest.mock('./src/utils/pwaInteractionGuards', () => ({
+  installPwaInteractionGuards: jest.fn(() => jest.fn()),
+}));
+
 jest.mock('./src/utils/sentry', () => ({
   initSentry: jest.fn(() => Promise.resolve()),
 }));

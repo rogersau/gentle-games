@@ -35,19 +35,21 @@ export const GlitterScreen: React.FC = () => {
           <GlitterGlobe ref={globeRef} width={globeSize} height={globeSize} />
         </View>
 
-        <View style={styles.controls}>
+        <View style={styles.controls} testID="glitter-controls">
           <AppButton
-            label={t('games.glitterFall.addGlitter')}
+            label={t('games.glitterFall.clearGlitter')}
             variant="secondary"
-            onPress={() => globeRef.current?.addGlitter(12)}
-            accessibilityHint={t('games.glitterFall.addGlitterHint')}
+            onPress={() => globeRef.current?.clearGlitter()}
+            accessibilityHint={t('games.glitterFall.clearGlitterHint')}
+            testID="glitter-clear-button"
             style={{ flex: 1 }}
           />
           <AppButton
-            label={t('games.glitterFall.clearGlitter')}
+            label={t('games.glitterFall.addGlitter')}
             variant="primary"
-            onPress={() => globeRef.current?.clearGlitter()}
-            accessibilityHint={t('games.glitterFall.clearGlitterHint')}
+            onPress={() => globeRef.current?.addGlitter(12)}
+            accessibilityHint={t('games.glitterFall.addGlitterHint')}
+            testID="glitter-add-button"
             style={{ flex: 1 }}
           />
         </View>

@@ -3,7 +3,16 @@
   <head>
     <meta charset="utf-8" />
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#FFFEF7" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Gentle Games" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="format-detection" content="telephone=no" />
     <title>Gentle Games — Calm, Sensory-Friendly Games for Kids</title>
 
     <!-- Open Graph / Social Media Meta Tags -->
@@ -26,16 +35,46 @@
       html,
       body {
         height: 100%;
+        margin: 0;
+        overscroll-behavior: none;
+        -webkit-text-size-adjust: 100%;
       }
       /* These styles disable body scrolling if you are using <ScrollView> */
       body {
         overflow: hidden;
+        background: #FFFEF7;
       }
       /* These styles make the root element full-height */
       #root {
         display: flex;
         height: 100%;
         flex: 1;
+      }
+      #root,
+      #root * {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      #root a,
+      #root button,
+      #root [role='button'] {
+        touch-action: manipulation;
+      }
+      #root img,
+      #root svg,
+      #root canvas {
+        -webkit-user-drag: none;
+        user-drag: none;
+      }
+      #root input,
+      #root textarea,
+      #root select,
+      #root [contenteditable='true'] {
+        -webkit-touch-callout: default;
+        -webkit-user-select: text;
+        user-select: text;
       }
     </style>
   </head>

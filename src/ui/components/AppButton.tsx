@@ -8,6 +8,8 @@ import { ResolvedThemeMode } from '../../utils/theme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
+const BUTTON_TOUCH_SLOP = { top: 6, bottom: 6, left: 6, right: 6 };
+const BUTTON_PRESS_RETENTION = { top: 12, bottom: 12, left: 12, right: 12 };
 
 interface AppButtonProps {
   label: string;
@@ -51,7 +53,9 @@ export const AppButton: React.FC<AppButtonProps> = ({
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         disabled={disabled}
-        activeOpacity={0.8}
+        activeOpacity={0.9}
+        hitSlop={BUTTON_TOUCH_SLOP}
+        pressRetentionOffset={BUTTON_PRESS_RETENTION}
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityRole="button"
         accessibilityHint={accessibilityHint}

@@ -29,6 +29,7 @@ import { PASTEL_COLORS } from './src/types';
 import { useThemeColors } from './src/utils/theme';
 import { useFonts } from './src/ui/fonts';
 import { GentleErrorBoundary } from './src/components/GentleErrorBoundary';
+import { installPwaInteractionGuards } from './src/utils/pwaInteractionGuards';
 
 // Initialize Sentry and PostHog before React mounts (production only)
 void initSentry().catch((error: unknown) => {
@@ -228,6 +229,10 @@ export default function App() {
 
   useEffect(() => {
     return installPwaBackNavigationGuard();
+  }, []);
+
+  useEffect(() => {
+    return installPwaInteractionGuards();
   }, []);
 
   if (!fontsLoaded && !fontError) {

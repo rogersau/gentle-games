@@ -9,6 +9,8 @@ const indexPath = path.join(distDir, 'index.html');
 const manifestPath = path.join(distDir, 'manifest.webmanifest');
 const swPath = path.join(distDir, 'sw.js');
 const buildVersion = process.env.GITHUB_SHA || Date.now().toString();
+const VIEWPORT_CONTENT =
+  'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
 
 const requiredPwaFiles = [
   'icon-32x32.png',
@@ -52,11 +54,16 @@ const writeManifest = () => {
     name: 'Gentle Games',
     short_name: 'Gentle Games',
     description: 'Calm, sensory-friendly games for kids.',
+    lang: 'en',
+    dir: 'ltr',
     start_url: './',
     scope: './',
     display: 'standalone',
+    orientation: 'portrait',
     background_color: '#FFFEF7',
     theme_color: '#FFFEF7',
+    categories: ['games', 'kids', 'education'],
+    prefer_related_applications: false,
     icons: manifestIcons,
   };
 
@@ -143,6 +150,47 @@ self.addEventListener('fetch', (event) => {
 const patchIndexHtml = () => {
   let html = fs.readFileSync(indexPath, 'utf8');
 
+  const upsertHeadTag = (currentHtml, matcher, tag) => {
+    const withoutExisting = currentHtml.replace(matcher, '');
+    return withoutExisting.replace('</head>', `  ${tag}\n</head>`);
+  };
+
+  html = upsertHeadTag(
+    html,
+    /<meta[^>]+name=["']viewport["'][^>]*>\s*/gi,
+    `  <meta name="viewport" content="${VIEWPORT_CONTENT}" />`
+  );
+  html = upsertHeadTag(
+    html,
+    /<meta[^>]+name=["']theme-color["'][^>]*>\s*/gi,
+    '  <meta name="theme-color" content="#FFFEF7" />'
+  );
+  html = upsertHeadTag(
+    html,
+    /<meta[^>]+name=["']apple-mobile-web-app-capable["'][^>]*>\s*/gi,
+    '  <meta name="apple-mobile-web-app-capable" content="yes" />'
+  );
+  html = upsertHeadTag(
+    html,
+    /<meta[^>]+name=["']mobile-web-app-capable["'][^>]*>\s*/gi,
+    '  <meta name="mobile-web-app-capable" content="yes" />'
+  );
+  html = upsertHeadTag(
+    html,
+    /<meta[^>]+name=["']apple-mobile-web-app-title["'][^>]*>\s*/gi,
+    '  <meta name="apple-mobile-web-app-title" content="Gentle Games" />'
+  );
+  html = upsertHeadTag(
+    html,
+    /<meta[^>]+name=["']apple-mobile-web-app-status-bar-style["'][^>]*>\s*/gi,
+    '  <meta name="apple-mobile-web-app-status-bar-style" content="default" />'
+  );
+  html = upsertHeadTag(
+    html,
+    /<meta[^>]+name=["']format-detection["'][^>]*>\s*/gi,
+    '  <meta name="format-detection" content="telephone=no" />'
+  );
+
   if (html.includes('manifest.webmanifest')) {
     html = html.replace(
       /href="[^"]*manifest\.webmanifest[^"]*"/,
@@ -206,6 +254,7 @@ module.exports = {
   getCacheName,
   getManifestTag,
   getServiceWorkerTag,
+  VIEWPORT_CONTENT,
   writeManifest,
   writeServiceWorker,
   patchIndexHtml,
