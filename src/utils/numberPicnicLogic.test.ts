@@ -160,18 +160,48 @@ describe('numberPicnicLogic', () => {
       const { result } = renderHook(() => useNumberPicnicGame('easy'));
 
       expect(result.current.isDragging).toBe(false);
+      expect(result.current.isOverBasket).toBe(false);
+
+      act(() => {
+        result.current.handleDropStart();
+      });
+
+      expect(result.current.isDragging).toBe(true);
+      expect(result.current.isOverBasket).toBe(false);
 
       act(() => {
         result.current.handleDragOverBasket(true);
       });
 
       expect(result.current.isDragging).toBe(true);
+      expect(result.current.isOverBasket).toBe(true);
 
       act(() => {
         result.current.handleDropEnd();
       });
 
       expect(result.current.isDragging).toBe(false);
+      expect(result.current.isOverBasket).toBe(false);
+      expect(result.current.basketCount).toBe(0);
+    });
+
+    it('cleans up transient drag state after a successful drop', () => {
+      const { result } = renderHook(() => useNumberPicnicGame('easy'));
+
+      act(() => {
+        result.current.handleDropStart();
+        result.current.handleDragOverBasket(true);
+        result.current.handleDropEnd();
+        result.current.handleItemDrop(0);
+      });
+
+      act(() => {
+        jest.advanceTimersByTime(300);
+      });
+
+      expect(result.current.basketCount).toBe(1);
+      expect(result.current.isDragging).toBe(false);
+      expect(result.current.isOverBasket).toBe(false);
     });
 
     it('generates basket items based on count', () => {
@@ -199,4 +229,3 @@ describe('numberPicnicLogic', () => {
     });
   });
 });
-
