@@ -81,7 +81,12 @@ Plans:
   2. Automated regression coverage catches startup telemetry and bootstrap regressions before release.
   3. Automated regression coverage catches source-map upload regressions for web, Android, and iOS fallback paths before release.
   4. Bubble Pop, Category Match, and Memory Snap route wiring retain their interaction- and accessibility-sensitive behavior under targeted regression tests.
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Restore the regression baseline and add targeted Bubble Pop, Category Match, and Memory Snap guardrails
+- [ ] 04-02-PLAN.md — Fix source-map fallback path handling and add automated upload-path regression coverage
+- [ ] 04-03-PLAN.md — Expand startup telemetry and bootstrap regression coverage around observability lifecycle edges
 
 ## Coverage Check
 
