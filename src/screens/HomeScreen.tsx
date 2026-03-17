@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Linking, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../context/SettingsContext";
 import { Difficulty, PASTEL_COLORS, ThemeColors, UNFINISHED_GAMES } from "../types";
 import { ResolvedThemeMode, useThemeColors } from "../utils/theme";
+import { openExternalUrl } from "../utils/externalLinks";
 import { TranslationKey } from "../i18n/types";
 import {
   AppScreen,
@@ -114,6 +115,7 @@ export const HomeScreen: React.FC = () => {
   const { t } = useTranslation();
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [showDifficultySelector, setShowDifficultySelector] = useState(false);
+  const [showWebsiteFallback, setShowWebsiteFallback] = useState(false);
 
   const difficultyOptions: {
     value: Difficulty;
@@ -155,6 +157,14 @@ export const HomeScreen: React.FC = () => {
   const handleCloseModal = () => {
     setShowDifficultySelector(false);
     setSelectedGame(null);
+  };
+
+  const handleWebsitePress = async () => {
+    const result = await openExternalUrl("https://gentlegames.org");
+
+    if (result !== "opened") {
+      setShowWebsiteFallback(true);
+    }
   };
 
   const getDifficultyLabel = (difficulty: Difficulty) => {
@@ -236,7 +246,7 @@ export const HomeScreen: React.FC = () => {
             accessibilityHint={t("home.settingsHint")}
           />
           <TouchableOpacity
-            onPress={() => Linking.openURL('https://gentlegames.org')}
+            onPress={handleWebsitePress}
             style={styles.websiteLinkContainer}
             accessibilityRole="link"
             accessibilityLabel={t("home.websiteLink")}
@@ -272,6 +282,14 @@ export const HomeScreen: React.FC = () => {
             />
           ))}
         </View>
+      </AppModal>
+
+      <AppModal
+        visible={showWebsiteFallback}
+        onClose={() => setShowWebsiteFallback(false)}
+        title={t("home.websiteLinkFallback.title")}
+      >
+        <Text style={styles.modalSubtitle}>{t("home.websiteLinkFallback.message")}</Text>
       </AppModal>
     </AppScreen>
   );
