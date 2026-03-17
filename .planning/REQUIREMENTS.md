@@ -14,7 +14,7 @@
 
 ### Gameplay Correctness
 
-- [ ] **PLAY-01**: User can undo one mirrored drawing action with a single undo step in half and quarter symmetry modes
+- [x] **PLAY-01**: User can undo one mirrored drawing action with a single undo step in half and quarter symmetry modes
 - [ ] **PLAY-02**: User can only complete a Number Picnic basket drop when the dragged item overlaps the visible basket target
 - [ ] **PLAY-03**: User sees Number Picnic basket hover feedback only when the dragged item is actually over the basket
 
@@ -66,7 +66,7 @@
 | PRIV-02 | Phase 1 | Complete |
 | PRIV-03 | Phase 1 | Complete |
 | PRIV-04 | Phase 1 | Complete |
-| PLAY-01 | Phase 2 | Pending |
+| PLAY-01 | Phase 2 | Complete |
 | PLAY-02 | Phase 2 | Pending |
 | PLAY-03 | Phase 2 | Pending |
 | STAB-01 | Phase 3 | Pending |
