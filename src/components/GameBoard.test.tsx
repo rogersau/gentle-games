@@ -26,6 +26,18 @@ const baseTiles = [
   { id: '2b', value: '🐶', type: 'animal' as const, isFlipped: false, isMatched: false },
 ];
 
+const createTiles = (values: [string, string]) => [
+  { id: '1a', value: values[0], type: 'animal' as const, isFlipped: false, isMatched: false },
+  { id: '1b', value: values[0], type: 'animal' as const, isFlipped: false, isMatched: false },
+  { id: '2a', value: values[1], type: 'animal' as const, isFlipped: false, isMatched: false },
+  { id: '2b', value: values[1], type: 'animal' as const, isFlipped: false, isMatched: false },
+];
+
+const singlePairTiles = [
+  { id: '1a', value: '🐰', type: 'animal' as const, isFlipped: false, isMatched: false },
+  { id: '1b', value: '🐰', type: 'animal' as const, isFlipped: false, isMatched: false },
+];
+
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: mockSettings,
@@ -71,6 +83,9 @@ describe('GameBoard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     renderedTileSize = 0;
+    mockSettings.difficulty = 'easy';
+    mockSettings.theme = 'animals';
+    mockSettings.showCardPreview = false;
     mockedCalculateGridDimensions.mockReturnValue({ cols: 2, rows: 2 });
     mockedGenerateTiles.mockImplementation(() => baseTiles.map((tile) => ({ ...tile })));
   });
@@ -202,6 +217,148 @@ describe('GameBoard', () => {
       });
       jest.useRealTimers();
       jest.restoreAllMocks();
+    }
+  });
+
+  it('clears the previous preview timeout before starting a replacement preview', async () => {
+    jest.useFakeTimers();
+    mockSettings.showCardPreview = true;
+    mockedGenerateTiles
+      .mockImplementationOnce(() => createTiles(['🐰', '🐶']))
+      .mockImplementationOnce(() => createTiles(['🦊', '🐻']));
+
+    let screen!: ReturnType<typeof render>;
+
+    try {
+      screen = render(
+        <GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />
+      );
+
+      expect(screen.queryAllByText('🐰').length).toBeGreaterThan(0);
+      expect(screen.queryAllByText('?').length).toBe(0);
+
+      await act(async () => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      mockSettings.difficulty = 'medium';
+
+      screen.rerender(
+        <GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />
+      );
+
+      expect(screen.queryAllByText('🦊').length).toBeGreaterThan(0);
+      expect(screen.queryAllByText('?').length).toBe(0);
+
+      await act(async () => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      expect(screen.queryAllByText('🦊').length).toBeGreaterThan(0);
+      expect(screen.queryAllByText('?').length).toBe(0);
+
+      await act(async () => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      expect(screen.queryAllByText('?').length).toBe(4);
+    } finally {
+      screen?.unmount();
+      await act(async () => {
+        jest.runOnlyPendingTimers();
+      });
+      jest.useRealTimers();
+    }
+  });
+
+  it('does not finish the game from a pending match timer after unmount', async () => {
+    jest.useFakeTimers();
+    const onGameComplete = jest.fn();
+    mockedCalculateGridDimensions.mockReturnValue({ cols: 2, rows: 1 });
+    mockedGenerateTiles.mockImplementation(() => singlePairTiles.map((tile) => ({ ...tile })));
+
+    let screen!: ReturnType<typeof render>;
+
+    try {
+      screen = render(
+        <GameBoard onGameComplete={onGameComplete} onBackPress={jest.fn()} />
+      );
+
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('tile-1a'));
+      });
+      await waitFor(() => expect(screen.queryAllByText('🐰').length).toBeGreaterThan(0));
+
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('tile-1b'));
+      });
+
+      screen.unmount();
+
+      await act(async () => {
+        jest.advanceTimersByTime(500);
+      });
+
+      expect(onGameComplete).not.toHaveBeenCalled();
+    } finally {
+      screen?.unmount();
+      await act(async () => {
+        jest.runOnlyPendingTimers();
+      });
+      jest.useRealTimers();
+    }
+  });
+
+  it('does not let stale mismatch timers flip tiles in the next round preview', async () => {
+    jest.useFakeTimers();
+    mockedGenerateTiles
+      .mockImplementationOnce(() => createTiles(['🐰', '🐶']))
+      .mockImplementationOnce(() => createTiles(['🦊', '🐻']));
+
+    let screen!: ReturnType<typeof render>;
+
+    try {
+      screen = render(
+        <GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />
+      );
+
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('tile-1a'));
+      });
+      await waitFor(() => expect(screen.queryAllByText('🐰').length).toBeGreaterThan(0));
+
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('tile-2a'));
+      });
+
+      mockSettings.showCardPreview = true;
+      mockSettings.difficulty = 'medium';
+
+      await act(async () => {
+        screen.rerender(
+          <GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />
+        );
+      });
+
+      await waitFor(() => {
+        expect(screen.queryAllByText('🦊').length).toBeGreaterThan(0);
+        expect(screen.queryAllByText('🐻').length).toBeGreaterThan(0);
+        expect(screen.queryAllByText('?').length).toBe(0);
+      });
+
+      await act(async () => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      expect(screen.queryAllByText('🦊').length).toBeGreaterThan(0);
+      expect(screen.queryAllByText('🐻').length).toBeGreaterThan(0);
+      expect(screen.queryAllByText('?').length).toBe(0);
+    } finally {
+      screen?.unmount();
+      await act(async () => {
+        jest.runOnlyPendingTimers();
+      });
+      jest.useRealTimers();
     }
   });
 });
