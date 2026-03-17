@@ -1,7 +1,10 @@
 import React from 'react';
+import fs from 'fs';
+import path from 'path';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Linking, StyleSheet } from 'react-native';
 import { HomeScreen } from './HomeScreen';
+import { APP_ROUTES, HOME_GAME_ROUTES } from '../types/navigation';
 import { openExternalUrl } from '../utils/externalLinks';
 
 const mockNavigate = jest.fn();
@@ -60,35 +63,35 @@ describe('HomeScreen', () => {
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Drawing Pad'));
 
-    expect(mockNavigate).toHaveBeenCalledWith('Drawing');
+    expect(mockNavigate).toHaveBeenCalledWith(HOME_GAME_ROUTES.drawing);
   });
 
   it('navigates directly to Glitter screen when Glitter Fall is selected', () => {
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Glitter Fall'));
 
-    expect(mockNavigate).toHaveBeenCalledWith('Glitter');
+    expect(mockNavigate).toHaveBeenCalledWith(HOME_GAME_ROUTES['glitter-fall']);
   });
 
   it('navigates directly to Bubble screen when Bubble Pop is selected', () => {
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Bubble Pop'));
 
-    expect(mockNavigate).toHaveBeenCalledWith('Bubble');
+    expect(mockNavigate).toHaveBeenCalledWith(HOME_GAME_ROUTES['bubble-pop']);
   });
 
   it('navigates directly to Category Match screen when Category Match is selected', () => {
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Category Match'));
 
-    expect(mockNavigate).toHaveBeenCalledWith('CategoryMatch');
+    expect(mockNavigate).toHaveBeenCalledWith(HOME_GAME_ROUTES['category-match']);
   });
 
   it('navigates directly to Keepy Uppy screen when Keepy Uppy is selected', () => {
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Keepy Uppy'));
 
-    expect(mockNavigate).toHaveBeenCalledWith('KeepyUppy');
+    expect(mockNavigate).toHaveBeenCalledWith(HOME_GAME_ROUTES['keepy-uppy']);
   });
 
   it('shows difficulty modal for Memory Snap and navigates to Game after selection', async () => {
@@ -111,8 +114,16 @@ describe('HomeScreen', () => {
 
     await waitFor(() => {
       expect(mockUpdateSettings).toHaveBeenCalledWith({ difficulty: 'hard' });
-      expect(mockNavigate).toHaveBeenCalledWith('Game');
+      expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Game);
     });
+  });
+
+  it('navigates to Settings through the shared app route contract', () => {
+    const screen = render(<HomeScreen />);
+
+    fireEvent.press(screen.getByLabelText('⚙️  Settings'));
+
+    expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Settings);
   });
 
   it('hides games listed in hiddenGames setting', () => {
@@ -168,4 +179,13 @@ describe('HomeScreen', () => {
       expect(Linking.openURL).not.toHaveBeenCalled();
     }
   );
+
+  it('uses the shared typed route helpers instead of local route strings and casts', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'HomeScreen.tsx'), 'utf8');
+
+    expect(source).toContain('HOME_GAME_ROUTES');
+    expect(source).toContain('APP_ROUTES.Settings');
+    expect(source).not.toContain('const ROUTE_MAP: Record<string, string>');
+    expect(source).not.toContain('as never');
+  });
 });
