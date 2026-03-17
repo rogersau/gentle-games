@@ -1,16 +1,39 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { Text, View } from 'react-native';
+import { render, waitFor } from '@testing-library/react-native';
+import { AppContent } from './App';
+import { useSettings } from './src/context/SettingsContext';
+import { reconcileObservability } from './src/utils/observabilityBootstrap';
 
-// Mock dependencies
 jest.mock('expo-splash-screen', () => ({
   preventAutoHideAsync: jest.fn(() => Promise.resolve()),
   hideAsync: jest.fn(() => Promise.resolve()),
 }));
 
-jest.mock('expo-font', () => ({
-  useFonts: jest.fn(() => [true, null]),
+jest.mock('./src/i18n', () => ({}));
+
+jest.mock('./src/context/SettingsContext', () => ({
+  SettingsProvider: ({ children }: { children: React.ReactNode }) => children,
+  useSettings: jest.fn(),
+}));
+
+jest.mock('./src/context/ParentTimerContext', () => ({
+  ParentTimerProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+jest.mock('./src/ui/fonts', () => ({
+  useFonts: jest.fn(() => ({ fontsLoaded: true, fontError: null })),
+}));
+
+jest.mock('./src/utils/theme', () => ({
+  useThemeColors: jest.fn(() => ({
+    resolvedMode: 'light',
+    colors: {
+      background: '#ffffff',
+      text: '#000000',
+      textLight: '#666666',
+      primary: '#4A90E2',
+    },
+  })),
 }));
 
 jest.mock('./src/utils/sounds', () => ({
@@ -26,131 +49,191 @@ jest.mock('./src/utils/pwaInteractionGuards', () => ({
   installPwaInteractionGuards: jest.fn(() => jest.fn()),
 }));
 
-jest.mock('./src/utils/sentry', () => ({
-  initSentry: jest.fn(() => Promise.resolve()),
+jest.mock('./src/utils/analytics', () => ({
+  getPostHogClient: jest.fn(() => null),
+  trackScreenView: jest.fn(),
 }));
 
-jest.mock('./src/utils/theme', () => ({
-  useThemeColors: jest.fn(() => ({ resolvedMode: 'light' })),
+jest.mock('./src/utils/observabilityBootstrap', () => ({
+  reconcileObservability: jest.fn(() => Promise.resolve()),
 }));
-
-jest.mock('./src/ui/fonts', () => ({
-  useFonts: jest.fn(() => ({ fontsLoaded: true, fontError: null })),
-}));
-
-jest.mock('./src/context/ParentTimerContext', () => ({
-  ParentTimerProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
-
-jest.mock('./src/i18n', () => ({}));
-
-// Mock PostHogProvider to simulate the real behavior
-const mockPostHogProvider = jest.fn();
 
 jest.mock('posthog-react-native', () => ({
-  __esModule: true,
-  default: jest.fn(),
-  PostHogProvider: (props: { client?: unknown; children: React.ReactNode }) => {
-    mockPostHogProvider(props);
-    // Simulate the actual PostHogProvider behavior - throws without client or apiKey
-    if (!props.client) {
-      throw new Error('Either a PostHog client or an apiKey is required. If you want to use the PostHogProvider without a client, please provide an apiKey and the options={ disabled: true }.');
-    }
-    return props.children;
-  },
-  usePostHog: () => ({
-    capture: jest.fn(),
-    screen: jest.fn(),
+  PostHogProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+jest.mock('@react-navigation/native', () => ({
+  NavigationContainer: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+jest.mock('@react-navigation/stack', () => ({
+  createStackNavigator: () => ({
+    Navigator: ({ children }: { children: React.ReactNode }) => children,
+    Screen: ({ children }: { children: () => React.ReactNode }) => children(),
   }),
 }));
 
-// Test component that mimics AppNavigator structure
-const TestNavigator: React.FC<{ posthogClient: unknown }> = ({ posthogClient }) => {
-  const { PostHogProvider } = require('posthog-react-native');
-  
-  return (
-    <NavigationContainer>
-      <PostHogProvider
-        client={posthogClient}
-        autocapture={{
-          captureScreens: false,
-          captureTouches: false,
-        }}
-      >
-        <View testID="app-content">
-          <Text>App Content</Text>
-        </View>
-      </PostHogProvider>
-    </NavigationContainer>
-  );
-};
+jest.mock('./src/components/GentleErrorBoundary', () => ({
+  GentleErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
+}));
 
-describe('PostHogProvider error handling', () => {
+jest.mock('./src/screens/HomeScreen', () => ({
+  HomeScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text testID="app-shell">Home</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/GameScreen', () => ({
+  GameScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>Game</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/SettingsScreen', () => ({
+  SettingsScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>Settings</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/DrawingScreen', () => ({
+  DrawingScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>Drawing</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/GlitterScreen', () => ({
+  GlitterScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>Glitter</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/BubbleScreen', () => ({
+  BubbleScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>Bubble</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/CategoryMatchScreen', () => ({
+  CategoryMatchScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>CategoryMatch</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/KeepyUppyScreen', () => ({
+  KeepyUppyScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>KeepyUppy</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/BreathingGardenScreen', () => ({
+  BreathingGardenScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>BreathingGarden</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/PatternTrainScreen', () => ({
+  PatternTrainScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>PatternTrain</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/NumberPicnicScreen', () => ({
+  NumberPicnicScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>NumberPicnic</ReactNative.Text>;
+  },
+}));
+
+const mockedUseSettings = jest.mocked(useSettings);
+const mockedReconcileObservability = jest.mocked(reconcileObservability);
+
+describe('AppContent observability bootstrap', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockedUseSettings.mockReturnValue({
+      settings: {
+        animationsEnabled: true,
+        soundEnabled: true,
+        soundVolume: 0.5,
+        difficulty: 'medium',
+        theme: 'mixed',
+        showCardPreview: true,
+        keepyUppyEasyMode: true,
+        colorMode: 'system',
+        hiddenGames: [],
+        parentTimerMinutes: 0,
+        enableUnfinishedGames: true,
+        language: 'en-US',
+        reducedMotionEnabled: false,
+        telemetryEnabled: false,
+      },
+      updateSettings: jest.fn(),
+      isLoading: false,
+    });
   });
 
-  it('should throw error when PostHogProvider is rendered without a client', () => {
-    // This reproduces the production error
-    expect(() => {
-      render(<TestNavigator posthogClient={undefined} />);
-    }).toThrow('Either a PostHog client or an apiKey is required');
+  it('does not reconcile observability until settings finish loading', () => {
+    mockedUseSettings.mockReturnValue({
+      settings: {
+        animationsEnabled: true,
+        soundEnabled: true,
+        soundVolume: 0.5,
+        difficulty: 'medium',
+        theme: 'mixed',
+        showCardPreview: true,
+        keepyUppyEasyMode: true,
+        colorMode: 'system',
+        hiddenGames: [],
+        parentTimerMinutes: 0,
+        enableUnfinishedGames: true,
+        language: 'en-US',
+        reducedMotionEnabled: false,
+        telemetryEnabled: true,
+      },
+      updateSettings: jest.fn(),
+      isLoading: true,
+    });
+
+    const { queryByTestId } = render(<AppContent />);
+
+    expect(mockedReconcileObservability).not.toHaveBeenCalled();
+    expect(queryByTestId('app-shell')).toBeNull();
   });
 
-  it('should not throw error when PostHogProvider has a valid client', () => {
-    const mockClient = { id: 'test-client' };
-    
-    expect(() => {
-      render(<TestNavigator posthogClient={mockClient} />);
-    }).not.toThrow();
+  it('renders the app shell and reconciles with telemetry disabled', async () => {
+    const { getByTestId } = render(<AppContent />);
+
+    await waitFor(() => {
+      expect(mockedReconcileObservability).toHaveBeenCalledWith(false);
+    });
+
+    expect(getByTestId('app-shell')).toBeTruthy();
   });
 
-  it('should not throw error when PostHogProvider has null client', () => {
-    // This is what happens when there's no API key
-    expect(() => {
-      render(<TestNavigator posthogClient={null} />);
-    }).toThrow('Either a PostHog client or an apiKey is required');
-  });
-});
+  it('logs a warning and keeps rendering when bootstrap fails', async () => {
+    const warningSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockedReconcileObservability.mockRejectedValueOnce(new Error('bootstrap failed'));
 
-describe('App should work without PostHog configuration', () => {
-  it('should be able to conditionally render PostHogProvider based on client availability', () => {
-    // This is the fix we need - conditionally render the provider
-    const ConditionalNavigator: React.FC<{ posthogClient: unknown }> = ({ posthogClient }) => {
-      const { PostHogProvider } = require('posthog-react-native');
-      const content = (
-        <View testID="app-content">
-          <Text>App Content</Text>
-        </View>
+    const { getByTestId } = render(<AppContent />);
+
+    await waitFor(() => {
+      expect(warningSpy).toHaveBeenCalledWith(
+        'Observability bootstrap failed. Continuing without analytics or crash reporting.',
+        expect.any(Error),
       );
-      
-      // Only wrap with PostHogProvider if we have a client
-      if (posthogClient) {
-        return (
-          <NavigationContainer>
-            <PostHogProvider
-              client={posthogClient}
-              autocapture={{
-                captureScreens: false,
-                captureTouches: false,
-              }}
-            >
-              {content}
-            </PostHogProvider>
-          </NavigationContainer>
-        );
-      }
-      
-      return <NavigationContainer>{content}</NavigationContainer>;
-    };
-    
-    // Should work without client
-    const { getByTestId: getByTestIdNoClient } = render(<ConditionalNavigator posthogClient={null} />);
-    expect(getByTestIdNoClient('app-content')).toBeTruthy();
-    
-    // Should also work with client
-    const mockClient = { id: 'test-client' };
-    const { getByTestId: getByTestIdWithClient } = render(<ConditionalNavigator posthogClient={mockClient} />);
-    expect(getByTestIdWithClient('app-content')).toBeTruthy();
+    });
+
+    expect(getByTestId('app-shell')).toBeTruthy();
+    warningSpy.mockRestore();
   });
 });
