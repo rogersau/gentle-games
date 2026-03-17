@@ -5,7 +5,7 @@ import { Accelerometer } from 'expo-sensors';
 import { Circle, Polygon, Rect } from 'react-native-svg';
 import { GlitterGlobe, GlitterGlobeRef, resolveParticleCollisions } from './GlitterGlobe';
 
-const mockIsAvailableAsync = jest.fn<() => Promise<boolean>>();
+const mockIsAvailableAsync = jest.fn<Promise<boolean>, []>();
 const mockSetUpdateInterval = jest.fn();
 const mockAddListener = jest.fn();
 
