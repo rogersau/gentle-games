@@ -31,7 +31,12 @@ Milestone `v1.1 Resolve Identified Concerns` hardens the shipped app without cha
   3. When telemetry is enabled, crash and analytics events send only allowlisted diagnostic fields and exclude free-form user content.
   4. If a privacy or support link cannot be opened, the user sees a calm fallback message instead of a silent or jarring failure.
   5. App startup applies required settings before observability services initialize, so cold starts behave consistently.
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Add the persisted telemetry consent contract and settings toggle
+- [ ] 01-02-PLAN.md — Guard the audited website link with a calm in-app fallback
+- [ ] 01-03-PLAN.md — Move observability into a consent-aware bootstrap flow and allowlisted wrappers
 
 ### Phase 2: Correct and Safe Gameplay Interactions
 **Goal**: The known gameplay bugs are fixed, and timer-driven game flows stop mutating state after the player leaves.
@@ -97,7 +102,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Privacy-Safe Bootstrap | 0/TBD | Not started | - |
+| 1. Privacy-Safe Bootstrap | 0/3 | Not started | - |
 | 2. Correct and Safe Gameplay Interactions | 0/TBD | Not started | - |
 | 3. Stable Navigation and Responsive Surfaces | 0/TBD | Not started | - |
 | 4. Release Confidence and Regression Guardrails | 0/TBD | Not started | - |
