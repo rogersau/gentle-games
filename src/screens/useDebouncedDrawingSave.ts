@@ -5,6 +5,7 @@ import type { HistoryEntry } from '../components/DrawingCanvas';
 interface UseDebouncedDrawingSaveOptions {
   storageKey: string;
   debounceMs?: number;
+  onError?: (error: unknown) => void;
 }
 
 interface UseDebouncedDrawingSaveResult {
@@ -12,11 +13,12 @@ interface UseDebouncedDrawingSaveResult {
   flushPendingSave: () => Promise<void>;
 }
 
-const DEFAULT_DEBOUNCE_MS = 250;
+export const DEFAULT_DRAWING_SAVE_DEBOUNCE_MS = 250;
 
 export const useDebouncedDrawingSave = ({
   storageKey,
-  debounceMs = DEFAULT_DEBOUNCE_MS,
+  debounceMs = DEFAULT_DRAWING_SAVE_DEBOUNCE_MS,
+  onError,
 }: UseDebouncedDrawingSaveOptions): UseDebouncedDrawingSaveResult => {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingHistoryRef = useRef<HistoryEntry[] | null>(null);
@@ -34,17 +36,21 @@ export const useDebouncedDrawingSave = ({
       writeQueueRef.current = writeQueueRef.current
         .catch(() => undefined)
         .then(async () => {
-          if (history.length > 0) {
-            await AsyncStorage.setItem(storageKey, JSON.stringify(history));
-            return;
-          }
+          try {
+            if (history.length > 0) {
+              await AsyncStorage.setItem(storageKey, JSON.stringify(history));
+              return;
+            }
 
-          await AsyncStorage.removeItem(storageKey);
+            await AsyncStorage.removeItem(storageKey);
+          } catch (error) {
+            onError?.(error);
+          }
         });
 
       await writeQueueRef.current;
     },
-    [storageKey]
+    [onError, storageKey]
   );
 
   const flushPendingSave = useCallback(async () => {
@@ -77,4 +83,3 @@ export const useDebouncedDrawingSave = ({
     flushPendingSave,
   };
 };
-
