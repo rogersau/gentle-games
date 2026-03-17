@@ -2,7 +2,12 @@ import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
 import { AppContent } from './App';
 import { useSettings } from './src/context/SettingsContext';
+import { APP_ROUTES } from './src/types/navigation';
+import { trackScreenView } from './src/utils/analytics';
 import { reconcileObservability } from './src/utils/observabilityBootstrap';
+
+const mockNavigationContainer = jest.fn();
+const renderedScreenNames: string[] = [];
 
 jest.mock('expo-splash-screen', () => ({
   preventAutoHideAsync: jest.fn(() => Promise.resolve()),
@@ -63,14 +68,22 @@ jest.mock('posthog-react-native', () => ({
 }));
 
 jest.mock('@react-navigation/native', () => ({
-  NavigationContainer: ({ children }: { children: React.ReactNode }) => children,
+  NavigationContainer: (props: { children: React.ReactNode }) => {
+    mockNavigationContainer(props);
+    return props.children;
+  },
 }));
 
 jest.mock('@react-navigation/stack', () => ({
-  createStackNavigator: () => ({
-    Navigator: ({ children }: { children: React.ReactNode }) => children,
-    Screen: ({ children }: { children: () => React.ReactNode }) => children(),
-  }),
+  createStackNavigator: () => {
+    return {
+      Navigator: ({ children }: { children: React.ReactNode }) => children,
+      Screen: ({ name, children }: { name: string; children: () => React.ReactNode }) => {
+        renderedScreenNames.push(name);
+        return children();
+      },
+    };
+  },
 }));
 
 jest.mock('./src/components/GentleErrorBoundary', () => ({
@@ -155,11 +168,13 @@ jest.mock('./src/screens/NumberPicnicScreen', () => ({
 }));
 
 const mockedUseSettings = jest.mocked(useSettings);
+const mockedTrackScreenView = jest.mocked(trackScreenView);
 const mockedReconcileObservability = jest.mocked(reconcileObservability);
 
 describe('AppContent observability bootstrap', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    renderedScreenNames.length = 0;
     mockedUseSettings.mockReturnValue({
       settings: {
         animationsEnabled: true,
@@ -235,5 +250,31 @@ describe('AppContent observability bootstrap', () => {
 
     expect(getByTestId('app-shell')).toBeTruthy();
     warningSpy.mockRestore();
+  });
+
+  it('anchors stack screens and route tracking to the shared app route contract', () => {
+    render(<AppContent />);
+
+    expect(renderedScreenNames).toEqual(Object.values(APP_ROUTES));
+
+    const navigationContainerProps = mockNavigationContainer.mock.calls.at(-1)?.[0];
+    expect(navigationContainerProps).toBeTruthy();
+
+    navigationContainerProps?.onStateChange?.({
+      index: 0,
+      routes: [{ key: 'home', name: APP_ROUTES.Home }],
+    });
+    navigationContainerProps?.onStateChange?.({
+      index: 0,
+      routes: [{ key: 'unknown', name: 'SurpriseRoute' }],
+    });
+    navigationContainerProps?.onStateChange?.({
+      index: 0,
+      routes: [{ key: 'settings', name: APP_ROUTES.Settings }],
+    });
+
+    expect(mockedTrackScreenView).toHaveBeenCalledTimes(2);
+    expect(mockedTrackScreenView).toHaveBeenNthCalledWith(1, APP_ROUTES.Home);
+    expect(mockedTrackScreenView).toHaveBeenNthCalledWith(2, APP_ROUTES.Settings);
   });
 });

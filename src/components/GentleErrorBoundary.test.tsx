@@ -1,8 +1,11 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import { Text } from 'react-native';
 import { GentleErrorBoundary } from './GentleErrorBoundary';
+import { APP_ROUTES } from '../types/navigation';
 import { captureScreenError } from '../utils/sentry';
+
+const mockNavigate = jest.fn();
 
 jest.mock('../utils/sentry', () => ({
   captureScreenError: jest.fn(),
@@ -13,13 +16,17 @@ jest.mock('../ui/components', () => {
   const ReactNative = require('react-native');
 
   return {
-    AppButton: ({ label }: { label: string }) => <ReactNative.Text>{label}</ReactNative.Text>,
+    AppButton: ({ label, onPress }: { label: string; onPress: () => void }) => (
+      <ReactNative.Pressable onPress={onPress}>
+        <ReactNative.Text>{label}</ReactNative.Text>
+      </ReactNative.Pressable>
+    ),
   };
 });
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
-    navigate: jest.fn(),
+    navigate: mockNavigate,
   }),
 }));
 
@@ -56,7 +63,7 @@ describe('GentleErrorBoundary', () => {
 
   it('routes boundary reporting through the shared capture helper without raw component stacks', () => {
     render(
-      <GentleErrorBoundary screenName="Settings">
+      <GentleErrorBoundary screenName={APP_ROUTES.Settings}>
         <ThrowError />
       </GentleErrorBoundary>,
     );
@@ -66,7 +73,7 @@ describe('GentleErrorBoundary', () => {
         message: 'Boundary should not forward this text',
       }),
       {
-        screen: 'Settings',
+        screen: APP_ROUTES.Settings,
         boundary: 'GentleErrorBoundary',
       },
     );
@@ -74,7 +81,7 @@ describe('GentleErrorBoundary', () => {
 
   it('still renders fallback UI after reporting through the wrapper', () => {
     const { getByTestId, getByText } = render(
-      <GentleErrorBoundary screenName="Home">
+      <GentleErrorBoundary screenName={APP_ROUTES.Home}>
         <ThrowError />
       </GentleErrorBoundary>,
     );
@@ -82,5 +89,17 @@ describe('GentleErrorBoundary', () => {
     expect(getByTestId('error-boundary-fallback')).toBeTruthy();
     expect(getByText('errorBoundary.title')).toBeTruthy();
     expect(captureScreenError).toHaveBeenCalled();
+  });
+
+  it('navigates back to the shared Home route from the fallback', () => {
+    const { getByText } = render(
+      <GentleErrorBoundary screenName={APP_ROUTES.Home}>
+        <ThrowError />
+      </GentleErrorBoundary>,
+    );
+
+    fireEvent.press(getByText('errorBoundary.goHome'));
+
+    expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Home);
   });
 });
