@@ -8,8 +8,8 @@
 ### Privacy & Observability
 
 - [x] **PRIV-01**: Parent can review and change a telemetry preference for analytics and crash reporting from within app settings
-- [ ] **PRIV-02**: App does not send analytics or crash telemetry until the telemetry preference for that install is explicitly enabled
-- [ ] **PRIV-03**: Crash and analytics events only send allowlisted diagnostic fields and exclude free-form user content
+- [x] **PRIV-02**: App does not send analytics or crash telemetry until the telemetry preference for that install is explicitly enabled
+- [x] **PRIV-03**: Crash and analytics events only send allowlisted diagnostic fields and exclude free-form user content
 - [x] **PRIV-04**: User receives a calm fallback message if an external support or privacy link cannot be opened
 
 ### Gameplay Correctness
@@ -21,7 +21,7 @@
 ### Runtime Stability
 
 - [ ] **STAB-01**: Navigation between app routes is type-checked without unsafe route casts
-- [ ] **STAB-02**: App startup services initialize from an explicit bootstrap flow after required settings state is available
+- [x] **STAB-02**: App startup services initialize from an explicit bootstrap flow after required settings state is available
 - [ ] **STAB-03**: User does not experience delayed callbacks mutating flagged gameplay state after leaving a screen
 - [ ] **STAB-04**: Concern-prone gameplay state synchronization behaves consistently without timing hacks or disabled hook dependency checks
 
@@ -63,14 +63,14 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | PRIV-01 | Phase 1 | Complete |
-| PRIV-02 | Phase 1 | Pending |
-| PRIV-03 | Phase 1 | Pending |
+| PRIV-02 | Phase 1 | Complete |
+| PRIV-03 | Phase 1 | Complete |
 | PRIV-04 | Phase 1 | Complete |
 | PLAY-01 | Phase 2 | Pending |
 | PLAY-02 | Phase 2 | Pending |
 | PLAY-03 | Phase 2 | Pending |
 | STAB-01 | Phase 3 | Pending |
-| STAB-02 | Phase 1 | Pending |
+| STAB-02 | Phase 1 | Complete |
 | STAB-03 | Phase 2 | Pending |
 | STAB-04 | Phase 3 | Pending |
 | PERF-01 | Phase 3 | Pending |

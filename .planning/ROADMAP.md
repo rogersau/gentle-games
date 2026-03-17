@@ -14,7 +14,7 @@ Milestone `v1.1 Resolve Identified Concerns` hardens the shipped app without cha
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Privacy-Safe Bootstrap** - Parent-controlled telemetry and safer startup observability defaults land first.
+- [x] **Phase 1: Privacy-Safe Bootstrap** - Parent-controlled telemetry and safer startup observability defaults land first. (completed 2026-03-17)
 - [ ] **Phase 2: Correct and Safe Gameplay Interactions** - Audited gameplay interactions behave correctly and timer-driven flows stop cleanly.
 - [ ] **Phase 3: Stable Navigation and Responsive Surfaces** - High-risk routed and interactive surfaces become safer to change and smoother to use.
 - [ ] **Phase 4: Release Confidence and Regression Guardrails** - Cross-platform release tooling and targeted regression coverage lock in the milestone.
@@ -102,7 +102,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Privacy-Safe Bootstrap | 2/3 | In Progress|  |
+| 1. Privacy-Safe Bootstrap | 3/3 | Complete   | 2026-03-17 |
 | 2. Correct and Safe Gameplay Interactions | 0/TBD | Not started | - |
 | 3. Stable Navigation and Responsive Surfaces | 0/TBD | Not started | - |
 | 4. Release Confidence and Regression Guardrails | 0/TBD | Not started | - |
