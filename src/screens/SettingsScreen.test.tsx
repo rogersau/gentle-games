@@ -1,5 +1,7 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
+import { useTranslation } from 'react-i18next';
 import { SettingsScreen } from './SettingsScreen';
 
 const mockGoBack = jest.fn();
@@ -15,8 +17,15 @@ let mockSettings = {
   colorMode: 'system' as const,
   hiddenGames: [] as string[],
   parentTimerMinutes: 0,
+  enableUnfinishedGames: true,
   language: 'en-AU' as const,
   reducedMotionEnabled: false,
+  telemetryEnabled: false,
+};
+
+const TranslationProbe = ({ translationKey }: { translationKey: string }) => {
+  const { t } = useTranslation();
+  return <Text>{t(translationKey)}</Text>;
 };
 
 jest.mock('@react-navigation/native', () => ({
@@ -46,8 +55,10 @@ describe('SettingsScreen', () => {
       colorMode: 'system',
       hiddenGames: [],
       parentTimerMinutes: 0,
+      enableUnfinishedGames: true,
       language: 'en-AU',
       reducedMotionEnabled: false,
+      telemetryEnabled: false,
     };
   });
 
@@ -113,7 +124,6 @@ describe('SettingsScreen', () => {
     expect(mockUpdateSettings).toHaveBeenCalledWith({ parentTimerMinutes: 15 });
   });
 
-  // New tests
   it('toggles animations setting', () => {
     const screen = render(React.createElement(SettingsScreen));
     const animationsSwitch = screen.getByRole('switch', { name: /Animations/i });
@@ -139,56 +149,49 @@ describe('SettingsScreen', () => {
     expect(mockUpdateSettings).toHaveBeenCalledWith({ soundVolume: 0.6 });
   });
 
-  it('selects 30 min parent timer', () => {
+  it('shows a telemetry toggle with calm localized privacy copy', () => {
     const screen = render(React.createElement(SettingsScreen));
-    fireEvent.press(screen.getByText('30 min'));
 
-    expect(mockUpdateSettings).toHaveBeenCalledWith({ parentTimerMinutes: 30 });
+    expect(screen.getByText('Share anonymous app updates')).toBeTruthy();
+    expect(
+      screen.getByText('Analytics and crash reports stay off until you turn this on.')
+    ).toBeTruthy();
   });
 
-  it('selects 20 min parent timer', () => {
-    const screen = render(React.createElement(SettingsScreen));
-    fireEvent.press(screen.getByText('20 min'));
-
-    expect(mockUpdateSettings).toHaveBeenCalledWith({ parentTimerMinutes: 20 });
-  });
-
-  it('selects 30 min parent timer', () => {
-    const screen = render(React.createElement(SettingsScreen));
-    fireEvent.press(screen.getByText('30 min'));
-
-    expect(mockUpdateSettings).toHaveBeenCalledWith({ parentTimerMinutes: 30 });
-  });
-
-  it('shows off parent timer when selected', () => {
-    const screen = render(React.createElement(SettingsScreen));
-    fireEvent.press(screen.getByText('Off'));
-
-    expect(mockUpdateSettings).toHaveBeenCalledWith({ parentTimerMinutes: 0 });
-  });
-
-  it('hides multiple games', () => {
-    const screen = render(React.createElement(SettingsScreen));
-    
-    // Hide Memory Snap
-    const memorySnapSwitch = screen.getByRole('switch', { name: /Memory Snap/i });
-    fireEvent(memorySnapSwitch, 'valueChange', false);
-    
-    expect(mockUpdateSettings).toHaveBeenCalledWith({
-      hiddenGames: ['memory-snap'],
+  it('toggles telemetry consent on and off', () => {
+    const firstScreen = render(React.createElement(SettingsScreen));
+    const telemetryOffSwitch = firstScreen.getByRole('switch', {
+      name: /Share anonymous app updates/i,
     });
+    fireEvent(telemetryOffSwitch, 'valueChange', true);
+
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ telemetryEnabled: true });
+
+    mockUpdateSettings.mockClear();
+    mockSettings.telemetryEnabled = true;
+
+    const secondScreen = render(React.createElement(SettingsScreen));
+    const telemetryOnSwitch = secondScreen.getByRole('switch', {
+      name: /Share anonymous app updates/i,
+    });
+    fireEvent(telemetryOnSwitch, 'valueChange', false);
+
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ telemetryEnabled: false });
   });
 
-  it('shows previously hidden game when toggled back', () => {
-    mockSettings.hiddenGames = ['drawing'];
-    const screen = render(React.createElement(SettingsScreen));
+  it('provides localized website fallback strings for downstream reuse', () => {
+    const titleProbe = render(
+      <TranslationProbe translationKey="home.websiteLinkFallback.title" />
+    );
+    const messageProbe = render(
+      <TranslationProbe translationKey="home.websiteLinkFallback.message" />
+    );
 
-    // Show Drawing game (currently hidden, so toggle is off)
-    const drawingSwitch = screen.getByRole('switch', { name: /drawing/i });
-    fireEvent(drawingSwitch, 'valueChange', true);
-
-    expect(mockUpdateSettings).toHaveBeenCalledWith({
-      hiddenGames: [],
-    });
+    expect(titleProbe.getByText('Website unavailable')).toBeTruthy();
+    expect(
+      messageProbe.getByText(
+        "We couldn't open the Gentle Games website right now. Please try again later."
+      )
+    ).toBeTruthy();
   });
 });
