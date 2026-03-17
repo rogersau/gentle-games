@@ -15,7 +15,7 @@ Milestone `v1.1 Resolve Identified Concerns` hardens the shipped app without cha
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: Privacy-Safe Bootstrap** - Parent-controlled telemetry and safer startup observability defaults land first. (completed 2026-03-17)
-- [ ] **Phase 2: Correct and Safe Gameplay Interactions** - Audited gameplay interactions behave correctly and timer-driven flows stop cleanly.
+- [x] **Phase 2: Correct and Safe Gameplay Interactions** - Audited gameplay interactions behave correctly and timer-driven flows stop cleanly. (completed 2026-03-17)
 - [ ] **Phase 3: Stable Navigation and Responsive Surfaces** - High-risk routed and interactive surfaces become safer to change and smoother to use.
 - [ ] **Phase 4: Release Confidence and Regression Guardrails** - Cross-platform release tooling and targeted regression coverage lock in the milestone.
 
@@ -51,9 +51,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Make Drawing Canvas undo remove one mirrored action per tap
-- [ ] 02-02-PLAN.md — Align Number Picnic hover and drop behavior with visible basket overlap
-- [ ] 02-03-PLAN.md — Replace audited gameplay timers with tracked cancellable cleanup
+- [x] 02-01-PLAN.md — Make Drawing Canvas undo remove one mirrored action per tap
+- [x] 02-02-PLAN.md — Align Number Picnic hover and drop behavior with visible basket overlap
+- [x] 02-03-PLAN.md — Replace audited gameplay timers with tracked cancellable cleanup
 
 ### Phase 3: Stable Navigation and Responsive Surfaces
 **Goal**: Concern-prone routed and interactive surfaces remain consistent under change and responsive during longer or higher-motion sessions.
@@ -108,6 +108,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Privacy-Safe Bootstrap | 3/3 | Complete   | 2026-03-17 |
-| 2. Correct and Safe Gameplay Interactions | 2/3 | In Progress | - |
+| 2. Correct and Safe Gameplay Interactions | 3/3 | Complete | 2026-03-17 |
 | 3. Stable Navigation and Responsive Surfaces | 0/TBD | Not started | - |
 | 4. Release Confidence and Regression Guardrails | 0/TBD | Not started | - |
