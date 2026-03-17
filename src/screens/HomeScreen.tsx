@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../context/SettingsContext";
 import { Difficulty, PASTEL_COLORS, ThemeColors, UNFINISHED_GAMES } from "../types";
+import { APP_ROUTES, AppStackParamList, HOME_GAME_ROUTES, HomeGameId } from "../types/navigation";
 import { ResolvedThemeMode, useThemeColors } from "../utils/theme";
 import { openExternalUrl } from "../utils/externalLinks";
 import { TranslationKey } from "../i18n/types";
@@ -18,7 +20,7 @@ import { Space, TypeStyle } from "../ui/tokens";
 import { useLayout } from "../ui/useLayout";
 
 interface Game {
-  id: string;
+  id: HomeGameId;
   nameKey: TranslationKey;
   descriptionKey: TranslationKey;
   icon: string;
@@ -91,20 +93,8 @@ const GAMES: Game[] = [
   },
 ];
 
-const ROUTE_MAP: Record<string, string> = {
-  "memory-snap": "Game",
-  drawing: "Drawing",
-  "glitter-fall": "Glitter",
-  "bubble-pop": "Bubble",
-  "category-match": "CategoryMatch",
-  "keepy-uppy": "KeepyUppy",
-  "breathing-garden": "BreathingGarden",
-  "pattern-train": "PatternTrain",
-  "number-picnic": "NumberPicnic",
-};
-
 export const HomeScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<StackNavigationProp<AppStackParamList>>();
   const { settings, updateSettings } = useSettings();
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(
@@ -141,8 +131,7 @@ export const HomeScreen: React.FC = () => {
     if (game.id === "memory-snap") {
       setShowDifficultySelector(true);
     } else {
-      const route = ROUTE_MAP[game.id];
-      if (route) navigation.navigate(route as never);
+      navigation.navigate(HOME_GAME_ROUTES[game.id]);
       setSelectedGame(null);
     }
   };
@@ -150,7 +139,7 @@ export const HomeScreen: React.FC = () => {
   const handleDifficultySelect = async (difficulty: Difficulty) => {
     await updateSettings({ difficulty });
     setShowDifficultySelector(false);
-    navigation.navigate("Game" as never);
+    navigation.navigate(APP_ROUTES.Game);
     setSelectedGame(null);
   };
 
@@ -242,7 +231,7 @@ export const HomeScreen: React.FC = () => {
             label={t("home.settingsButton")}
             variant="secondary"
             size="lg"
-            onPress={() => navigation.navigate("Settings" as never)}
+            onPress={() => navigation.navigate(APP_ROUTES.Settings)}
             accessibilityHint={t("home.settingsHint")}
           />
           <TouchableOpacity
