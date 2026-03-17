@@ -20,7 +20,7 @@
 
 ### Runtime Stability
 
-- [ ] **STAB-01**: Navigation between app routes is type-checked without unsafe route casts
+- [x] **STAB-01**: Navigation between app routes is type-checked without unsafe route casts
 - [x] **STAB-02**: App startup services initialize from an explicit bootstrap flow after required settings state is available
 - [x] **STAB-03**: User does not experience delayed callbacks mutating flagged gameplay state after leaving a screen
 - [ ] **STAB-04**: Concern-prone gameplay state synchronization behaves consistently without timing hacks or disabled hook dependency checks
@@ -69,7 +69,7 @@
 | PLAY-01 | Phase 2 | Complete |
 | PLAY-02 | Phase 2 | Complete |
 | PLAY-03 | Phase 2 | Complete |
-| STAB-01 | Phase 3 | Pending |
+| STAB-01 | Phase 3 | Complete |
 | STAB-02 | Phase 1 | Complete |
 | STAB-03 | Phase 2 | Complete |
 | STAB-04 | Phase 3 | Pending |
