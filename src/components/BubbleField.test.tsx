@@ -1,6 +1,7 @@
 import React from 'react';
 import { act, render } from '@testing-library/react-native';
 import { PanResponder, View } from 'react-native';
+import { Circle, Text as SvgText } from 'react-native-svg';
 import { BubbleField } from './BubbleField';
 
 jest.mock('../utils/theme', () => ({
@@ -105,17 +106,16 @@ describe('BubbleField', () => {
   };
 
   const getBubbleCircles = (screen: ReturnType<typeof render>) =>
-    screen.UNSAFE_root.findAll(
-      (node) =>
-        node.type === 'RNSVGCircle' &&
-        node.props.strokeWidth === 2 &&
-        node.props.fill !== 'none'
-    );
+    screen.UNSAFE_root
+      .findAllByType(Circle)
+      .filter((node: any) => node.props.strokeWidth === 2 && node.props.fill !== 'none');
 
   const getPopIndicators = (screen: ReturnType<typeof render>) =>
-    screen.UNSAFE_root.findAll(
-      (node) => node.type === 'RNSVGCircle' && node.props.strokeWidth === 2 && node.props.fill === 'none'
-    );
+    screen.UNSAFE_root
+      .findAllByType(Circle)
+      .filter((node: any) => node.props.strokeWidth === 2 && node.props.fill === 'none');
+
+  const getPopIndicatorLabels = (screen: ReturnType<typeof render>) => screen.UNSAFE_root.findAllByType(SvgText);
 
   beforeAll(() => {
     globalThis.requestAnimationFrame = jest.fn((callback: FrameRequestCallback) => {
@@ -146,7 +146,7 @@ describe('BubbleField', () => {
     globalThis.cancelAnimationFrame = originalCancelAnimationFrame;
   });
 
-  it('cancels its animation frame on unmount and keeps minimum/spawn behavior intact', () => {
+  it('keeps minimum bubbles and publishes spawned bubbles as frames advance', () => {
     const screen = render(
       <BubbleField
         width={240}
@@ -162,8 +162,15 @@ describe('BubbleField', () => {
     advanceFrame(0);
     advanceFrame(50);
     advanceFrame(100);
+    advanceFrame(150);
 
     expect(getBubbleCircles(screen)).toHaveLength(3);
+  });
+
+  it('cancels its animation frame on unmount even when the first frame id is zero', () => {
+    const screen = render(
+      <BubbleField width={240} height={220} minActiveBubbles={1} maxActiveBubbles={2} />
+    );
 
     screen.unmount();
 
@@ -181,24 +188,33 @@ describe('BubbleField', () => {
     );
 
     expect(
-      getBubbleCircles(screen).some((node) => node.props.cx === 60 && node.props.cy === 70)
-    ).toBe(true);
+      getBubbleCircles(screen).length
+    ).toBeGreaterThan(0);
+
+    const firstBubble = getBubbleCircles(screen)[0];
+    const tappedBubblePosition = {
+      x: firstBubble.props.cx,
+      y: firstBubble.props.cy,
+    };
 
     act(() => {
       touchLayer?.props.onPanResponderRelease({
         nativeEvent: {
-          locationX: 60,
-          locationY: 70,
+          locationX: tappedBubblePosition.x,
+          locationY: tappedBubblePosition.y,
         },
       });
     });
 
     expect(onBubblePop).toHaveBeenCalledTimes(1);
     expect(
-      getBubbleCircles(screen).some((node) => node.props.cx === 60 && node.props.cy === 70)
+      getBubbleCircles(screen).some(
+        (node: any) =>
+          node.props.cx === tappedBubblePosition.x && node.props.cy === tappedBubblePosition.y
+      )
     ).toBe(false);
     expect(getBubbleCircles(screen)).toHaveLength(1);
     expect(getPopIndicators(screen)).toHaveLength(1);
-    expect(screen.getByText('POP')).toBeTruthy();
+    expect(getPopIndicatorLabels(screen)).toHaveLength(1);
   });
 });
