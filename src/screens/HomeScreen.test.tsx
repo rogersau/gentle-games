@@ -1,10 +1,12 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { Linking, StyleSheet } from 'react-native';
 import { HomeScreen } from './HomeScreen';
+import { openExternalUrl } from '../utils/externalLinks';
 
 const mockNavigate = jest.fn();
 const mockUpdateSettings = jest.fn().mockResolvedValue(undefined);
+const mockOpenExternalUrl = openExternalUrl as jest.MockedFunction<typeof openExternalUrl>;
 let mockSettings = {
   animationsEnabled: true,
   soundEnabled: true,
@@ -31,9 +33,15 @@ jest.mock('../context/SettingsContext', () => ({
   }),
 }));
 
+jest.mock('../utils/externalLinks', () => ({
+  openExternalUrl: jest.fn(),
+}));
+
 describe('HomeScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockOpenExternalUrl.mockResolvedValue('opened');
+    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     mockSettings = {
       animationsEnabled: true,
       soundEnabled: true,
@@ -127,4 +135,37 @@ describe('HomeScreen', () => {
     expect(flex).toBe(1);
     expect(maxHeight).toBeUndefined();
   });
+
+  it('routes website link presses through openExternalUrl', async () => {
+    const screen = render(<HomeScreen />);
+
+    fireEvent.press(screen.getByRole('link'));
+
+    await waitFor(() => {
+      expect(mockOpenExternalUrl).toHaveBeenCalledWith('https://gentlegames.org');
+    });
+    expect(Linking.openURL).not.toHaveBeenCalled();
+  });
+
+  it.each(['unsupported', 'failed'] as const)(
+    'shows a calm website fallback modal when the helper returns %s',
+    async (result) => {
+      mockOpenExternalUrl.mockResolvedValue(result);
+      const screen = render(<HomeScreen />);
+
+      fireEvent.press(screen.getByRole('link'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Website unavailable')).toBeTruthy();
+        expect(
+          screen.getByText(
+            "We couldn't open the Gentle Games website right now. Please try again later."
+          )
+        ).toBeTruthy();
+      });
+
+      expect(screen.queryByText(/exploded|Error:|TypeError/i)).toBeNull();
+      expect(Linking.openURL).not.toHaveBeenCalled();
+    }
+  );
 });
