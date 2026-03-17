@@ -105,7 +105,7 @@ describe('BreathingGardenScreen', () => {
     consoleErrorSpy = createInfiniteLoopSpy();
     animatedTimingSpy = jest
       .spyOn(Animated, 'timing')
-      .mockImplementation((value: Animated.Value, config: Animated.TimingAnimationConfig) => ({
+      .mockImplementation((value: Animated.Value | Animated.ValueXY, config: Animated.TimingAnimationConfig) => ({
         start: (callback?: Animated.EndCallback) => {
           queuedAnimations.push({
             toValue: typeof config.toValue === 'number' ? config.toValue : 0,
