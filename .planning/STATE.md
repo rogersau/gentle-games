@@ -4,17 +4,17 @@ milestone: v1.1
 milestone_name: milestone
 current_phase: 2
 current_phase_name: Correct and Safe Gameplay Interactions
-current_plan: 2
-status: ready_for_execution
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-17T21:58:05.834Z"
+current_plan: 3
+status: Ready for Execution
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-03-17T22:10:45.784Z"
 last_activity: 2026-03-17
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 4
-  percent: 67
+  completed_plans: 6
+  percent: 83
 ---
 
 # Project State
@@ -31,7 +31,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 Phase: 2 of 4 (Correct and Safe Gameplay Interactions)
 Current Phase: 2
 Current Phase Name: Correct and Safe Gameplay Interactions
-Current Plan: 2
+Current Plan: 3
 Total Plans in Phase: 3
 Plan: 2 of 3
 Status: Ready for Execution
@@ -63,6 +63,7 @@ Progress: [████████░░] 83%
 | Phase 01 P03 | 8min | 2 tasks | 10 files |
 | Phase 02 P01 | 1min | 1 tasks | 2 files |
 | Phase 02 P02 | 3min | 2 tasks | 6 files |
+| Phase 02 P03 | 6min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Stored shared actionId metadata on DrawingCanvas history entries so undo removes the latest mirrored gesture batch instead of relying on the current symmetry mode.
 - [Phase 02]: Number Picnic now tracks active dragging separately from basket overlap so hover, drop validity, and scroll lock no longer share one boolean.
 - [Phase 02]: Visible basket bounds now drive both hover feedback and accepted drops in Number Picnic, replacing the old upward-threshold heuristic.
+- [Phase 02]: Extracted the Pattern Train timeout-registry pattern into a shared hook so audited games can share one cancellable timer contract.
+- [Phase 02]: Memory Snap now clears all tracked timers before each restart so stale preview, match, and mismatch callbacks cannot mutate the next round.
 
 ### Pending Todos
 
@@ -96,6 +99,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-17T21:58:05.834Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-03-17T22:10:45.782Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None

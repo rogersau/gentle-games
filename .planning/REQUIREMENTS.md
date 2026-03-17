@@ -22,14 +22,14 @@
 
 - [ ] **STAB-01**: Navigation between app routes is type-checked without unsafe route casts
 - [x] **STAB-02**: App startup services initialize from an explicit bootstrap flow after required settings state is available
-- [ ] **STAB-03**: User does not experience delayed callbacks mutating flagged gameplay state after leaving a screen
+- [x] **STAB-03**: User does not experience delayed callbacks mutating flagged gameplay state after leaving a screen
 - [ ] **STAB-04**: Concern-prone gameplay state synchronization behaves consistently without timing hacks or disabled hook dependency checks
 
 ### Performance
 
 - [ ] **PERF-01**: High-motion screens avoid the hottest per-frame React state churn that causes dropped frames on lower-end devices
 - [ ] **PERF-02**: Long drawing sessions persist changes without rewriting the full drawing history on every edit
-- [ ] **PERF-03**: Match and round scheduling on flagged games uses tracked cancellable timers that do not pile up across rapid navigation or replay flows
+- [x] **PERF-03**: Match and round scheduling on flagged games uses tracked cancellable timers that do not pile up across rapid navigation or replay flows
 
 ### Release & Regression Coverage
 
@@ -71,11 +71,11 @@
 | PLAY-03 | Phase 2 | Complete |
 | STAB-01 | Phase 3 | Pending |
 | STAB-02 | Phase 1 | Complete |
-| STAB-03 | Phase 2 | Pending |
+| STAB-03 | Phase 2 | Complete |
 | STAB-04 | Phase 3 | Pending |
 | PERF-01 | Phase 3 | Pending |
 | PERF-02 | Phase 3 | Pending |
-| PERF-03 | Phase 2 | Pending |
+| PERF-03 | Phase 2 | Complete |
 | RELG-01 | Phase 4 | Pending |
 | RELG-02 | Phase 4 | Pending |
 | RELG-03 | Phase 4 | Pending |
