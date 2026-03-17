@@ -168,6 +168,9 @@ describe('numberPicnicLogic', () => {
       act(() => {
         jest.advanceTimersByTime(100);
         result.current.startNewRound();
+      });
+
+      act(() => {
         result.current.handleItemDrop(0);
       });
 

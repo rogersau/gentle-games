@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Difficulty, NumberPicnicPrompt, NUMBER_PICNIC_ITEMS } from '../types';
+import { useTrackedTimeouts } from './useTrackedTimeouts';
 
 export const getNumberPicnicMaxCount = (difficulty: Difficulty): number => {
   if (difficulty === 'easy') return 5;
@@ -55,6 +56,8 @@ export interface UseNumberPicnicGameResult {
 }
 
 export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGameResult => {
+  const { queueTimeout, clearAllTimeouts } = useTrackedTimeouts();
+
   // Game state
   const [prompt, setPrompt] = useState(() => generateNumberPicnicPrompt(difficulty));
   const [basketCount, setBasketCount] = useState(0);
@@ -126,10 +129,10 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
       return prev - 1;
     });
     
-    setTimeout(() => {
+    queueTimeout(() => {
       setIsProcessing(false);
     }, 300);
-  }, [difficulty]);
+  }, [difficulty, queueTimeout]);
 
   // Handle drop end
   const handleDropEnd = useCallback(() => {
@@ -139,10 +142,12 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
 
   // Start new round after basket exits
   const startNewRound = useCallback(() => {
+    clearAllTimeouts();
     const newPrompt = generateNumberPicnicPrompt(difficulty);
     setPrompt(newPrompt);
     setBasketCount(0);
     setCompletedPicnics(current => current + 1);
+    setIsProcessing(false);
     setIsSuccess(false);
     setIsDragging(false);
     setIsOverBasket(false);
@@ -150,7 +155,7 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
     // Reset blanket items for new round
     const max = getNumberPicnicMaxCount(difficulty);
     setBlanketItemCount(Math.max(12, max + 3));
-  }, [difficulty]);
+  }, [clearAllTimeouts, difficulty]);
 
   return {
     // State
