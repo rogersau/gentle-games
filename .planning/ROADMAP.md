@@ -16,7 +16,7 @@ Milestone `v1.1 Resolve Identified Concerns` hardens the shipped app without cha
 
 - [x] **Phase 1: Privacy-Safe Bootstrap** - Parent-controlled telemetry and safer startup observability defaults land first. (completed 2026-03-17)
 - [x] **Phase 2: Correct and Safe Gameplay Interactions** - Audited gameplay interactions behave correctly and timer-driven flows stop cleanly. (completed 2026-03-17)
-- [ ] **Phase 3: Stable Navigation and Responsive Surfaces** - High-risk routed and interactive surfaces become safer to change and smoother to use.
+- [x] **Phase 3: Stable Navigation and Responsive Surfaces** - High-risk routed and interactive surfaces become safer to change and smoother to use. (completed 2026-03-17)
 - [ ] **Phase 4: Release Confidence and Regression Guardrails** - Cross-platform release tooling and targeted regression coverage lock in the milestone.
 
 ## Phase Details
@@ -67,9 +67,9 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Type the shared navigation contract and audited route call sites
-- [ ] 03-02-PLAN.md — Remove audited timing and dependency hacks from Keepy Uppy and Breathing Garden
-- [ ] 03-03-PLAN.md — Reduce per-frame React churn on Bubble Field and Glitter Globe
+- [x] 03-01-PLAN.md — Type the shared navigation contract and audited route call sites
+- [x] 03-02-PLAN.md — Remove audited timing and dependency hacks from Keepy Uppy and Breathing Garden
+- [x] 03-03-PLAN.md — Reduce per-frame React churn on Bubble Field and Glitter Globe
 - [x] 03-04-PLAN.md — Debounce drawing persistence with flush-on-exit safeguards
 
 ### Phase 4: Release Confidence and Regression Guardrails
@@ -115,5 +115,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Privacy-Safe Bootstrap | 3/3 | Complete   | 2026-03-17 |
 | 2. Correct and Safe Gameplay Interactions | 3/3 | Complete | 2026-03-17 |
-| 3. Stable Navigation and Responsive Surfaces | 1/4 | In Progress | - |
+| 3. Stable Navigation and Responsive Surfaces | 4/4 | Complete | 2026-03-17 |
 | 4. Release Confidence and Regression Guardrails | 0/TBD | Not started | - |
