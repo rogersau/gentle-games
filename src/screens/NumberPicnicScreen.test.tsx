@@ -74,12 +74,16 @@ jest.mock('../components/numberpicnic', () => {
       </View>
     ),
     PicnicBlanket: ({
+      itemEmoji,
+      itemCount,
       onDropStart,
       onDropEnd,
       onDragOverBasket,
       onItemDrop,
       testID,
     }: {
+      itemEmoji: string;
+      itemCount: number;
       onDropStart?: () => void;
       onDropEnd?: () => void;
       onDragOverBasket?: (isOver: boolean) => void;
@@ -87,6 +91,13 @@ jest.mock('../components/numberpicnic', () => {
       testID?: string;
     }) => (
       <View testID={testID}>
+        {Array.from({ length: Math.min(itemCount, 2) }, (_, index) => (
+          <View
+            key={index}
+            testID={`picnic-item-${index}`}
+            accessibilityLabel={`${itemEmoji} item ${index + 1}. Drag up to basket.`}
+          />
+        ))}
         <Pressable testID="blanket-start-drag" onPress={() => onDropStart?.()} />
         <Pressable testID="blanket-hover-on" onPress={() => onDragOverBasket?.(true)} />
         <Pressable testID="blanket-hover-off" onPress={() => onDragOverBasket?.(false)} />

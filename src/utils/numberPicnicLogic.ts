@@ -40,12 +40,14 @@ export interface UseNumberPicnicGameResult {
   completedPicnics: number;
   isProcessing: boolean;
   isDragging: boolean;
+  isOverBasket: boolean;
   isSuccess: boolean;
   blanketItemCount: number;
   basketItems: string[];
   isComplete: boolean;
   
   // Actions
+  handleDropStart: () => void;
   handleItemDrop: (index: number) => void;
   handleDropEnd: () => void;
   handleDragOverBasket: (isOver: boolean) => void;
@@ -59,6 +61,7 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
   const [completedPicnics, setCompletedPicnics] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isOverBasket, setIsOverBasket] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [blanketItemCount, setBlanketItemCount] = useState(() => {
     const max = getNumberPicnicMaxCount(difficulty);
@@ -68,8 +71,6 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
   // Use refs for values that change frequently to avoid recreating callbacks
   const basketCountRef = useRef(basketCount);
   const isProcessingRef = useRef(isProcessing);
-  const isOverBasketRef = useRef(false);
-  
   useEffect(() => {
     basketCountRef.current = basketCount;
   }, [basketCount]);
@@ -93,10 +94,13 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
     }
   }, [isComplete, isSuccess]);
 
+  const handleDropStart = useCallback(() => {
+    setIsDragging(true);
+  }, []);
+
   // Handle when item is dragged over basket (for highlighting)
   const handleDragOverBasket = useCallback((isOver: boolean) => {
-    isOverBasketRef.current = isOver;
-    setIsDragging(isOver);
+    setIsOverBasket(isOver);
   }, []);
 
   // Handle item drop
@@ -111,6 +115,8 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
     }
 
     setIsProcessing(true);
+    setIsDragging(false);
+    setIsOverBasket(false);
     
     // Add item to basket
     setBasketCount(prev => {
@@ -128,6 +134,7 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
   // Handle drop end
   const handleDropEnd = useCallback(() => {
     setIsDragging(false);
+    setIsOverBasket(false);
   }, []);
 
   // Start new round after basket exits
@@ -137,6 +144,8 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
     setBasketCount(0);
     setCompletedPicnics(current => current + 1);
     setIsSuccess(false);
+    setIsDragging(false);
+    setIsOverBasket(false);
     
     // Reset blanket items for new round
     const max = getNumberPicnicMaxCount(difficulty);
@@ -150,16 +159,17 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
     completedPicnics,
     isProcessing,
     isDragging,
+    isOverBasket,
     isSuccess,
     blanketItemCount,
     basketItems,
     isComplete,
     
     // Actions
+    handleDropStart,
     handleItemDrop,
     handleDropEnd,
     handleDragOverBasket,
     startNewRound,
   };
 };
-

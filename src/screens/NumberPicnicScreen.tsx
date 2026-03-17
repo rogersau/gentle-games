@@ -27,12 +27,15 @@ export const NumberPicnicScreen: React.FC = () => {
     completedPicnics,
     isProcessing,
     isDragging,
+    isOverBasket,
     isSuccess,
     blanketItemCount,
     basketItems,
     isComplete,
+    handleDropStart,
     handleItemDrop,
     handleDropEnd,
+    handleDragOverBasket,
     startNewRound,
   } = useNumberPicnicGame(settings.difficulty);
 
@@ -41,6 +44,7 @@ export const NumberPicnicScreen: React.FC = () => {
       <AppHeader title={t('games.numberPicnic.title')} onBack={() => navigation.goBack()} />
       <ScrollView 
         ref={scrollViewRef}
+        testID="number-picnic-scroll"
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -65,7 +69,7 @@ export const NumberPicnicScreen: React.FC = () => {
             items={basketItems}
             targetCount={prompt.targetCount}
             onPress={() => {}}
-            isDropTarget={isDragging}
+            isDropTarget={isOverBasket}
             isSuccess={isSuccess}
             onAnimationComplete={startNewRound}
             style={styles.basket}
@@ -92,7 +96,8 @@ export const NumberPicnicScreen: React.FC = () => {
           itemCount={blanketItemCount}
           targetCount={prompt.targetCount}
           onItemDrop={handleItemDrop}
-          onDropStart={() => {}}
+          onDropStart={handleDropStart}
+          onDragOverBasket={handleDragOverBasket}
           onDropEnd={handleDropEnd}
           isProcessing={isProcessing}
           style={styles.blanket}

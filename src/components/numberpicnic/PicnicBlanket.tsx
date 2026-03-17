@@ -30,6 +30,7 @@ interface PicnicBlanketProps {
   targetCount: number;
   onItemDrop: (index: number) => void;
   onDropStart?: () => void;
+  onDragOverBasket?: (isOver: boolean) => void;
   onDropEnd?: () => void;
   isProcessing?: boolean;
   style?: ViewStyle;
@@ -42,6 +43,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
   targetCount,
   onItemDrop,
   onDropStart,
+  onDragOverBasket,
   onDropEnd,
   isProcessing = false,
   style,
