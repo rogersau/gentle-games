@@ -30,12 +30,13 @@ import { useFonts } from './src/ui/fonts';
 import { GentleErrorBoundary } from './src/components/GentleErrorBoundary';
 import { installPwaInteractionGuards } from './src/utils/pwaInteractionGuards';
 import { reconcileObservability } from './src/utils/observabilityBootstrap';
+import { APP_ROUTES, AppRouteName, AppStackParamList, isAppRouteName } from './src/types/navigation';
 
 void SplashScreen.preventAutoHideAsync().catch((error) => {
   console.warn('Unable to keep splash screen visible during app startup.', error);
 });
 
-const Stack = createStackNavigator();
+const Stack = createStackNavigator<AppStackParamList>();
 
 /**
  * Extract the active route name from the navigation state.
@@ -75,7 +76,7 @@ const ConditionalPostHogProvider: React.FC<{ client: ReturnType<typeof getPostHo
 
 const AppNavigator: React.FC = () => {
   const { resolvedMode } = useThemeColors();
-  const routeNameRef = useRef<string | undefined>(undefined);
+  const routeNameRef = useRef<AppRouteName | undefined>(undefined);
   const posthogClient = getPostHogClient();
 
   useEffect(() => {
@@ -95,12 +96,13 @@ const AppNavigator: React.FC = () => {
 
   const handleStateChange = useCallback((state: NavigationState | undefined) => {
     const currentRouteName = getActiveRouteName(state);
+    const typedRouteName = isAppRouteName(currentRouteName) ? currentRouteName : undefined;
     const previousRouteName = routeNameRef.current;
 
-    if (currentRouteName && currentRouteName !== previousRouteName) {
-      trackScreenView(currentRouteName);
+    if (typedRouteName && typedRouteName !== previousRouteName) {
+      trackScreenView(typedRouteName);
     }
-    routeNameRef.current = currentRouteName;
+    routeNameRef.current = typedRouteName;
   }, []);
 
   return (
@@ -115,79 +117,79 @@ const AppNavigator: React.FC = () => {
               cardStyle: { flex: 1, minHeight: 0 },
             }}
           >
-            <Stack.Screen name="Home">
+            <Stack.Screen name={APP_ROUTES.Home}>
               {() => (
-                <GentleErrorBoundary screenName="Home">
+                <GentleErrorBoundary screenName={APP_ROUTES.Home}>
                   <HomeScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="Game">
+            <Stack.Screen name={APP_ROUTES.Game}>
               {() => (
-                <GentleErrorBoundary screenName="Game">
+                <GentleErrorBoundary screenName={APP_ROUTES.Game}>
                   <GameScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="Settings">
+            <Stack.Screen name={APP_ROUTES.Settings}>
               {() => (
-                <GentleErrorBoundary screenName="Settings">
+                <GentleErrorBoundary screenName={APP_ROUTES.Settings}>
                   <SettingsScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="Drawing">
+            <Stack.Screen name={APP_ROUTES.Drawing}>
               {() => (
-                <GentleErrorBoundary screenName="Drawing">
+                <GentleErrorBoundary screenName={APP_ROUTES.Drawing}>
                   <DrawingScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="Glitter">
+            <Stack.Screen name={APP_ROUTES.Glitter}>
               {() => (
-                <GentleErrorBoundary screenName="Glitter">
+                <GentleErrorBoundary screenName={APP_ROUTES.Glitter}>
                   <GlitterScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="Bubble">
+            <Stack.Screen name={APP_ROUTES.Bubble}>
               {() => (
-                <GentleErrorBoundary screenName="Bubble">
+                <GentleErrorBoundary screenName={APP_ROUTES.Bubble}>
                   <BubbleScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="CategoryMatch">
+            <Stack.Screen name={APP_ROUTES.CategoryMatch}>
               {() => (
-                <GentleErrorBoundary screenName="CategoryMatch">
+                <GentleErrorBoundary screenName={APP_ROUTES.CategoryMatch}>
                   <CategoryMatchScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="KeepyUppy">
+            <Stack.Screen name={APP_ROUTES.KeepyUppy}>
               {() => (
-                <GentleErrorBoundary screenName="KeepyUppy">
+                <GentleErrorBoundary screenName={APP_ROUTES.KeepyUppy}>
                   <KeepyUppyScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="BreathingGarden">
+            <Stack.Screen name={APP_ROUTES.BreathingGarden}>
               {() => (
-                <GentleErrorBoundary screenName="BreathingGarden">
+                <GentleErrorBoundary screenName={APP_ROUTES.BreathingGarden}>
                   <BreathingGardenScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="PatternTrain">
+            <Stack.Screen name={APP_ROUTES.PatternTrain}>
               {() => (
-                <GentleErrorBoundary screenName="PatternTrain">
+                <GentleErrorBoundary screenName={APP_ROUTES.PatternTrain}>
                   <PatternTrainScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="NumberPicnic">
+            <Stack.Screen name={APP_ROUTES.NumberPicnic}>
               {() => (
-                <GentleErrorBoundary screenName="NumberPicnic">
+                <GentleErrorBoundary screenName={APP_ROUTES.NumberPicnic}>
                   <NumberPicnicScreen />
                 </GentleErrorBoundary>
               )}

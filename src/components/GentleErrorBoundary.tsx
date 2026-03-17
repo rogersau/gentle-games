@@ -3,14 +3,16 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { ThemeColors } from '../types';
+import { APP_ROUTES, AppRouteName, AppStackParamList } from '../types/navigation';
 import { useThemeColors } from '../utils/theme';
 import { captureScreenError } from '../utils/sentry';
 import { AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 interface Props {
   children: ReactNode;
-  screenName: string;
+  screenName: AppRouteName;
 }
 
 interface State {
@@ -23,14 +25,14 @@ interface State {
  * Consistent with app's calm, sensory-friendly design.
  */
 const GentleErrorFallback: React.FC<{ onReset: () => void }> = ({ onReset }) => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<StackNavigationProp<AppStackParamList>>();
   const { t } = useTranslation();
   const { colors } = useThemeColors();
   const styles = createStyles(colors);
 
   const handleGoHome = () => {
     // Navigate home and clear the error state
-    navigation.navigate('Home' as never);
+    navigation.navigate(APP_ROUTES.Home);
     onReset();
   };
 
