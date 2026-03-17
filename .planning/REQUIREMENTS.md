@@ -28,7 +28,7 @@
 ### Performance
 
 - [ ] **PERF-01**: High-motion screens avoid the hottest per-frame React state churn that causes dropped frames on lower-end devices
-- [ ] **PERF-02**: Long drawing sessions persist changes without rewriting the full drawing history on every edit
+- [x] **PERF-02**: Long drawing sessions persist changes without rewriting the full drawing history on every edit
 - [x] **PERF-03**: Match and round scheduling on flagged games uses tracked cancellable timers that do not pile up across rapid navigation or replay flows
 
 ### Release & Regression Coverage
@@ -74,7 +74,7 @@
 | STAB-03 | Phase 2 | Complete |
 | STAB-04 | Phase 3 | Pending |
 | PERF-01 | Phase 3 | Pending |
-| PERF-02 | Phase 3 | Pending |
+| PERF-02 | Phase 3 | Complete |
 | PERF-03 | Phase 2 | Complete |
 | RELG-01 | Phase 4 | Pending |
 | RELG-02 | Phase 4 | Pending |

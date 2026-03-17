@@ -70,7 +70,7 @@ Plans:
 - [ ] 03-01-PLAN.md — Type the shared navigation contract and audited route call sites
 - [ ] 03-02-PLAN.md — Remove audited timing and dependency hacks from Keepy Uppy and Breathing Garden
 - [ ] 03-03-PLAN.md — Reduce per-frame React churn on Bubble Field and Glitter Globe
-- [ ] 03-04-PLAN.md — Debounce drawing persistence with flush-on-exit safeguards
+- [x] 03-04-PLAN.md — Debounce drawing persistence with flush-on-exit safeguards
 
 ### Phase 4: Release Confidence and Regression Guardrails
 **Goal**: The hardened app can be shipped and validated confidently across web, Android, and iOS concern-prone paths.
@@ -115,5 +115,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Privacy-Safe Bootstrap | 3/3 | Complete   | 2026-03-17 |
 | 2. Correct and Safe Gameplay Interactions | 3/3 | Complete | 2026-03-17 |
-| 3. Stable Navigation and Responsive Surfaces | 0/TBD | Not started | - |
+| 3. Stable Navigation and Responsive Surfaces | 1/4 | In Progress | - |
 | 4. Release Confidence and Regression Guardrails | 0/TBD | Not started | - |
