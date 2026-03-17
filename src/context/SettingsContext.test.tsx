@@ -35,8 +35,15 @@ const TestConsumer = () => {
       <Text testID="theme">{settings.theme}</Text>
       <Text testID="keepyEasy">{String(settings.keepyUppyEasyMode)}</Text>
       <Text testID="colorMode">{settings.colorMode}</Text>
+      <Text testID="telemetry">{String(settings.telemetryEnabled)}</Text>
       <TouchableOpacity testID="set-hard" onPress={() => updateSettings({ difficulty: 'hard' })}>
         <Text>set-hard</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID="set-telemetry"
+        onPress={() => updateSettings({ telemetryEnabled: true })}
+      >
+        <Text>set-telemetry</Text>
       </TouchableOpacity>
     </View>
   );
@@ -47,7 +54,21 @@ describe('SettingsContext', () => {
     jest.clearAllMocks();
   });
 
-  it('sanitizes persisted settings values', async () => {
+  it('defaults telemetryEnabled to false for fresh installs', async () => {
+    storage.getItem.mockResolvedValueOnce(null);
+
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>
+    );
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+
+    expect(screen.getByTestId('telemetry').props.children).toBe('false');
+  });
+
+  it('sanitizes invalid persisted telemetryEnabled values back to false', async () => {
     storage.getItem.mockResolvedValueOnce(
       JSON.stringify({
         animationsEnabled: 'false',
@@ -57,6 +78,7 @@ describe('SettingsContext', () => {
         theme: 'invalid',
         keepyUppyEasyMode: 'invalid',
         colorMode: 'invalid',
+        telemetryEnabled: 'maybe',
       })
     );
 
@@ -75,6 +97,7 @@ describe('SettingsContext', () => {
     expect(screen.getByTestId('theme').props.children).toBe('mixed');
     expect(screen.getByTestId('keepyEasy').props.children).toBe('true');
     expect(screen.getByTestId('colorMode').props.children).toBe('system');
+    expect(screen.getByTestId('telemetry').props.children).toBe('false');
   });
 
   it('removes corrupted persisted settings', async () => {
@@ -115,5 +138,28 @@ describe('SettingsContext', () => {
 
     const saved = storage.setItem.mock.calls[0][1];
     expect(JSON.parse(saved).difficulty).toBe('hard');
+  });
+
+  it('persists telemetryEnabled updates to storage', async () => {
+    storage.getItem.mockResolvedValueOnce(null);
+
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>
+    );
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+    fireEvent.press(screen.getByTestId('set-telemetry'));
+
+    await waitFor(() => {
+      expect(storage.setItem).toHaveBeenCalledWith(
+        'gentleMatchSettings',
+        expect.any(String)
+      );
+    });
+
+    const saved = storage.setItem.mock.calls[0][1];
+    expect(JSON.parse(saved).telemetryEnabled).toBe(true);
   });
 });
