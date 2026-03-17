@@ -4,10 +4,10 @@ milestone: v1.1
 milestone_name: milestone
 current_phase: 2
 current_phase_name: Correct and Safe Gameplay Interactions
-current_plan: 1
-status: verifying
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-17T11:15:15.856Z"
+current_plan: 2
+status: ready_for_execution
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-17T21:58:05.834Z"
 last_activity: 2026-03-17
 progress:
   total_phases: 4
@@ -31,21 +31,21 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 Phase: 2 of 4 (Correct and Safe Gameplay Interactions)
 Current Phase: 2
 Current Phase Name: Correct and Safe Gameplay Interactions
-Current Plan: 1
+Current Plan: 2
 Total Plans in Phase: 3
-Plan: 1 of 3
-Status: Verifying
+Plan: 2 of 3
+Status: Ready for Execution
 Last Activity: 2026-03-17
-Last Activity Description: Completed plan 02-01 symmetry-aware Drawing Canvas undo batching
-Last activity: 2026-03-17 — Completed plan 02-01 symmetry-aware Drawing Canvas undo batching
+Last Activity Description: Completed plan 02-02 Number Picnic overlap-driven hover and drop handling
+Last activity: 2026-03-17 — Completed plan 02-02 Number Picnic overlap-driven hover and drop handling
 
-Progress: [███████░░░] 67%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 4.0 min
+- Total plans completed: 5
+- Average duration: 3.8 min
 - Total execution time: 0.3 hours
 
 **By Phase:**
@@ -53,15 +53,16 @@ Progress: [███████░░░] 67%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | Phase 01 | 3 | 15min | 5.0min |
-| Phase 02 | 1 | 1min | 1.0min |
+| Phase 02 | 2 | 4min | 2.0min |
 
 **Recent Trend:**
-- Last 5 plans: Phase 01 P01, Phase 01 P02, Phase 01 P03, Phase 02 P01
+- Last 5 plans: Phase 01 P01, Phase 01 P02, Phase 01 P03, Phase 02 P01, Phase 02 P02
 - Trend: Stable
 | Phase 01 P01 | 5min | 2 tasks | 9 files |
 | Phase 01 P02 | 2min | 2 tasks | 4 files |
 | Phase 01 P03 | 8min | 2 tasks | 10 files |
 | Phase 02 P01 | 1min | 1 tasks | 2 files |
+| Phase 02 P02 | 3min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,8 @@ Recent decisions affecting current work:
 - [Phase 01]: PostHog uses defaultOptIn=false plus explicit optIn/optOut to keep telemetry off until consent is granted in-session.
 - [Phase 01]: Sentry strips free-form messages, extra data, and component stacks while preserving only allowlisted tags and the anonymous install ID.
 - [Phase 02]: Stored shared actionId metadata on DrawingCanvas history entries so undo removes the latest mirrored gesture batch instead of relying on the current symmetry mode.
+- [Phase 02]: Number Picnic now tracks active dragging separately from basket overlap so hover, drop validity, and scroll lock no longer share one boolean.
+- [Phase 02]: Visible basket bounds now drive both hover feedback and accepted drops in Number Picnic, replacing the old upward-threshold heuristic.
 
 ### Pending Todos
 
@@ -93,6 +96,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-17T11:15:15.854Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-03-17T21:58:05.834Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None

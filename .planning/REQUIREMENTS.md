@@ -67,8 +67,8 @@
 | PRIV-03 | Phase 1 | Complete |
 | PRIV-04 | Phase 1 | Complete |
 | PLAY-01 | Phase 2 | Complete |
-| PLAY-02 | Phase 2 | Pending |
-| PLAY-03 | Phase 2 | Pending |
+| PLAY-02 | Phase 2 | Complete |
+| PLAY-03 | Phase 2 | Complete |
 | STAB-01 | Phase 3 | Pending |
 | STAB-02 | Phase 1 | Complete |
 | STAB-03 | Phase 2 | Pending |
