@@ -3,6 +3,7 @@ import { Text } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { useTranslation } from 'react-i18next';
 import { SettingsScreen } from './SettingsScreen';
+import { TranslationKey } from '../i18n/types';
 
 const mockGoBack = jest.fn();
 const mockUpdateSettings = jest.fn();
@@ -23,7 +24,7 @@ let mockSettings = {
   telemetryEnabled: false,
 };
 
-const TranslationProbe = ({ translationKey }: { translationKey: string }) => {
+const TranslationProbe = ({ translationKey }: { translationKey: TranslationKey }) => {
   const { t } = useTranslation();
   return <Text>{t(translationKey)}</Text>;
 };
