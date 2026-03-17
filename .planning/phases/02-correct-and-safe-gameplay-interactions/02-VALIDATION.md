@@ -21,16 +21,16 @@ created: 2026-03-17
 | **Config file** | `jest.config.js` |
 | **Quick run command** | `npm test -- --runInBand src/components/DrawingCanvas.test.tsx src/utils/numberPicnicLogic.test.ts src/screens/NumberPicnicScreen.test.tsx src/components/GameBoard.test.tsx` |
 | **Full suite command** | `npm run ci:shared` |
-| **Estimated runtime** | ~90 seconds |
+| **Estimated runtime** | ~25 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run the relevant surface tests, for example `npm test -- --runInBand src/components/DrawingCanvas.test.tsx` or `npm test -- --runInBand src/utils/numberPicnicLogic.test.ts src/screens/NumberPicnicScreen.test.tsx`
+- **After every task commit:** Run the smallest relevant surface tests only, for example `npm test -- --runInBand src/components/DrawingCanvas.test.tsx`, `npm test -- --runInBand src/utils/numberPicnicLogic.test.ts`, or `npm test -- --runInBand src/components/GameBoard.test.tsx`
 - **After every plan wave:** Run `npm test -- --runInBand src/components/DrawingCanvas.test.tsx src/utils/numberPicnicLogic.test.ts src/screens/NumberPicnicScreen.test.tsx src/components/GameBoard.test.tsx`
 - **Before `/gsd-verify-work`:** Full suite must be green
-- **Max feedback latency:** 120 seconds
+- **Max feedback latency:** 30 seconds
 
 ---
 
@@ -70,7 +70,7 @@ All phase behaviors have automated verification.
 - [x] Sampling continuity: no 3 consecutive tasks without automated verify
 - [x] Wave 0 covers all missing references
 - [x] No watch-mode flags
-- [x] Feedback latency < 120s
+- [x] Feedback latency < 30s
 - [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** pending
