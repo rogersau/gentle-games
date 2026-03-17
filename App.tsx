@@ -8,7 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PostHogProvider } from 'posthog-react-native';
 // Initialize i18n before app renders
 import './src/i18n';
-import { SettingsProvider } from './src/context/SettingsContext';
+import { SettingsProvider, useSettings } from './src/context/SettingsContext';
 import { ParentTimerProvider } from './src/context/ParentTimerContext';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { GameScreen } from './src/screens/GameScreen';
@@ -23,22 +23,13 @@ import { PatternTrainScreen } from './src/screens/PatternTrainScreen';
 import { NumberPicnicScreen } from './src/screens/NumberPicnicScreen';
 import { initializeSounds, unloadSounds } from './src/utils/sounds';
 import { installPwaBackNavigationGuard } from './src/utils/pwaBackGuard';
-import { initSentry } from './src/utils/sentry';
-import { initAnalytics, getPostHogClient, trackScreenView } from './src/utils/analytics';
+import { getPostHogClient, trackScreenView } from './src/utils/analytics';
 import { PASTEL_COLORS } from './src/types';
 import { useThemeColors } from './src/utils/theme';
 import { useFonts } from './src/ui/fonts';
 import { GentleErrorBoundary } from './src/components/GentleErrorBoundary';
 import { installPwaInteractionGuards } from './src/utils/pwaInteractionGuards';
-
-// Initialize Sentry and PostHog before React mounts (production only)
-void initSentry().catch((error: unknown) => {
-  console.warn('Sentry initialization failed. Continuing without error monitoring.', error);
-});
-
-void initAnalytics().catch((error: unknown) => {
-  console.warn('PostHog initialization failed. Continuing without analytics.', error);
-});
+import { reconcileObservability } from './src/utils/observabilityBootstrap';
 
 void SplashScreen.preventAutoHideAsync().catch((error) => {
   console.warn('Unable to keep splash screen visible during app startup.', error);
@@ -209,6 +200,37 @@ const AppNavigator: React.FC = () => {
   );
 };
 
+export const AppContent: React.FC = () => {
+  const { settings, isLoading } = useSettings();
+
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+
+    void reconcileObservability(settings.telemetryEnabled).catch((error: unknown) => {
+      console.warn(
+        'Observability bootstrap failed. Continuing without analytics or crash reporting.',
+        error,
+      );
+    });
+  }, [isLoading, settings.telemetryEnabled]);
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={PASTEL_COLORS.primary} />
+      </View>
+    );
+  }
+
+  return (
+    <ParentTimerProvider>
+      <AppNavigator />
+    </ParentTimerProvider>
+  );
+};
+
 export default function App() {
   const { fontsLoaded, fontError } = useFonts();
 
@@ -246,9 +268,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <SettingsProvider>
-        <ParentTimerProvider>
-          <AppNavigator />
-        </ParentTimerProvider>
+        <AppContent />
       </SettingsProvider>
     </SafeAreaProvider>
   );
