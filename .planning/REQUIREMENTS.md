@@ -10,7 +10,7 @@
 - [x] **PRIV-01**: Parent can review and change a telemetry preference for analytics and crash reporting from within app settings
 - [ ] **PRIV-02**: App does not send analytics or crash telemetry until the telemetry preference for that install is explicitly enabled
 - [ ] **PRIV-03**: Crash and analytics events only send allowlisted diagnostic fields and exclude free-form user content
-- [ ] **PRIV-04**: User receives a calm fallback message if an external support or privacy link cannot be opened
+- [x] **PRIV-04**: User receives a calm fallback message if an external support or privacy link cannot be opened
 
 ### Gameplay Correctness
 
@@ -65,7 +65,7 @@
 | PRIV-01 | Phase 1 | Complete |
 | PRIV-02 | Phase 1 | Pending |
 | PRIV-03 | Phase 1 | Pending |
-| PRIV-04 | Phase 1 | Pending |
+| PRIV-04 | Phase 1 | Complete |
 | PLAY-01 | Phase 2 | Pending |
 | PLAY-02 | Phase 2 | Pending |
 | PLAY-03 | Phase 2 | Pending |
