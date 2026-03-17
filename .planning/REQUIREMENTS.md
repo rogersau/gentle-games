@@ -62,12 +62,30 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| PRIV-01 | Phase 1 | Pending |
+| PRIV-02 | Phase 1 | Pending |
+| PRIV-03 | Phase 1 | Pending |
+| PRIV-04 | Phase 1 | Pending |
+| PLAY-01 | Phase 2 | Pending |
+| PLAY-02 | Phase 2 | Pending |
+| PLAY-03 | Phase 2 | Pending |
+| STAB-01 | Phase 3 | Pending |
+| STAB-02 | Phase 1 | Pending |
+| STAB-03 | Phase 2 | Pending |
+| STAB-04 | Phase 3 | Pending |
+| PERF-01 | Phase 3 | Pending |
+| PERF-02 | Phase 3 | Pending |
+| PERF-03 | Phase 2 | Pending |
+| RELG-01 | Phase 4 | Pending |
+| RELG-02 | Phase 4 | Pending |
+| RELG-03 | Phase 4 | Pending |
+| RELG-04 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 18 total
-- Mapped to phases: 0
-- Unmapped: 18 ⚠️
+- Mapped to phases: 18
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-17*
-*Last updated: 2026-03-17 after milestone v1.1 requirement scoping*
+*Last updated: 2026-03-17 after roadmap creation for milestone v1.1*
