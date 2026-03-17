@@ -23,6 +23,7 @@ export interface Point {
 export interface Stroke {
   kind: 'stroke';
   id: string;
+  actionId?: string;
   points: Point[];
   color: string;
   width: number;
@@ -31,6 +32,7 @@ export interface Stroke {
 export interface Shape {
   kind: 'shape';
   id: string;
+  actionId?: string;
   type: 'circle' | 'square' | 'triangle';
   x: number;
   y: number;
@@ -41,6 +43,7 @@ export interface Shape {
 export interface ErasedRegion {
   kind: 'erase';
   id: string;
+  actionId?: string;
   points: Point[];
   width: number;
 }
@@ -148,7 +151,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     // Unified ordered history — preserves exact draw order for correct undo
     const [history, setHistory] = useState<HistoryEntry[]>(initialHistory);
     // Current strokes being drawn (one per symmetry copy)
-    const [currentStrokes, setCurrentStrokes] = useState<Omit<Stroke, 'kind' | 'id'>[]>([]);
+    const [currentStrokes, setCurrentStrokes] = useState<Array<Omit<Stroke, 'kind' | 'id'>>>([]);
 
     // Update history when initialHistory prop changes (e.g., when loading saved drawing)
     useEffect(() => {
@@ -173,6 +176,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     const shapeSizeRef = useRef(shapeSize);
     const symmetryModeRef = useRef(symmetryMode);
     const historyRef = useRef(history);
+    const nextActionIdRef = useRef(0);
 
     useEffect(() => { selectedColorRef.current = selectedColor; }, [selectedColor]);
     useEffect(() => { toolRef.current = tool; }, [tool]);
@@ -189,6 +193,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     const clearCanvas = () => {
       setHistory([]);
       setCurrentStrokes([]);
+    };
+
+    const createActionId = () => {
+      const actionId = `action-${Date.now()}-${nextActionIdRef.current}`;
+      nextActionIdRef.current += 1;
+      return actionId;
     };
 
     // Expose imperative methods
@@ -208,11 +218,13 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           if (toolRef.current === 'shape') {
             // Create shapes with symmetry
             const offsets = getSymmetryOffsets(mode);
+            const actionId = createActionId();
             const newShapes: Shape[] = offsets.map(([xMult, yMult], idx) => {
               const pt = applySymmetry({ x: locationX, y: locationY }, width, height, xMult, yMult);
               return {
                 kind: 'shape' as const,
                 id: `shape-${Date.now()}-${idx}`,
+                actionId,
                 type: shapeTypeRef.current,
                 x: pt.x,
                 y: pt.y,
@@ -224,10 +236,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           } else {
             const strokeWidth = toolRef.current === 'eraser' ? 30 : 5;
             const offsets = getSymmetryOffsets(mode);
+            const actionId = createActionId();
             // Create one stroke for each symmetry copy with properly mirrored initial points
             const newStrokes = offsets.map(([xMult, yMult]) => {
               const mirroredPt = applySymmetry({ x: locationX, y: locationY }, width, height, xMult, yMult);
               return {
+                actionId,
                 points: [mirroredPt],
                 color: selectedColorRef.current,
                 width: strokeWidth,
@@ -266,6 +280,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               const eraseEntries: ErasedRegion[] = strokes.map((stroke, idx) => ({
                 kind: 'erase',
                 id: `erase-${Date.now()}-${idx}`,
+                actionId: stroke.actionId,
                 points: stroke.points,
                 width: stroke.width,
               }));
@@ -275,6 +290,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               const strokeEntries: Stroke[] = strokes.map((stroke, idx) => ({
                 kind: 'stroke',
                 id: `stroke-${Date.now()}-${idx}`,
+                actionId: stroke.actionId,
                 points: stroke.points,
                 color: stroke.color,
                 width: stroke.width,
@@ -301,10 +317,23 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     };
 
     const handleUndo = () => {
-      // When undoing with symmetry, we need to remove all copies of the last action
-      // Each action creates N entries (where N is the symmetry count at that time)
-      // For simplicity, just remove one entry at a time
-      setHistory((prev) => prev.slice(0, -1));
+      setHistory((prev) => {
+        if (prev.length === 0) {
+          return prev;
+        }
+
+        const lastEntry = prev[prev.length - 1];
+        if (!lastEntry.actionId) {
+          return prev.slice(0, -1);
+        }
+
+        let cutoffIndex = prev.length - 1;
+        while (cutoffIndex >= 0 && prev[cutoffIndex].actionId === lastEntry.actionId) {
+          cutoffIndex -= 1;
+        }
+
+        return prev.slice(0, cutoffIndex + 1);
+      });
     };
 
     const handleColorSelect = (color: string) => {
