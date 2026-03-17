@@ -1,172 +1,134 @@
-import * as Sentry from '@sentry/react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  initSentry,
-  setGameContext,
-  clearGameContext,
-  addActionBreadcrumb,
-  testSentry,
-  isSentryInitialized,
-  isSentryEnabled,
-} from './sentry';
+describe('sentry consent-aware wrappers', () => {
+  const mockInit = jest.fn();
+  const mockSetUser = jest.fn();
+  const mockSetContext = jest.fn();
+  const mockAddBreadcrumb = jest.fn();
+  const mockCaptureException = jest.fn();
 
-// Mock dependencies
-jest.mock('@sentry/react-native', () => ({
-  init: jest.fn(),
-  captureException: jest.fn(),
-  captureMessage: jest.fn(),
-  setContext: jest.fn(),
-  addBreadcrumb: jest.fn(),
-  setUser: jest.fn(),
-  flush: jest.fn(() => Promise.resolve(true)),
-}));
-
-jest.mock('@react-native-async-storage/async-storage', () => ({
-  getItem: jest.fn(),
-  setItem: jest.fn(() => Promise.resolve()),
-}));
-
-jest.mock('./analytics', () => ({
-  setAnalyticsUser: jest.fn(),
-}));
-
-describe('sentry', () => {
   beforeEach(() => {
+    jest.resetModules();
     jest.clearAllMocks();
+
+    jest.doMock('expo-constants', () => ({
+      __esModule: true,
+      default: {
+        expoConfig: {
+          extra: {
+            sentryDsn: 'https://dsn.example/1',
+            sentryDebug: true,
+          },
+        },
+      },
+      expoConfig: {
+        extra: {
+          sentryDsn: 'https://dsn.example/1',
+          sentryDebug: true,
+        },
+      },
+    }));
+
+    jest.doMock('@react-native-async-storage/async-storage', () => ({
+      __esModule: true,
+      default: {
+        getItem: jest.fn(() => Promise.resolve('install_test')),
+        setItem: jest.fn(() => Promise.resolve()),
+      },
+      getItem: jest.fn(() => Promise.resolve('install_test')),
+      setItem: jest.fn(() => Promise.resolve()),
+    }));
+
+    jest.doMock('@sentry/react-native', () => ({
+      __esModule: true,
+      init: mockInit,
+      setUser: mockSetUser,
+      setContext: mockSetContext,
+      addBreadcrumb: mockAddBreadcrumb,
+      captureException: mockCaptureException,
+    }));
+
+    jest.doMock('./analytics', () => ({
+      __esModule: true,
+      setAnalyticsUser: jest.fn(),
+    }));
   });
 
-  describe('isSentryEnabled', () => {
-    it('is exported and available', () => {
-      // In test environment, Sentry should be disabled
-      expect(typeof isSentryEnabled).toBe('boolean');
+  it('makes capture helpers safe no-ops when telemetry is disabled', () => {
+    const sentry = require('./sentry');
+
+    sentry.addActionBreadcrumb('Card flipped', 'game_action', {
+      screen: 'Home',
+      rawMessage: 'drop me',
     });
+    sentry.captureScreenError(new Error('Test error'), {
+      screen: 'Home',
+      componentStack: 'stack',
+    });
+
+    expect(mockAddBreadcrumb).not.toHaveBeenCalled();
+    expect(mockCaptureException).not.toHaveBeenCalled();
   });
 
-  describe('initSentry', () => {
-    it('skips initialization when Sentry is disabled', async () => {
-      await initSentry();
+  it('filters beforeSend and beforeBreadcrumb payloads to allowlisted fields only', async () => {
+    const sentry = require('./sentry');
 
-      // Should not initialize Sentry when disabled
-      expect(Sentry.init).not.toHaveBeenCalled();
+    await sentry.reconcileSentryConsent(true);
+
+    expect(mockInit).toHaveBeenCalledTimes(1);
+
+    const options = mockInit.mock.calls[0][0];
+    const filteredEvent = options.beforeSend({
+      message: 'raw error text',
+      user: {
+        id: 'install_test',
+        email: 'child@example.com',
+      },
+      tags: {
+        screen: 'Home',
+        custom: 'remove-me',
+      },
+      contexts: {
+        react: {
+          componentStack: 'drop me',
+        },
+      },
+      extra: {
+        rawMessage: 'drop me',
+      },
+      exception: {
+        values: [
+          {
+            type: 'Error',
+            value: 'drop me',
+          },
+        ],
+      },
     });
 
-    it('does not generate install ID when Sentry is disabled', async () => {
-      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(null);
+    expect(filteredEvent).toEqual(
+      expect.objectContaining({
+        user: { id: 'install_test' },
+        tags: { screen: 'Home' },
+      }),
+    );
+    expect(filteredEvent.message).toBeUndefined();
+    expect(filteredEvent.contexts).toBeUndefined();
+    expect(filteredEvent.extra).toBeUndefined();
+    expect(filteredEvent.exception.values[0].value).toBeUndefined();
 
-      await initSentry();
-
-      // Should not generate install ID when Sentry is disabled
-      expect(AsyncStorage.getItem).not.toHaveBeenCalled();
-      expect(AsyncStorage.setItem).not.toHaveBeenCalled();
+    const filteredBreadcrumb = options.beforeBreadcrumb({
+      category: 'error',
+      message: 'free-form text',
+      data: {
+        screen: 'Home',
+        componentStack: 'drop me',
+      },
     });
 
-    it('handles AsyncStorage errors gracefully', async () => {
-      (AsyncStorage.getItem as jest.Mock).mockRejectedValueOnce(new Error('Storage error'));
-
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-
-      // Should not throw
-      await expect(initSentry()).resolves.not.toThrow();
-
-      consoleSpy.mockRestore();
-    });
-  });
-
-  describe('setGameContext', () => {
-    it('skips when Sentry is disabled and logs to console', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-
-      setGameContext('Memory Snap', 'easy');
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[Sentry] Skipping setGameContext - disabled'
-      );
-      expect(Sentry.setContext).not.toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
-    });
-  });
-
-  describe('clearGameContext', () => {
-    it('skips when Sentry is disabled and logs to console', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-
-      clearGameContext();
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[Sentry] Skipping clearGameContext - disabled'
-      );
-      expect(Sentry.setContext).not.toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
-    });
-  });
-
-  describe('addActionBreadcrumb', () => {
-    it('skips when Sentry is disabled and logs to console', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-
-      addActionBreadcrumb('Card flipped', 'game_action', { cardId: 1 });
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[Sentry] Skipping breadcrumb - disabled:',
-        'Card flipped'
-      );
-      expect(Sentry.addBreadcrumb).not.toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
-    });
-
-    it('uses default category when not specified', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-
-      addActionBreadcrumb('Button pressed');
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[Sentry] Skipping breadcrumb - disabled:',
-        'Button pressed'
-      );
-
-      consoleSpy.mockRestore();
-    });
-  });
-
-  describe('isSentryInitialized', () => {
-    it('returns false when Sentry is disabled', () => {
-      expect(isSentryInitialized()).toBe(false);
-    });
-  });
-
-  describe('testSentry', () => {
-    it('logs when Sentry is disabled', async () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-
-      await testSentry();
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[Sentry] Cannot test - Sentry is disabled or DSN not configured.'
-      );
-      expect(Sentry.captureException).not.toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
-    });
-  });
-
-  describe('getInstallId', () => {
-    it('retrieves existing install ID from storage', async () => {
-      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce('existing_install_id');
-
-      await initSentry();
-
-      // Should not generate new ID if one exists
-      expect(AsyncStorage.setItem).not.toHaveBeenCalled();
-    });
-
-    it('returns null when AsyncStorage fails', async () => {
-      (AsyncStorage.getItem as jest.Mock).mockRejectedValueOnce(new Error('Storage error'));
-
-      // Should not throw
-      await expect(initSentry()).resolves.not.toThrow();
+    expect(filteredBreadcrumb).toEqual({
+      category: 'error',
+      data: {
+        screen: 'Home',
+      },
     });
   });
 });
