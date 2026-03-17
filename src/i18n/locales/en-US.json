@@ -24,7 +24,11 @@
     "emptyGames": "All games are hidden. Enable one in Settings.",
     "settingsButton": "⚙️  Settings",
     "settingsHint": "Opens app settings",
-    "websiteLink": "Visit gentlegames.org"
+    "websiteLink": "Visit gentlegames.org",
+    "websiteLinkFallback": {
+      "title": "Website unavailable",
+      "message": "We couldn't open the Gentle Games website right now. Please try again later."
+    }
   },
   "errorBoundary": {
     "iconAccessibilityLabel": "Gentle cloud icon",
@@ -316,6 +320,10 @@
     "language": {
       "title": "Language",
       "description": "Choose your preferred language"
+    },
+    "telemetry": {
+      "label": "Share anonymous app updates",
+      "description": "Analytics and crash reports stay off until you turn this on."
     }
   },
   "parentTimer": {

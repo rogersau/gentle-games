@@ -221,6 +221,16 @@ export const SettingsScreen: React.FC = () => {
           </Text>
         </View>
 
+        {/* Telemetry */}
+        <View style={styles.section}>
+          <SettingToggle
+            label={t('settings.telemetry.label')}
+            description={t('settings.telemetry.description')}
+            value={!!settings.telemetryEnabled}
+            onValueChange={(value) => updateSettings({ telemetryEnabled: value })}
+          />
+        </View>
+
         <View style={styles.bottomAction}>
           <AppButton
             label={t('common.back')}
