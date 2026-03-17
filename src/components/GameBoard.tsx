@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, StyleSheet, Text, useWindowDimensions } from 'react-native';
 import { ThemeColors, Tile as TileType } from '../types';
 import { generateTiles, checkMatch, checkGameComplete, formatTime, calculateGridDimensions } from '../utils/gameLogic';
@@ -9,6 +9,7 @@ import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { AppButton, AppModal } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useTranslation } from 'react-i18next';
+import { useTrackedTimeouts } from '../utils/useTrackedTimeouts';
 
 interface GameBoardProps {
   onGameComplete: (time: number) => void;
@@ -32,7 +33,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentTime, setCurrentTime] = useState<number>(Date.now());
   const [isPreviewPhase, setIsPreviewPhase] = useState(false);
-  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { queueTimeout, clearAllTimeouts } = useTrackedTimeouts();
 
   const padding = Space.base;
   const headerHeight = 60;
@@ -54,19 +55,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
     return { cols, boardWidth, boardHeight, tileSize: calculatedTileSize };
   }, [bottomInset, screenWidth, screenHeight, settings.difficulty]);
 
-  useEffect(() => {
-    startNewGame();
-  }, [settings.difficulty, settings.theme]);
-
-  // Cleanup preview timer on unmount
-  useEffect(() => {
-    return () => {
-      if (previewTimerRef.current) {
-        clearTimeout(previewTimerRef.current);
-      }
-    };
-  }, []);
-
   // Timer effect - updates every second while game is active
   useEffect(() => {
     if (!startTime || isGameComplete || endTime) return;
@@ -78,12 +66,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
     return () => clearInterval(interval);
   }, [startTime, isGameComplete, endTime]);
 
-  const startNewGame = () => {
-    if (previewTimerRef.current) {
-      clearTimeout(previewTimerRef.current);
-      previewTimerRef.current = null;
-    }
-
+  const startNewGame = useCallback(() => {
+    clearAllTimeouts();
     const newTiles = generateTiles(settings.difficulty, settings.theme);
     setSelectedTiles([]);
     setIsGameComplete(false);
@@ -96,16 +80,25 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
     if (settings.showCardPreview) {
       setTiles(newTiles.map(tile => ({ ...tile, isFlipped: true })));
       setIsPreviewPhase(true);
-      previewTimerRef.current = setTimeout(() => {
+      queueTimeout(() => {
         setTiles(newTiles);
         setIsPreviewPhase(false);
-        previewTimerRef.current = null;
       }, 2000);
     } else {
       setTiles(newTiles);
       setIsPreviewPhase(false);
     }
-  };
+  }, [clearAllTimeouts, queueTimeout, settings.difficulty, settings.showCardPreview, settings.theme]);
+
+  useEffect(() => {
+    startNewGame();
+  }, [startNewGame]);
+
+  useEffect(() => {
+    return () => {
+      clearAllTimeouts();
+    };
+  }, [clearAllTimeouts]);
 
   const handleTilePress = useCallback(async (tileId: string) => {
     if (isPreviewPhase || isProcessing || selectedTiles.length >= 2) return;
@@ -144,7 +137,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
             newSelected.includes(tile.id) ? { ...tile, isMatched: true } : tile
           );
 
-          setTimeout(() => {
+          queueTimeout(() => {
             setTiles(updatedTiles);
             setSelectedTiles([]);
             setIsProcessing(false);
@@ -161,7 +154,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
             }
           }, 500);
         } else {
-          setTimeout(() => {
+          queueTimeout(() => {
             setTiles(p =>
               p.map(tile =>
                 newSelected.includes(tile.id) ? { ...tile, isFlipped: false } : tile
@@ -176,7 +169,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
         return prev;
       });
     }
-  }, [selectedTiles, isProcessing, isPreviewPhase, settings, startTime, onGameComplete]);
+  }, [selectedTiles, isProcessing, isPreviewPhase, settings, startTime, onGameComplete, queueTimeout]);
 
   const elapsed = endTime
     ? endTime - (startTime || 0)

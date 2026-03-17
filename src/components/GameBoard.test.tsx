@@ -8,7 +8,7 @@ const mockSettings = {
   animationsEnabled: false,
   soundEnabled: true,
   soundVolume: 0.5,
-  difficulty: 'easy' as const,
+  difficulty: 'easy' as 'easy' | 'medium' | 'hard',
   theme: 'animals' as const,
   showCardPreview: false,
   colorMode: 'system' as const,
