@@ -64,7 +64,13 @@ Plans:
   2. Concern-prone gameplay state synchronization behaves consistently during repeated interactions without timing hacks or hidden dependency suppression.
   3. High-motion screens avoid their hottest per-frame React state churn so normal play remains smooth on lower-end devices.
   4. Long drawing sessions stay responsive and preserve progress without rewriting the full drawing history on every edit.
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Type the shared navigation contract and audited route call sites
+- [ ] 03-02-PLAN.md — Remove audited timing and dependency hacks from Keepy Uppy and Breathing Garden
+- [ ] 03-03-PLAN.md — Reduce per-frame React churn on Bubble Field and Glitter Globe
+- [ ] 03-04-PLAN.md — Debounce drawing persistence with flush-on-exit safeguards
 
 ### Phase 4: Release Confidence and Regression Guardrails
 **Goal**: The hardened app can be shipped and validated confidently across web, Android, and iOS concern-prone paths.
