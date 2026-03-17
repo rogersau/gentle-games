@@ -156,6 +156,53 @@ describe('numberPicnicLogic', () => {
       expect(result.current.prompt.itemName).toBeDefined();
     });
 
+    it('clears pending processing reset before a new round starts', () => {
+      const { result } = renderHook(() => useNumberPicnicGame('easy'));
+
+      act(() => {
+        result.current.handleItemDrop(0);
+      });
+
+      expect(result.current.isProcessing).toBe(true);
+
+      act(() => {
+        jest.advanceTimersByTime(100);
+        result.current.startNewRound();
+        result.current.handleItemDrop(0);
+      });
+
+      expect(result.current.completedPicnics).toBe(1);
+      expect(result.current.basketCount).toBe(1);
+      expect(result.current.isProcessing).toBe(true);
+
+      act(() => {
+        jest.advanceTimersByTime(200);
+      });
+
+      expect(result.current.isProcessing).toBe(true);
+
+      act(() => {
+        jest.advanceTimersByTime(100);
+      });
+
+      expect(result.current.isProcessing).toBe(false);
+    });
+
+    it('cleans up pending processing reset timeout on unmount', () => {
+      const { result, unmount } = renderHook(() => useNumberPicnicGame('easy'));
+
+      act(() => {
+        result.current.handleItemDrop(0);
+      });
+
+      expect(result.current.isProcessing).toBe(true);
+      expect(jest.getTimerCount()).toBe(1);
+
+      unmount();
+
+      expect(jest.getTimerCount()).toBe(0);
+    });
+
     it('updates dragging state', () => {
       const { result } = renderHook(() => useNumberPicnicGame('easy'));
 
