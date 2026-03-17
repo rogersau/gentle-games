@@ -8,6 +8,15 @@ jest.mock('../utils/sentry', () => ({
   captureScreenError: jest.fn(),
 }));
 
+jest.mock('../ui/components', () => {
+  const React = require('react');
+  const ReactNative = require('react-native');
+
+  return {
+    AppButton: ({ label }: { label: string }) => <ReactNative.Text>{label}</ReactNative.Text>,
+  };
+});
+
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     navigate: jest.fn(),

@@ -1,14 +1,10 @@
-import { initAnalytics } from './analytics';
-import { initSentry } from './sentry';
+import { reconcileAnalyticsConsent } from './analytics';
+import { reconcileSentryConsent } from './sentry';
 
 export async function reconcileObservability(telemetryEnabled: boolean): Promise<void> {
-  if (!telemetryEnabled) {
-    return;
-  }
-
   const results = await Promise.allSettled([
-    initSentry(),
-    initAnalytics(),
+    reconcileSentryConsent(telemetryEnabled),
+    reconcileAnalyticsConsent(telemetryEnabled),
   ]);
 
   const failures = results.filter(

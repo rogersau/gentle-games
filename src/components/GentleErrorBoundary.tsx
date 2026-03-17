@@ -1,11 +1,10 @@
 import React, { Component, ReactNode } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import * as Sentry from '@sentry/react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
-import { isSentryEnabled } from '../utils/sentry';
+import { captureScreenError } from '../utils/sentry';
 import { AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 
@@ -75,33 +74,11 @@ export class GentleErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    if (!isSentryEnabled) {
-      console.log('[Sentry] Error boundary caught error but Sentry is disabled:', error.message);
-      return;
-    }
+    void errorInfo;
 
-    // Report to Sentry with screen context
-    Sentry.captureException(error, {
-      tags: {
-        screen: this.props.screenName,
-        errorBoundary: 'GentleErrorBoundary',
-      },
-      contexts: {
-        react: {
-          componentStack: errorInfo.componentStack,
-        },
-      },
-    });
-
-    // Add breadcrumb for debugging
-    Sentry.addBreadcrumb({
-      category: 'error',
-      message: `Error caught in ${this.props.screenName}`,
-      level: 'error',
-      data: {
-        screen: this.props.screenName,
-        errorMessage: error.message,
-      },
+    captureScreenError(error, {
+      screen: this.props.screenName,
+      boundary: 'GentleErrorBoundary',
     });
   }
 
