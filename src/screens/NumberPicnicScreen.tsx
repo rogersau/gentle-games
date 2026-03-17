@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,13 @@ import { PicnicBasket, PicnicBlanket } from '../components/numberpicnic';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+interface WindowRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export const NumberPicnicScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings } = useSettings();
@@ -20,6 +27,7 @@ export const NumberPicnicScreen: React.FC = () => {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const scrollViewRef = useRef<ScrollView>(null);
+  const [basketLayout, setBasketLayout] = useState<WindowRect | null>(null);
 
   const {
     prompt,
@@ -69,6 +77,7 @@ export const NumberPicnicScreen: React.FC = () => {
             items={basketItems}
             targetCount={prompt.targetCount}
             onPress={() => {}}
+            onDropZoneLayout={setBasketLayout}
             isDropTarget={isOverBasket}
             isSuccess={isSuccess}
             onAnimationComplete={startNewRound}
@@ -98,6 +107,7 @@ export const NumberPicnicScreen: React.FC = () => {
           onItemDrop={handleItemDrop}
           onDropStart={handleDropStart}
           onDragOverBasket={handleDragOverBasket}
+          dropZoneLayout={basketLayout}
           onDropEnd={handleDropEnd}
           isProcessing={isProcessing}
           style={styles.blanket}

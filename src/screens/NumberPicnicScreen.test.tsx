@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { Text, View } from 'react-native';
 import { NumberPicnicScreen } from './NumberPicnicScreen';
 
 const mockGoBack = jest.fn();
@@ -67,10 +68,23 @@ jest.mock('../components/numberpicnic', () => {
   const { View, Text, Pressable } = require('react-native');
 
   return {
-    PicnicBasket: ({ isDropTarget, items, targetCount, testID }: { isDropTarget?: boolean; items: string[]; targetCount: number; testID?: string }) => (
+    PicnicBasket: ({
+      isDropTarget,
+      items,
+      targetCount,
+      onAnimationComplete,
+      testID,
+    }: {
+      isDropTarget?: boolean;
+      items: string[];
+      targetCount: number;
+      onAnimationComplete?: () => void;
+      testID?: string;
+    }) => (
       <View testID={testID}>
         <Text>{`drop-target:${isDropTarget ? 'yes' : 'no'}`}</Text>
         <Text>{`basket-items:${items.length}/${targetCount}`}</Text>
+        <Pressable testID="basket-next-round" onPress={() => onAnimationComplete?.()} />
       </View>
     ),
     PicnicBlanket: ({
@@ -226,5 +240,47 @@ describe('NumberPicnicScreen', () => {
     
     // After rerender, the item should still exist
     expect(getByTestId('picnic-item-0')).toBeTruthy();
+  });
+
+  it('clears basket hover state when a new round starts', () => {
+    const { getByTestId, getByText } = render(<NumberPicnicScreen />);
+
+    fireEvent.press(getByTestId('blanket-start-drag'));
+    fireEvent.press(getByTestId('blanket-hover-on'));
+    expect(getByText('drop-target:yes')).toBeTruthy();
+
+    fireEvent.press(getByTestId('basket-next-round'));
+
+    expect(getByText('drop-target:no')).toBeTruthy();
+    expect(getByTestId('number-picnic-scroll').props.scrollEnabled).toBe(true);
+  });
+});
+
+describe('Number Picnic overlap components', () => {
+  const {
+    translateNumberPicnicRect,
+    doesNumberPicnicRectOverlap,
+  } = jest.requireActual('../components/numberpicnic/PicnicBlanket');
+
+  it('rejects upward drags that still miss the visible basket', () => {
+    const basketRect = { x: 100, y: 100, width: 120, height: 120 };
+    const translatedItemRect = translateNumberPicnicRect(
+      { x: 0, y: 350, width: 56, height: 56 },
+      0,
+      -250
+    );
+
+    expect(doesNumberPicnicRectOverlap(translatedItemRect, basketRect)).toBe(false);
+  });
+
+  it('uses the same visible overlap check for hover and valid drop acceptance', () => {
+    const basketRect = { x: 100, y: 100, width: 120, height: 120 };
+    const translatedItemRect = translateNumberPicnicRect(
+      { x: 120, y: 350, width: 56, height: 56 },
+      0,
+      -200
+    );
+
+    expect(doesNumberPicnicRectOverlap(translatedItemRect, basketRect)).toBe(true);
   });
 });

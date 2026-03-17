@@ -14,6 +14,36 @@ import { Space, Radius } from '../../ui/tokens';
 import { ThemeColors } from '../../types';
 import { useSettings } from '../../context/SettingsContext';
 
+interface WindowRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export const translateNumberPicnicRect = (layout: WindowRect, dx: number, dy: number): WindowRect => ({
+  x: layout.x + dx,
+  y: layout.y + dy,
+  width: layout.width,
+  height: layout.height,
+});
+
+export const doesNumberPicnicRectOverlap = (
+  draggedRect: WindowRect | null,
+  dropZoneLayout: WindowRect | null | undefined
+): boolean => {
+  if (!draggedRect || !dropZoneLayout) {
+    return false;
+  }
+
+  return (
+    draggedRect.x < dropZoneLayout.x + dropZoneLayout.width &&
+    draggedRect.x + draggedRect.width > dropZoneLayout.x &&
+    draggedRect.y < dropZoneLayout.y + dropZoneLayout.height &&
+    draggedRect.y + draggedRect.height > dropZoneLayout.y
+  );
+};
+
 interface DraggableItem {
   id: number;
   emoji: string;
@@ -24,6 +54,10 @@ interface DraggableItem {
   isDragging: boolean;
 }
 
+interface MeasurableNode {
+  measureInWindow?: (callback: (x: number, y: number, width: number, height: number) => void) => void;
+}
+
 interface PicnicBlanketProps {
   itemEmoji: string;
   itemCount: number;
@@ -31,6 +65,7 @@ interface PicnicBlanketProps {
   onItemDrop: (index: number) => void;
   onDropStart?: () => void;
   onDragOverBasket?: (isOver: boolean) => void;
+  dropZoneLayout?: WindowRect | null;
   onDropEnd?: () => void;
   isProcessing?: boolean;
   style?: ViewStyle;
@@ -44,6 +79,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
   onItemDrop,
   onDropStart,
   onDragOverBasket,
+  dropZoneLayout,
   onDropEnd,
   isProcessing = false,
   style,
@@ -63,6 +99,9 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
   
   // Create draggable items only once
   const draggableItemsRef = useRef<DraggableItem[]>([]);
+  const itemRefs = useRef<Array<MeasurableNode | null>>([]);
+  const itemLayoutsRef = useRef<Record<number, WindowRect | null>>({});
+  const isOverBasketRef = useRef(false);
   
   // Track the current emoji to detect changes
   const prevEmojiRef = useRef(itemEmoji);
@@ -100,6 +139,56 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
     });
   }, [visibleItems, settings.animationsEnabled, settings.reducedMotionEnabled]);
 
+  const setDragOverlap = useCallback((isOver: boolean) => {
+    if (isOverBasketRef.current === isOver) {
+      return;
+    }
+
+    isOverBasketRef.current = isOver;
+    onDragOverBasket?.(isOver);
+  }, [onDragOverBasket]);
+
+  const measureItemLayout = useCallback((index: number, onMeasured: (layout: WindowRect | null) => void) => {
+    const itemRef = itemRefs.current[index];
+    if (!itemRef?.measureInWindow) {
+      onMeasured(itemLayoutsRef.current[index] ?? null);
+      return;
+    }
+
+    itemRef.measureInWindow((x, y, width, height) => {
+      const layout = { x, y, width, height };
+      itemLayoutsRef.current[index] = layout;
+      onMeasured(layout);
+    });
+  }, []);
+
+  const updateDragOverlap = useCallback(
+    (index: number, dx: number, dy: number, options?: { forceMeasure?: boolean }): boolean => {
+      const evaluateOverlap = (layout: WindowRect | null) => {
+        const translatedLayout = layout
+          ? translateNumberPicnicRect(layout, dx, dy)
+          : null;
+
+        const isOver = doesNumberPicnicRectOverlap(translatedLayout, dropZoneLayout);
+
+        setDragOverlap(isOver);
+        return isOver;
+      };
+
+      const cachedLayout = itemLayoutsRef.current[index] ?? null;
+      if (options?.forceMeasure || !cachedLayout) {
+        let measuredOverlap = false;
+        measureItemLayout(index, (layout) => {
+          measuredOverlap = evaluateOverlap(layout);
+        });
+        return measuredOverlap;
+      }
+
+      return evaluateOverlap(cachedLayout);
+    },
+    [dropZoneLayout, measureItemLayout, setDragOverlap]
+  );
+
   // Create PanResponder for an item
   const createPanResponder = useCallback((item: DraggableItem, index: number) => {
     return PanResponder.create({
@@ -108,6 +197,8 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
       onPanResponderGrant: () => {
         setDraggingIndex(index);
         onDropStart?.();
+        setDragOverlap(false);
+        measureItemLayout(index, () => undefined);
         
         // Scale up when dragging starts
         if (settings.animationsEnabled && !settings.reducedMotionEnabled) {
@@ -124,12 +215,14 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
           x: gestureState.dx,
           y: gestureState.dy,
         });
-        
-        // Only check for drop on release, not during drag
-        // This prevents accidental drops while dragging toward the basket
+
+        updateDragOverlap(index, gestureState.dx, gestureState.dy);
       },
       onPanResponderRelease: (_, gestureState) => {
+        const isValidDrop = updateDragOverlap(index, gestureState.dx, gestureState.dy, { forceMeasure: true });
+
         setDraggingIndex(null);
+        setDragOverlap(false);
         onDropEnd?.();
         
         // Scale back down
@@ -141,9 +234,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
           }).start();
         }
 
-        // Check if dragged upward toward basket (must drag at least 200px up)
-        if (gestureState.dy < -200) {
-          // Dropped toward basket - require significant drag to basket area
+        if (isValidDrop) {
           onItemDrop(index);
           
           // Fade out the item
@@ -172,8 +263,23 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
           }
         }
       },
+      onPanResponderTerminate: () => {
+        setDraggingIndex(null);
+        setDragOverlap(false);
+        onDropEnd?.();
+      },
     });
-  }, [isProcessing, settings.animationsEnabled, settings.reducedMotionEnabled, onDropStart, onDropEnd, onItemDrop, draggingIndex]);
+  }, [
+    isProcessing,
+    settings.animationsEnabled,
+    settings.reducedMotionEnabled,
+    onDropStart,
+    onDropEnd,
+    onItemDrop,
+    measureItemLayout,
+    setDragOverlap,
+    updateDragOverlap,
+  ]);
 
   const itemsPerRow = screenWidth < 400 ? 4 : screenWidth < 600 ? 5 : 6;
 
@@ -232,6 +338,18 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
               >
                 {item.isAvailable ? (
                   <Animated.View
+                    ref={(node) => {
+                      itemRefs.current[index] = node as MeasurableNode | null;
+                    }}
+                    onLayout={(event) => {
+                      const { layout } = event.nativeEvent;
+                      itemLayoutsRef.current[index] = {
+                        x: layout.x,
+                        y: layout.y,
+                        width: layout.width,
+                        height: layout.height,
+                      };
+                    }}
                     {...panResponder.panHandlers}
                     style={[styles.draggableItem, animatedStyle]}
                     accessibilityLabel={`${itemEmoji} item ${index + 1}. Drag up to basket.`}

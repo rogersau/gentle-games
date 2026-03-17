@@ -1,16 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  TouchableOpacity,
   StyleSheet,
   Text,
   View,
   ViewStyle,
   Animated,
   Easing,
-  PanResponder,
-  PanResponderGestureState,
   Dimensions,
   Platform,
+  LayoutChangeEvent,
 } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
 import { Space, TypeStyle, Radius } from '../../ui/tokens';
@@ -75,14 +73,37 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
   const displayItems = items.slice(0, 12);
   const remainingCount = Math.max(0, items.length - 12);
 
+  const measureDropZone = React.useCallback(() => {
+    if (!basketRef.current || !onDropZoneLayout) {
+      return;
+    }
+
+    basketRef.current.measureInWindow?.((x, y, width, height) => {
+      onDropZoneLayout({ x, y, width, height });
+    });
+  }, [onDropZoneLayout]);
+
+  const handleDropZoneLayout = (_event: LayoutChangeEvent) => {
+    if (basketRef.current?.measureInWindow) {
+      measureDropZone();
+      return;
+    }
+
+    const { layout } = _event.nativeEvent;
+    onDropZoneLayout?.({
+      x: layout.x,
+      y: layout.y,
+      width: layout.width,
+      height: layout.height,
+    });
+  };
+
   // Measure drop zone layout
   useEffect(() => {
-    if (basketRef.current && onDropZoneLayout) {
-      basketRef.current.measureInWindow((x, y, width, height) => {
-        onDropZoneLayout({ x, y, width, height });
-      });
+    if (basketPhase === 'waiting') {
+      measureDropZone();
     }
-  }, [onDropZoneLayout]);
+  }, [basketPhase, measureDropZone]);
 
   // Start basket entry animation
   const startBasketEntry = () => {
@@ -254,6 +275,8 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
         {/* Basket Body */}
         <Animated.View 
           ref={basketRef}
+          onLayout={handleDropZoneLayout}
+          testID={testID ? `${testID}-drop-zone` : undefined}
           style={[
             styles.basket,
             isCorrect && styles.basketCorrect,
