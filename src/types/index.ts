@@ -46,6 +46,7 @@ export interface Settings {
   enableUnfinishedGames: boolean;
   language: import('./i18n').SupportedLanguage;
   reducedMotionEnabled: boolean;
+  telemetryEnabled: boolean;
 }
 
 export const UNFINISHED_GAMES: string[] = [

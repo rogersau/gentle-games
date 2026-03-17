@@ -24,6 +24,7 @@ const defaultSettings: Settings = {
   enableUnfinishedGames: true,
   language: DEFAULT_LANGUAGE,
   reducedMotionEnabled: false,
+  telemetryEnabled: false,
 };
 
 const toBoolean = (value: unknown, fallback: boolean): boolean => {
@@ -95,6 +96,7 @@ const sanitizeSettings = (candidate: unknown): Settings => {
     enableUnfinishedGames: toBoolean(parsed.enableUnfinishedGames, defaultSettings.enableUnfinishedGames),
     language: toLanguage(parsed.language),
     reducedMotionEnabled: toBoolean(parsed.reducedMotionEnabled, defaultSettings.reducedMotionEnabled),
+    telemetryEnabled: toBoolean(parsed.telemetryEnabled, defaultSettings.telemetryEnabled),
   };
 };
 
