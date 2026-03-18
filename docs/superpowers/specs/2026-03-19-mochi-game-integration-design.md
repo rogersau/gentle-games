@@ -9,7 +9,7 @@ Mochi the mascot is extended across all 8 games in the Gentle Games app. Rather 
 - Mochi never disrupts gameplay or forces attention
 - All appearances are brief, non-blocking, and gentle
 - Phrases cycle through arrays to avoid repetition
-- Mochi is disabled by default in games via parent settings toggle
+- Mochi is enabled by default in games via parent settings toggle
 - Every game has a tailored Mochi experience appropriate to its emotional rhythm
 
 ---
@@ -235,7 +235,11 @@ Add `showMochiInGames: boolean` to SettingsContext. Each game checks this flag b
 
 ### Queue Behavior
 
-If a second Mochi trigger fires while one is already visible, the second queues and fires after the first completes its auto-hide. This prevents overlapping/stacking Mochi.
+If a second Mochi trigger fires while one is already visible, the second queues and fires after the first completes its auto-hide. A maximum of one queued appearance is allowed — if a third trigger fires before the queue fires, it is dropped (not queued). This prevents an ever-growing queue from creating a backlog of late-arriving celebrations.
+
+### Breathing Garden Future Note
+
+The breath indicator (nose/mouth guide) is acknowledged as a potential future iteration and is out of scope for this implementation.
 
 ### Milestone Counter Scope
 
