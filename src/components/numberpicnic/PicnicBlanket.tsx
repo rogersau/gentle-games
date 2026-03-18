@@ -219,7 +219,8 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
         updateDragOverlap(index, gestureState.dx, gestureState.dy);
       },
       onPanResponderRelease: (_, gestureState) => {
-        const isValidDrop = updateDragOverlap(index, gestureState.dx, gestureState.dy, { forceMeasure: true });
+        const hasCachedLayout = Boolean(itemLayoutsRef.current[index]);
+        const isValidDrop = updateDragOverlap(index, gestureState.dx, gestureState.dy, hasCachedLayout ? undefined : { forceMeasure: true });
 
         setDraggingIndex(null);
         setDragOverlap(false);

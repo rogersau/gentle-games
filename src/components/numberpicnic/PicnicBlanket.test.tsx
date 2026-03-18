@@ -8,6 +8,13 @@ let mockSettings = {
   reducedMotionEnabled: false,
 };
 
+let mockMeasuredLayout = {
+  x: 10,
+  y: 100,
+  width: 56,
+  height: 56,
+};
+
 jest.mock('../../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: mockSettings,
@@ -45,6 +52,12 @@ describe('PicnicBlanket', () => {
       animationsEnabled: false,
       reducedMotionEnabled: false,
     };
+    mockMeasuredLayout = {
+      x: 10,
+      y: 100,
+      width: 56,
+      height: 56,
+    };
     jest.spyOn(PanResponder, 'create').mockImplementation(
       (handlers: any) =>
         ({
@@ -77,7 +90,7 @@ describe('PicnicBlanket', () => {
     expect(getByTestId('picnic-item-0').props.accessibilityLabel).toContain('🥕');
   });
 
-  it('drops item when dragged upward past threshold', () => {
+  it('drops item when dragged into the measured basket overlap area', () => {
     const onItemDrop = jest.fn();
     const onDropStart = jest.fn();
     const onDropEnd = jest.fn();
@@ -90,7 +103,22 @@ describe('PicnicBlanket', () => {
         onItemDrop={onItemDrop}
         onDropStart={onDropStart}
         onDropEnd={onDropEnd}
-      />
+        dropZoneLayout={{ x: 20, y: 50, width: 120, height: 120 }}
+      />,
+      {
+        createNodeMock: (element) =>
+          element.props.testID === 'picnic-item-0'
+            ? {
+                measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) =>
+                  callback(
+                    mockMeasuredLayout.x,
+                    mockMeasuredLayout.y,
+                    mockMeasuredLayout.width,
+                    mockMeasuredLayout.height
+                  ),
+              }
+            : {},
+      }
     );
 
     const item = getByTestId('picnic-item-0');
@@ -104,9 +132,14 @@ describe('PicnicBlanket', () => {
     expect(moveShouldSet()).toBe(true);
 
     act(() => {
+      item.props.onLayout?.({
+        nativeEvent: {
+          layout: mockMeasuredLayout,
+        },
+      });
       onGrant?.({}, {});
-      onMove?.({}, { dx: 0, dy: -250 });
-      onRelease?.({}, { dx: 0, dy: -250 });
+      onMove?.({}, { dx: 20, dy: -40 });
+      onRelease?.({}, { dx: 20, dy: -40 });
     });
 
     expect(onDropStart).toHaveBeenCalledTimes(1);
@@ -114,19 +147,44 @@ describe('PicnicBlanket', () => {
     expect(onItemDrop).toHaveBeenCalledWith(0);
   });
 
-  it('does not drop item when release is below threshold', () => {
+  it('does not drop item when release does not overlap the basket bounds', () => {
     const onItemDrop = jest.fn();
 
     const { getByTestId } = render(
-      <PicnicBlanket itemEmoji="🍇" itemCount={1} targetCount={3} onItemDrop={onItemDrop} />
+      <PicnicBlanket
+        itemEmoji="🍇"
+        itemCount={1}
+        targetCount={3}
+        onItemDrop={onItemDrop}
+        dropZoneLayout={{ x: 220, y: 20, width: 100, height: 100 }}
+      />,
+      {
+        createNodeMock: (element) =>
+          element.props.testID === 'picnic-item-0'
+            ? {
+                measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) =>
+                  callback(
+                    mockMeasuredLayout.x,
+                    mockMeasuredLayout.y,
+                    mockMeasuredLayout.width,
+                    mockMeasuredLayout.height
+                  ),
+              }
+            : {},
+      }
     );
 
     const item = getByTestId('picnic-item-0');
 
     act(() => {
+      item.props.onLayout?.({
+        nativeEvent: {
+          layout: mockMeasuredLayout,
+        },
+      });
       item.props.onPanResponderGrant?.({}, {});
-      item.props.onPanResponderMove?.({}, { dx: 0, dy: -80 });
-      item.props.onPanResponderRelease?.({}, { dx: 0, dy: -80 });
+      item.props.onPanResponderMove?.({}, { dx: 15, dy: -30 });
+      item.props.onPanResponderRelease?.({}, { dx: 15, dy: -30 });
     });
 
     expect(onItemDrop).not.toHaveBeenCalled();
