@@ -36,8 +36,25 @@ jest.mock('../context/SettingsContext', () => ({
   }),
 }));
 
+jest.mock('../utils/theme', () => ({
+  useThemeColors: () => ({
+    colors: { background: '#FFFEF7', text: '#5A5A5A' },
+    resolvedMode: 'light',
+  }),
+  useReducedMotion: () => false,
+}));
+
 jest.mock('../utils/externalLinks', () => ({
   openExternalUrl: jest.fn(),
+}));
+
+jest.mock('../context/MochiContext', () => ({
+  useMochiContext: () => ({
+    mochiProps: { variant: 'idle', visible: false, phrase: null },
+    showMochi: jest.fn(),
+    hideMochi: jest.fn(),
+    celebrate: jest.fn(),
+  }),
 }));
 
 describe('HomeScreen', () => {
@@ -60,38 +77,48 @@ describe('HomeScreen', () => {
   });
 
   it('navigates directly to Drawing screen when Drawing Pad is selected', () => {
+    jest.useFakeTimers();
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Drawing Pad'));
-
+    jest.advanceTimersByTime(300);
     expect(mockNavigate).toHaveBeenCalledWith(HOME_GAME_ROUTES.drawing);
+    jest.useRealTimers();
   });
 
   it('navigates directly to Glitter screen when Glitter Fall is selected', () => {
+    jest.useFakeTimers();
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Glitter Fall'));
-
+    jest.advanceTimersByTime(300);
     expect(mockNavigate).toHaveBeenCalledWith(HOME_GAME_ROUTES['glitter-fall']);
+    jest.useRealTimers();
   });
 
   it('navigates directly to Bubble screen when Bubble Pop is selected', () => {
+    jest.useFakeTimers();
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Bubble Pop'));
-
+    jest.advanceTimersByTime(300);
     expect(mockNavigate).toHaveBeenCalledWith(HOME_GAME_ROUTES['bubble-pop']);
+    jest.useRealTimers();
   });
 
   it('navigates directly to Category Match screen when Category Match is selected', () => {
+    jest.useFakeTimers();
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Category Match'));
-
+    jest.advanceTimersByTime(300);
     expect(mockNavigate).toHaveBeenCalledWith(HOME_GAME_ROUTES['category-match']);
+    jest.useRealTimers();
   });
 
   it('navigates directly to Keepy Uppy screen when Keepy Uppy is selected', () => {
+    jest.useFakeTimers();
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Keepy Uppy'));
-
+    jest.advanceTimersByTime(300);
     expect(mockNavigate).toHaveBeenCalledWith(HOME_GAME_ROUTES['keepy-uppy']);
+    jest.useRealTimers();
   });
 
   it('shows difficulty modal for Memory Snap and navigates to Game after selection', async () => {

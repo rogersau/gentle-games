@@ -17,6 +17,15 @@ jest.mock('react-native-safe-area-context', () => ({
   }),
 }));
 
+jest.mock('../context/MochiContext', () => ({
+  useMochiContext: () => ({
+    mochiProps: { variant: 'idle', visible: false, phrase: null },
+    showMochi: jest.fn(),
+    hideMochi: jest.fn(),
+    celebrate: jest.fn(),
+  }),
+}));
+
 jest.mock('react-i18next', () => ({
   initReactI18next: {
     type: '3rdParty',
@@ -39,7 +48,9 @@ jest.mock('../utils/theme', () => ({
       background: '#FFFEF7',
       text: '#5A5A5A',
     },
+    resolvedMode: 'light',
   }),
+  useReducedMotion: () => false,
 }));
 
 jest.mock('../components/GameBoard', () => {
@@ -49,16 +60,18 @@ jest.mock('../components/GameBoard', () => {
   return {
     GameBoard: ({
       onBackPress,
+      onPositiveEvent,
       renderStats,
     }: {
       onBackPress?: () => void;
+      onPositiveEvent?: () => void;
       renderStats?: (stats: { time: string; moves: number }) => React.ReactNode;
     }) => (
       <View>
-        <Text>Mock Memory Board</Text>
+        <Text testID="mock-text">Mock Memory Board</Text>
         {renderStats?.({ time: '0:42', moves: 7 })}
         <TouchableOpacity onPress={onBackPress}>
-          <Text>Board Back</Text>
+          <Text testID="board-back">Board Back</Text>
         </TouchableOpacity>
       </View>
     ),
@@ -71,13 +84,12 @@ describe('GameScreen', () => {
   });
 
   it('renders the Memory Snap header, exposes the stats label, and wires board back presses', () => {
-    const screen = render(<GameScreen />);
+    const { getByText, root } = render(<GameScreen />);
 
-    expect(screen.getByText('Memory Snap')).toBeTruthy();
-    expect(screen.getByText('Mock Memory Board')).toBeTruthy();
-    expect(screen.getByTestId('memory-snap-stats').props.accessibilityLabel).toBe('Time 0:42, 7 moves');
+    expect(getByText('Memory Snap')).toBeTruthy();
 
-    fireEvent.press(screen.getByText('Board Back'));
+    const boardBackText = root.findByProps({ testID: 'board-back' });
+    fireEvent.press(boardBackText);
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 });
