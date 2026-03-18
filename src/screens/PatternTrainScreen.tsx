@@ -49,6 +49,14 @@ interface DraggableCarriage {
   isAvailable: boolean;
 }
 
+const pickPhrase = (phrases: string[], lastIndex: number): { phrase: string; index: number } => {
+  let idx: number;
+  do {
+    idx = Math.floor(Math.random() * phrases.length);
+  } while (idx === lastIndex && phrases.length > 1);
+  return { phrase: phrases[idx], index: idx };
+};
+
 export const PatternTrainScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings, updateSettings } = useSettings();
@@ -86,14 +94,6 @@ export const PatternTrainScreen: React.FC = () => {
   const { bounce: successBounce } = useGentleBounce();
   const { showMochi } = useMochi();
   const lastPhraseIndexRef = useRef(-1);
-
-  const pickPhrase = (phrases: string[], lastIndex: number): { phrase: string; index: number } => {
-    let idx: number;
-    do {
-      idx = Math.floor(Math.random() * phrases.length);
-    } while (idx === lastIndex && phrases.length > 1);
-    return { phrase: phrases[idx], index: idx };
-  };
 
   const difficultyOptions: {
     value: Difficulty;
