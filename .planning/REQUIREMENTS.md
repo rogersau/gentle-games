@@ -33,9 +33,9 @@
 
 ### Release & Regression Coverage
 
-- [ ] **RELG-01**: Release automation includes web source maps in the Sentry upload path
-- [ ] **RELG-02**: App startup telemetry and bootstrap behavior has automated regression coverage
-- [ ] **RELG-03**: Source-map upload tooling has automated regression coverage for web, Android, and iOS fallback paths
+- [x] **RELG-01**: Release automation includes web source maps in the Sentry upload path
+- [x] **RELG-02**: App startup telemetry and bootstrap behavior has automated regression coverage
+- [x] **RELG-03**: Source-map upload tooling has automated regression coverage for web, Android, and iOS fallback paths
 - [x] **RELG-04**: Bubble Pop, Category Match, and Memory Snap route wiring have targeted regression coverage for interaction- and accessibility-sensitive behavior
 
 ## v2 Requirements
@@ -76,9 +76,9 @@
 | PERF-01 | Phase 3 | Complete |
 | PERF-02 | Phase 3 | Complete |
 | PERF-03 | Phase 2 | Complete |
-| RELG-01 | Phase 4 | Pending |
-| RELG-02 | Phase 4 | Pending |
-| RELG-03 | Phase 4 | Pending |
+| RELG-01 | Phase 4 | Complete |
+| RELG-02 | Phase 4 | Complete |
+| RELG-03 | Phase 4 | Complete |
 | RELG-04 | Phase 4 | Complete |
 
 **Coverage:**

@@ -6,14 +6,14 @@ current_phase: 3
 current_phase_name: Stable Navigation and Responsive Surfaces
 current_plan: 4
 status: planning
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-03-18T00:13:05.286Z"
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-03-18T00:21:44.665Z"
 last_activity: 2026-03-18
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 13
-  completed_plans: 11
+  completed_plans: 13
   percent: 100
 ---
 
@@ -69,6 +69,8 @@ Progress: [██████████] 100%
 | Phase 03 P03 | 443 | 2 tasks | 4 files |
 | Phase 03 P02 | 435 | 2 tasks | 4 files |
 | Phase 04 P01 | 407 | 3 tasks | 8 files |
+| Phase 04 P03 | 314 | 2 tasks | 7 files |
+| Phase 04 P02 | 323 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -103,6 +105,11 @@ Recent decisions affecting current work:
 - [Phase 04]: Category Match board regressions stay on the live PanResponder seam, while screen tests own preview, counter, and streak flow.
 - [Phase 04]: Memory Snap route coverage keeps GameBoard as the real owner of gameplay logic and only adds a stable stats test seam at the wrapper level.
 - [Phase 04]: Number Picnic release validation can reuse a cached measured item rect when available instead of forcing a second measurement for the same drag.
+- [Phase 04]: Kept startup regression coverage on the existing AppContent/reconcileObservability seam so Phase 1 bootstrap behavior remains the single source of truth.
+- [Phase 04]: Made aggregated reconciliation failures source-labeled instead of raw joined messages so partial failures are easier to diagnose and assert.
+- [Phase 04]: Fixed duplicate PostHog identify calls on first enable without broadening telemetry scope.
+- [Phase 04]: Kept the fallback uploader in scripts/upload-sourcemaps.js and fixed it with an explicit platform map instead of introducing a new release subsystem.
+- [Phase 04]: Web source-map scans now treat dist/ as the real export root while explicitly skipping dist/android and dist/ios to avoid mixed-platform uploads after build:all.
 
 ### Pending Todos
 
@@ -115,6 +122,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-18T00:13:05.283Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-03-18T00:21:44.662Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
