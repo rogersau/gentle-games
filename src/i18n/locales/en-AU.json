@@ -335,5 +335,23 @@
   },
   "accessibility": {
     "gameCardHint": "Double tap to play this game"
+  },
+  "mascot": {
+    "greeting": "Hello, friend!",
+    "letsPlay": "Let's play!",
+    "letsMatch": "Let's find the matches!",
+    "letsDraw": "Let's draw something beautiful!",
+    "letsPop": "Let's pop some bubbles!",
+    "letsKeepUp": "Let's keep them aloft!",
+    "letsCategorize": "Let's sort these things!",
+    "letsBreathe": "Let's breathe together.",
+    "letsPattern": "Let's find the pattern!",
+    "letsCount": "Let's count together!",
+    "beautiful": "Beautiful!",
+    "wonderful": "Wonderful!",
+    "greatJob": "Amazing job!",
+    "amazing": "You're amazing!",
+    "takingTime": "You're doing great!",
+    "settingsHelper": "Here's where you can change things."
   }
 }
