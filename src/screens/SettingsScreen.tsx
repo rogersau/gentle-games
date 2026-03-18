@@ -1,10 +1,5 @@
 import React, { useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
@@ -68,8 +63,8 @@ export const SettingsScreen: React.FC = () => {
         rightAction={
           <AppButton
             label={t('common.save')}
-            variant="primary"
-            size="sm"
+            variant='primary'
+            size='sm'
             onPress={() => navigation.goBack()}
             accessibilityHint={t('settings.saveHint')}
           />
@@ -91,9 +86,7 @@ export const SettingsScreen: React.FC = () => {
             value={settings.language}
             onValueChange={(value) => updateSettings({ language: value })}
           />
-          <Text style={styles.description}>
-            {t('settings.language.description')}
-          </Text>
+          <Text style={styles.description}>{t('settings.language.description')}</Text>
         </View>
 
         {/* Appearance */}
@@ -104,9 +97,7 @@ export const SettingsScreen: React.FC = () => {
             value={settings.colorMode}
             onValueChange={(value) => updateSettings({ colorMode: value })}
           />
-          <Text style={styles.description}>
-            {t('settings.appearance.description')}
-          </Text>
+          <Text style={styles.description}>{t('settings.appearance.description')}</Text>
         </View>
 
         {/* Reduced Motion */}
@@ -184,27 +175,25 @@ export const SettingsScreen: React.FC = () => {
         {/* Games on Home Screen */}
         <View style={styles.section}>
           <SectionHeader title={t('settings.gamesOnHomeScreen.title')} />
-          {ALL_GAMES
-            .filter((game) => settings.enableUnfinishedGames || !UNFINISHED_GAMES.includes(game.id))
-            .map((game) => {
-              const isVisible = !settings.hiddenGames.includes(game.id);
-              return (
-                <SettingToggle
-                  key={game.id}
-                  label={`${game.icon}  ${t(game.nameKey)}`}
-                  value={isVisible}
-                  onValueChange={(value) => {
-                    const updated = value
-                      ? settings.hiddenGames.filter((id) => id !== game.id)
-                      : [...settings.hiddenGames, game.id];
-                    updateSettings({ hiddenGames: updated });
-                  }}
-                />
-              );
-            })}
-          <Text style={styles.description}>
-            {t('settings.gamesOnHomeScreen.description')}
-          </Text>
+          {ALL_GAMES.filter(
+            (game) => settings.enableUnfinishedGames || !UNFINISHED_GAMES.includes(game.id),
+          ).map((game) => {
+            const isVisible = !settings.hiddenGames.includes(game.id);
+            return (
+              <SettingToggle
+                key={game.id}
+                label={`${game.icon}  ${t(game.nameKey)}`}
+                value={isVisible}
+                onValueChange={(value) => {
+                  const updated = value
+                    ? settings.hiddenGames.filter((id) => id !== game.id)
+                    : [...settings.hiddenGames, game.id];
+                  updateSettings({ hiddenGames: updated });
+                }}
+              />
+            );
+          })}
+          <Text style={styles.description}>{t('settings.gamesOnHomeScreen.description')}</Text>
         </View>
 
         {/* Parent Timer */}
@@ -216,9 +205,7 @@ export const SettingsScreen: React.FC = () => {
             onValueChange={(value) => updateSettings({ parentTimerMinutes: value })}
             wrap
           />
-          <Text style={styles.description}>
-            {t('settings.parentTimer.description')}
-          </Text>
+          <Text style={styles.description}>{t('settings.parentTimer.description')}</Text>
         </View>
 
         {/* Telemetry */}
@@ -234,7 +221,7 @@ export const SettingsScreen: React.FC = () => {
         <View style={styles.bottomAction}>
           <AppButton
             label={t('common.back')}
-            variant="secondary"
+            variant='secondary'
             onPress={() => navigation.goBack()}
             accessibilityHint={t('settings.backHint')}
           />

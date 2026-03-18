@@ -75,15 +75,11 @@ describe('upload-sourcemaps', () => {
         webAssetsRoot,
         androidAssetsRoot,
         iosAssetsRoot,
-      ].includes(targetPath)
+      ].includes(targetPath),
     );
     mockReaddirSync.mockImplementation((targetPath) => {
       if (targetPath === distRoot) {
-        return [
-          makeDirent('_expo', true),
-          makeDirent('android', true),
-          makeDirent('ios', true),
-        ];
+        return [makeDirent('_expo', true), makeDirent('android', true), makeDirent('ios', true)];
       }
 
       if (targetPath === `${distRoot}/_expo`) {
@@ -179,7 +175,7 @@ describe('upload-sourcemaps', () => {
     expect(mockExecSync).toHaveBeenCalledTimes(3);
     expect(mockExecSync).toHaveBeenCalledWith(
       expect.stringContaining(`upload-sourcemaps ${distRoot} --url-prefix ~/web --rewrite`),
-      { stdio: 'inherit' }
+      { stdio: 'inherit' },
     );
     expect(logSpy).toHaveBeenCalledWith('\n✅ Successfully uploaded 3 source map(s) to Sentry!');
   });

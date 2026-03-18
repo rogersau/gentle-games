@@ -125,17 +125,17 @@ describe('HomeScreen', () => {
     const screen = render(<HomeScreen />);
 
     // GameCard wraps content in TouchableOpacity with accessibility label
-    const memorySnapCard = screen.getAllByRole('button').find(
-      (el: any) => el.props.accessibilityLabel?.includes('Memory Snap')
-    );
+    const memorySnapCard = screen
+      .getAllByRole('button')
+      .find((el: any) => el.props.accessibilityLabel?.includes('Memory Snap'));
     expect(memorySnapCard).toBeTruthy();
     fireEvent.press(memorySnapCard!);
     expect(screen.getByText(/Select difficulty/)).toBeTruthy();
 
     // Find the Hard difficulty button
-    const hardButton = screen.getAllByRole('button').find(
-      (el: any) => el.props.accessibilityLabel?.includes('Hard')
-    );
+    const hardButton = screen
+      .getAllByRole('button')
+      .find((el: any) => el.props.accessibilityLabel?.includes('Hard'));
     expect(hardButton).toBeTruthy();
     fireEvent.press(hardButton!);
 
@@ -197,14 +197,14 @@ describe('HomeScreen', () => {
         expect(screen.getByText('Website unavailable')).toBeTruthy();
         expect(
           screen.getByText(
-            "We couldn't open the Gentle Games website right now. Please try again later."
-          )
+            "We couldn't open the Gentle Games website right now. Please try again later.",
+          ),
         ).toBeTruthy();
       });
 
       expect(screen.queryByText(/exploded|Error:|TypeError/i)).toBeNull();
       expect(Linking.openURL).not.toHaveBeenCalled();
-    }
+    },
   );
 
   it('uses the shared typed route helpers instead of local route strings and casts', () => {

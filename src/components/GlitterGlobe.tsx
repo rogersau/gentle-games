@@ -62,20 +62,13 @@ const FINGER_INFLUENCE_RADIUS = 96;
 const FINGER_PUSH = 16;
 const SHAKE_IMPULSE = 45;
 const MAX_SPEED = 65;
-const LARGE_PIECE_CHANCE = 0.30;
+const LARGE_PIECE_CHANCE = 0.3;
 const WAKE_INTERVAL_MS = 45;
 const WAKE_MAX_TRAIL = 22;
 const WAKE_FADE_PER_SECOND = 2.2;
 const WAKE_EXPAND_PER_SECOND = 20;
 
-const PARTICLE_COLORS = [
-  '#FF5D8F',
-  '#6BCBFF',
-  '#FFD166',
-  '#B8F559',
-  '#C792EA',
-  '#FF9E5E',
-];
+const PARTICLE_COLORS = ['#FF5D8F', '#6BCBFF', '#FFD166', '#B8F559', '#C792EA', '#FF9E5E'];
 const PARTICLE_SHAPES: GlitterShape[] = ['circle', 'square', 'diamond', 'star'];
 
 let particleCounter = 0;
@@ -86,7 +79,7 @@ const getStarPoints = (
   centerX: number,
   centerY: number,
   outerRadius: number,
-  innerRadius: number
+  innerRadius: number,
 ): string => {
   const points: string[] = [];
   for (let i = 0; i < 10; i++) {
@@ -135,7 +128,7 @@ const clampParticleToGlobe = (
   particle: GlitterParticle,
   centerX: number,
   centerY: number,
-  globeRadius: number
+  globeRadius: number,
 ): GlitterParticle => {
   const maxDistance = globeRadius - particle.radius;
   const dx = particle.x - centerX;
@@ -210,7 +203,7 @@ export const resolveParticleCollisions = (particles: GlitterParticle[]): Glitter
       // Elastic impulse (equal mass) along collision normal
       const dvn = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
       if (dvn > 0) {
-        const impulse = (1 + PARTICLE_BOUNCE) * dvn / 2;
+        const impulse = ((1 + PARTICLE_BOUNCE) * dvn) / 2;
         result[i].vx -= impulse * nx;
         result[i].vy -= impulse * ny;
         result[j].vx += impulse * nx;
@@ -228,7 +221,7 @@ const stepParticles = (
   width: number,
   height: number,
   gravityX: number,
-  gravityY: number
+  gravityY: number,
 ): GlitterParticle[] => {
   const centerX = width / 2;
   const centerY = height / 2;
@@ -256,7 +249,7 @@ const stepParticles = (
       { ...p, vx: clampedVx, vy: clampedVy },
       centerX,
       centerY,
-      globeRadius
+      globeRadius,
     );
   }
   return result;
@@ -265,7 +258,7 @@ const stepParticles = (
 const applyShakeImpulse = (
   particles: GlitterParticle[],
   width: number,
-  height: number
+  height: number,
 ): GlitterParticle[] => {
   const centerX = width / 2;
   const centerY = height / 2;
@@ -292,7 +285,7 @@ const applyFingerImpulse = (
   moveX: number,
   moveY: number,
   width: number,
-  height: number
+  height: number,
 ): GlitterParticle[] => {
   const centerX = width / 2;
   const centerY = height / 2;
@@ -380,23 +373,23 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
             return;
           }
 
-           Accelerometer.setUpdateInterval(100);
-           subscription = Accelerometer.addListener((reading) => {
-             motionForceRef.current = getMotionForce(reading);
+          Accelerometer.setUpdateInterval(100);
+          subscription = Accelerometer.addListener((reading) => {
+            motionForceRef.current = getMotionForce(reading);
 
-             const now = Date.now();
-             if (shouldTriggerShake(reading, lastShakeAtRef.current, now)) {
-               lastShakeAtRef.current = now;
-               publishSnapshot(
-                 applyShakeImpulse(
-                   particlesRef.current,
-                   sizeRef.current.width,
-                   sizeRef.current.height
-                 ),
-                 wakeRipplesRef.current
-               );
-             }
-           });
+            const now = Date.now();
+            if (shouldTriggerShake(reading, lastShakeAtRef.current, now)) {
+              lastShakeAtRef.current = now;
+              publishSnapshot(
+                applyShakeImpulse(
+                  particlesRef.current,
+                  sizeRef.current.width,
+                  sizeRef.current.height,
+                ),
+                wakeRipplesRef.current,
+              );
+            }
+          });
         } catch {
           motionForceRef.current = { x: 0, y: 0 };
         }
@@ -416,7 +409,10 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
       ref,
       () => ({
         addGlitter: (count = 20) => {
-          const nextCount = Math.max(0, Math.min(count, maxParticles - particlesRef.current.length));
+          const nextCount = Math.max(
+            0,
+            Math.min(count, maxParticles - particlesRef.current.length),
+          );
           if (nextCount === 0) {
             return;
           }
@@ -426,14 +422,14 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
               ...particlesRef.current,
               ...createParticles(nextCount, sizeRef.current.width, sizeRef.current.height),
             ],
-            wakeRipplesRef.current
+            wakeRipplesRef.current,
           );
         },
         clearGlitter: () => {
           publishSnapshot([], []);
         },
       }),
-      [maxParticles]
+      [maxParticles],
     );
 
     useEffect(() => {
@@ -453,7 +449,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
             sizeRef.current.width,
             sizeRef.current.height,
             motionForce.x,
-            BASE_GRAVITY + motionForce.y
+            BASE_GRAVITY + motionForce.y,
           );
           const nextWakeRipples = wakeRipplesRef.current
             .map((wake) => ({
@@ -493,7 +489,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
                 locationX,
                 locationY,
                 sizeRef.current.width,
-                sizeRef.current.height
+                sizeRef.current.height,
               )
             ) {
               const now = Date.now();
@@ -509,7 +505,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
                     radius: 6,
                     opacity: 0.34,
                   },
-                ].slice(-WAKE_MAX_TRAIL)
+                ].slice(-WAKE_MAX_TRAIL),
               );
             }
           },
@@ -532,7 +528,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
               point.x,
               point.y,
               sizeRef.current.width,
-              sizeRef.current.height
+              sizeRef.current.height,
             );
             if (isInside) {
               const now = Date.now();
@@ -559,9 +555,9 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
                 moveX,
                 moveY,
                 sizeRef.current.width,
-                sizeRef.current.height
+                sizeRef.current.height,
               ),
-              wakeRipplesRef.current
+              wakeRipplesRef.current,
             );
           },
           onPanResponderRelease: () => {
@@ -573,7 +569,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
             lastWakeAtRef.current = 0;
           },
         }),
-      []
+      [],
     );
 
     const globe = useMemo(() => {
@@ -593,9 +589,9 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
       >
         <Svg width={width} height={height}>
           <Defs>
-            <RadialGradient id="globeFill" cx="50%" cy="32%" rx="65%" ry="65%">
-              <Stop offset="0%" stopColor={colors.surfaceGame} />
-              <Stop offset="100%" stopColor={colors.surfaceGame} />
+            <RadialGradient id='globeFill' cx='50%' cy='32%' rx='65%' ry='65%'>
+              <Stop offset='0%' stopColor={colors.surfaceGame} />
+              <Stop offset='100%' stopColor={colors.surfaceGame} />
             </RadialGradient>
           </Defs>
 
@@ -603,7 +599,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
             cx={globe.centerX}
             cy={globe.centerY}
             r={globe.radius}
-            fill="url(#globeFill)"
+            fill='url(#globeFill)'
             stroke={colors.primary}
             strokeWidth={3}
           />
@@ -645,7 +641,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
                     particle.x,
                     particle.y,
                     particle.radius,
-                    particle.radius * 0.45
+                    particle.radius * 0.45,
                   )}
                   fill={particle.color}
                   opacity={particle.opacity}
@@ -670,7 +666,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
               cx={wake.x}
               cy={wake.y}
               r={wake.radius}
-              fill="none"
+              fill='none'
               stroke={colors.cardFront}
               strokeWidth={1.5}
               opacity={wake.opacity}
@@ -680,7 +676,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
         <View style={styles.touchLayer} {...panResponder.panHandlers} />
       </View>
     );
-  }
+  },
 );
 
 const styles = StyleSheet.create({

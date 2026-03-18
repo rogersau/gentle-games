@@ -13,17 +13,21 @@ provides:
 affects: [drawing-canvas, gameplay-correctness, regression-testing]
 tech-stack:
   added: []
-  patterns: [gesture-scoped actionId batching in ordered history, undo by trailing batch identity instead of current toolbar mode]
+  patterns:
+    [
+      gesture-scoped actionId batching in ordered history,
+      undo by trailing batch identity instead of current toolbar mode,
+    ]
 key-files:
   created: []
   modified:
     - src/components/DrawingCanvas.tsx
     - src/components/DrawingCanvas.test.tsx
 key-decisions:
-  - "Stored a shared actionId on each history entry created by one gesture so undo can remove the trailing batch without inferring symmetry from the current toolbar state."
+  - 'Stored a shared actionId on each history entry created by one gesture so undo can remove the trailing batch without inferring symmetry from the current toolbar state.'
 patterns-established:
-  - "Drawing history batches mirrored entries from one gesture with a shared actionId."
-  - "Undo removes the trailing contiguous batch for backward compatibility with older entries that may not include actionId."
+  - 'Drawing history batches mirrored entries from one gesture with a shared actionId.'
+  - 'Undo removes the trailing contiguous batch for backward compatibility with older entries that may not include actionId.'
 requirements-completed: [PLAY-01]
 duration: 1min
 completed: 2026-03-17
@@ -42,6 +46,7 @@ completed: 2026-03-17
 - **Files modified:** 2
 
 ## Accomplishments
+
 - Added regression tests that prove half- and quarter-symmetry undo removes a full mirrored gesture in one tap.
 - Tagged stroke, shape, and eraser history entries with a shared per-gesture `actionId`.
 - Replaced single-entry undo with trailing batch removal so undo still works after symmetry mode changes.
@@ -56,10 +61,12 @@ Each task was committed atomically:
 _Note: TDD tasks may have multiple commits (test → feat → refactor)_
 
 ## Files Created/Modified
+
 - `src/components/DrawingCanvas.tsx` - Adds optional `actionId` batch metadata and batch-aware undo logic for strokes, shapes, and erases.
 - `src/components/DrawingCanvas.test.tsx` - Covers mirrored undo behavior in half symmetry, quarter symmetry after mode changes, and shape/eraser batching.
 
 ## Decisions Made
+
 - Used shared `actionId` metadata on ordered history entries instead of adding a second undo stack, preserving existing draw order and render flow.
 - Made undo remove the trailing contiguous batch with the same `actionId`, while falling back to single-entry undo for older entries without batch metadata.
 
@@ -68,6 +75,7 @@ _Note: TDD tasks may have multiple commits (test → feat → refactor)_
 None - plan executed exactly as written.
 
 ## Issues Encountered
+
 - Existing working tree changes for later Phase 2 work were present in unrelated Number Picnic files, so staging stayed file-specific to keep this task commit atomic.
 
 ## User Setup Required
@@ -75,11 +83,13 @@ None - plan executed exactly as written.
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Drawing Canvas mirrored undo behavior is now locked down for PLAY-01 and ready for downstream gameplay regression work.
 - Phase 2 can continue with Number Picnic overlap and timer-cleanup plans without revisiting Drawing Canvas history structure.
 
 ## Self-Check: PASSED
 
 ---
-*Phase: 02-correct-and-safe-gameplay-interactions*
-*Completed: 2026-03-17*
+
+_Phase: 02-correct-and-safe-gameplay-interactions_
+_Completed: 2026-03-17_

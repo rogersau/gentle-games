@@ -44,7 +44,7 @@ export const GameScreen: React.FC = () => {
             <Text
               style={[styles.stats, { color: colors.text }]}
               accessibilityLabel={`Time ${time}, ${moves} moves`}
-              testID="memory-snap-stats"
+              testID='memory-snap-stats'
             >
               Time: {time} · Moves: {moves}
             </Text>
@@ -52,20 +52,20 @@ export const GameScreen: React.FC = () => {
         />
 
         {/* In-game Mochi — shown only after game starts (onGameStart), floating higher to avoid card grid */}
-        <MochiPresence
-          size="sm"
-          style={styles.mochiInGame}
-        />
+        <MochiPresence size='sm' style={styles.mochiInGame} />
 
         <AppModal
           visible={showIntro}
-          onClose={() => { setShowIntro(false); hideMochi(); }}
+          onClose={() => {
+            setShowIntro(false);
+            hideMochi();
+          }}
           showClose={false}
         >
-          <MochiPresence size="md" />
+          <MochiPresence size='md' />
           <AppButton
-            label={t("common.play")}
-            variant="primary"
+            label={t('common.play')}
+            variant='primary'
             onPress={() => setShowIntro(false)}
           />
         </AppModal>

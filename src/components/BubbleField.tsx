@@ -44,7 +44,13 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { t } = useTranslation();
   const [snapshot, setSnapshot] = useState<BubbleFieldSnapshot>(() => {
-    const initialBubbles = ensureMinimumBubbles([], minActiveBubbles, width, height, maxActiveBubbles);
+    const initialBubbles = ensureMinimumBubbles(
+      [],
+      minActiveBubbles,
+      width,
+      height,
+      maxActiveBubbles,
+    );
     return {
       bubbles: initialBubbles,
       popIndicators: [],
@@ -72,14 +78,8 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
     widthRef.current = width;
     heightRef.current = height;
     publishSnapshot(
-      ensureMinimumBubbles(
-        bubblesRef.current,
-        minActiveBubbles,
-        width,
-        height,
-        maxActiveBubbles
-      ),
-      popIndicatorsRef.current
+      ensureMinimumBubbles(bubblesRef.current, minActiveBubbles, width, height, maxActiveBubbles),
+      popIndicatorsRef.current,
     );
   }, [height, maxActiveBubbles, minActiveBubbles, width]);
 
@@ -105,7 +105,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
           nextBubbles,
           Math.min(spawnCount, maxActiveBubbles - nextBubbles.length),
           widthRef.current,
-          heightRef.current
+          heightRef.current,
         );
       }
 
@@ -114,7 +114,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
         minActiveBubbles,
         widthRef.current,
         heightRef.current,
-        maxActiveBubbles
+        maxActiveBubbles,
       );
       const nextPopIndicators = popIndicatorsRef.current
         .map((indicator) => ({
@@ -159,7 +159,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
             minActiveBubbles,
             widthRef.current,
             heightRef.current,
-            maxActiveBubbles
+            maxActiveBubbles,
           );
           const nextPopIndicators = [
             ...popIndicatorsRef.current,
@@ -175,7 +175,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
           onBubblePop?.();
         },
       }),
-    [maxActiveBubbles, minActiveBubbles, onBubblePop]
+    [maxActiveBubbles, minActiveBubbles, onBubblePop],
   );
 
   return (
@@ -211,7 +211,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
               cx={indicator.x}
               cy={indicator.y}
               r={10 + (1 - indicator.life) * 14}
-              fill="none"
+              fill='none'
               stroke={colors.cardFront}
               strokeWidth={2}
               opacity={indicator.life * 0.8}
@@ -222,8 +222,8 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
               fill={colors.secondary}
               fontSize={16}
               fontFamily={FontFamily.bold}
-              fontWeight="700"
-              textAnchor="middle"
+              fontWeight='700'
+              textAnchor='middle'
               opacity={indicator.life}
             >
               {t('games.bubblePop.pop')}

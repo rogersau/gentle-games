@@ -158,60 +158,57 @@ const patchIndexHtml = () => {
   html = upsertHeadTag(
     html,
     /<meta[^>]+name=["']viewport["'][^>]*>\s*/gi,
-    `  <meta name="viewport" content="${VIEWPORT_CONTENT}" />`
+    `  <meta name="viewport" content="${VIEWPORT_CONTENT}" />`,
   );
   html = upsertHeadTag(
     html,
     /<meta[^>]+name=["']theme-color["'][^>]*>\s*/gi,
-    '  <meta name="theme-color" content="#FFFEF7" />'
+    '  <meta name="theme-color" content="#FFFEF7" />',
   );
   html = upsertHeadTag(
     html,
     /<meta[^>]+name=["']apple-mobile-web-app-capable["'][^>]*>\s*/gi,
-    '  <meta name="apple-mobile-web-app-capable" content="yes" />'
+    '  <meta name="apple-mobile-web-app-capable" content="yes" />',
   );
   html = upsertHeadTag(
     html,
     /<meta[^>]+name=["']mobile-web-app-capable["'][^>]*>\s*/gi,
-    '  <meta name="mobile-web-app-capable" content="yes" />'
+    '  <meta name="mobile-web-app-capable" content="yes" />',
   );
   html = upsertHeadTag(
     html,
     /<meta[^>]+name=["']apple-mobile-web-app-title["'][^>]*>\s*/gi,
-    '  <meta name="apple-mobile-web-app-title" content="Gentle Games" />'
+    '  <meta name="apple-mobile-web-app-title" content="Gentle Games" />',
   );
   html = upsertHeadTag(
     html,
     /<meta[^>]+name=["']apple-mobile-web-app-status-bar-style["'][^>]*>\s*/gi,
-    '  <meta name="apple-mobile-web-app-status-bar-style" content="default" />'
+    '  <meta name="apple-mobile-web-app-status-bar-style" content="default" />',
   );
   html = upsertHeadTag(
     html,
     /<meta[^>]+name=["']format-detection["'][^>]*>\s*/gi,
-    '  <meta name="format-detection" content="telephone=no" />'
+    '  <meta name="format-detection" content="telephone=no" />',
   );
 
   if (html.includes('manifest.webmanifest')) {
-    html = html.replace(
-      /href="[^"]*manifest\.webmanifest[^"]*"/,
-      `href="${getManifestTag()}"`
-    );
+    html = html.replace(/href="[^"]*manifest\.webmanifest[^"]*"/, `href="${getManifestTag()}"`);
   } else {
     html = html.replace(
       '</head>',
-      `  <link rel="manifest" href="${getManifestTag()}" />\n  <link rel="apple-touch-icon" href="./icons/icon-180x180.png" />\n  <link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32x32.png" />\n</head>`
+      `  <link rel="manifest" href="${getManifestTag()}" />\n  <link rel="apple-touch-icon" href="./icons/icon-180x180.png" />\n  <link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32x32.png" />\n</head>`,
     );
   }
 
   if (html.includes('serviceWorker.register(')) {
     html = html.replace(
       /serviceWorker\.register\([^)]*\)/,
-      `serviceWorker.register('${getServiceWorkerTag()}')`
+      `serviceWorker.register('${getServiceWorkerTag()}')`,
     );
   } else {
     html = html.replace(
       '</body>',
-      `  <script>\n    if ('serviceWorker' in navigator) {\n      window.addEventListener('load', function () {\n        navigator.serviceWorker.register('${getServiceWorkerTag()}');\n      });\n    }\n  </script>\n</body>`
+      `  <script>\n    if ('serviceWorker' in navigator) {\n      window.addEventListener('load', function () {\n        navigator.serviceWorker.register('${getServiceWorkerTag()}');\n      });\n    }\n  </script>\n</body>`,
     );
   }
 

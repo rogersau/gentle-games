@@ -50,7 +50,7 @@ export const useDebouncedDrawingSave = ({
 
       await writeQueueRef.current;
     },
-    [onError, storageKey]
+    [onError, storageKey],
   );
 
   const flushPendingSave = useCallback(async () => {
@@ -73,7 +73,7 @@ export const useDebouncedDrawingSave = ({
         void flushPendingSave();
       }, debounceMs);
     },
-    [clearPendingTimer, debounceMs, flushPendingSave]
+    [clearPendingTimer, debounceMs, flushPendingSave],
   );
 
   useEffect(() => clearPendingTimer, [clearPendingTimer]);

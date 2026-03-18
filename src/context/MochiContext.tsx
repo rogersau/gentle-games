@@ -48,7 +48,9 @@ export const MochiProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   return (
-    <MochiContext.Provider value={{ mochiProps: { variant, visible, phrase }, showMochi, hideMochi, celebrate }}>
+    <MochiContext.Provider
+      value={{ mochiProps: { variant, visible, phrase }, showMochi, hideMochi, celebrate }}
+    >
       {children}
     </MochiContext.Provider>
   );

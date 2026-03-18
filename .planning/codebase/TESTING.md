@@ -5,13 +5,16 @@
 ## Test Framework
 
 **Runner:**
+
 - Jest 29 with the Expo preset via `jest-expo`, configured in `jest.config.js`
 - Config: `jest.config.js`
 
 **Assertion Library:**
+
 - Jest assertions with `@testing-library/react-native` query and event helpers, as used in `App.test.tsx`, `src/screens/HomeScreen.test.tsx`, and `src/context/SettingsContext.test.tsx`
 
 **Run Commands:**
+
 ```bash
 npm test                     # Run all Jest tests
 npm run test:watch           # Run Jest in watch mode
@@ -25,17 +28,20 @@ npm run smoke:android:ci     # Build, install, and run Android smoke flow
 ## Test File Organization
 
 **Location:**
+
 - Tests are mostly co-located with the source file under `src/`, for example `src/screens/HomeScreen.test.tsx`, `src/utils/gameLogic.test.ts`, and `src/ui/components/VolumeControl.test.tsx`.
 - Root-level entry behavior is tested in `App.test.tsx`.
 - Build-script behavior is also tested in place, for example `scripts/prepare-pwa.test.js`.
 - Device smoke coverage lives in `.maestro/` with flows such as `.maestro/smoke-home.yml`, `.maestro/settings-flow.yml`, and `.maestro/accessibility-flow.yml`.
 
 **Naming:**
+
 - Use `*.test.tsx` for component and screen tests.
 - Use `*.test.ts` for hooks and pure utilities.
 - Keep the test file next to the implementation unless the subject is a root script or app entry point.
 
 **Structure:**
+
 ```text
 src/
   screens/
@@ -55,6 +61,7 @@ scripts/
 ## Test Structure
 
 **Suite Organization:**
+
 ```typescript
 describe('HomeScreen', () => {
   beforeEach(() => {
@@ -81,9 +88,11 @@ describe('HomeScreen', () => {
   });
 });
 ```
+
 - This pattern comes directly from `src/screens/HomeScreen.test.tsx`.
 
 **Patterns:**
+
 - Reset mock state in `beforeEach` with `jest.clearAllMocks()`, as in `App.test.tsx`, `src/screens/SettingsScreen.test.tsx`, and `src/utils/analytics.test.ts`.
 - Use `render(...)` plus Testing Library queries for components and screens, as in `src/ui/components/SelectBox.test.tsx` and `src/components/GentleErrorBoundary.test.tsx`.
 - Use `waitFor(...)` for async storage loads, modal appearance, and delayed state changes, as in `src/context/SettingsContext.test.tsx`, `src/screens/DrawingScreen.test.tsx`, and `src/ui/components/SelectBox.test.tsx`.
@@ -95,6 +104,7 @@ describe('HomeScreen', () => {
 **Framework:** Jest module mocks and spies
 
 **Patterns:**
+
 ```typescript
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
@@ -109,6 +119,7 @@ jest.mock('@react-navigation/native', () => ({
   }),
 }));
 ```
+
 - This pattern is used throughout `src/screens/HomeScreen.test.tsx`, `src/screens/SettingsScreen.test.tsx`, and `src/context/ParentTimerContext.test.tsx`.
 
 ```typescript
@@ -120,6 +131,7 @@ const storage = AsyncStorage as unknown as {
   removeItem: jest.Mock;
 };
 ```
+
 - Use this pattern from `src/context/SettingsContext.test.tsx` when a file normally receives a global mock from `jest.setup.ts` but one suite needs the real implementation.
 
 ```typescript
@@ -131,26 +143,31 @@ afterEach(() => {
   jest.useRealTimers();
 });
 ```
+
 - Use fake timers when testing interval or timeout orchestration, as in `src/context/ParentTimerContext.test.tsx` and `src/screens/usePatternTrainGame.test.ts`.
 
 **Global setup:**
+
 - `jest.setup.ts` provides default mocks for `@react-native-async-storage/async-storage`, `react-i18next`, `posthog-react-native`, `expo-sensors`, `expo-audio`, `@sentry/react-native`, `expo-constants`, and selected app modules like `./src/utils/sounds` and `./src/context/SettingsContext`.
 - `jest.setup.ts` also suppresses expected console noise for i18n notices, intentional drawing-storage warnings, and React `act(...)` warnings.
 - `jest.setup.ts` installs deterministic browser-like globals for animation and performance APIs with mocked `requestAnimationFrame`, `cancelAnimationFrame`, and `performance.now`.
 
 **What to Mock:**
+
 - Mock navigation hooks in screen tests, as in `src/screens/HomeScreen.test.tsx`, `src/screens/SettingsScreen.test.tsx`, and `src/screens/DrawingScreen.test.tsx`.
 - Mock native or Expo SDK boundaries such as storage, audio, sensors, and safe area APIs, as in `jest.setup.ts` and `src/screens/DrawingScreen.test.tsx`.
 - Mock analytics and observability integrations in tests that verify graceful degradation, as in `App.test.tsx`, `src/utils/analytics.test.ts`, and `src/utils/sentry.test.ts`.
 - Mock complex child components when the parent test only needs contract verification, such as `src/screens/DrawingScreen.test.tsx` mocking `src/components/DrawingCanvas.tsx`.
 
 **What NOT to Mock:**
+
 - Keep pure game logic real and assert its outputs directly, as in `src/utils/gameLogic.test.ts`, `src/utils/categoryMatchLogic.test.ts`, and `src/utils/numberPicnicLogic.test.ts`.
 - Keep small local test helpers real unless the test is specifically about their integration boundaries, as in `src/test-utils/infiniteLoopDetection.test.ts`.
 
 ## Fixtures and Factories
 
 **Test Data:**
+
 ```typescript
 const createMockPattern = (overrides = {}) => ({
   carriages: [
@@ -164,6 +181,7 @@ const createMockPattern = (overrides = {}) => ({
   ...overrides,
 });
 ```
+
 - This inline factory pattern comes from `src/screens/usePatternTrainGame.test.ts`.
 
 ```typescript
@@ -180,9 +198,11 @@ let mockSettings = {
   parentTimerMinutes: 0,
 };
 ```
+
 - Shared mutable test fixtures are often declared at module scope and reset in `beforeEach`, as in `src/screens/HomeScreen.test.tsx` and `src/screens/SettingsScreen.test.tsx`.
 
 **Location:**
+
 - There is no central fixtures directory.
 - Keep lightweight fixtures inside the test file closest to the feature under test.
 
@@ -191,6 +211,7 @@ let mockSettings = {
 **Requirements:** Coverage is collected by `npm run test:ci`, but no minimum coverage thresholds are enforced in `jest.config.js`.
 
 **View Coverage:**
+
 ```bash
 npm run test:ci
 ```
@@ -198,20 +219,24 @@ npm run test:ci
 ## Test Types
 
 **Unit Tests:**
+
 - Pure logic and utility modules receive direct unit coverage in `src/utils/gameLogic.test.ts`, `src/utils/theme.test.ts`, `src/utils/glitterMotion.test.ts`, `src/utils/music.test.ts`, and `src/test-utils/infiniteLoopDetection.test.ts`.
 - These tests assert deterministic outputs and avoid rendering when possible.
 
 **Integration Tests:**
+
 - Context and stateful hook behavior is tested with real React rendering in `src/context/SettingsContext.test.tsx`, `src/context/ParentTimerContext.test.tsx`, and `src/screens/usePatternTrainGame.test.ts`.
 - Screen tests verify screen-level contracts against mocked navigation and child dependencies, as in `src/screens/DrawingScreen.test.tsx`, `src/screens/HomeScreen.test.tsx`, and `src/screens/SettingsScreen.test.tsx`.
 
 **E2E Tests:**
+
 - E2E coverage is lightweight and handled with Maestro flows in `.maestro/smoke-home.yml`, `.maestro/game-flow.yml`, `.maestro/settings-flow.yml`, `.maestro/parent-gate.yml`, and `.maestro/accessibility-flow.yml`.
 - CI executes the Android smoke path via `.github/workflows/ci.yml` and the `npm run smoke:android:ci` script in `package.json`.
 
 ## Common Patterns
 
 **Async Testing:**
+
 ```typescript
 const screen = render(
   <SettingsProvider>
@@ -229,9 +254,11 @@ await waitFor(() => {
   );
 });
 ```
+
 - This pattern comes from `src/context/SettingsContext.test.tsx`.
 
 **Error Testing:**
+
 ```typescript
 const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -239,6 +266,7 @@ await expect(initSentry()).resolves.not.toThrow();
 
 warnSpy.mockRestore();
 ```
+
 - This pattern appears in `src/utils/sentry.test.ts` and similar console-spy tests in `src/screens/DrawingScreen.test.tsx`.
 
 ```typescript
@@ -250,11 +278,13 @@ expect(() => {
   );
 }).not.toThrow();
 ```
+
 - Use this pattern from `src/components/GentleErrorBoundary.test.tsx` when verifying fallback rendering around intentional exceptions.
 
 ## Verification Commands
 
 **Local verification:**
+
 ```bash
 npm run typecheck
 npm test
@@ -263,6 +293,7 @@ npm run test:i18n
 ```
 
 **CI verification:**
+
 - `.github/workflows/ci.yml` runs `npm run ci:shared`, which expands to `npm run test:ci && npm run typecheck`.
 - `.github/workflows/ci.yml` also validates web, Android, and iOS exports and then runs Android smoke tests with Maestro.
 
@@ -277,4 +308,4 @@ npm run test:i18n
 
 ---
 
-*Testing analysis: 2026-03-17*
+_Testing analysis: 2026-03-17_

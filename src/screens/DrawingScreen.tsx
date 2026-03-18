@@ -1,11 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  useWindowDimensions,
-  BackHandler,
-} from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions, BackHandler } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +9,10 @@ import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
 import { AppScreen, AppHeader, AppButton, AppModal } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
-import { DEFAULT_DRAWING_SAVE_DEBOUNCE_MS, useDebouncedDrawingSave } from './useDebouncedDrawingSave';
+import {
+  DEFAULT_DRAWING_SAVE_DEBOUNCE_MS,
+  useDebouncedDrawingSave,
+} from './useDebouncedDrawingSave';
 
 const DRAWING_STORAGE_KEY = '@gentle_match_saved_drawing';
 export const DRAWING_HEADER_HEIGHT = 60;
@@ -32,7 +29,7 @@ export const DrawingScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const allowNextBeforeRemoveRef = useRef(false);
-  
+
   const [savedHistory, setSavedHistory] = useState<HistoryEntry[]>([]);
   const [showContinueModal, setShowContinueModal] = useState(false);
   const [hasCheckedSaved, setHasCheckedSaved] = useState(false);
@@ -126,9 +123,12 @@ export const DrawingScreen: React.FC = () => {
     setShowContinueModal(false);
   };
 
-  const handleHistoryChange = useCallback((history: HistoryEntry[]) => {
-    scheduleSave(history);
-  }, [scheduleSave]);
+  const handleHistoryChange = useCallback(
+    (history: HistoryEntry[]) => {
+      scheduleSave(history);
+    },
+    [scheduleSave],
+  );
 
   const handleBackPress = async () => {
     await flushLatestHistory();
@@ -147,14 +147,11 @@ export const DrawingScreen: React.FC = () => {
 
   return (
     <AppScreen>
-      <AppHeader
-        title={t('games.drawing.title')}
-        onBack={handleBackPress}
-      />
-      
+      <AppHeader title={t('games.drawing.title')} onBack={handleBackPress} />
+
       <View style={styles.content}>
         {hasCheckedSaved && (
-          <DrawingCanvas 
+          <DrawingCanvas
             key={`canvas-${savedHistory.length}`}
             ref={canvasRef}
             width={canvasDimensions.width}
@@ -173,20 +170,18 @@ export const DrawingScreen: React.FC = () => {
         title={t('games.drawing.welcomeBack')}
         showClose={false}
       >
-        <Text style={styles.modalText}>
-          {t('games.drawing.continuePrompt')}
-        </Text>
+        <Text style={styles.modalText}>{t('games.drawing.continuePrompt')}</Text>
         <View style={styles.modalButtons}>
           <AppButton
             label={t('games.drawing.newDrawing')}
-            variant="ghost"
+            variant='ghost'
             onPress={handleNewDrawing}
             style={{ flex: 1 }}
             accessibilityHint={t('games.drawing.newDrawingHint')}
           />
           <AppButton
             label={t('games.drawing.continueDrawing')}
-            variant="primary"
+            variant='primary'
             onPress={handleContinue}
             style={{ flex: 1 }}
             accessibilityHint={t('games.drawing.continueHint')}
@@ -199,30 +194,30 @@ export const DrawingScreen: React.FC = () => {
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    ...TypeStyle.body,
-    color: colors.text,
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingHorizontal: Space.base,
-    paddingTop: Space.base,
-  },
-  modalText: {
-    ...TypeStyle.body,
-    color: colors.text,
-    textAlign: 'center',
-    marginBottom: Space.lg,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: Space.md,
-  },
-});
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      ...TypeStyle.body,
+      color: colors.text,
+    },
+    content: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      paddingHorizontal: Space.base,
+      paddingTop: Space.base,
+    },
+    modalText: {
+      ...TypeStyle.body,
+      color: colors.text,
+      textAlign: 'center',
+      marginBottom: Space.lg,
+    },
+    modalButtons: {
+      flexDirection: 'row',
+      gap: Space.md,
+    },
+  });

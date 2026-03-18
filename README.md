@@ -54,16 +54,19 @@ The app offers a collection of calm, creative activities including memory games,
 
 1. Clone or download the project
 2. Navigate to the project directory:
+
    ```bash
    cd gentle-games
    ```
 
 3. Install dependencies:
+
    ```bash
    npm install
    ```
 
 4. Start the development server:
+
    ```bash
    npm start
    # or
@@ -122,6 +125,7 @@ npm run smoke:android:test
 ```
 
 For GitHub Actions, use:
+
 - `CI` workflow on pull requests/pushes for:
   - shared checks (`npm run ci:shared`)
   - platform export validation (web, android, ios)
@@ -267,6 +271,7 @@ and is published at **https://rogersau.github.io/gentle-games/docs/**. It includ
 ## Support
 
 For issues or questions:
+
 - Open an issue on the [GitHub issue tracker](https://github.com/rogersau/gentle-games/issues)
 - Visit the [Support page](https://rogersau.github.io/gentle-games/docs/support.html)
 - Check the [Expo documentation](https://docs.expo.dev)

@@ -20,14 +20,10 @@ const ALLOWED_DIAGNOSTIC_KEYS = new Set([
   'value',
 ]);
 
-const ALLOWED_TAG_KEYS = new Set([
-  'error_boundary',
-  'screen',
-]);
+const ALLOWED_TAG_KEYS = new Set(['error_boundary', 'screen']);
 
-const isPrimitiveDiagnosticValue = (
-  value: unknown,
-): value is string | number | boolean => ['string', 'number', 'boolean'].includes(typeof value);
+const isPrimitiveDiagnosticValue = (value: unknown): value is string | number | boolean =>
+  ['string', 'number', 'boolean'].includes(typeof value);
 
 const isSentryEnabled = !__DEV__ || SENTRY_DEBUG === true;
 
@@ -101,9 +97,7 @@ function sanitizeTags(
   return sanitized;
 }
 
-function sanitizeBreadcrumb(
-  breadcrumb: Sentry.Breadcrumb,
-): Sentry.Breadcrumb | null {
+function sanitizeBreadcrumb(breadcrumb: Sentry.Breadcrumb): Sentry.Breadcrumb | null {
   if (!telemetryEnabled) {
     return null;
   }
@@ -204,10 +198,13 @@ export function setGameContext(gameName: string, difficulty?: string): void {
     return;
   }
 
-  Sentry.setContext('game', sanitizeDiagnosticData({
-    game: gameName,
-    difficulty: difficulty || 'not_set',
-  }) ?? null);
+  Sentry.setContext(
+    'game',
+    sanitizeDiagnosticData({
+      game: gameName,
+      difficulty: difficulty || 'not_set',
+    }) ?? null,
+  );
 
   addActionBreadcrumb('game_started', 'navigation', {
     game: gameName,
@@ -287,7 +284,9 @@ export async function testSentry(): Promise<void> {
   Sentry.captureException(new Error('Test error from development'));
 
   try {
-    const flushResult = await (Sentry as unknown as { flush: (timeout?: number) => Promise<boolean> }).flush(2000);
+    const flushResult = await (
+      Sentry as unknown as { flush: (timeout?: number) => Promise<boolean> }
+    ).flush(2000);
     console.log('[Sentry] Test complete. Flush result:', flushResult);
   } catch (error) {
     console.warn('[Sentry] Flush failed:', error);

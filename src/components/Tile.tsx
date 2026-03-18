@@ -44,13 +44,17 @@ const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
     }
   }, [tile.isFlipped, settings.animationsEnabled]);
 
-  const tileStyle = tile.isMatched ? styles.tileMatched : (showFront ? styles.tileFront : styles.tileBack);
+  const tileStyle = tile.isMatched
+    ? styles.tileMatched
+    : showFront
+      ? styles.tileFront
+      : styles.tileBack;
 
   const accessibilityLabel = tile.isMatched
     ? `${tile.value}, matched`
     : tile.isFlipped
-    ? `${tile.value}, face up`
-    : 'Card, face down';
+      ? `${tile.value}, face up`
+      : 'Card, face down';
 
   return (
     <TouchableOpacity
@@ -58,17 +62,13 @@ const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
       disabled={tile.isFlipped || tile.isMatched}
       style={[styles.container, { width: size, height: size }]}
       activeOpacity={0.8}
-      accessibilityRole="button"
+      accessibilityRole='button'
       accessibilityLabel={accessibilityLabel}
-      accessibilityHint={!tile.isFlipped && !tile.isMatched ? 'Double tap to flip this card' : undefined}
+      accessibilityHint={
+        !tile.isFlipped && !tile.isMatched ? 'Double tap to flip this card' : undefined
+      }
     >
-      <Animated.View
-        style={[
-          styles.tile,
-          tileStyle,
-          { transform: [{ scaleX: scaleAnim }] },
-        ]}
-      >
+      <Animated.View style={[styles.tile, tileStyle, { transform: [{ scaleX: scaleAnim }] }]}>
         {showFront ? (
           <View style={styles.cardBack}>
             <View style={styles.swirlBackground}>
@@ -79,7 +79,13 @@ const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
             <Text style={styles.questionMark}>?</Text>
           </View>
         ) : (
-          <Text style={[styles.emoji, { fontSize: finalEmojiSize }, tile.isMatched ? styles.matchedEmoji : undefined]}>
+          <Text
+            style={[
+              styles.emoji,
+              { fontSize: finalEmojiSize },
+              tile.isMatched ? styles.matchedEmoji : undefined,
+            ]}
+          >
             {tile.value}
           </Text>
         )}

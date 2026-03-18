@@ -155,7 +155,7 @@ describe('SettingsScreen', () => {
 
     expect(screen.getByText('Share anonymous app updates')).toBeTruthy();
     expect(
-      screen.getByText('Analytics and crash reports stay off until you turn this on.')
+      screen.getByText('Analytics and crash reports stay off until you turn this on.'),
     ).toBeTruthy();
   });
 
@@ -181,18 +181,16 @@ describe('SettingsScreen', () => {
   });
 
   it('provides localized website fallback strings for downstream reuse', () => {
-    const titleProbe = render(
-      <TranslationProbe translationKey="home.websiteLinkFallback.title" />
-    );
+    const titleProbe = render(<TranslationProbe translationKey='home.websiteLinkFallback.title' />);
     const messageProbe = render(
-      <TranslationProbe translationKey="home.websiteLinkFallback.message" />
+      <TranslationProbe translationKey='home.websiteLinkFallback.message' />,
     );
 
     expect(titleProbe.getByText('Website unavailable')).toBeTruthy();
     expect(
       messageProbe.getByText(
-        "We couldn't open the Gentle Games website right now. Please try again later."
-      )
+        "We couldn't open the Gentle Games website right now. Please try again later.",
+      ),
     ).toBeTruthy();
   });
 });

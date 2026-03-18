@@ -24,11 +24,11 @@ key-files:
     - src/utils/numberPicnicLogic.ts
     - src/utils/numberPicnicLogic.test.ts
 key-decisions:
-  - "Number Picnic now tracks active drag separately from basket overlap so scroll lock, hover, and drop validity are no longer conflated."
-  - "The visible basket bounds now drive both hover feedback and drop acceptance, replacing the old upward-drag threshold heuristic."
+  - 'Number Picnic now tracks active drag separately from basket overlap so scroll lock, hover, and drop validity are no longer conflated.'
+  - 'The visible basket bounds now drive both hover feedback and drop acceptance, replacing the old upward-drag threshold heuristic.'
 patterns-established:
-  - "Interactive drop targets should measure visible bounds and use the same overlap result for both highlight and drop validation."
-  - "Number Picnic drag cleanup clears both active drag and hover state when a drag ends or a new round starts."
+  - 'Interactive drop targets should measure visible bounds and use the same overlap result for both highlight and drop validation.'
+  - 'Number Picnic drag cleanup clears both active drag and hover state when a drag ends or a new round starts.'
 requirements-completed: [PLAY-02, PLAY-03]
 duration: 3min
 completed: 2026-03-17
@@ -47,6 +47,7 @@ completed: 2026-03-17
 - **Files modified:** 6
 
 ## Accomplishments
+
 - Split Number Picnic drag handling into distinct active-drag and basket-overlap state so hover and scroll lock no longer depend on the same boolean.
 - Wired measured basket bounds from `PicnicBasket` through `NumberPicnicScreen` into `PicnicBlanket` so hover and drop validity use real overlap checks.
 - Added regression coverage proving no-overlap drags do not highlight or drop, while real overlap does.
@@ -59,6 +60,7 @@ Each task was committed atomically:
 2. **Task 2: Replace upward-threshold drops with measured basket overlap in the Number Picnic components** - `1c528a5` (feat)
 
 ## Files Created/Modified
+
 - `src/utils/numberPicnicLogic.ts` - Tracks `isDragging` and `isOverBasket` separately and clears both cleanly on release/new round.
 - `src/utils/numberPicnicLogic.test.ts` - Verifies drag-state separation and cleanup behavior.
 - `src/screens/NumberPicnicScreen.tsx` - Stores measured basket bounds and passes overlap-driven state through the screen flow.
@@ -67,6 +69,7 @@ Each task was committed atomically:
 - `src/components/numberpicnic/PicnicBasket.tsx` - Reports measured visible basket bounds upward for hit testing.
 
 ## Decisions Made
+
 - Hover state and valid-drop state now come from the same overlap calculation so the visuals and game rules stay aligned.
 - The fix stays narrow to Number Picnic rather than introducing a generic drag-and-drop subsystem.
 
@@ -86,6 +89,7 @@ This summary and progress update reconstruct that missing handoff without changi
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Phase 02-03 can now build timer cleanup on top of the corrected Number Picnic drag/drop flow.
 - Phase verification can treat PLAY-02 and PLAY-03 as implemented and test-covered.
 

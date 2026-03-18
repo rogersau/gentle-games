@@ -18,7 +18,8 @@ export async function reconcileObservability(telemetryEnabled: boolean): Promise
     messages.push(`${source} unavailable`);
 
     if (reason && reason !== source) {
-      messages[messages.length - 1] = `${source} unavailable${reason === `${source} unavailable` ? '' : `: ${reason}`}`;
+      messages[messages.length - 1] =
+        `${source} unavailable${reason === `${source} unavailable` ? '' : `: ${reason}`}`;
     }
 
     return messages;

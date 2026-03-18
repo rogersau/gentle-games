@@ -28,6 +28,7 @@ src/screens/GameScreen.tsx           # Modify — integrate MochiPresence (intro
 ## Task 1: Mochi SVG Component
 
 **Files:**
+
 - Create: `src/components/Mochi.tsx`
 - Test: `src/components/Mochi.test.tsx`
 
@@ -41,17 +42,17 @@ import { Mochi } from './Mochi';
 
 describe('Mochi', () => {
   it('renders with sm size', () => {
-    render(<Mochi variant="idle" size="sm" animate={false} />);
+    render(<Mochi variant='idle' size='sm' animate={false} />);
     expect(screen.getByTestId('mochi-body')).toBeTruthy();
   });
 
   it('renders floating variant', () => {
-    render(<Mochi variant="floating" size="md" animate={false} />);
+    render(<Mochi variant='floating' size='md' animate={false} />);
     expect(screen.getByTestId('mochi-body')).toBeTruthy();
   });
 
   it('renders happy variant', () => {
-    render(<Mochi variant="happy" size="lg" animate={false} />);
+    render(<Mochi variant='happy' size='lg' animate={false} />);
     expect(screen.getByTestId('mochi-body')).toBeTruthy();
   });
 });
@@ -126,7 +127,7 @@ export const Mochi: React.FC<MochiProps> = ({
             duration: 1800,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       );
       float.start();
       return () => float.stop();
@@ -145,7 +146,7 @@ export const Mochi: React.FC<MochiProps> = ({
             duration: 1500,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       );
       breathe.start();
       return () => breathe.stop();
@@ -179,7 +180,7 @@ export const Mochi: React.FC<MochiProps> = ({
                 duration: 0,
                 useNativeDriver: true,
               }),
-            ])
+            ]),
           ).start();
         });
       }
@@ -187,11 +188,7 @@ export const Mochi: React.FC<MochiProps> = ({
   }, [variant, animate, floatAnim, scaleAnim, bounceAnim, sparkles]);
 
   const animatedStyle = {
-    transform: [
-      { translateY: floatAnim },
-      { scale: scaleAnim },
-      { translateY: bounceAnim },
-    ],
+    transform: [{ translateY: floatAnim }, { scale: scaleAnim }, { translateY: bounceAnim }],
   };
 
   return (
@@ -224,36 +221,24 @@ export const Mochi: React.FC<MochiProps> = ({
           opacity={0.6}
         />
         {/* Left leg */}
-        <Ellipse
-          cx={width * 0.35}
-          cy={height - 12}
-          rx={8}
-          ry={10}
-          fill={color}
-        />
+        <Ellipse cx={width * 0.35} cy={height - 12} rx={8} ry={10} fill={color} />
         {/* Right leg */}
-        <Ellipse
-          cx={width * 0.65}
-          cy={height - 12}
-          rx={8}
-          ry={10}
-          fill={color}
-        />
+        <Ellipse cx={width * 0.65} cy={height - 12} rx={8} ry={10} fill={color} />
         {/* Left eye arc (happy closed-eye smile) */}
         <Path
           d={`M ${width * 0.32} ${height * 0.45} Q ${width * 0.37} ${height * 0.5} ${width * 0.42} ${height * 0.45}`}
           stroke={shadowColor}
           strokeWidth={2}
-          fill="none"
-          strokeLinecap="round"
+          fill='none'
+          strokeLinecap='round'
         />
         {/* Right eye arc */}
         <Path
           d={`M ${width * 0.58} ${height * 0.45} Q ${width * 0.63} ${height * 0.5} ${width * 0.68} ${height * 0.45}`}
           stroke={shadowColor}
           strokeWidth={2}
-          fill="none"
-          strokeLinecap="round"
+          fill='none'
+          strokeLinecap='round'
         />
         {/* Left blush */}
         <Circle cx={width * 0.25} cy={height * 0.52} r={4} fill={blushColor} opacity={0.5} />
@@ -264,13 +249,25 @@ export const Mochi: React.FC<MochiProps> = ({
           d={`M ${width * 0.38} ${height * 0.58} Q ${width / 2} ${height * 0.66} ${width * 0.62} ${height * 0.58}`}
           stroke={shadowColor}
           strokeWidth={2}
-          fill="none"
-          strokeLinecap="round"
+          fill='none'
+          strokeLinecap='round'
         />
         {/* Sparkles — only visible during happy variant */}
         <Circle cx={width * 0.1} cy={height * 0.2} r={3} fill={highlightColor} opacity={sparkle1} />
-        <Circle cx={width * 0.9} cy={height * 0.25} r={2.5} fill={highlightColor} opacity={sparkle2} />
-        <Circle cx={width * 0.15} cy={height * 0.75} r={2} fill={highlightColor} opacity={sparkle3} />
+        <Circle
+          cx={width * 0.9}
+          cy={height * 0.25}
+          r={2.5}
+          fill={highlightColor}
+          opacity={sparkle2}
+        />
+        <Circle
+          cx={width * 0.15}
+          cy={height * 0.75}
+          r={2}
+          fill={highlightColor}
+          opacity={sparkle3}
+        />
       </Svg>
     </Animated.View>
   );
@@ -301,6 +298,7 @@ git commit -m "feat: add Mochi SVG component with idle/floating/happy variants"
 ## Task 2: MochiPresence Wrapper + useMochi Hook
 
 **Files:**
+
 - Create: `src/components/MochiPresence.tsx`
 - Create: `src/hooks/useMochi.ts`
 - Modify: `src/ui/components/index.ts`
@@ -449,6 +447,7 @@ const styles = StyleSheet.create({
 - [ ] **Step 3: Update ui/components/index.ts**
 
 Add exports:
+
 ```ts
 export { Mochi, MochiVariant, MochiSize } from './Mochi';
 export { MochiPresence } from './MochiPresence';
@@ -466,6 +465,7 @@ git commit -m "feat: add MochiPresence wrapper and useMochi hook"
 ## Task 3: i18n Mascot Keys
 
 **Files:**
+
 - Modify: `src/i18n/locales/en-AU.json`
 - Modify: `src/i18n/locales/en-US.json`
 
@@ -511,6 +511,7 @@ git commit -m "feat: add mascot i18n namespace"
 ## Task 4: Home Screen Integration
 
 **Files:**
+
 - Modify: `src/screens/HomeScreen.tsx`
 
 - [ ] **Step 1: Add Mochi to HomeScreen**
@@ -518,21 +519,24 @@ git commit -m "feat: add mascot i18n namespace"
 In `HomeScreen.tsx`:
 
 Add to imports:
+
 ```tsx
 import { MochiPresence } from '../ui/components';
 import { useMochi } from '../hooks/useMochi';
 ```
 
 Add inside the component (after `const { t } = useTranslation();`):
+
 ```tsx
 const { celebrate, showMochi, hideMochi } = useMochi();
 ```
 
 In `handleGameSelect` — call `celebrate()` before navigating (Mochi fires happy bounce, auto-returns to idle after 1.5s):
+
 ```tsx
 const handleGameSelect = (game: Game) => {
   setSelectedGame(game);
-  if (game.id === "memory-snap") {
+  if (game.id === 'memory-snap') {
     setShowDifficultySelector(true);
   } else {
     celebrate();
@@ -545,6 +549,7 @@ const handleGameSelect = (game: Game) => {
 ```
 
 Add `MochiPresence` to the titleArea — Home screen Mochi is always visible (call `showMochi()` on mount so the presence is shown):
+
 ```tsx
 // Inside component — call once on mount
 React.useEffect(() => {
@@ -554,18 +559,16 @@ React.useEffect(() => {
 
 ```tsx
 <View style={styles.titleArea}>
-  <MochiPresence
-    size="lg"
-    style={styles.mochiInTitle}
-  />
-  <Text style={styles.title} accessibilityRole="header">
-    {t("home.title")}
+  <MochiPresence size='lg' style={styles.mochiInTitle} />
+  <Text style={styles.title} accessibilityRole='header'>
+    {t('home.title')}
   </Text>
-  <Text style={styles.subtitle}>{t("home.subtitle")}</Text>
+  <Text style={styles.subtitle}>{t('home.subtitle')}</Text>
 </View>
 ```
 
 Add to `createStyles`:
+
 ```tsx
 mochiInTitle: {
   marginBottom: Space.md,
@@ -589,10 +592,12 @@ git commit -m "feat: integrate Mochi on Home screen with floating animation"
 ## Task 5: Memory Snap (GameScreen) Integration
 
 **Files:**
+
 - Modify: `src/screens/GameScreen.tsx`
 - Modify: `src/components/GameBoard.tsx`
 
 This integrates Mochi into Memory Snap at three points:
+
 1. **Intro modal** — shown briefly when the game screen first renders
 2. **In-game corner** — small Mochi sits quietly during gameplay
 3. **Completion modal** — Mochi celebrates when the game ends
@@ -602,16 +607,19 @@ This integrates Mochi into Memory Snap at three points:
 In `GameBoard.tsx`:
 
 **Add to `GameBoardProps` interface** (near line 14-19):
+
 ```tsx
 onPositiveEvent?: () => void;  // fires when a match is found
 ```
 
 **Fire it inside `handleTilePress`** — after `playMatchSound(settings);` inside the `if (isMatch)` block (around line 134):
+
 ```tsx
 onPositiveEvent?.();
 ```
 
 **Pass `celebrate` from GameScreen** — in `GameScreen.tsx`, add to the `GameBoard` JSX:
+
 ```tsx
 <GameBoard
   onGameComplete={handleGameComplete}
@@ -629,18 +637,21 @@ onPositiveEvent?.();
 In `GameScreen.tsx`:
 
 Add to imports:
+
 ```tsx
 import { MochiPresence } from '../ui/components';
 import { useMochi } from '../hooks/useMochi';
 ```
 
 Add state inside `GameScreen`:
+
 ```tsx
 const { mochiProps, showMochi, hideMochi, celebrate } = useMochi();
 const [showIntro, setShowIntro] = useState(true);
 ```
 
 On mount, show Mochi with the game intro phrase:
+
 ```tsx
 React.useEffect(() => {
   showMochi('mascot.letsMatch');
@@ -651,31 +662,38 @@ In `handleGameComplete`, call `celebrate()`.
 In `handleBackPress`, call `hideMochi()`.
 
 Add to the JSX inside `content` View:
+
 ```tsx
-{/* In-game Mochi (small, bottom-right corner) */}
-<MochiPresence
-  size="sm"
-  style={styles.mochiInGame}
-/>
+{
+  /* In-game Mochi (small, bottom-right corner) */
+}
+<MochiPresence size='sm' style={styles.mochiInGame} />;
 ```
 
 Add intro modal (separate from GameBoard's completion modal):
+
 ```tsx
 <AppModal
   visible={showIntro}
-  onClose={() => { setShowIntro(false); hideMochi(); }}
+  onClose={() => {
+    setShowIntro(false);
+    hideMochi();
+  }}
   showClose={false}
 >
-  <MochiPresence size="md" />
+  <MochiPresence size='md' />
   <AppButton
-    label={t("common.play")}
-    variant="primary"
-    onPress={() => { setShowIntro(false); }}
+    label={t('common.play')}
+    variant='primary'
+    onPress={() => {
+      setShowIntro(false);
+    }}
   />
 </AppModal>
 ```
 
 Add to `createStyles`:
+
 ```tsx
 mochiInGame: {
   position: 'absolute',
@@ -708,6 +726,7 @@ Expected: All checks pass
 - [ ] **Step 2: Review the spec one more time**
 
 Verify the implementation covers:
+
 - [ ] `Mochi.tsx` — SVG blob with legs, face, blush, sparkle burst on happy variant ✓
 - [ ] `MochiPresence.tsx` — reads reducedMotion, resolves theme colors, uses `useMochi` hook internally ✓
 - [ ] `useMochi.ts` — `{ mochiProps, showMochi, hideMochi, celebrate }` matching spec interface ✓

@@ -31,13 +31,13 @@ key-files:
     - src/utils/sounds.test.ts
 
 key-decisions:
-  - "Telemetry consent lives in the existing Settings contract and AsyncStorage payload instead of a separate consent store."
-  - "Fresh installs keep telemetry disabled until a parent explicitly enables it from the in-app Settings screen."
-  - "Website fallback copy was added in shared locale files during this plan so Plan 01-02 can reuse the same parent-safe strings."
+  - 'Telemetry consent lives in the existing Settings contract and AsyncStorage payload instead of a separate consent store.'
+  - 'Fresh installs keep telemetry disabled until a parent explicitly enables it from the in-app Settings screen.'
+  - 'Website fallback copy was added in shared locale files during this plan so Plan 01-02 can reuse the same parent-safe strings.'
 
 patterns-established:
-  - "Shared settings fields must be defaulted, sanitized, persisted, and covered by context tests together."
-  - "Parent-facing privacy controls use existing SettingToggle UI with localized explanatory copy."
+  - 'Shared settings fields must be defaulted, sanitized, persisted, and covered by context tests together.'
+  - 'Parent-facing privacy controls use existing SettingToggle UI with localized explanatory copy.'
 
 requirements-completed: [PRIV-01]
 
@@ -59,6 +59,7 @@ completed: 2026-03-17
 - **Files modified:** 9
 
 ## Accomplishments
+
 - Added `telemetryEnabled` to the shared `Settings` contract and the existing sanitize/load/persist flow.
 - Added a parent-facing telemetry toggle to `SettingsScreen` using the established toggle UI and calm localized copy.
 - Added shared website fallback strings and Jest translation coverage so downstream link-guard work can reuse them.
@@ -76,6 +77,7 @@ Each task was committed atomically:
 _Note: TDD tasks used separate RED and GREEN commits._
 
 ## Files Created/Modified
+
 - `src/types/index.ts` - Extends the shared `Settings` interface with `telemetryEnabled`.
 - `src/context/SettingsContext.tsx` - Defaults, sanitizes, loads, and persists telemetry consent through `gentleMatchSettings`.
 - `src/context/SettingsContext.test.tsx` - Verifies fresh-install defaults, sanitization, and persistence for telemetry consent.
@@ -87,6 +89,7 @@ _Note: TDD tasks used separate RED and GREEN commits._
 - `src/utils/sounds.test.ts` - Updates typed `Settings` fixtures to include the new required telemetry field.
 
 ## Decisions Made
+
 - Telemetry consent is part of the existing shared settings model so the app has one persisted source of truth for parent consent.
 - The telemetry default remains `false` to preserve the privacy-safe child experience on fresh install.
 - Shared locale keys for website fallback copy were added early so the next plan can wire guarded external links without introducing inline English.
@@ -96,6 +99,7 @@ _Note: TDD tasks used separate RED and GREEN commits._
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] Repaired typecheck fallout from the new required telemetry field**
+
 - **Found during:** Final verification after Task 2
 - **Issue:** Adding `telemetryEnabled` to `Settings` broke typed test fixtures and a new translation probe type in verification.
 - **Fix:** Added `telemetryEnabled: false` to typed `Settings` test fixtures and typed the translation probe against `TranslationKey`.
@@ -109,6 +113,7 @@ _Note: TDD tasks used separate RED and GREEN commits._
 **Impact on plan:** The fix was directly required to keep the new settings contract type-safe. No scope creep.
 
 ## Issues Encountered
+
 - `python` was unavailable in the shell, so file edits were switched to Node-based scripts without affecting plan scope.
 
 ## User Setup Required
@@ -116,6 +121,7 @@ _Note: TDD tasks used separate RED and GREEN commits._
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Plan 01-02 can reuse the shared `home.websiteLinkFallback.*` locale keys for calm in-app failure handling.
 - Plan 01-03 can read one persisted `telemetryEnabled` source of truth before initializing observability.
 

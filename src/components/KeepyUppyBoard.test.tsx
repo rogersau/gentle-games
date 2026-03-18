@@ -48,7 +48,7 @@ describe('KeepyUppyBoard', () => {
         onScoreChange={mockOnScoreChange}
         onBalloonCountChange={mockOnBalloonCountChange}
         onPoppedChange={mockOnPoppedChange}
-      />
+      />,
     );
 
     expect(mockOnScoreChange).toHaveBeenLastCalledWith(0);
@@ -75,7 +75,7 @@ describe('KeepyUppyBoard', () => {
         onScoreChange={mockOnScoreChange}
         onBalloonCountChange={mockOnBalloonCountChange}
         onPoppedChange={mockOnPoppedChange}
-      />
+      />,
     );
 
     expect(ref.current?.getBalloonCount()).toBe(1);
@@ -112,7 +112,7 @@ describe('KeepyUppyBoard', () => {
         easyMode={true}
         onScoreChange={mockOnScoreChange}
         onBalloonCountChange={mockOnBalloonCountChange}
-      />
+      />,
     );
 
     expect(typeof ref.current?.addBalloon).toBe('function');

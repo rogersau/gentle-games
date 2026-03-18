@@ -15,9 +15,8 @@ const ANALYTICS_PROPERTY_ALLOWLIST = new Set([
   'value',
 ]);
 
-const isPrimitiveDiagnosticValue = (
-  value: unknown,
-): value is string | number | boolean => ['string', 'number', 'boolean'].includes(typeof value);
+const isPrimitiveDiagnosticValue = (value: unknown): value is string | number | boolean =>
+  ['string', 'number', 'boolean'].includes(typeof value);
 
 const isAnalyticsEnabled = !__DEV__ || POSTHOG_DEBUG === true;
 
@@ -161,21 +160,14 @@ export function trackScreenView(screenName: string): void {
   posthogClient.screen(screenName);
 }
 
-export function trackGameStart(
-  gameName: string,
-  difficulty?: string,
-): void {
+export function trackGameStart(gameName: string, difficulty?: string): void {
   trackEvent('game started', {
     game: gameName,
     difficulty: difficulty || 'not_set',
   });
 }
 
-export function trackGameComplete(
-  gameName: string,
-  durationMs?: number,
-  score?: number,
-): void {
+export function trackGameComplete(gameName: string, durationMs?: number, score?: number): void {
   trackEvent('game completed', {
     game: gameName,
     duration_ms: durationMs,

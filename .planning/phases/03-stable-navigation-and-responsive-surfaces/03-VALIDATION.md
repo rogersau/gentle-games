@@ -15,13 +15,13 @@ created: 2026-03-17
 
 ## Test Infrastructure
 
-| Property | Value |
-|----------|-------|
-| **Framework** | Jest 29 + `jest-expo` 54 |
-| **Config file** | `jest.config.js` |
-| **Quick run command** | `npm run typecheck && npx jest --runInBand <phase-targeted tests>` |
-| **Full suite command** | `npm run ci:shared` |
-| **Estimated runtime** | ~25 seconds |
+| Property               | Value                                                              |
+| ---------------------- | ------------------------------------------------------------------ |
+| **Framework**          | Jest 29 + `jest-expo` 54                                           |
+| **Config file**        | `jest.config.js`                                                   |
+| **Quick run command**  | `npm run typecheck && npx jest --runInBand <phase-targeted tests>` |
+| **Full suite command** | `npm run ci:shared`                                                |
+| **Estimated runtime**  | ~25 seconds                                                        |
 
 ---
 
@@ -36,18 +36,18 @@ created: 2026-03-17
 
 ## Per-Task Verification Map
 
-| Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 03-01-01 | 01 | 1 | STAB-01 | typecheck + component integration | `npm run typecheck && npx jest --runInBand src/types/navigation.test.ts App.test.tsx src/components/GentleErrorBoundary.test.tsx` | ❌ W0 | ⬜ pending |
-| 03-01-02 | 01 | 1 | STAB-01 | screen integration | `npm run typecheck && npx jest --runInBand src/screens/HomeScreen.test.tsx src/types/navigation.test.ts App.test.tsx src/components/GentleErrorBoundary.test.tsx` | ❌ W0 | ⬜ pending |
-| 03-02-01 | 02 | 1 | STAB-04 | component integration | `npm run typecheck && npx jest --runInBand src/components/KeepyUppyBoard.test.tsx` | ✅ | ⬜ pending |
-| 03-02-02 | 02 | 1 | STAB-04 | screen integration | `npm run typecheck && npx jest --runInBand src/screens/BreathingGardenScreen.test.tsx src/components/KeepyUppyBoard.test.tsx` | ✅ | ⬜ pending |
-| 03-03-01 | 03 | 1 | PERF-01 | component + screen integration | `npm run typecheck && npx jest --runInBand src/components/BubbleField.test.tsx src/screens/BubbleScreen.test.tsx` | ❌ W0 | ⬜ pending |
-| 03-03-02 | 03 | 1 | PERF-01 | component + screen integration | `npm run typecheck && npx jest --runInBand src/components/GlitterGlobe.test.tsx src/screens/GlitterScreen.test.tsx src/components/BubbleField.test.tsx src/screens/BubbleScreen.test.tsx` | ✅ | ⬜ pending |
-| 03-04-01 | 04 | 1 | PERF-02 | unit + fake timers | `npm run typecheck && npx jest --runInBand src/screens/useDebouncedDrawingSave.test.ts` | ❌ W0 | ⬜ pending |
-| 03-04-02 | 04 | 1 | PERF-02 | screen integration + fake timers | `npm run typecheck && npx jest --runInBand src/screens/useDebouncedDrawingSave.test.ts src/screens/DrawingScreen.test.tsx` | ❌ W0 | ⬜ pending |
+| Task ID  | Plan | Wave | Requirement | Test Type                         | Automated Command                                                                                                                                                                         | File Exists | Status     |
+| -------- | ---- | ---- | ----------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| 03-01-01 | 01   | 1    | STAB-01     | typecheck + component integration | `npm run typecheck && npx jest --runInBand src/types/navigation.test.ts App.test.tsx src/components/GentleErrorBoundary.test.tsx`                                                         | ❌ W0       | ⬜ pending |
+| 03-01-02 | 01   | 1    | STAB-01     | screen integration                | `npm run typecheck && npx jest --runInBand src/screens/HomeScreen.test.tsx src/types/navigation.test.ts App.test.tsx src/components/GentleErrorBoundary.test.tsx`                         | ❌ W0       | ⬜ pending |
+| 03-02-01 | 02   | 1    | STAB-04     | component integration             | `npm run typecheck && npx jest --runInBand src/components/KeepyUppyBoard.test.tsx`                                                                                                        | ✅          | ⬜ pending |
+| 03-02-02 | 02   | 1    | STAB-04     | screen integration                | `npm run typecheck && npx jest --runInBand src/screens/BreathingGardenScreen.test.tsx src/components/KeepyUppyBoard.test.tsx`                                                             | ✅          | ⬜ pending |
+| 03-03-01 | 03   | 1    | PERF-01     | component + screen integration    | `npm run typecheck && npx jest --runInBand src/components/BubbleField.test.tsx src/screens/BubbleScreen.test.tsx`                                                                         | ❌ W0       | ⬜ pending |
+| 03-03-02 | 03   | 1    | PERF-01     | component + screen integration    | `npm run typecheck && npx jest --runInBand src/components/GlitterGlobe.test.tsx src/screens/GlitterScreen.test.tsx src/components/BubbleField.test.tsx src/screens/BubbleScreen.test.tsx` | ✅          | ⬜ pending |
+| 03-04-01 | 04   | 1    | PERF-02     | unit + fake timers                | `npm run typecheck && npx jest --runInBand src/screens/useDebouncedDrawingSave.test.ts`                                                                                                   | ❌ W0       | ⬜ pending |
+| 03-04-02 | 04   | 1    | PERF-02     | screen integration + fake timers  | `npm run typecheck && npx jest --runInBand src/screens/useDebouncedDrawingSave.test.ts src/screens/DrawingScreen.test.tsx`                                                                | ❌ W0       | ⬜ pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+_Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky_
 
 ---
 
@@ -65,9 +65,9 @@ created: 2026-03-17
 
 ## Manual-Only Verifications
 
-| Behavior | Requirement | Why Manual | Test Instructions |
-|----------|-------------|------------|-------------------|
-| Bubble and Glitter motion feel smoother on lower-end devices | PERF-01 | Responsiveness improvements are relative and device-sensitive | Play Bubble Pop and Glitter Fall on a lower-end device or throttled emulator, then confirm motion remains calm and no obvious dropped-frame regressions appear during sustained interaction. |
+| Behavior                                                     | Requirement | Why Manual                                                    | Test Instructions                                                                                                                                                                            |
+| ------------------------------------------------------------ | ----------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bubble and Glitter motion feel smoother on lower-end devices | PERF-01     | Responsiveness improvements are relative and device-sensitive | Play Bubble Pop and Glitter Fall on a lower-end device or throttled emulator, then confirm motion remains calm and no obvious dropped-frame regressions appear during sustained interaction. |
 
 ---
 

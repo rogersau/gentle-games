@@ -94,7 +94,7 @@ jest.mock('./src/components/GentleErrorBoundary', () => ({
 jest.mock('./src/screens/HomeScreen', () => ({
   HomeScreen: () => {
     const ReactNative = require('react-native');
-    return <ReactNative.Text testID="app-shell">Home</ReactNative.Text>;
+    return <ReactNative.Text testID='app-shell'>Home</ReactNative.Text>;
   },
 }));
 
@@ -173,9 +173,10 @@ const mockedTrackScreenView = jest.mocked(trackScreenView);
 const mockedReconcileObservability = jest.mocked(reconcileObservability);
 type SettingsValue = ReturnType<typeof useSettings>;
 
-const createSettingsValue = (
-  overrides?: { settings?: Partial<Settings>; isLoading?: boolean },
-): SettingsValue => {
+const createSettingsValue = (overrides?: {
+  settings?: Partial<Settings>;
+  isLoading?: boolean;
+}): SettingsValue => {
   const settings: Settings = {
     animationsEnabled: true,
     soundEnabled: true,

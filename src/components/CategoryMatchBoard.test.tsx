@@ -82,7 +82,7 @@ describe('CategoryMatchBoard', () => {
       (handlers: any) =>
         ({
           panHandlers: handlers,
-        }) as any
+        }) as any,
     );
 
     mockCreateCategoryMatchRound.mockReturnValue({
@@ -105,7 +105,12 @@ describe('CategoryMatchBoard', () => {
     const onCorrectMatch = jest.fn();
     const onIncorrectMatch = jest.fn();
     const screen = render(
-      <CategoryMatchBoard width={360} height={480} onCorrectMatch={onCorrectMatch} onIncorrectMatch={onIncorrectMatch} />
+      <CategoryMatchBoard
+        width={360}
+        height={480}
+        onCorrectMatch={onCorrectMatch}
+        onIncorrectMatch={onIncorrectMatch}
+      />,
     );
 
     const token = screen.getByTestId('category-draggable-token');
@@ -115,7 +120,7 @@ describe('CategoryMatchBoard', () => {
     });
 
     expect(screen.getByTestId('category-zone-sky').props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ borderColor: '#A8D8EA' })])
+      expect.arrayContaining([expect.objectContaining({ borderColor: '#A8D8EA' })]),
     );
 
     act(() => {
@@ -124,7 +129,7 @@ describe('CategoryMatchBoard', () => {
 
     expect(onCorrectMatch).toHaveBeenCalledWith(
       expect.objectContaining({ emoji: '☀️', category: 'sky' }),
-      'sky'
+      'sky',
     );
 
     act(() => {
@@ -141,13 +146,15 @@ describe('CategoryMatchBoard', () => {
 
     expect(screen.queryByText('Try a different category.')).toBeNull();
     expect(screen.getByTestId('category-zone-land').props.style).not.toEqual(
-      expect.arrayContaining([expect.objectContaining({ borderColor: '#A8D8EA' })])
+      expect.arrayContaining([expect.objectContaining({ borderColor: '#A8D8EA' })]),
     );
   });
 
   it('clears feedback timers on unmount before delayed feedback completes', () => {
     const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
-    const screen = render(<CategoryMatchBoard width={360} height={480} onIncorrectMatch={jest.fn()} />);
+    const screen = render(
+      <CategoryMatchBoard width={360} height={480} onIncorrectMatch={jest.fn()} />,
+    );
     const token = screen.getByTestId('category-draggable-token');
 
     act(() => {

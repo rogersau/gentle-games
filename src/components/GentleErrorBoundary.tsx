@@ -37,21 +37,19 @@ const GentleErrorFallback: React.FC<{ onReset: () => void }> = ({ onReset }) => 
   };
 
   return (
-    <View style={styles.container} testID="error-boundary-fallback">
+    <View style={styles.container} testID='error-boundary-fallback'>
       <View style={styles.content}>
         <Text style={styles.icon} accessibilityLabel={t('errorBoundary.iconAccessibilityLabel')}>
           ☁️
         </Text>
-        <Text style={styles.title} accessibilityRole="header">
+        <Text style={styles.title} accessibilityRole='header'>
           {t('errorBoundary.title')}
         </Text>
-        <Text style={styles.message}>
-          {t('errorBoundary.message')}
-        </Text>
+        <Text style={styles.message}>{t('errorBoundary.message')}</Text>
         <AppButton
           label={t('errorBoundary.goHome')}
-          variant="primary"
-          size="lg"
+          variant='primary'
+          size='lg'
           onPress={handleGoHome}
           accessibilityLabel={t('errorBoundary.goHomeAccessibilityLabel')}
           accessibilityHint={t('errorBoundary.goHomeAccessibilityHint')}
@@ -90,9 +88,7 @@ export class GentleErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      return (
-        <GentleErrorFallback onReset={this.handleReset} />
-      );
+      return <GentleErrorFallback onReset={this.handleReset} />;
     }
 
     return this.props.children;

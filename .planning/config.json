@@ -1,0 +1,28 @@
+{
+  "mode": "yolo",
+  "granularity": "coarse",
+  "parallelization": true,
+  "commit_docs": true,
+  "model_profile": "quality",
+  "model_overrides": {
+    "gsd-planner": "gpt-5.4",
+    "gsd-roadmapper": "gpt-5.4",
+    "gsd-executor": "gpt-5.4",
+    "gsd-phase-researcher": "gpt-5.4",
+    "gsd-project-researcher": "gpt-5.4",
+    "gsd-research-synthesizer": "gpt-5.4",
+    "gsd-debugger": "gpt-5.4",
+    "gsd-codebase-mapper": "gpt-5.4",
+    "gsd-verifier": "gpt-5.4",
+    "gsd-plan-checker": "gpt-5.4",
+    "gsd-integration-checker": "gpt-5.4"
+  },
+  "workflow": {
+    "research": true,
+    "plan_check": true,
+    "verifier": true,
+    "nyquist_validation": true,
+    "auto_advance": true,
+    "_auto_chain_active": false
+  }
+}

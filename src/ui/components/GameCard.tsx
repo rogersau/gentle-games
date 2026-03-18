@@ -34,7 +34,7 @@ export const GameCard: React.FC<GameCardProps> = ({
   return (
     <AppCard
       onPress={onPress}
-      variant="elevated"
+      variant='elevated'
       accentColor={accentColor}
       style={StyleSheet.flatten([styles.card, style])}
       accessibilityLabel={`${title}. ${description}`}
@@ -42,10 +42,14 @@ export const GameCard: React.FC<GameCardProps> = ({
       testID={testID}
     >
       <View style={styles.row}>
-        <IconBadge icon={icon} size="md" accessibilityLabel={title} />
+        <IconBadge icon={icon} size='md' accessibilityLabel={title} />
         <View style={styles.info}>
-          <Text style={styles.title} numberOfLines={2}>{title}</Text>
-          <Text style={styles.description} numberOfLines={2}>{description}</Text>
+          <Text style={styles.title} numberOfLines={2}>
+            {title}
+          </Text>
+          <Text style={styles.description} numberOfLines={2}>
+            {description}
+          </Text>
         </View>
       </View>
     </AppCard>

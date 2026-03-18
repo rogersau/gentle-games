@@ -15,19 +15,17 @@ const resources = {
   },
 };
 
-i18n
-  .use(initReactI18next)
-  .init({
-    resources,
-    lng: DEFAULT_LANGUAGE,
-    fallbackLng: 'en-AU',
-    interpolation: {
-      escapeValue: false,
-    },
-    react: {
-      useSuspense: false,
-    },
-  });
+i18n.use(initReactI18next).init({
+  resources,
+  lng: DEFAULT_LANGUAGE,
+  fallbackLng: 'en-AU',
+  interpolation: {
+    escapeValue: false,
+  },
+  react: {
+    useSuspense: false,
+  },
+});
 
 export default i18n;
 

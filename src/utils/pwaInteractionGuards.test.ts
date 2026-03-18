@@ -19,7 +19,12 @@ const createMockBrowser = (): { browser: BrowserLike; document: MockDocument } =
 
 const getListener = (document: MockDocument, eventName: string) =>
   document.addEventListener.mock.calls.find(([type]) => type === eventName)?.[1] as
-    | ((event: { preventDefault: () => void; target?: EventTarget | null; touches?: ArrayLike<unknown>; ctrlKey?: boolean }) => void)
+    | ((event: {
+        preventDefault: () => void;
+        target?: EventTarget | null;
+        touches?: ArrayLike<unknown>;
+        ctrlKey?: boolean;
+      }) => void)
     | undefined;
 
 describe('pwaInteractionGuards', () => {
@@ -40,20 +45,18 @@ describe('pwaInteractionGuards', () => {
     const { browser, document } = createMockBrowser();
     const cleanup = installPwaInteractionGuards('web', browser);
 
-    expect(document.addEventListener).toHaveBeenCalledWith(
-      'touchmove',
-      expect.any(Function),
-      { passive: false },
-    );
-    expect(document.addEventListener).toHaveBeenCalledWith(
-      'wheel',
-      expect.any(Function),
-      { passive: false },
-    );
+    expect(document.addEventListener).toHaveBeenCalledWith('touchmove', expect.any(Function), {
+      passive: false,
+    });
+    expect(document.addEventListener).toHaveBeenCalledWith('wheel', expect.any(Function), {
+      passive: false,
+    });
 
     cleanup();
 
-    expect(document.removeEventListener).toHaveBeenCalledTimes(document.addEventListener.mock.calls.length);
+    expect(document.removeEventListener).toHaveBeenCalledTimes(
+      document.addEventListener.mock.calls.length,
+    );
   });
 
   it('prevents selection-style browser UI on non-editable targets', () => {

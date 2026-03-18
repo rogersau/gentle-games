@@ -15,7 +15,12 @@ provides:
 affects: [phase-04-02, phase-04-03, ci, regression-baseline]
 tech-stack:
   added: []
-  patterns: [PanResponder seam tests, route-wrapper accessibility assertions, overlap-first drag/drop regressions]
+  patterns:
+    [
+      PanResponder seam tests,
+      route-wrapper accessibility assertions,
+      overlap-first drag/drop regressions,
+    ]
 key-files:
   created:
     - src/components/CategoryMatchBoard.test.tsx
@@ -28,12 +33,12 @@ key-files:
     - src/screens/BubbleScreen.test.tsx
     - src/screens/GameScreen.tsx
 key-decisions:
-  - "Category Match board regressions stay on the live PanResponder seam, while screen tests own preview, counter, and streak flow."
-  - "Memory Snap route coverage keeps GameBoard as the real owner of gameplay logic and only adds a stable stats test seam at the wrapper level."
-  - "Number Picnic release validation can reuse a cached measured item rect when available instead of forcing a second measurement for the same drag."
+  - 'Category Match board regressions stay on the live PanResponder seam, while screen tests own preview, counter, and streak flow.'
+  - 'Memory Snap route coverage keeps GameBoard as the real owner of gameplay logic and only adds a stable stats test seam at the wrapper level.'
+  - 'Number Picnic release validation can reuse a cached measured item rect when available instead of forcing a second measurement for the same drag.'
 patterns-established:
-  - "Route-wrapper regressions should assert accessibility labels exposed to assistive tech, not only visible text."
-  - "Gesture-heavy board tests can stay deterministic by driving PanResponder handlers directly and keeping feedback timers under fake timers."
+  - 'Route-wrapper regressions should assert accessibility labels exposed to assistive tech, not only visible text.'
+  - 'Gesture-heavy board tests can stay deterministic by driving PanResponder handlers directly and keeping feedback timers under fake timers.'
 requirements-completed: [RELG-04]
 duration: 7min
 completed: 2026-03-18
@@ -52,6 +57,7 @@ completed: 2026-03-18
 - **Files modified:** 8
 
 ## Accomplishments
+
 - Replaced stale Number Picnic threshold assertions with measured overlap regressions so the shared Jest baseline matches shipped drop behavior.
 - Added a dedicated Category Match board regression file that exercises hover highlighting, correct and incorrect drops, and feedback-timer cleanup.
 - Locked Bubble Pop and Memory Snap route wrappers to their accessibility-facing counter, header, back, and stats contracts without duplicating gameplay logic.
@@ -69,6 +75,7 @@ Each task was committed atomically:
 **Plan metadata:** Final docs commit created after summary generation.
 
 ## Files Created/Modified
+
 - `src/components/numberpicnic/PicnicBlanket.test.tsx` - Rewrites stale threshold-only assertions around real overlap-driven drops.
 - `src/components/numberpicnic/PicnicBlanket.tsx` - Reuses cached measured item bounds on release when already available for the same drag.
 - `src/components/CategoryMatchBoard.test.tsx` - Covers hover highlighting, correct/incorrect drops, and feedback timer cleanup on the live board seam.
@@ -79,6 +86,7 @@ Each task was committed atomically:
 - `src/screens/GameScreen.tsx` - Exposes a stable test ID for the existing wrapper-owned stats label.
 
 ## Decisions Made
+
 - Kept Category Match drag/drop verification in a new real board test so the screen test could stay focused on wrapper behavior and progression messaging.
 - Added only tiny accessibility-safe seams (`testID`s) where needed instead of mocking or duplicating Bubble Pop or Memory Snap gameplay internals.
 - Treated the Number Picnic release-measurement path as a legitimate regression hardening opportunity and reused cached measured bounds when the current drag already owns them.
@@ -88,6 +96,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] Reused cached Number Picnic item measurements on release**
+
 - **Found during:** Task 1 (Replace stale PicnicBlanket threshold assertions with overlap-based regression coverage)
 - **Issue:** The release path always forced a second measurement even when the current drag already had a cached measured rect, which blocked deterministic overlap-regression coverage around the existing measurement seam.
 - **Fix:** Updated `PicnicBlanket.tsx` to reuse the cached item rect on release when present and fall back to a fresh measurement only when needed.
@@ -101,6 +110,7 @@ Each task was committed atomically:
 **Impact on plan:** The deviation stayed inside the audited Number Picnic drag seam and was necessary to restore a trustworthy overlap-based regression baseline without widening scope.
 
 ## Issues Encountered
+
 - The first Memory Snap route-wrapper test failed because the safe-area mock did not supply `SafeAreaView`; adding a minimal test-only safe-area stub fixed the harness without touching shipped behavior.
 
 ## User Setup Required
@@ -108,12 +118,15 @@ Each task was committed atomically:
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Phase 04-02 can build source-map upload-path coverage on top of a green, trustworthy gameplay regression subset.
 - RELG-04 now has targeted Jest coverage on the audited route and interaction seams named in the roadmap, reducing risk for release-confidence follow-up work.
 
 ---
-*Phase: 04-release-confidence-and-regression-guardrails*
-*Completed: 2026-03-18*
+
+_Phase: 04-release-confidence-and-regression-guardrails_
+_Completed: 2026-03-18_
 
 ## Self-Check
+
 PASSED

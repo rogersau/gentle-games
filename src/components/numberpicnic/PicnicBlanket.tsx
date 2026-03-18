@@ -21,7 +21,11 @@ interface WindowRect {
   height: number;
 }
 
-export const translateNumberPicnicRect = (layout: WindowRect, dx: number, dy: number): WindowRect => ({
+export const translateNumberPicnicRect = (
+  layout: WindowRect,
+  dx: number,
+  dy: number,
+): WindowRect => ({
   x: layout.x + dx,
   y: layout.y + dy,
   width: layout.width,
@@ -30,7 +34,7 @@ export const translateNumberPicnicRect = (layout: WindowRect, dx: number, dy: nu
 
 export const doesNumberPicnicRectOverlap = (
   draggedRect: WindowRect | null,
-  dropZoneLayout: WindowRect | null | undefined
+  dropZoneLayout: WindowRect | null | undefined,
 ): boolean => {
   if (!draggedRect || !dropZoneLayout) {
     return false;
@@ -55,7 +59,9 @@ interface DraggableItem {
 }
 
 interface MeasurableNode {
-  measureInWindow?: (callback: (x: number, y: number, width: number, height: number) => void) => void;
+  measureInWindow?: (
+    callback: (x: number, y: number, width: number, height: number) => void,
+  ) => void;
 }
 
 interface PicnicBlanketProps {
@@ -93,19 +99,19 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
   // Calculate how many items to show on the blanket
   const maxItems = Math.max(12, targetCount + 3);
   const visibleItems = Math.min(itemCount, maxItems);
-  
+
   // Track which item is currently being dragged
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
-  
+
   // Create draggable items only once
   const draggableItemsRef = useRef<DraggableItem[]>([]);
   const itemRefs = useRef<Array<MeasurableNode | null>>([]);
   const itemLayoutsRef = useRef<Record<number, WindowRect | null>>({});
   const isOverBasketRef = useRef(false);
-  
+
   // Track the current emoji to detect changes
   const prevEmojiRef = useRef(itemEmoji);
-  
+
   // Initialize items if not already done OR if emoji changed (new round)
   if (draggableItemsRef.current.length === 0 || prevEmojiRef.current !== itemEmoji) {
     prevEmojiRef.current = itemEmoji;
@@ -125,7 +131,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
     draggableItemsRef.current.forEach((item, index) => {
       const shouldBeAvailable = index < visibleItems;
       item.isAvailable = shouldBeAvailable;
-      
+
       // Animate opacity change
       if (settings.animationsEnabled && !settings.reducedMotionEnabled) {
         Animated.timing(item.opacity, {
@@ -139,35 +145,39 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
     });
   }, [visibleItems, settings.animationsEnabled, settings.reducedMotionEnabled]);
 
-  const setDragOverlap = useCallback((isOver: boolean) => {
-    if (isOverBasketRef.current === isOver) {
-      return;
-    }
+  const setDragOverlap = useCallback(
+    (isOver: boolean) => {
+      if (isOverBasketRef.current === isOver) {
+        return;
+      }
 
-    isOverBasketRef.current = isOver;
-    onDragOverBasket?.(isOver);
-  }, [onDragOverBasket]);
+      isOverBasketRef.current = isOver;
+      onDragOverBasket?.(isOver);
+    },
+    [onDragOverBasket],
+  );
 
-  const measureItemLayout = useCallback((index: number, onMeasured: (layout: WindowRect | null) => void) => {
-    const itemRef = itemRefs.current[index];
-    if (!itemRef?.measureInWindow) {
-      onMeasured(itemLayoutsRef.current[index] ?? null);
-      return;
-    }
+  const measureItemLayout = useCallback(
+    (index: number, onMeasured: (layout: WindowRect | null) => void) => {
+      const itemRef = itemRefs.current[index];
+      if (!itemRef?.measureInWindow) {
+        onMeasured(itemLayoutsRef.current[index] ?? null);
+        return;
+      }
 
-    itemRef.measureInWindow((x, y, width, height) => {
-      const layout = { x, y, width, height };
-      itemLayoutsRef.current[index] = layout;
-      onMeasured(layout);
-    });
-  }, []);
+      itemRef.measureInWindow((x, y, width, height) => {
+        const layout = { x, y, width, height };
+        itemLayoutsRef.current[index] = layout;
+        onMeasured(layout);
+      });
+    },
+    [],
+  );
 
   const updateDragOverlap = useCallback(
     (index: number, dx: number, dy: number, options?: { forceMeasure?: boolean }): boolean => {
       const evaluateOverlap = (layout: WindowRect | null) => {
-        const translatedLayout = layout
-          ? translateNumberPicnicRect(layout, dx, dy)
-          : null;
+        const translatedLayout = layout ? translateNumberPicnicRect(layout, dx, dy) : null;
 
         const isOver = doesNumberPicnicRectOverlap(translatedLayout, dropZoneLayout);
 
@@ -186,101 +196,109 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
 
       return evaluateOverlap(cachedLayout);
     },
-    [dropZoneLayout, measureItemLayout, setDragOverlap]
+    [dropZoneLayout, measureItemLayout, setDragOverlap],
   );
 
   // Create PanResponder for an item
-  const createPanResponder = useCallback((item: DraggableItem, index: number) => {
-    return PanResponder.create({
-      onStartShouldSetPanResponder: () => !isProcessing && item.isAvailable,
-      onMoveShouldSetPanResponder: () => !isProcessing && item.isAvailable,
-      onPanResponderGrant: () => {
-        setDraggingIndex(index);
-        onDropStart?.();
-        setDragOverlap(false);
-        measureItemLayout(index, () => undefined);
-        
-        // Scale up when dragging starts
-        if (settings.animationsEnabled && !settings.reducedMotionEnabled) {
-          Animated.timing(item.scale, {
-            toValue: 1.3,
-            duration: 200,
-            useNativeDriver: Platform.OS !== 'web',
-          }).start();
-        }
-      },
-      onPanResponderMove: (_, gestureState) => {
-        // Update position based on gesture
-        item.position.setValue({
-          x: gestureState.dx,
-          y: gestureState.dy,
-        });
+  const createPanResponder = useCallback(
+    (item: DraggableItem, index: number) => {
+      return PanResponder.create({
+        onStartShouldSetPanResponder: () => !isProcessing && item.isAvailable,
+        onMoveShouldSetPanResponder: () => !isProcessing && item.isAvailable,
+        onPanResponderGrant: () => {
+          setDraggingIndex(index);
+          onDropStart?.();
+          setDragOverlap(false);
+          measureItemLayout(index, () => undefined);
 
-        updateDragOverlap(index, gestureState.dx, gestureState.dy);
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        const hasCachedLayout = Boolean(itemLayoutsRef.current[index]);
-        const isValidDrop = updateDragOverlap(index, gestureState.dx, gestureState.dy, hasCachedLayout ? undefined : { forceMeasure: true });
-
-        setDraggingIndex(null);
-        setDragOverlap(false);
-        onDropEnd?.();
-        
-        // Scale back down
-        if (settings.animationsEnabled && !settings.reducedMotionEnabled) {
-          Animated.timing(item.scale, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: Platform.OS !== 'web',
-          }).start();
-        }
-
-        if (isValidDrop) {
-          onItemDrop(index);
-          
-          // Fade out the item
+          // Scale up when dragging starts
           if (settings.animationsEnabled && !settings.reducedMotionEnabled) {
-            Animated.timing(item.opacity, {
-              toValue: 0,
+            Animated.timing(item.scale, {
+              toValue: 1.3,
               duration: 200,
               useNativeDriver: Platform.OS !== 'web',
-            }).start(() => {
-              item.position.setValue({ x: 0, y: 0 });
-            });
-          } else {
-            item.opacity.setValue(0);
-            item.position.setValue({ x: 0, y: 0 });
-          }
-        } else {
-          // Reset position (not dropped to basket)
-          if (settings.animationsEnabled && !settings.reducedMotionEnabled) {
-            Animated.spring(item.position, {
-              toValue: { x: 0, y: 0 },
-              useNativeDriver: Platform.OS !== 'web',
-              friction: 5,
             }).start();
-          } else {
-            item.position.setValue({ x: 0, y: 0 });
           }
-        }
-      },
-      onPanResponderTerminate: () => {
-        setDraggingIndex(null);
-        setDragOverlap(false);
-        onDropEnd?.();
-      },
-    });
-  }, [
-    isProcessing,
-    settings.animationsEnabled,
-    settings.reducedMotionEnabled,
-    onDropStart,
-    onDropEnd,
-    onItemDrop,
-    measureItemLayout,
-    setDragOverlap,
-    updateDragOverlap,
-  ]);
+        },
+        onPanResponderMove: (_, gestureState) => {
+          // Update position based on gesture
+          item.position.setValue({
+            x: gestureState.dx,
+            y: gestureState.dy,
+          });
+
+          updateDragOverlap(index, gestureState.dx, gestureState.dy);
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          const hasCachedLayout = Boolean(itemLayoutsRef.current[index]);
+          const isValidDrop = updateDragOverlap(
+            index,
+            gestureState.dx,
+            gestureState.dy,
+            hasCachedLayout ? undefined : { forceMeasure: true },
+          );
+
+          setDraggingIndex(null);
+          setDragOverlap(false);
+          onDropEnd?.();
+
+          // Scale back down
+          if (settings.animationsEnabled && !settings.reducedMotionEnabled) {
+            Animated.timing(item.scale, {
+              toValue: 1,
+              duration: 200,
+              useNativeDriver: Platform.OS !== 'web',
+            }).start();
+          }
+
+          if (isValidDrop) {
+            onItemDrop(index);
+
+            // Fade out the item
+            if (settings.animationsEnabled && !settings.reducedMotionEnabled) {
+              Animated.timing(item.opacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: Platform.OS !== 'web',
+              }).start(() => {
+                item.position.setValue({ x: 0, y: 0 });
+              });
+            } else {
+              item.opacity.setValue(0);
+              item.position.setValue({ x: 0, y: 0 });
+            }
+          } else {
+            // Reset position (not dropped to basket)
+            if (settings.animationsEnabled && !settings.reducedMotionEnabled) {
+              Animated.spring(item.position, {
+                toValue: { x: 0, y: 0 },
+                useNativeDriver: Platform.OS !== 'web',
+                friction: 5,
+              }).start();
+            } else {
+              item.position.setValue({ x: 0, y: 0 });
+            }
+          }
+        },
+        onPanResponderTerminate: () => {
+          setDraggingIndex(null);
+          setDragOverlap(false);
+          onDropEnd?.();
+        },
+      });
+    },
+    [
+      isProcessing,
+      settings.animationsEnabled,
+      settings.reducedMotionEnabled,
+      onDropStart,
+      onDropEnd,
+      onItemDrop,
+      measureItemLayout,
+      setDragOverlap,
+      updateDragOverlap,
+    ],
+  );
 
   const itemsPerRow = screenWidth < 400 ? 4 : screenWidth < 600 ? 5 : 6;
 
@@ -298,19 +316,17 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
       <View style={styles.blanket}>
         {/* Gingham pattern overlay */}
         <View style={styles.pattern} />
-        
+
         {/* Instruction text */}
-        <Text style={styles.instruction}>
-          Drag items up to the basket!
-        </Text>
-        
+        <Text style={styles.instruction}>Drag items up to the basket!</Text>
+
         {/* Items grid */}
         <View style={styles.itemsContainer}>
           {draggableItemsRef.current.map((item, index) => {
             const panResponder = createPanResponder(item, index);
             const pos = itemPositions[index];
             const isCurrentlyDragging = draggingIndex === index;
-            
+
             const animatedStyle = {
               transform: [
                 { translateX: item.position.x },
@@ -328,10 +344,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
                 style={[
                   styles.itemWrapper,
                   {
-                    transform: [
-                      { translateX: pos.offsetX },
-                      { translateY: pos.offsetY },
-                    ],
+                    transform: [{ translateX: pos.offsetX }, { translateY: pos.offsetY }],
                     // Also set zIndex on wrapper when dragging
                     zIndex: isCurrentlyDragging ? 100 : 1,
                   },
@@ -354,7 +367,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
                     {...panResponder.panHandlers}
                     style={[styles.draggableItem, animatedStyle]}
                     accessibilityLabel={`${itemEmoji} item ${index + 1}. Drag up to basket.`}
-                    accessibilityHint="Drag this item upward to add it to the picnic basket"
+                    accessibilityHint='Drag this item upward to add it to the picnic basket'
                     testID={`picnic-item-${index}`}
                   >
                     <Text style={styles.emoji} selectable={false}>

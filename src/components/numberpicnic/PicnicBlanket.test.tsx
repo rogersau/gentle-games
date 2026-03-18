@@ -64,7 +64,7 @@ describe('PicnicBlanket', () => {
       (handlers: any) =>
         ({
           panHandlers: handlers,
-        }) as any
+        }) as any,
     );
   });
 
@@ -74,7 +74,7 @@ describe('PicnicBlanket', () => {
 
   it('renders only the available draggable items', () => {
     const { queryAllByTestId } = render(
-      <PicnicBlanket itemEmoji="🍎" itemCount={2} targetCount={5} onItemDrop={jest.fn()} />
+      <PicnicBlanket itemEmoji='🍎' itemCount={2} targetCount={5} onItemDrop={jest.fn()} />,
     );
 
     expect(queryAllByTestId(/picnic-item-/)).toHaveLength(2);
@@ -82,12 +82,12 @@ describe('PicnicBlanket', () => {
 
   it('rebuilds item labels when emoji changes between rounds', () => {
     const { getByTestId, rerender } = render(
-      <PicnicBlanket itemEmoji="🍓" itemCount={1} targetCount={3} onItemDrop={jest.fn()} />
+      <PicnicBlanket itemEmoji='🍓' itemCount={1} targetCount={3} onItemDrop={jest.fn()} />,
     );
 
     expect(getByTestId('picnic-item-0').props.accessibilityLabel).toContain('🍓');
 
-    rerender(<PicnicBlanket itemEmoji="🥕" itemCount={1} targetCount={3} onItemDrop={jest.fn()} />);
+    rerender(<PicnicBlanket itemEmoji='🥕' itemCount={1} targetCount={3} onItemDrop={jest.fn()} />);
 
     expect(getByTestId('picnic-item-0').props.accessibilityLabel).toContain('🥕');
   });
@@ -99,7 +99,7 @@ describe('PicnicBlanket', () => {
 
     const { getByTestId } = render(
       <PicnicBlanket
-        itemEmoji="🍌"
+        itemEmoji='🍌'
         itemCount={1}
         targetCount={3}
         onItemDrop={onItemDrop}
@@ -111,16 +111,18 @@ describe('PicnicBlanket', () => {
         createNodeMock: (element: NodeMockElement) =>
           (element.props as { testID?: string }).testID === 'picnic-item-0'
             ? {
-                measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) =>
+                measureInWindow: (
+                  callback: (x: number, y: number, width: number, height: number) => void,
+                ) =>
                   callback(
                     mockMeasuredLayout.x,
                     mockMeasuredLayout.y,
                     mockMeasuredLayout.width,
-                    mockMeasuredLayout.height
+                    mockMeasuredLayout.height,
                   ),
               }
             : {},
-      }
+      },
     );
 
     const item = getByTestId('picnic-item-0');
@@ -154,7 +156,7 @@ describe('PicnicBlanket', () => {
 
     const { getByTestId } = render(
       <PicnicBlanket
-        itemEmoji="🍇"
+        itemEmoji='🍇'
         itemCount={1}
         targetCount={3}
         onItemDrop={onItemDrop}
@@ -164,16 +166,18 @@ describe('PicnicBlanket', () => {
         createNodeMock: (element: NodeMockElement) =>
           (element.props as { testID?: string }).testID === 'picnic-item-0'
             ? {
-                measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) =>
+                measureInWindow: (
+                  callback: (x: number, y: number, width: number, height: number) => void,
+                ) =>
                   callback(
                     mockMeasuredLayout.x,
                     mockMeasuredLayout.y,
                     mockMeasuredLayout.width,
-                    mockMeasuredLayout.height
+                    mockMeasuredLayout.height,
                   ),
               }
             : {},
-      }
+      },
     );
 
     const item = getByTestId('picnic-item-0');

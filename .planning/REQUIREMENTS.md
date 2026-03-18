@@ -51,41 +51,43 @@
 
 ## Out of Scope
 
-| Feature | Reason |
-|---------|--------|
-| New mini-games or content packs | This milestone is for hardening existing experiences rather than expanding feature scope |
-| Backend accounts, sync, or online services | No backend exists today and those additions do not resolve the audited concerns |
-| Full UI redesign or design-system refresh | Stability work should preserve the current sensory-friendly interface rather than restyle it |
+| Feature                                     | Reason                                                                                                                           |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| New mini-games or content packs             | This milestone is for hardening existing experiences rather than expanding feature scope                                         |
+| Backend accounts, sync, or online services  | No backend exists today and those additions do not resolve the audited concerns                                                  |
+| Full UI redesign or design-system refresh   | Stability work should preserve the current sensory-friendly interface rather than restyle it                                     |
 | Full decomposition of every large component | Some maintainability refactors may happen opportunistically, but repository-wide restructuring is deferred beyond this milestone |
 
 ## Traceability
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| PRIV-01 | Phase 1 | Complete |
-| PRIV-02 | Phase 1 | Complete |
-| PRIV-03 | Phase 1 | Complete |
-| PRIV-04 | Phase 1 | Complete |
-| PLAY-01 | Phase 2 | Complete |
-| PLAY-02 | Phase 2 | Complete |
-| PLAY-03 | Phase 2 | Complete |
-| STAB-01 | Phase 3 | Complete |
-| STAB-02 | Phase 1 | Complete |
-| STAB-03 | Phase 2 | Complete |
-| STAB-04 | Phase 3 | Complete |
-| PERF-01 | Phase 3 | Complete |
-| PERF-02 | Phase 3 | Complete |
-| PERF-03 | Phase 2 | Complete |
-| RELG-01 | Phase 4 | Complete |
-| RELG-02 | Phase 4 | Complete |
-| RELG-03 | Phase 4 | Complete |
-| RELG-04 | Phase 4 | Complete |
+| Requirement | Phase   | Status   |
+| ----------- | ------- | -------- |
+| PRIV-01     | Phase 1 | Complete |
+| PRIV-02     | Phase 1 | Complete |
+| PRIV-03     | Phase 1 | Complete |
+| PRIV-04     | Phase 1 | Complete |
+| PLAY-01     | Phase 2 | Complete |
+| PLAY-02     | Phase 2 | Complete |
+| PLAY-03     | Phase 2 | Complete |
+| STAB-01     | Phase 3 | Complete |
+| STAB-02     | Phase 1 | Complete |
+| STAB-03     | Phase 2 | Complete |
+| STAB-04     | Phase 3 | Complete |
+| PERF-01     | Phase 3 | Complete |
+| PERF-02     | Phase 3 | Complete |
+| PERF-03     | Phase 2 | Complete |
+| RELG-01     | Phase 4 | Complete |
+| RELG-02     | Phase 4 | Complete |
+| RELG-03     | Phase 4 | Complete |
+| RELG-04     | Phase 4 | Complete |
 
 **Coverage:**
+
 - v1 requirements: 18 total
 - Mapped to phases: 18
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-03-17*
-*Last updated: 2026-03-17 after roadmap creation for milestone v1.1*
+
+_Requirements defined: 2026-03-17_
+_Last updated: 2026-03-17 after roadmap creation for milestone v1.1_

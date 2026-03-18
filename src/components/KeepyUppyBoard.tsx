@@ -44,16 +44,13 @@ const MIN_FLICK_DISTANCE = 8;
 const MAX_FLICK_DURATION_MS = 500;
 
 export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>(
-  (
-    { bounds, onScoreChange, onBalloonCountChange, onPoppedChange, easyMode = false },
-    ref
-  ) => {
+  ({ bounds, onScoreChange, onBalloonCountChange, onPoppedChange, easyMode = false }, ref) => {
     const { colors, resolvedMode } = useThemeColors();
     const { t } = useTranslation();
     const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
     const createBoardBalloon = useCallback(
       () => createBalloon(bounds, { colors, resolvedMode }),
-      [bounds, colors, resolvedMode]
+      [bounds, colors, resolvedMode],
     );
     const [score, setScore] = useState(0);
     const [popped, setPopped] = useState(0);
@@ -120,7 +117,7 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
         resetBalloons: resetBoard,
         getBalloonCount: () => balloons.length,
       }),
-      [addBoardBalloon, balloons.length, resetBoard]
+      [addBoardBalloon, balloons.length, resetBoard],
     );
 
     const toBoardPoint = useCallback(
@@ -132,7 +129,7 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
           y: balloon.y - balloonH / 2 + locationY,
         };
       },
-      []
+      [],
     );
 
     const handleBalloonPress = useCallback(
@@ -143,11 +140,11 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
           previous.map((current) =>
             current.id === balloon.id
               ? tapBalloon(current, tapPoint.x, tapPoint.y, easyMode)
-              : current
-            )
+              : current,
+          ),
         );
       },
-      [easyMode, toBoardPoint]
+      [easyMode, toBoardPoint],
     );
 
     const handleBalloonRelease = useCallback(
@@ -160,21 +157,16 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
         const deltaX = pageX - touchStart.x;
         const deltaY = pageY - touchStart.y;
         const durationMs = Math.max(1, Date.now() - touchStart.startedAt);
-        if (
-          Math.hypot(deltaX, deltaY) < MIN_FLICK_DISTANCE ||
-          durationMs > MAX_FLICK_DURATION_MS
-        ) {
+        if (Math.hypot(deltaX, deltaY) < MIN_FLICK_DISTANCE || durationMs > MAX_FLICK_DURATION_MS) {
           return;
         }
         setBalloons((previous) =>
           previous.map((current) =>
-            current.id === balloon.id
-              ? flickBalloon(current, deltaX, deltaY, durationMs)
-              : current
-          )
+            current.id === balloon.id ? flickBalloon(current, deltaX, deltaY, durationMs) : current,
+          ),
         );
       },
-      []
+      [],
     );
 
     return (
@@ -192,8 +184,8 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
           return (
             <TouchableOpacity
               key={balloon.id}
-              accessibilityRole="button"
-              accessibilityLabel={t('games.keepyUppy.balloonAccessibility') }
+              accessibilityRole='button'
+              accessibilityLabel={t('games.keepyUppy.balloonAccessibility')}
               testID={`balloon-${balloon.id}`}
               onPressIn={(event) => {
                 touchStartRef.current[balloon.id] = {
@@ -204,15 +196,11 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
                 handleBalloonPress(
                   balloon,
                   event.nativeEvent.locationX,
-                  event.nativeEvent.locationY
+                  event.nativeEvent.locationY,
                 );
               }}
               onPressOut={(event) =>
-                handleBalloonRelease(
-                  balloon,
-                  event.nativeEvent.pageX,
-                  event.nativeEvent.pageY
-                )
+                handleBalloonRelease(balloon, event.nativeEvent.pageX, event.nativeEvent.pageY)
               }
               style={[
                 styles.balloonHitArea,
@@ -245,7 +233,7 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
         })}
       </View>
     );
-  }
+  },
 );
 
 const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>

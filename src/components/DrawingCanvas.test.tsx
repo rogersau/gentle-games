@@ -4,12 +4,14 @@ import { PanResponder, StyleSheet, View } from 'react-native';
 import { DrawingCanvas, DrawingCanvasRef, HistoryEntry } from './DrawingCanvas';
 
 const findTouchLayer = (screen: ReturnType<typeof render>) =>
-  screen.UNSAFE_getAllByType(View).find((node) => typeof node.props.onPanResponderGrant === 'function');
+  screen
+    .UNSAFE_getAllByType(View)
+    .find((node) => typeof node.props.onPanResponderGrant === 'function');
 
 const drawGesture = (
   screen: ReturnType<typeof render>,
   start: { x: number; y: number },
-  moves: Array<{ x: number; y: number }> = []
+  moves: Array<{ x: number; y: number }> = [],
 ) => {
   const touchLayer = findTouchLayer(screen);
   expect(touchLayer).toBeTruthy();
@@ -33,7 +35,7 @@ describe('DrawingCanvas', () => {
   beforeEach(() => {
     jest
       .spyOn(PanResponder, 'create')
-      .mockImplementation((handlers: any) => ({ panHandlers: handlers } as any));
+      .mockImplementation((handlers: any) => ({ panHandlers: handlers }) as any);
   });
 
   afterEach(() => {
@@ -44,7 +46,7 @@ describe('DrawingCanvas', () => {
     const initialHistory: HistoryEntry[] = [];
 
     const { getByTestId, getAllByTestId } = render(
-      <DrawingCanvas width={320} height={280} initialHistory={initialHistory} />
+      <DrawingCanvas width={320} height={280} initialHistory={initialHistory} />,
     );
 
     const initialPaletteCount = getAllByTestId('palette-color-button').length;
@@ -62,8 +64,8 @@ describe('DrawingCanvas', () => {
         width={320}
         height={280}
         initialHistory={initialHistory}
-        canvasBackgroundColor="#3F444D"
-      />
+        canvasBackgroundColor='#3F444D'
+      />,
     );
 
     const containerStyle = StyleSheet.flatten(getByTestId('drawing-canvas-container').props.style);
@@ -77,7 +79,7 @@ describe('DrawingCanvas', () => {
     const ref = React.createRef<DrawingCanvasRef>();
 
     const { getByTestId } = render(
-      <DrawingCanvas ref={ref} width={320} height={280} initialHistory={initialHistory} />
+      <DrawingCanvas ref={ref} width={320} height={280} initialHistory={initialHistory} />,
     );
 
     expect(ref.current?.getHistory()).toHaveLength(1);
@@ -93,14 +95,10 @@ describe('DrawingCanvas', () => {
     const screen = render(<DrawingCanvas ref={ref} width={320} height={280} initialHistory={[]} />);
 
     fireEvent.press(screen.getByLabelText('games.drawing.symmetry'));
-    drawGesture(
-      screen,
-      { x: 40, y: 60 },
-      [
-        { x: 70, y: 90 },
-        { x: 100, y: 120 },
-      ]
-    );
+    drawGesture(screen, { x: 40, y: 60 }, [
+      { x: 70, y: 90 },
+      { x: 100, y: 120 },
+    ]);
 
     expect(ref.current?.getHistory()).toHaveLength(2);
 
@@ -116,14 +114,10 @@ describe('DrawingCanvas', () => {
     fireEvent.press(screen.getByLabelText('games.drawing.symmetry'));
     fireEvent.press(screen.getByLabelText('games.drawing.symmetry'));
 
-    drawGesture(
-      screen,
-      { x: 48, y: 56 },
-      [
-        { x: 72, y: 88 },
-        { x: 96, y: 112 },
-      ]
-    );
+    drawGesture(screen, { x: 48, y: 56 }, [
+      { x: 72, y: 88 },
+      { x: 96, y: 112 },
+    ]);
 
     expect(ref.current?.getHistory()).toHaveLength(4);
 
@@ -135,10 +129,14 @@ describe('DrawingCanvas', () => {
 
   it('keeps batch-aware undo semantics for shapes and eraser actions', () => {
     const shapeRef = React.createRef<DrawingCanvasRef>();
-    const shapeScreen = render(<DrawingCanvas ref={shapeRef} width={320} height={280} initialHistory={[]} />);
+    const shapeScreen = render(
+      <DrawingCanvas ref={shapeRef} width={320} height={280} initialHistory={[]} />,
+    );
 
     fireEvent.press(shapeScreen.getByLabelText('games.drawing.symmetry'));
-    fireEvent.press(shapeScreen.getByLabelText('games.drawing.shapeTool, games.drawing.shape.circle'));
+    fireEvent.press(
+      shapeScreen.getByLabelText('games.drawing.shapeTool, games.drawing.shape.circle'),
+    );
     fireEvent.press(shapeScreen.getAllByText('games.drawing.shape.circle')[0]);
 
     drawGesture(shapeScreen, { x: 80, y: 100 });
@@ -150,20 +148,18 @@ describe('DrawingCanvas', () => {
     expect(shapeRef.current?.getHistory()).toHaveLength(0);
 
     const eraseRef = React.createRef<DrawingCanvasRef>();
-    const eraseScreen = render(<DrawingCanvas ref={eraseRef} width={320} height={280} initialHistory={[]} />);
+    const eraseScreen = render(
+      <DrawingCanvas ref={eraseRef} width={320} height={280} initialHistory={[]} />,
+    );
 
     fireEvent.press(eraseScreen.getByLabelText('games.drawing.symmetry'));
     fireEvent.press(eraseScreen.getByLabelText('games.drawing.symmetry'));
     fireEvent.press(eraseScreen.getByLabelText('games.drawing.eraserTool'));
 
-    drawGesture(
-      eraseScreen,
-      { x: 120, y: 120 },
-      [
-        { x: 140, y: 135 },
-        { x: 160, y: 150 },
-      ]
-    );
+    drawGesture(eraseScreen, { x: 120, y: 120 }, [
+      { x: 140, y: 135 },
+      { x: 160, y: 150 },
+    ]);
 
     expect(eraseRef.current?.getHistory()).toHaveLength(4);
 
@@ -172,4 +168,3 @@ describe('DrawingCanvas', () => {
     expect(eraseRef.current?.getHistory()).toHaveLength(0);
   });
 });
-

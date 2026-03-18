@@ -28,25 +28,19 @@ export const SegmentedControl = <T extends string | number>({
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
 
   return (
-    <View style={[styles.container, wrap && styles.containerWrap]} accessibilityRole="radiogroup">
+    <View style={[styles.container, wrap && styles.containerWrap]} accessibilityRole='radiogroup'>
       {options.map((option) => {
         const isActive = option.value === value;
         return (
           <TouchableOpacity
             key={String(option.value)}
-            style={[
-              styles.segment,
-              isActive && styles.segmentActive,
-              !wrap && styles.segmentFlex,
-            ]}
+            style={[styles.segment, isActive && styles.segmentActive, !wrap && styles.segmentFlex]}
             onPress={() => onValueChange(option.value)}
             accessibilityLabel={option.label}
-            accessibilityRole="radio"
+            accessibilityRole='radio'
             accessibilityState={{ selected: isActive }}
           >
-            <Text style={[styles.label, isActive && styles.labelActive]}>
-              {option.label}
-            </Text>
+            <Text style={[styles.label, isActive && styles.labelActive]}>{option.label}</Text>
           </TouchableOpacity>
         );
       })}

@@ -35,10 +35,13 @@ export const BubbleScreen: React.FC = () => {
       <AppHeader title={t('games.bubblePop.title')} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
-        <Text style={styles.subtitle} accessibilityRole="text">
+        <Text style={styles.subtitle} accessibilityRole='text'>
           {t('games.bubblePop.subtitle')}
         </Text>
-        <Text style={styles.counter} accessibilityLabel={t('games.bubblePop.popped', { count: poppedCount })}>
+        <Text
+          style={styles.counter}
+          accessibilityLabel={t('games.bubblePop.popped', { count: poppedCount })}
+        >
           {t('games.bubblePop.popped', { count: poppedCount })}
         </Text>
 
@@ -81,4 +84,3 @@ const createStyles = (colors: ThemeColors) =>
       justifyContent: 'center',
     },
   });
-

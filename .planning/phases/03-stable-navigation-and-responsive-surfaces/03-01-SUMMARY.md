@@ -10,19 +10,28 @@ provides:
   - Shared typed app-stack route constants and param list for audited navigation seams
   - Typed Home screen launch map for audited game cards and settings access
   - Regression coverage that surfaces route-contract drift before runtime
-affects: [phase-03-02, phase-04-release-confidence-and-regression-guardrails, home-screen, app-shell]
+affects:
+  [phase-03-02, phase-04-release-confidence-and-regression-guardrails, home-screen, app-shell]
 tech-stack:
   added: []
   patterns: [shared navigation contract, typed route-name guards, route-contract regression tests]
 key-files:
   created: [src/types/navigation.ts, src/types/navigation.test.ts]
-  modified: [App.tsx, App.test.tsx, src/screens/HomeScreen.tsx, src/screens/HomeScreen.test.tsx, src/components/GentleErrorBoundary.tsx, src/components/GentleErrorBoundary.test.tsx]
+  modified:
+    [
+      App.tsx,
+      App.test.tsx,
+      src/screens/HomeScreen.tsx,
+      src/screens/HomeScreen.test.tsx,
+      src/components/GentleErrorBoundary.tsx,
+      src/components/GentleErrorBoundary.test.tsx,
+    ]
 key-decisions:
-  - "Kept the existing stack structure and user flow, but moved audited route names into src/types/navigation.ts as the single source of truth."
-  - "Guarded analytics route tracking with isAppRouteName so only known app routes can be reported from navigation state changes."
+  - 'Kept the existing stack structure and user flow, but moved audited route names into src/types/navigation.ts as the single source of truth.'
+  - 'Guarded analytics route tracking with isAppRouteName so only known app routes can be reported from navigation state changes.'
 patterns-established:
-  - "Audited navigation seams should import APP_ROUTES and AppStackParamList instead of hard-coded route strings or as never casts."
-  - "Route hardening tests can combine behavioral navigation assertions with focused contract checks in src/types/navigation.test.ts."
+  - 'Audited navigation seams should import APP_ROUTES and AppStackParamList instead of hard-coded route strings or as never casts.'
+  - 'Route hardening tests can combine behavioral navigation assertions with focused contract checks in src/types/navigation.test.ts.'
 requirements-completed: [STAB-01]
 duration: 4min
 completed: 2026-03-17
@@ -41,6 +50,7 @@ completed: 2026-03-17
 - **Files modified:** 8
 
 ## Accomplishments
+
 - Added a shared `AppStackParamList`, `APP_ROUTES`, and `HOME_GAME_ROUTES` contract in `src/types/navigation.ts`.
 - Typed the audited navigator, Home launches, settings entry, and error-boundary recovery path against shared route names.
 - Added Jest coverage that catches route-contract drift in the navigation contract, app shell, Home screen, and error-boundary fallback.
@@ -57,6 +67,7 @@ Each task was committed atomically:
 **Plan metadata:** Pending final docs commit at summary creation time.
 
 ## Files Created/Modified
+
 - `src/types/navigation.ts` - Shared app stack param list, route constants, home game route map, and route-name guard.
 - `src/types/navigation.test.ts` - Regression coverage for stack route constants and the shared home launch map.
 - `App.tsx` - Typed stack registration and analytics route tracking limited to known app route names.
@@ -67,6 +78,7 @@ Each task was committed atomically:
 - `src/components/GentleErrorBoundary.test.tsx` - Fallback recovery regression coverage using shared route constants.
 
 ## Decisions Made
+
 - Centralized the audited app route contract in `src/types/navigation.ts` instead of spreading route strings across the app shell, Home screen, and error boundary.
 - Used `isAppRouteName` in `App.tsx` so analytics only tracks routes that satisfy the shared app contract, preserving current flow while making drift explicit.
 
@@ -75,6 +87,7 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 ## Issues Encountered
+
 - `npm run typecheck` is still blocked by unrelated pre-existing test typing errors in `src/components/GlitterGlobe.test.tsx` and `src/screens/BreathingGardenScreen.test.tsx`. Per scope rules, these were logged to `deferred-items.md` instead of being fixed during plan 03-01.
 
 ## User Setup Required
@@ -82,12 +95,15 @@ None - plan executed exactly as written.
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Phase 3 now has a shared typed navigation contract that later stability and regression work can reuse without adding another route helper layer.
 - Audited route drift in the app shell, Home screen, and error boundary is now visible in Jest before runtime, reducing risk for later routed-surface changes.
 
 ## Self-Check
+
 PASSED
 
 ---
-*Phase: 03-stable-navigation-and-responsive-surfaces*
-*Completed: 2026-03-17*
+
+_Phase: 03-stable-navigation-and-responsive-surfaces_
+_Completed: 2026-03-17_

@@ -15,6 +15,7 @@ Children can access calm, predictable, pressure-free play that parents and careg
 **Status:** Complete as of 2026-03-18
 
 **Target features:**
+
 - Parent-controlled telemetry consent and safer observability defaults
 - Fixes for known gameplay and release-tooling bugs
 - Runtime hardening for navigation, startup orchestration, timers, and hook-driven state flow
@@ -56,11 +57,12 @@ The current app already ships a broad gentle-play experience, including multiple
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| Start formal GSD planning at milestone `v1.1` | The app is already shipped, but this repository had no prior `PROJECT.md`/`ROADMAP.md` planning scaffold | — Pending |
-| Scope milestone `v1.1` to everything in `.planning/codebase/CONCERNS.md` | User explicitly chose the full concerns inventory rather than a narrower slice | — Pending |
-| Skip external ecosystem research for this milestone | The concern inventory is codebase-specific and already detailed enough to define requirements directly | — Pending |
+| Decision                                                                 | Rationale                                                                                                | Outcome   |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- | --------- |
+| Start formal GSD planning at milestone `v1.1`                            | The app is already shipped, but this repository had no prior `PROJECT.md`/`ROADMAP.md` planning scaffold | — Pending |
+| Scope milestone `v1.1` to everything in `.planning/codebase/CONCERNS.md` | User explicitly chose the full concerns inventory rather than a narrower slice                           | — Pending |
+| Skip external ecosystem research for this milestone                      | The concern inventory is codebase-specific and already detailed enough to define requirements directly   | — Pending |
 
 ---
-*Last updated: 2026-03-18 after milestone v1.1 completion*
+
+_Last updated: 2026-03-18 after milestone v1.1 completion_

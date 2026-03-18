@@ -36,13 +36,13 @@ key-files:
     - src/components/GentleErrorBoundary.test.tsx
 
 key-decisions:
-  - "Observability now reconciles only after SettingsContext finishes loading so cold starts honor persisted consent."
-  - "PostHog uses defaultOptIn=false plus explicit optIn/optOut to keep telemetry off until consent is granted in-session."
-  - "Sentry strips free-form messages, extra data, and component stacks while preserving only allowlisted tags and the anonymous install ID."
+  - 'Observability now reconciles only after SettingsContext finishes loading so cold starts honor persisted consent.'
+  - 'PostHog uses defaultOptIn=false plus explicit optIn/optOut to keep telemetry off until consent is granted in-session.'
+  - 'Sentry strips free-form messages, extra data, and component stacks while preserving only allowlisted tags and the anonymous install ID.'
 
 patterns-established:
-  - "Bootstrap pattern: app-level side effects that depend on persisted settings run from a provider-backed AppContent component."
-  - "Telemetry pattern: wrappers sanitize allowlisted flat diagnostic fields before forwarding data to analytics or crash reporting."
+  - 'Bootstrap pattern: app-level side effects that depend on persisted settings run from a provider-backed AppContent component.'
+  - 'Telemetry pattern: wrappers sanitize allowlisted flat diagnostic fields before forwarding data to analytics or crash reporting.'
 
 requirements-completed: [PRIV-02, PRIV-03, STAB-02]
 
@@ -64,6 +64,7 @@ completed: 2026-03-17
 - **Files modified:** 10
 
 ## Accomplishments
+
 - Moved observability startup out of module-load side effects and into a single post-settings bootstrap path in `App.tsx`.
 - Added consent-aware analytics and Sentry wrappers that opt in/out explicitly and only forward allowlisted diagnostic fields.
 - Routed `GentleErrorBoundary` crash reporting through the shared Sentry helper so raw component stacks and ad hoc error text are not forwarded.
@@ -80,6 +81,7 @@ Each task was committed atomically:
 _Note: TDD tasks used RED → GREEN commits._
 
 ## Files Created/Modified
+
 - `App.tsx` - Exports provider-backed `AppContent` and defers observability reconciliation until settings loading completes.
 - `App.test.tsx` - Verifies settings-gated startup, telemetry-off shell rendering, and non-blocking bootstrap failure handling.
 - `src/utils/observabilityBootstrap.ts` - Centralizes consent-aware reconciliation across analytics and Sentry.
@@ -92,6 +94,7 @@ _Note: TDD tasks used RED → GREEN commits._
 - `src/components/GentleErrorBoundary.test.tsx` - Verifies wrapper-based reporting and fallback rendering.
 
 ## Decisions Made
+
 - Used a provider-backed `AppContent` component so settings-dependent startup work stays centralized and runs only after `SettingsContext` resolves.
 - Preserved the existing public `initAnalytics` and `initSentry` entry points while adding explicit consent reconciliation helpers for future in-session toggles.
 - Filtered telemetry by allowlisted keys instead of regex scrubbing so only known diagnostic fields survive across analytics, breadcrumbs, and crash events.
@@ -101,6 +104,7 @@ _Note: TDD tasks used RED → GREEN commits._
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] Replaced dynamic analytics import in Sentry consent setup**
+
 - **Found during:** Task 2 (Enforce consent-aware allowlists in analytics, Sentry, and error-boundary capture)
 - **Issue:** Jest could not execute the `import('./analytics')` callback used during Sentry initialization, which blocked task verification.
 - **Fix:** Switched the analytics bridge in `sentry.ts` to a typed `require(...)` call so test and runtime environments can share the same anonymous install ID flow.
@@ -109,6 +113,7 @@ _Note: TDD tasks used RED → GREEN commits._
 - **Committed in:** `9207ffb`
 
 **2. [Rule 3 - Blocking] Tightened sanitized payload helpers to satisfy strict TypeScript checks**
+
 - **Found during:** Task 2 (Enforce consent-aware allowlists in analytics, Sentry, and error-boundary capture)
 - **Issue:** `Object.fromEntries(...)` widened filtered telemetry values back to `unknown`/`undefined`, causing `npm run typecheck` to fail.
 - **Fix:** Rewrote analytics and Sentry allowlist reducers to build typed records directly and narrowed `beforeSend` to `Sentry.ErrorEvent`.
@@ -122,6 +127,7 @@ _Note: TDD tasks used RED → GREEN commits._
 **Impact on plan:** Both fixes were verification blockers in the planned work. They preserved scope and were required to complete the consent-aware wrappers safely.
 
 ## Issues Encountered
+
 - Existing Jest module rules rejected JSX mocks that captured `Text` from outer scope in `App.test.tsx`; the test was adjusted to lazy-require `react-native` within mocks during the RED step.
 
 ## User Setup Required
@@ -129,10 +135,12 @@ _Note: TDD tasks used RED → GREEN commits._
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Privacy-safe observability startup is ready for later regression coverage in Phase 4.
 - The remaining Phase 1 work can assume telemetry consent is already persisted and reconciled centrally.
 
 ## Self-Check: PASSED
+
 - Found `.planning/phases/01-privacy-safe-bootstrap/01-03-SUMMARY.md`
 - Found commit `c26c38a`
 - Found commit `34c55a9`
@@ -140,5 +148,6 @@ None - no external service configuration required.
 - Found commit `9207ffb`
 
 ---
-*Phase: 01-privacy-safe-bootstrap*
-*Completed: 2026-03-17*
+
+_Phase: 01-privacy-safe-bootstrap_
+_Completed: 2026-03-17_

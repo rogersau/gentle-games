@@ -48,11 +48,7 @@ export const resolveBalloonPalette = (colors: ThemeColors, _resolvedMode?: strin
  * fall back to picking any value (allowing duplicates when the palette is
  * smaller than the number of balloons).
  */
-const pickBalloonColor = (
-  palette: string[],
-  used: string[],
-  rng: () => number
-): string => {
+const pickBalloonColor = (palette: string[], used: string[], rng: () => number): string => {
   const available = palette.filter((c) => !used.includes(c));
   const source = available.length > 0 ? available : palette;
   return source[Math.floor(rng() * source.length)];
@@ -71,14 +67,9 @@ export interface CreateBalloonOptions {
 
 export const createBalloon = (
   bounds: KeepyUppyBounds,
-  options: CreateBalloonOptions = {}
+  options: CreateBalloonOptions = {},
 ): KeepyUppyBalloon => {
-  const {
-    colors = PASTEL_COLORS,
-    rng = Math.random,
-    overrideColor,
-    resolvedMode,
-  } = options;
+  const { colors = PASTEL_COLORS, rng = Math.random, overrideColor, resolvedMode } = options;
   const radius = BALLOON_RADIUS;
   const palette = resolveBalloonPalette(colors, resolvedMode);
   const color = overrideColor ?? pickBalloonColor(palette, [], rng);
@@ -104,7 +95,7 @@ export interface AddBalloonOptions {
 export const addBalloon = (
   balloons: KeepyUppyBalloon[],
   bounds: KeepyUppyBounds,
-  options: AddBalloonOptions = {}
+  options: AddBalloonOptions = {},
 ): KeepyUppyBalloon[] => {
   const { colors = PASTEL_COLORS, rng = Math.random, resolvedMode } = options;
   if (balloons.length >= MAX_BALLOONS) {
@@ -121,7 +112,7 @@ export const tapBalloon = (
   balloon: KeepyUppyBalloon,
   tapX: number,
   tapY: number,
-  easyMode = false
+  easyMode = false,
 ): KeepyUppyBalloon => {
   const dx = balloon.x - tapX;
   const dy = balloon.y - tapY;
@@ -142,7 +133,7 @@ export const flickBalloon = (
   balloon: KeepyUppyBalloon,
   deltaX: number,
   deltaY: number,
-  durationMs: number
+  durationMs: number,
 ): KeepyUppyBalloon => {
   const safeDurationMs = Math.max(60, durationMs);
   const velocityScale = 1000 / safeDurationMs;
@@ -205,7 +196,7 @@ export const stepBalloons = (
   balloons: KeepyUppyBalloon[],
   bounds: KeepyUppyBounds,
   deltaSeconds: number,
-  nowMs: number
+  nowMs: number,
 ): { balloons: KeepyUppyBalloon[]; popped: number } => {
   const safeDelta = clamp(deltaSeconds, 0, 1 / 24);
   const floorY = bounds.height - BALLOON_RADIUS;
@@ -248,7 +239,9 @@ export const stepBalloons = (
         groundedAt,
       };
     })
-    .filter((balloon) => balloon.groundedAt === null || nowMs - balloon.groundedAt < GROUND_POP_DELAY_MS);
+    .filter(
+      (balloon) => balloon.groundedAt === null || nowMs - balloon.groundedAt < GROUND_POP_DELAY_MS,
+    );
 
   const popped = balloons.length - moved.length;
   return { balloons: resolveBalloonCollisions(moved), popped };

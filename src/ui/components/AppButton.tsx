@@ -42,7 +42,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
   const { scale, onPressIn, onPressOut } = useScalePress();
   const styles = useMemo(
     () => createStyles(colors, resolvedMode, variant, size),
-    [colors, resolvedMode, variant, size]
+    [colors, resolvedMode, variant, size],
   );
 
   return (
@@ -57,7 +57,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
         hitSlop={BUTTON_TOUCH_SLOP}
         pressRetentionOffset={BUTTON_PRESS_RETENTION}
         accessibilityLabel={accessibilityLabel ?? label}
-        accessibilityRole="button"
+        accessibilityRole='button'
         accessibilityHint={accessibilityHint}
         accessibilityState={{ disabled }}
         testID={testID}
@@ -71,14 +71,18 @@ export const AppButton: React.FC<AppButtonProps> = ({
 const sizeMap = {
   sm: { paddingVertical: Space.base, paddingHorizontal: Space.base, minHeight: HitTarget.min - 4 },
   md: { paddingVertical: Space.md, paddingHorizontal: Space.xl, minHeight: HitTarget.min },
-  lg: { paddingVertical: Space.base, paddingHorizontal: Space['2xl'], minHeight: HitTarget.min + 8 },
+  lg: {
+    paddingVertical: Space.base,
+    paddingHorizontal: Space['2xl'],
+    minHeight: HitTarget.min + 8,
+  },
 };
 
 const createStyles = (
   colors: ThemeColors,
   resolvedMode: ResolvedThemeMode,
   variant: ButtonVariant,
-  size: ButtonSize
+  size: ButtonSize,
 ) => {
   const sizeValues = sizeMap[size];
 

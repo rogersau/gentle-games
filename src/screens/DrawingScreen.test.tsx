@@ -34,15 +34,17 @@ jest.mock('../components/DrawingCanvas', () => {
   const { View } = require('react-native');
 
   return {
-    DrawingCanvas: React.forwardRef((props: Record<string, unknown>, ref: React.ForwardedRef<unknown>) => {
-      React.useImperativeHandle(ref, () => ({
-        clear: mockClearCanvas,
-        getHistory: () => mockCanvasHistory,
-      }));
+    DrawingCanvas: React.forwardRef(
+      (props: Record<string, unknown>, ref: React.ForwardedRef<unknown>) => {
+        React.useImperativeHandle(ref, () => ({
+          clear: mockClearCanvas,
+          getHistory: () => mockCanvasHistory,
+        }));
 
-      mockDrawingCanvas(props);
-      return React.createElement(View, { testID: 'drawing-canvas' });
-    }),
+        mockDrawingCanvas(props);
+        return React.createElement(View, { testID: 'drawing-canvas' });
+      },
+    ),
   };
 });
 
@@ -70,7 +72,8 @@ jest.mock('react-native-safe-area-context', () => {
   const { View } = require('react-native');
 
   return {
-    SafeAreaView: ({ children }: { children: React.ReactNode }) => React.createElement(View, null, children),
+    SafeAreaView: ({ children }: { children: React.ReactNode }) =>
+      React.createElement(View, null, children),
     useSafeAreaInsets: () => mockInsets,
   };
 });
@@ -83,8 +86,12 @@ import {
   DRAWING_SAVE_DEBOUNCE_MS,
 } from './DrawingScreen';
 
-const historyA = [{ kind: 'shape', id: 'shape-a', type: 'circle', x: 10, y: 20, size: 20, color: '#000', width: 5 }];
-const historyB = [{ kind: 'shape', id: 'shape-b', type: 'square', x: 30, y: 40, size: 24, color: '#f00', width: 5 }];
+const historyA = [
+  { kind: 'shape', id: 'shape-a', type: 'circle', x: 10, y: 20, size: 20, color: '#000', width: 5 },
+];
+const historyB = [
+  { kind: 'shape', id: 'shape-b', type: 'square', x: 30, y: 40, size: 24, color: '#f00', width: 5 },
+];
 
 const getLatestCanvasProps = () =>
   mockDrawingCanvas.mock.calls[mockDrawingCanvas.mock.calls.length - 1][0] as {
@@ -127,7 +134,12 @@ describe('DrawingScreen', () => {
     const screenHeight = Dimensions.get('window').height;
     const expectedRemainingHeight = Math.max(
       0,
-      screenHeight - 500 - 500 - DRAWING_HEADER_HEIGHT - DRAWING_TOOLBAR_HEIGHT - DRAWING_LAYOUT_PADDING
+      screenHeight -
+        500 -
+        500 -
+        DRAWING_HEADER_HEIGHT -
+        DRAWING_TOOLBAR_HEIGHT -
+        DRAWING_LAYOUT_PADDING,
     );
 
     expect(latestProps.height).toBe(expectedRemainingHeight);
@@ -148,7 +160,12 @@ describe('DrawingScreen', () => {
     const screenHeight = Dimensions.get('window').height;
     const expectedRemainingHeight = Math.max(
       0,
-      screenHeight - 44 - 34 - DRAWING_HEADER_HEIGHT - DRAWING_TOOLBAR_HEIGHT - DRAWING_LAYOUT_PADDING
+      screenHeight -
+        44 -
+        34 -
+        DRAWING_HEADER_HEIGHT -
+        DRAWING_TOOLBAR_HEIGHT -
+        DRAWING_LAYOUT_PADDING,
     );
 
     expect(latestProps.height).toBe(expectedRemainingHeight);
@@ -285,7 +302,7 @@ describe('DrawingScreen', () => {
     expect(AsyncStorage.setItem).toHaveBeenCalledTimes(1);
     expect(AsyncStorage.setItem).toHaveBeenCalledWith(
       '@gentle_match_saved_drawing',
-      JSON.stringify(historyB)
+      JSON.stringify(historyB),
     );
   });
 
@@ -315,11 +332,11 @@ describe('DrawingScreen', () => {
 
     expect(AsyncStorage.setItem).toHaveBeenCalledWith(
       '@gentle_match_saved_drawing',
-      JSON.stringify(historyB)
+      JSON.stringify(historyB),
     );
     expect(mockGoBack).toHaveBeenCalled();
     expect((AsyncStorage.setItem as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(
-      mockGoBack.mock.invocationCallOrder[0]
+      mockGoBack.mock.invocationCallOrder[0],
     );
   });
 
@@ -352,11 +369,11 @@ describe('DrawingScreen', () => {
     expect(preventDefault).toHaveBeenCalled();
     expect(AsyncStorage.setItem).toHaveBeenCalledWith(
       '@gentle_match_saved_drawing',
-      JSON.stringify(historyB)
+      JSON.stringify(historyB),
     );
     expect(mockDispatch).toHaveBeenCalledWith(action);
     expect((AsyncStorage.setItem as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(
-      mockDispatch.mock.invocationCallOrder[0]
+      mockDispatch.mock.invocationCallOrder[0],
     );
   });
 

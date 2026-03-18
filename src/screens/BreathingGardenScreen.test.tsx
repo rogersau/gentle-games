@@ -2,10 +2,7 @@ import React from 'react';
 import { Animated } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { BreathingGardenScreen } from './BreathingGardenScreen';
-import {
-  assertNoInfiniteLoops,
-  createInfiniteLoopSpy,
-} from '../test-utils/infiniteLoopDetection';
+import { assertNoInfiniteLoops, createInfiniteLoopSpy } from '../test-utils/infiniteLoopDetection';
 
 const mockGoBack = jest.fn();
 const mockToggleMusic = jest.fn();
@@ -81,13 +78,13 @@ jest.mock('../components/BreathingBall', () => ({
     const { Pressable, Text, View } = require('react-native');
 
     return (
-      <View testID="breathing-ball">
+      <View testID='breathing-ball'>
         <Text>Color: {colorScheme?.name || 'Default'}</Text>
-        <Pressable testID="phase-inhale" onPress={() => onPhaseChange?.('inhale')} />
-        <Pressable testID="phase-exhale" onPress={() => onPhaseChange?.('exhale')} />
-        <Pressable testID="progress-25" onPress={() => onProgress?.(0.25)} />
-        <Pressable testID="progress-75" onPress={() => onProgress?.(0.75)} />
-        <Pressable testID="cycle-3" onPress={() => onCycleComplete?.(3)} />
+        <Pressable testID='phase-inhale' onPress={() => onPhaseChange?.('inhale')} />
+        <Pressable testID='phase-exhale' onPress={() => onPhaseChange?.('exhale')} />
+        <Pressable testID='progress-25' onPress={() => onProgress?.(0.25)} />
+        <Pressable testID='progress-75' onPress={() => onProgress?.(0.75)} />
+        <Pressable testID='cycle-3' onPress={() => onCycleComplete?.(3)} />
       </View>
     );
   },
@@ -102,21 +99,22 @@ describe('BreathingGardenScreen', () => {
     mockSettings.animationsEnabled = true;
     queuedAnimations.length = 0;
     consoleErrorSpy = createInfiniteLoopSpy();
-    animatedTimingSpy = jest
-      .spyOn(Animated, 'timing')
-      .mockImplementation((value: Animated.Value | Animated.ValueXY, config: Animated.TimingAnimationConfig) => ({
-        start: (callback?: Animated.EndCallback) => {
-          queuedAnimations.push({
-            toValue: typeof config.toValue === 'number' ? config.toValue : 0,
-            run: () => callback?.({ finished: true }),
-          });
-          return value;
-        },
-        stop: jest.fn(),
-        reset: jest.fn(),
-        _startNativeLoop: jest.fn(),
-        _isUsingNativeDriver: () => config.useNativeDriver ?? false,
-      }) as unknown as Animated.CompositeAnimation);
+    animatedTimingSpy = jest.spyOn(Animated, 'timing').mockImplementation(
+      (value: Animated.Value | Animated.ValueXY, config: Animated.TimingAnimationConfig) =>
+        ({
+          start: (callback?: Animated.EndCallback) => {
+            queuedAnimations.push({
+              toValue: typeof config.toValue === 'number' ? config.toValue : 0,
+              run: () => callback?.({ finished: true }),
+            });
+            return value;
+          },
+          stop: jest.fn(),
+          reset: jest.fn(),
+          _startNativeLoop: jest.fn(),
+          _isUsingNativeDriver: () => config.useNativeDriver ?? false,
+        }) as unknown as Animated.CompositeAnimation,
+    );
   });
 
   afterEach(() => {

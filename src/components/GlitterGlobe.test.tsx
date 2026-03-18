@@ -55,19 +55,17 @@ describe('GlitterGlobe', () => {
   let nextFrameId = 0;
 
   const getWakeRipples = (screen: ReturnType<typeof render>) =>
-    screen.UNSAFE_root
-      .findAllByType(Circle)
-      .filter((node: any) => node.props.fill === 'none' && node.props.strokeWidth === 1.5);
+    screen.UNSAFE_root.findAllByType(Circle).filter(
+      (node: any) => node.props.fill === 'none' && node.props.strokeWidth === 1.5,
+    );
 
   const getParticleNodes = (screen: ReturnType<typeof render>) => [
-    ...screen.UNSAFE_root
-      .findAllByType(Circle)
-      .filter(
-        (node: any) =>
-          node.props.fill !== 'none' &&
-          node.props.fill !== 'url(#globeFill)' &&
-          node.props.strokeWidth !== 3
-      ),
+    ...screen.UNSAFE_root.findAllByType(Circle).filter(
+      (node: any) =>
+        node.props.fill !== 'none' &&
+        node.props.fill !== 'url(#globeFill)' &&
+        node.props.strokeWidth !== 3,
+    ),
     ...screen.UNSAFE_root.findAllByType(Rect),
     ...screen.UNSAFE_root.findAllByType(Polygon),
   ];
@@ -92,7 +90,7 @@ describe('GlitterGlobe', () => {
     mockAddListener.mockReturnValue({ remove: jest.fn() });
     jest
       .spyOn(PanResponder, 'create')
-      .mockImplementation((handlers: any) => ({ panHandlers: handlers } as any));
+      .mockImplementation((handlers: any) => ({ panHandlers: handlers }) as any);
   });
 
   afterEach(() => {
@@ -142,11 +140,13 @@ describe('GlitterGlobe', () => {
 
     expect(getParticleNodes(screen)).toHaveLength(2);
 
-    const touchLayer = screen.UNSAFE_getAllByType(View).find(
-      (node) =>
-        typeof node.props.onPanResponderGrant === 'function' &&
-        typeof node.props.onPanResponderMove === 'function'
-    );
+    const touchLayer = screen
+      .UNSAFE_getAllByType(View)
+      .find(
+        (node) =>
+          typeof node.props.onPanResponderGrant === 'function' &&
+          typeof node.props.onPanResponderMove === 'function',
+      );
 
     act(() => {
       touchLayer?.props.onPanResponderGrant({
@@ -180,14 +180,7 @@ describe('GlitterGlobe', () => {
 });
 
 describe('resolveParticleCollisions', () => {
-  const makeParticle = (
-    id: number,
-    x: number,
-    y: number,
-    vx: number,
-    vy: number,
-    radius = 5
-  ) => ({
+  const makeParticle = (id: number, x: number, y: number, vx: number, vy: number, radius = 5) => ({
     id,
     x,
     y,

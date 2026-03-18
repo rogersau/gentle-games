@@ -93,9 +93,15 @@ const sanitizeSettings = (candidate: unknown): Settings => {
     colorMode: toColorMode(parsed.colorMode, defaultSettings.colorMode),
     hiddenGames: toHiddenGames(parsed.hiddenGames),
     parentTimerMinutes: toParentTimerMinutes(parsed.parentTimerMinutes),
-    enableUnfinishedGames: toBoolean(parsed.enableUnfinishedGames, defaultSettings.enableUnfinishedGames),
+    enableUnfinishedGames: toBoolean(
+      parsed.enableUnfinishedGames,
+      defaultSettings.enableUnfinishedGames,
+    ),
     language: toLanguage(parsed.language),
-    reducedMotionEnabled: toBoolean(parsed.reducedMotionEnabled, defaultSettings.reducedMotionEnabled),
+    reducedMotionEnabled: toBoolean(
+      parsed.reducedMotionEnabled,
+      defaultSettings.reducedMotionEnabled,
+    ),
     telemetryEnabled: toBoolean(parsed.telemetryEnabled, defaultSettings.telemetryEnabled),
   };
 };

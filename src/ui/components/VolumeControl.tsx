@@ -34,13 +34,17 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
   };
 
   return (
-    <View style={styles.container} accessibilityRole="adjustable" accessibilityLabel={`Volume ${Math.round(value * 100)}%`}>
+    <View
+      style={styles.container}
+      accessibilityRole='adjustable'
+      accessibilityLabel={`Volume ${Math.round(value * 100)}%`}
+    >
       <TouchableOpacity
         style={styles.button}
         onPress={decrease}
         disabled={value <= 0}
-        accessibilityLabel={t('settings.volume.decrease') }
-        accessibilityRole="button"
+        accessibilityLabel={t('settings.volume.decrease')}
+        accessibilityRole='button'
       >
         <Text style={[styles.buttonText, value <= 0 && styles.buttonTextDisabled]}>−</Text>
       </TouchableOpacity>
@@ -60,8 +64,8 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
         style={styles.button}
         onPress={increase}
         disabled={value >= 1}
-        accessibilityLabel={t('settings.volume.increase') }
-        accessibilityRole="button"
+        accessibilityLabel={t('settings.volume.increase')}
+        accessibilityRole='button'
       >
         <Text style={[styles.buttonText, value >= 1 && styles.buttonTextDisabled]}>+</Text>
       </TouchableOpacity>

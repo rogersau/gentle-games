@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, StyleSheet, Text, useWindowDimensions } from 'react-native';
 import { ThemeColors, Tile as TileType } from '../types';
-import { generateTiles, checkMatch, checkGameComplete, formatTime, calculateGridDimensions } from '../utils/gameLogic';
+import {
+  generateTiles,
+  checkMatch,
+  checkGameComplete,
+  formatTime,
+  calculateGridDimensions,
+} from '../utils/gameLogic';
 import { playFlipSound, playMatchSound, playCompleteSound } from '../utils/sounds';
 import { Tile } from './Tile';
 import { useSettings } from '../context/SettingsContext';
@@ -20,7 +26,14 @@ interface GameBoardProps {
   onGameStart?: () => void;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPress, bottomInset = 0, renderStats, onPositiveEvent, onGameStart }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({
+  onGameComplete,
+  onBackPress,
+  bottomInset = 0,
+  renderStats,
+  onPositiveEvent,
+  onGameStart,
+}) => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const { settings } = useSettings();
   const { colors, resolvedMode } = useThemeColors();
@@ -80,7 +93,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
     setCurrentTime(Date.now());
 
     if (settings.showCardPreview) {
-      setTiles(newTiles.map(tile => ({ ...tile, isFlipped: true })));
+      setTiles(newTiles.map((tile) => ({ ...tile, isFlipped: true })));
       setIsPreviewPhase(true);
       queueTimeout(() => {
         setTiles(newTiles);
@@ -90,7 +103,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
       setTiles(newTiles);
       setIsPreviewPhase(false);
     }
-  }, [clearAllTimeouts, queueTimeout, settings.difficulty, settings.showCardPreview, settings.theme]);
+  }, [
+    clearAllTimeouts,
+    queueTimeout,
+    settings.difficulty,
+    settings.showCardPreview,
+    settings.theme,
+  ]);
 
   useEffect(() => {
     startNewGame();
@@ -102,93 +121,107 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
     };
   }, [clearAllTimeouts]);
 
-  const handleTilePress = useCallback(async (tileId: string) => {
-    if (isPreviewPhase || isProcessing || selectedTiles.length >= 2) return;
-    if (selectedTiles.includes(tileId)) return;
+  const handleTilePress = useCallback(
+    async (tileId: string) => {
+      if (isPreviewPhase || isProcessing || selectedTiles.length >= 2) return;
+      if (selectedTiles.includes(tileId)) return;
 
-    await playFlipSound(settings);
+      await playFlipSound(settings);
 
-    // Start timer on first flip
-    if (!startTime) {
-      const now = Date.now();
-      setStartTime(now);
-      setCurrentTime(now); // Ensure currentTime is synchronized to prevent negative timer
-      onGameStart?.();
-    }
+      // Start timer on first flip
+      if (!startTime) {
+        const now = Date.now();
+        setStartTime(now);
+        setCurrentTime(now); // Ensure currentTime is synchronized to prevent negative timer
+        onGameStart?.();
+      }
 
-    const newSelected = [...selectedTiles, tileId];
-    setSelectedTiles(newSelected);
+      const newSelected = [...selectedTiles, tileId];
+      setSelectedTiles(newSelected);
 
-    setTiles(prev =>
-      prev.map(tile =>
-        tile.id === tileId ? { ...tile, isFlipped: true } : tile
-      )
-    );
+      setTiles((prev) =>
+        prev.map((tile) => (tile.id === tileId ? { ...tile, isFlipped: true } : tile)),
+      );
 
-    if (newSelected.length === 2) {
-      setIsProcessing(true);
-      setMoves(prev => prev + 1);
+      if (newSelected.length === 2) {
+        setIsProcessing(true);
+        setMoves((prev) => prev + 1);
 
-      // Use functional updater to read latest tiles, avoiding stale closure
-      setTiles(prev => {
-        const isMatch = checkMatch(prev, newSelected);
+        // Use functional updater to read latest tiles, avoiding stale closure
+        setTiles((prev) => {
+          const isMatch = checkMatch(prev, newSelected);
 
-        if (isMatch) {
-          playMatchSound(settings);
-          onPositiveEvent?.();
+          if (isMatch) {
+            playMatchSound(settings);
+            onPositiveEvent?.();
 
-          const updatedTiles = prev.map(tile =>
-            newSelected.includes(tile.id) ? { ...tile, isMatched: true } : tile
-          );
-
-          queueTimeout(() => {
-            setTiles(updatedTiles);
-            setSelectedTiles([]);
-            setIsProcessing(false);
-
-            if (checkGameComplete(updatedTiles)) {
-              const end = Date.now();
-              setEndTime(end);
-              setIsGameComplete(true);
-              playCompleteSound(settings);
-              setStartTime(st => {
-                onGameComplete(end - (st || end));
-                return st;
-              });
-            }
-          }, 500);
-        } else {
-          queueTimeout(() => {
-            setTiles(p =>
-              p.map(tile =>
-                newSelected.includes(tile.id) ? { ...tile, isFlipped: false } : tile
-              )
+            const updatedTiles = prev.map((tile) =>
+              newSelected.includes(tile.id) ? { ...tile, isMatched: true } : tile,
             );
-            setSelectedTiles([]);
-            setIsProcessing(false);
-          }, 1000);
-        }
 
-        // Return prev unchanged here — the real update happens in the setTimeout
-        return prev;
-      });
-    }
-  }, [selectedTiles, isProcessing, isPreviewPhase, settings, startTime, onGameComplete, onPositiveEvent, queueTimeout]);
+            queueTimeout(() => {
+              setTiles(updatedTiles);
+              setSelectedTiles([]);
+              setIsProcessing(false);
 
-  const elapsed = endTime
-    ? endTime - (startTime || 0)
-    : startTime
-    ? currentTime - startTime
-    : 0;
+              if (checkGameComplete(updatedTiles)) {
+                const end = Date.now();
+                setEndTime(end);
+                setIsGameComplete(true);
+                playCompleteSound(settings);
+                setStartTime((st) => {
+                  onGameComplete(end - (st || end));
+                  return st;
+                });
+              }
+            }, 500);
+          } else {
+            queueTimeout(() => {
+              setTiles((p) =>
+                p.map((tile) =>
+                  newSelected.includes(tile.id) ? { ...tile, isFlipped: false } : tile,
+                ),
+              );
+              setSelectedTiles([]);
+              setIsProcessing(false);
+            }, 1000);
+          }
+
+          // Return prev unchanged here — the real update happens in the setTimeout
+          return prev;
+        });
+      }
+    },
+    [
+      selectedTiles,
+      isProcessing,
+      isPreviewPhase,
+      settings,
+      startTime,
+      onGameComplete,
+      onPositiveEvent,
+      queueTimeout,
+    ],
+  );
+
+  const elapsed = endTime ? endTime - (startTime || 0) : startTime ? currentTime - startTime : 0;
 
   const timeString = startTime ? formatTime(elapsed) : '—';
 
   const defaultRenderStats = ({ time, moves }: { time: string; moves: number }) => (
     <View style={styles.headerInfo}>
-      <Text style={styles.timerText} accessibilityLabel={startTime ? t('games.memorySnap.timeLabel', { time }) : t('common.timerNotStarted')}>
+      <Text
+        style={styles.timerText}
+        accessibilityLabel={
+          startTime ? t('games.memorySnap.timeLabel', { time }) : t('common.timerNotStarted')
+        }
+      >
         {time}
       </Text>
-      <Text style={styles.movesText} accessibilityLabel={t('games.memorySnap.moves', { count: moves })}>
+      <Text
+        style={styles.movesText}
+        accessibilityLabel={t('games.memorySnap.moves', { count: moves })}
+      >
         {t('games.memorySnap.moves', { count: moves })}
       </Text>
     </View>
@@ -196,11 +229,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
 
   return (
     <View style={styles.container}>
-      {(renderStats ?? defaultRenderStats)({ time: timeString, moves })}  
+      {(renderStats ?? defaultRenderStats)({ time: timeString, moves })}
 
       <View style={styles.inner}>
         <View
-          testID="memory-board"
+          testID='memory-board'
           style={[
             styles.board,
             {
@@ -209,7 +242,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
             },
           ]}
         >
-          {tiles.map(tile => (
+          {tiles.map((tile) => (
             <Tile
               key={tile.id}
               tile={tile}
@@ -221,25 +254,25 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
 
         <AppModal
           visible={isGameComplete}
-          title="Well Done! 🎉"
+          title='Well Done! 🎉'
           onClose={() => undefined}
           showClose={false}
           dismissOnBackdropPress={false}
         >
-          <Text style={styles.completeText} accessibilityRole="text">
+          <Text style={styles.completeText} accessibilityRole='text'>
             You finished in {formatTime(elapsed)}!
           </Text>
           <View style={styles.buttonRow}>
             <AppButton
               label={t('games.memorySnap.goHome')}
-              variant="secondary"
+              variant='secondary'
               onPress={() => onBackPress?.()}
               accessibilityHint={t('games.memorySnap.goHomeHint')}
             />
             <View style={{ width: Space.md }} />
             <AppButton
               label={t('games.memorySnap.playAgain')}
-              variant="primary"
+              variant='primary'
               onPress={startNewGame}
               accessibilityHint={t('games.memorySnap.playAgainHint')}
             />

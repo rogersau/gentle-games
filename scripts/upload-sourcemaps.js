@@ -42,18 +42,20 @@ const PLATFORM_CONFIG = {
 };
 
 function checkEnvironment() {
-  const missing = REQUIRED_ENV_VARS.filter(varName => !process.env[varName]);
+  const missing = REQUIRED_ENV_VARS.filter((varName) => !process.env[varName]);
 
   if (missing.length > 0) {
     console.error('❌ Missing required environment variables:');
-    missing.forEach(varName => console.error(`   - ${varName}`));
+    missing.forEach((varName) => console.error(`   - ${varName}`));
     console.error('\nSet these variables and try again.');
     process.exit(1);
   }
 }
 
 function getVersion() {
-  const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'),
+  );
   return packageJson.version;
 }
 

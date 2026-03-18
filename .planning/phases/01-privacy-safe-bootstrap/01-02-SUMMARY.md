@@ -17,7 +17,12 @@ affects: [privacy, homescreen, observability, support-links]
 # Tech tracking
 tech-stack:
   added: []
-  patterns: [guarded external link helper, localized in-app fallback modal, HomeScreen async website handler]
+  patterns:
+    [
+      guarded external link helper,
+      localized in-app fallback modal,
+      HomeScreen async website handler,
+    ]
 
 key-files:
   created:
@@ -28,12 +33,12 @@ key-files:
     - src/screens/HomeScreen.test.tsx
 
 key-decisions:
-  - "External link handling stays narrow: one generic helper returns simple states instead of introducing a broader link-management subsystem."
-  - "HomeScreen reuses existing AppModal and shared locale keys so website failures stay calm, localized, and free of raw technical errors."
+  - 'External link handling stays narrow: one generic helper returns simple states instead of introducing a broader link-management subsystem.'
+  - 'HomeScreen reuses existing AppModal and shared locale keys so website failures stay calm, localized, and free of raw technical errors.'
 
 patterns-established:
-  - "Audited external URLs should be opened through openExternalUrl rather than direct Linking.openURL calls from screen components."
-  - "When external navigation fails, surface a localized in-app AppModal fallback instead of exposing platform error details."
+  - 'Audited external URLs should be opened through openExternalUrl rather than direct Linking.openURL calls from screen components.'
+  - 'When external navigation fails, surface a localized in-app AppModal fallback instead of exposing platform error details.'
 
 requirements-completed: [PRIV-04]
 
@@ -55,6 +60,7 @@ completed: 2026-03-17
 - **Files modified:** 4
 
 ## Accomplishments
+
 - Added a narrow `openExternalUrl` helper that collapses platform link behavior into safe `opened`, `unsupported`, and `failed` outcomes.
 - Replaced the audited HomeScreen website launch path with an awaited helper call and localized `AppModal` fallback.
 - Added regression coverage proving the website path opens when available and fails gently in-app when it is not.
@@ -71,12 +77,14 @@ Each task was committed atomically:
 _Note: TDD tasks used separate RED and GREEN commits._
 
 ## Files Created/Modified
+
 - `src/utils/externalLinks.ts` - Opens external URLs through `Linking.canOpenURL` and `Linking.openURL` while returning only safe result states.
 - `src/utils/externalLinks.test.ts` - Covers opened, unsupported, and failed helper outcomes without thrown exceptions.
 - `src/screens/HomeScreen.tsx` - Routes the website link through the helper and shows localized fallback copy in `AppModal`.
 - `src/screens/HomeScreen.test.tsx` - Verifies helper usage, calm fallback behavior, and avoidance of direct `Linking.openURL` calls from the screen.
 
 ## Decisions Made
+
 - Kept the link helper intentionally small and generic so the audited website path is guarded without adding a larger subsystem.
 - Reused the existing `AppModal` pattern and shared locale keys from Plan 01-01 to preserve the app’s calm, parent-safe UX.
 
@@ -85,6 +93,7 @@ _Note: TDD tasks used separate RED and GREEN commits._
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] Corrected stale generated planning progress after state tools left outdated summary text**
+
 - **Found during:** Post-summary state updates
 - **Issue:** The required `state update-progress` and `roadmap update-plan-progress` commands reported success but left stale human-readable progress text in `STATE.md` and `ROADMAP.md`.
 - **Fix:** Manually updated the stale progress, last-activity, and phase-plan summary lines to match the tool-reported completed state.
@@ -98,6 +107,7 @@ _Note: TDD tasks used separate RED and GREEN commits._
 **Impact on plan:** The fix kept project-tracking artifacts aligned with the completed work. No product scope creep.
 
 ## Issues Encountered
+
 - Initial test mocking with a full `react-native` module replacement triggered TurboModule lookup failures, so the tests were adjusted to use the real `Linking` object with spies instead.
 
 ## User Setup Required
@@ -105,6 +115,7 @@ _Note: TDD tasks used separate RED and GREEN commits._
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Plan 01-03 can keep using the same privacy-safe UI baseline while moving observability into consent-aware bootstrap flow.
 - The audited website path is now guarded, localized, and covered by regression tests.
 

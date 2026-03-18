@@ -52,20 +52,22 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
   const { settings } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const basketRef = useRef<View>(null);
-  
+
   // Animation state
-  const [basketPhase, setBasketPhase] = useState<'entering' | 'waiting' | 'exiting' | 'offscreen'>('entering');
+  const [basketPhase, setBasketPhase] = useState<'entering' | 'waiting' | 'exiting' | 'offscreen'>(
+    'entering',
+  );
   const basketPosition = useRef(new Animated.Value(SCREEN_WIDTH)).current;
   const basketOpacity = useRef(new Animated.Value(0)).current;
   const dropHighlight = useRef(new Animated.Value(0)).current;
-  
+
   // Track previous item count for animation
   const prevCountRef = useRef(items.length);
   const itemAnimationsRef = useRef<Map<number, Animated.Value>>(new Map());
 
   const isFull = items.length >= targetCount;
   const isCorrect = items.length === targetCount;
-  
+
   // Show up to 12 items inside the basket
   const displayItems = items.slice(0, 12);
   const remainingCount = Math.max(0, items.length - 12);
@@ -194,7 +196,7 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
   useEffect(() => {
     const currentCount = items.length;
     const prevCount = prevCountRef.current;
-    
+
     if (currentCount > prevCount) {
       const newItemIndices = [];
       for (let i = prevCount; i < currentCount; i++) {
@@ -203,11 +205,9 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
           itemAnimationsRef.current.set(i, new Animated.Value(0));
         }
       }
-      
-      const duration = settings.animationsEnabled && !settings.reducedMotionEnabled
-        ? 400
-        : 50;
-        
+
+      const duration = settings.animationsEnabled && !settings.reducedMotionEnabled ? 400 : 50;
+
       newItemIndices.forEach((index) => {
         const animValue = itemAnimationsRef.current.get(index);
         if (animValue) {
@@ -221,7 +221,7 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
         }
       });
     }
-    
+
     prevCountRef.current = currentCount;
   }, [items.length, settings.animationsEnabled, settings.reducedMotionEnabled]);
 
@@ -233,7 +233,7 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
         opacity: 1,
       };
     }
-    
+
     return {
       transform: [
         {
@@ -268,9 +268,9 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
       <View style={styles.basketContainer}>
         {/* Basket Handle */}
         <View style={styles.handle} />
-        
+
         {/* Basket Body */}
-        <Animated.View 
+        <Animated.View
           ref={basketRef}
           onLayout={handleDropZoneLayout}
           testID={testID ? `${testID}-drop-zone` : undefined}
@@ -283,17 +283,14 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
         >
           {/* Basket Top Rim */}
           <View style={styles.rim} />
-          
+
           {/* Items Preview */}
           <View style={styles.itemsArea}>
             {displayItems.length > 0 ? (
               <>
                 <View style={styles.itemsGrid}>
                   {displayItems.map((emoji, index) => (
-                    <Animated.View 
-                      key={`${emoji}-${index}`}
-                      style={getItemAnimatedStyle(index)}
-                    >
+                    <Animated.View key={`${emoji}-${index}`} style={getItemAnimatedStyle(index)}>
                       <Text style={styles.itemEmoji} selectable={false}>
                         {emoji}
                       </Text>
@@ -301,24 +298,22 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
                   ))}
                 </View>
                 {remainingCount > 0 && (
-                  <Text style={styles.moreIndicator}>
-                    +{remainingCount} more
-                  </Text>
+                  <Text style={styles.moreIndicator}>+{remainingCount} more</Text>
                 )}
               </>
             ) : (
-              <Text style={styles.emptyText}>
-                Drag items here!
-              </Text>
+              <Text style={styles.emptyText}>Drag items here!</Text>
             )}
           </View>
-          
+
           {/* Count Badge */}
-          <View style={[
-            styles.countBadge,
-            isCorrect && styles.countBadgeCorrect,
-            isFull && !isCorrect && styles.countBadgeFull,
-          ]}>
+          <View
+            style={[
+              styles.countBadge,
+              isCorrect && styles.countBadgeCorrect,
+              isFull && !isCorrect && styles.countBadgeFull,
+            ]}
+          >
             <Text style={styles.countText}>
               {items.length}/{targetCount}
             </Text>

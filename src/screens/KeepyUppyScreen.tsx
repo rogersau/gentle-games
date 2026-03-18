@@ -37,18 +37,33 @@ export const KeepyUppyScreen: React.FC = () => {
       <AppHeader title={t('games.keepyUppy.title')} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
-        <Text style={styles.subtitle} accessibilityRole="text">
+        <Text style={styles.subtitle} accessibilityRole='text'>
           {t('games.keepyUppy.subtitle')}
         </Text>
         <View style={styles.statsRow}>
-          <Text style={styles.statText} accessibilityLabel={t('games.keepyUppy.taps', { count: score })}>{t('games.keepyUppy.taps', { count: score })}</Text>
-          <Text style={styles.statText} accessibilityLabel={t('games.keepyUppy.balloons', { count: balloonCount })}>{t('games.keepyUppy.balloons', { count: balloonCount })}</Text>
-          <Text style={styles.statText} accessibilityLabel={t('games.keepyUppy.popped', { count: popped })}>{t('games.keepyUppy.popped', { count: popped })}</Text>
+          <Text
+            style={styles.statText}
+            accessibilityLabel={t('games.keepyUppy.taps', { count: score })}
+          >
+            {t('games.keepyUppy.taps', { count: score })}
+          </Text>
+          <Text
+            style={styles.statText}
+            accessibilityLabel={t('games.keepyUppy.balloons', { count: balloonCount })}
+          >
+            {t('games.keepyUppy.balloons', { count: balloonCount })}
+          </Text>
+          <Text
+            style={styles.statText}
+            accessibilityLabel={t('games.keepyUppy.popped', { count: popped })}
+          >
+            {t('games.keepyUppy.popped', { count: popped })}
+          </Text>
         </View>
         <AppButton
           label={t('games.keepyUppy.addBalloon')}
-          variant="secondary"
-          size="sm"
+          variant='secondary'
+          size='sm'
           onPress={handleAddBalloon}
           disabled={balloonCount >= MAX_BALLOONS}
           accessibilityHint={t('games.keepyUppy.addBalloonHint')}

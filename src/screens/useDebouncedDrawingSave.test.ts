@@ -41,7 +41,7 @@ describe('useDebouncedDrawingSave', () => {
       useDebouncedDrawingSave({
         storageKey: '@drawing-test',
         debounceMs: 250,
-      })
+      }),
     );
 
     act(() => {
@@ -66,7 +66,7 @@ describe('useDebouncedDrawingSave', () => {
       useDebouncedDrawingSave({
         storageKey: '@drawing-test',
         debounceMs: 250,
-      })
+      }),
     );
 
     act(() => {
@@ -93,7 +93,7 @@ describe('useDebouncedDrawingSave', () => {
       useDebouncedDrawingSave({
         storageKey: '@drawing-test',
         debounceMs: 250,
-      })
+      }),
     );
 
     act(() => {

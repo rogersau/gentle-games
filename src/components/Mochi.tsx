@@ -22,7 +22,7 @@ export type MochiProps = {
   animate?: boolean;
   className?: string;
   testID?: string;
-}
+};
 
 export const Mochi: React.FC<MochiProps> = ({
   variant = 'idle',
@@ -61,7 +61,7 @@ export const Mochi: React.FC<MochiProps> = ({
             duration: 1800,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       );
       float.start();
       return () => float.stop();
@@ -80,7 +80,7 @@ export const Mochi: React.FC<MochiProps> = ({
             duration: 1500,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       );
       breathe.start();
       return () => breathe.stop();
@@ -100,41 +100,41 @@ export const Mochi: React.FC<MochiProps> = ({
         }),
       ]).start();
       sparkles.forEach((sparkle) => {
-          const loop = Animated.loop(
-            Animated.sequence([
-              Animated.timing(sparkle, {
-                toValue: 1,
-                duration: 300,
-                useNativeDriver: true,
-              }),
-              Animated.timing(sparkle, {
-                toValue: 0,
-                duration: 0,
-                useNativeDriver: true,
-              }),
-            ])
-          );
-          sparkleAnimRefs.current.push(loop);
-          loop.start();
-        });
+        const loop = Animated.loop(
+          Animated.sequence([
+            Animated.timing(sparkle, {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+            Animated.timing(sparkle, {
+              toValue: 0,
+              duration: 0,
+              useNativeDriver: true,
+            }),
+          ]),
+        );
+        sparkleAnimRefs.current.push(loop);
+        loop.start();
+      });
       return () => {
-        sparkleAnimRefs.current.forEach(a => a.stop());
+        sparkleAnimRefs.current.forEach((a) => a.stop());
         sparkleAnimRefs.current = [];
       };
     }
   }, [variant, animate, floatAnim, scaleAnim, bounceAnim, sparkle1, sparkle2, sparkle3]);
 
   const animatedStyle = {
-    transform: [
-      { translateY: floatAnim },
-      { scale: scaleAnim },
-      { translateY: bounceAnim },
-    ],
+    transform: [{ translateY: floatAnim }, { scale: scaleAnim }, { translateY: bounceAnim }],
   };
 
   return (
     // @ts-expect-error className not supported in RN but kept for API parity
-    <Animated.View style={[styles.container, { width, height }, animatedStyle]} className={className} testID={testID}>
+    <Animated.View
+      style={[styles.container, { width, height }, animatedStyle]}
+      className={className}
+      testID={testID}
+    >
       <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         {/* Shadow */}
         <Ellipse
@@ -163,36 +163,24 @@ export const Mochi: React.FC<MochiProps> = ({
           opacity={0.6}
         />
         {/* Left leg */}
-        <Ellipse
-          cx={width * 0.35}
-          cy={height - 12}
-          rx={8}
-          ry={10}
-          fill={color}
-        />
+        <Ellipse cx={width * 0.35} cy={height - 12} rx={8} ry={10} fill={color} />
         {/* Right leg */}
-        <Ellipse
-          cx={width * 0.65}
-          cy={height - 12}
-          rx={8}
-          ry={10}
-          fill={color}
-        />
+        <Ellipse cx={width * 0.65} cy={height - 12} rx={8} ry={10} fill={color} />
         {/* Left eye arc (happy closed-eye smile) */}
         <Path
           d={`M ${width * 0.32} ${height * 0.45} Q ${width * 0.37} ${height * 0.5} ${width * 0.42} ${height * 0.45}`}
           stroke={shadowColor}
           strokeWidth={2}
-          fill="none"
-          strokeLinecap="round"
+          fill='none'
+          strokeLinecap='round'
         />
         {/* Right eye arc */}
         <Path
           d={`M ${width * 0.58} ${height * 0.45} Q ${width * 0.63} ${height * 0.5} ${width * 0.68} ${height * 0.45}`}
           stroke={shadowColor}
           strokeWidth={2}
-          fill="none"
-          strokeLinecap="round"
+          fill='none'
+          strokeLinecap='round'
         />
         {/* Left blush */}
         <Circle cx={width * 0.25} cy={height * 0.52} r={4} fill={blushColor} opacity={0.5} />
@@ -203,13 +191,31 @@ export const Mochi: React.FC<MochiProps> = ({
           d={`M ${width * 0.38} ${height * 0.58} Q ${width / 2} ${height * 0.66} ${width * 0.62} ${height * 0.58}`}
           stroke={shadowColor}
           strokeWidth={2}
-          fill="none"
-          strokeLinecap="round"
+          fill='none'
+          strokeLinecap='round'
         />
         {/* Sparkles — only visible during happy variant */}
-        <AnimatedCircle cx={width * 0.1} cy={height * 0.2} r={3} fill={highlightColor} opacity={sparkle1} />
-        <AnimatedCircle cx={width * 0.9} cy={height * 0.25} r={2.5} fill={highlightColor} opacity={sparkle2} />
-        <AnimatedCircle cx={width * 0.15} cy={height * 0.75} r={2} fill={highlightColor} opacity={sparkle3} />
+        <AnimatedCircle
+          cx={width * 0.1}
+          cy={height * 0.2}
+          r={3}
+          fill={highlightColor}
+          opacity={sparkle1}
+        />
+        <AnimatedCircle
+          cx={width * 0.9}
+          cy={height * 0.25}
+          r={2.5}
+          fill={highlightColor}
+          opacity={sparkle2}
+        />
+        <AnimatedCircle
+          cx={width * 0.15}
+          cy={height * 0.75}
+          r={2}
+          fill={highlightColor}
+          opacity={sparkle3}
+        />
       </Svg>
     </Animated.View>
   );

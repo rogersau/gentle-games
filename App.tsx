@@ -31,7 +31,12 @@ import { useFonts } from './src/ui/fonts';
 import { GentleErrorBoundary } from './src/components/GentleErrorBoundary';
 import { installPwaInteractionGuards } from './src/utils/pwaInteractionGuards';
 import { reconcileObservability } from './src/utils/observabilityBootstrap';
-import { APP_ROUTES, AppRouteName, AppStackParamList, isAppRouteName } from './src/types/navigation';
+import {
+  APP_ROUTES,
+  AppRouteName,
+  AppStackParamList,
+  isAppRouteName,
+} from './src/types/navigation';
 
 void SplashScreen.preventAutoHideAsync().catch((error) => {
   console.warn('Unable to keep splash screen visible during app startup.', error);
@@ -53,10 +58,10 @@ function getActiveRouteName(state: NavigationState | undefined): string | undefi
 }
 
 // Conditional PostHogProvider wrapper - only renders provider if client exists
-const ConditionalPostHogProvider: React.FC<{ client: ReturnType<typeof getPostHogClient>; children: React.ReactNode }> = ({
-  client,
-  children,
-}) => {
+const ConditionalPostHogProvider: React.FC<{
+  client: ReturnType<typeof getPostHogClient>;
+  children: React.ReactNode;
+}> = ({ client, children }) => {
   if (!client) {
     // No PostHog client (no API key configured) - render children without provider
     return <>{children}</>;
@@ -108,9 +113,7 @@ const AppNavigator: React.FC = () => {
 
   return (
     <>
-      <NavigationContainer
-        onStateChange={handleStateChange}
-      >
+      <NavigationContainer onStateChange={handleStateChange}>
         <ConditionalPostHogProvider client={posthogClient}>
           <Stack.Navigator
             screenOptions={{
@@ -222,7 +225,7 @@ export const AppContent: React.FC = () => {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={PASTEL_COLORS.primary} />
+        <ActivityIndicator size='large' color={PASTEL_COLORS.primary} />
       </View>
     );
   }
@@ -265,7 +268,7 @@ export default function App() {
   if (!fontsLoaded && !fontError) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={PASTEL_COLORS.primary} />
+        <ActivityIndicator size='large' color={PASTEL_COLORS.primary} />
       </View>
     );
   }

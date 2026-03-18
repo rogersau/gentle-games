@@ -50,9 +50,9 @@ export const NumberPicnicScreen: React.FC = () => {
   return (
     <AppScreen>
       <AppHeader title={t('games.numberPicnic.title')} onBack={() => navigation.goBack()} />
-      <ScrollView 
+      <ScrollView
         ref={scrollViewRef}
-        testID="number-picnic-scroll"
+        testID='number-picnic-scroll'
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -61,13 +61,12 @@ export const NumberPicnicScreen: React.FC = () => {
         <Text style={styles.subtitle}>{t('games.numberPicnic.subtitle')}</Text>
 
         {/* Instructions Card */}
-        <AppCard variant="elevated" style={styles.promptCard}>
+        <AppCard variant='elevated' style={styles.promptCard}>
           <Text style={styles.promptText}>
-            {t('games.numberPicnic.place')} <Text style={styles.promptStrong}>{prompt.targetCount}</Text> {prompt.itemName}
+            {t('games.numberPicnic.place')}{' '}
+            <Text style={styles.promptStrong}>{prompt.targetCount}</Text> {prompt.itemName}
           </Text>
-          <Text style={styles.visualDots}>
-            {prompt.visualDots.join(' ')}
-          </Text>
+          <Text style={styles.visualDots}>{prompt.visualDots.join(' ')}</Text>
         </AppCard>
 
         {/* Picnic Basket with animation */}
@@ -83,20 +82,16 @@ export const NumberPicnicScreen: React.FC = () => {
             onAnimationComplete={startNewRound}
             style={styles.basket}
             accessibilityLabel={`Basket with ${basketCount} ${prompt.itemName}`}
-            accessibilityHint="Drag items from the blanket to fill the basket"
-            testID="picnic-basket"
+            accessibilityHint='Drag items from the blanket to fill the basket'
+            testID='picnic-basket'
           />
         </View>
 
         {/* Feedback Text */}
-        <Text style={[
-          styles.feedback,
-          isComplete && styles.feedbackComplete
-        ]}>
-          {isComplete 
-            ? t('games.numberPicnic.feedback.complete') 
-            : t('games.numberPicnic.feedback.incomplete')
-          }
+        <Text style={[styles.feedback, isComplete && styles.feedbackComplete]}>
+          {isComplete
+            ? t('games.numberPicnic.feedback.complete')
+            : t('games.numberPicnic.feedback.incomplete')}
         </Text>
 
         {/* Picnic Blanket with draggable items */}
@@ -111,7 +106,7 @@ export const NumberPicnicScreen: React.FC = () => {
           onDropEnd={handleDropEnd}
           isProcessing={isProcessing}
           style={styles.blanket}
-          testID="picnic-blanket"
+          testID='picnic-blanket'
         />
 
         {/* Completed Count */}

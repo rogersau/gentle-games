@@ -23,24 +23,24 @@ const TestConsumer = () => {
   const { settings, isLoading, updateSettings } = useSettings();
 
   if (isLoading) {
-    return <Text testID="loading">loading</Text>;
+    return <Text testID='loading'>loading</Text>;
   }
 
   return (
     <View>
-      <Text testID="animations">{String(settings.animationsEnabled)}</Text>
-      <Text testID="sound">{String(settings.soundEnabled)}</Text>
-      <Text testID="volume">{String(settings.soundVolume)}</Text>
-      <Text testID="difficulty">{settings.difficulty}</Text>
-      <Text testID="theme">{settings.theme}</Text>
-      <Text testID="keepyEasy">{String(settings.keepyUppyEasyMode)}</Text>
-      <Text testID="colorMode">{settings.colorMode}</Text>
-      <Text testID="telemetry">{String(settings.telemetryEnabled)}</Text>
-      <TouchableOpacity testID="set-hard" onPress={() => updateSettings({ difficulty: 'hard' })}>
+      <Text testID='animations'>{String(settings.animationsEnabled)}</Text>
+      <Text testID='sound'>{String(settings.soundEnabled)}</Text>
+      <Text testID='volume'>{String(settings.soundVolume)}</Text>
+      <Text testID='difficulty'>{settings.difficulty}</Text>
+      <Text testID='theme'>{settings.theme}</Text>
+      <Text testID='keepyEasy'>{String(settings.keepyUppyEasyMode)}</Text>
+      <Text testID='colorMode'>{settings.colorMode}</Text>
+      <Text testID='telemetry'>{String(settings.telemetryEnabled)}</Text>
+      <TouchableOpacity testID='set-hard' onPress={() => updateSettings({ difficulty: 'hard' })}>
         <Text>set-hard</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        testID="set-telemetry"
+        testID='set-telemetry'
         onPress={() => updateSettings({ telemetryEnabled: true })}
       >
         <Text>set-telemetry</Text>
@@ -60,7 +60,7 @@ describe('SettingsContext', () => {
     const screen = render(
       <SettingsProvider>
         <TestConsumer />
-      </SettingsProvider>
+      </SettingsProvider>,
     );
 
     await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
@@ -79,13 +79,13 @@ describe('SettingsContext', () => {
         keepyUppyEasyMode: 'invalid',
         colorMode: 'invalid',
         telemetryEnabled: 'maybe',
-      })
+      }),
     );
 
     const screen = render(
       <SettingsProvider>
         <TestConsumer />
-      </SettingsProvider>
+      </SettingsProvider>,
     );
 
     await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
@@ -107,7 +107,7 @@ describe('SettingsContext', () => {
     render(
       <SettingsProvider>
         <TestConsumer />
-      </SettingsProvider>
+      </SettingsProvider>,
     );
 
     await waitFor(() => {
@@ -123,17 +123,14 @@ describe('SettingsContext', () => {
     const screen = render(
       <SettingsProvider>
         <TestConsumer />
-      </SettingsProvider>
+      </SettingsProvider>,
     );
 
     await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
     fireEvent.press(screen.getByTestId('set-hard'));
 
     await waitFor(() => {
-      expect(storage.setItem).toHaveBeenCalledWith(
-        'gentleMatchSettings',
-        expect.any(String)
-      );
+      expect(storage.setItem).toHaveBeenCalledWith('gentleMatchSettings', expect.any(String));
     });
 
     const saved = storage.setItem.mock.calls[0][1];
@@ -146,17 +143,14 @@ describe('SettingsContext', () => {
     const screen = render(
       <SettingsProvider>
         <TestConsumer />
-      </SettingsProvider>
+      </SettingsProvider>,
     );
 
     await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
     fireEvent.press(screen.getByTestId('set-telemetry'));
 
     await waitFor(() => {
-      expect(storage.setItem).toHaveBeenCalledWith(
-        'gentleMatchSettings',
-        expect.any(String)
-      );
+      expect(storage.setItem).toHaveBeenCalledWith('gentleMatchSettings', expect.any(String));
     });
 
     const saved = storage.setItem.mock.calls[0][1];

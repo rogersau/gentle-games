@@ -23,32 +23,32 @@ Mochi is a soft, rounded blob creature that serves as the app's calming, nurturi
 
 ### Color
 
-| Token | Light Mode | Dark Mode |
-|-------|-----------|-----------|
-| Mochi body | `#D4A5E8` (warm lavender) | `#9B7BB0` (muted lavender) |
-| Highlight | `#EDE0F5` (pale lavender) | `#B89CC8` (lighter muted) |
-| Shadow | `#C496D8` (deeper lavender) | `#7A5E94` (darker muted) |
-| Blush | `#F0C0D8` (soft pink) | `#C890B0` (muted pink) |
+| Token      | Light Mode                  | Dark Mode                  |
+| ---------- | --------------------------- | -------------------------- |
+| Mochi body | `#D4A5E8` (warm lavender)   | `#9B7BB0` (muted lavender) |
+| Highlight  | `#EDE0F5` (pale lavender)   | `#B89CC8` (lighter muted)  |
+| Shadow     | `#C496D8` (deeper lavender) | `#7A5E94` (darker muted)   |
+| Blush      | `#F0C0D8` (soft pink)       | `#C890B0` (muted pink)     |
 
 Mochi colors complement the existing `PASTEL_COLORS.accent` and sit naturally alongside all nine game accent colors without clashing.
 
 ### Size Variants
 
-| Variant | Use Case | Approx. Size |
-|---------|----------|-------------|
-| `sm` | In-game corner presence, settings | 40-50px |
-| `md` | Game intro modal, home screen secondary | 60-80px |
-| `lg` | Home screen hero, completion celebration | 100-120px |
+| Variant | Use Case                                 | Approx. Size |
+| ------- | ---------------------------------------- | ------------ |
+| `sm`    | In-game corner presence, settings        | 40-50px      |
+| `md`    | Game intro modal, home screen secondary  | 60-80px      |
+| `lg`    | Home screen hero, completion celebration | 100-120px    |
 
 ### Animation Style
 
-| Animation | Description | Duration/Period |
-|-----------|-------------|----------------|
-| `floating` | Gentle sine-wave vertical drift | 3-4s period, 2-4px amplitude |
-| `breathing` | Subtle scale pulse (1.0 → 1.02 → 1.0) | 3s period |
-| `happy-bounce` | Quick vertical bounce on positive events | 400ms |
-| `sparkle` | Small particle burst on completion | 600ms |
-| `wiggle` | Gentle side-to-side wiggle on tap (if tap interaction enabled) | 300ms |
+| Animation      | Description                                                    | Duration/Period              |
+| -------------- | -------------------------------------------------------------- | ---------------------------- |
+| `floating`     | Gentle sine-wave vertical drift                                | 3-4s period, 2-4px amplitude |
+| `breathing`    | Subtle scale pulse (1.0 → 1.02 → 1.0)                          | 3s period                    |
+| `happy-bounce` | Quick vertical bounce on positive events                       | 400ms                        |
+| `sparkle`      | Small particle burst on completion                             | 600ms                        |
+| `wiggle`       | Gentle side-to-side wiggle on tap (if tap interaction enabled) | 300ms                        |
 
 **All animations are disabled when `settings.reducedMotionEnabled` is true.** Mochi renders in a fully static pose in that case.
 
@@ -102,14 +102,14 @@ All Mochi text is localized via the i18n system under the `mascot.*` key namespa
 
 ### Phrase Examples
 
-| Context | English Text |
-|---------|-------------|
-| Home greeting | "Hello, friend!" |
-| Game intro | "Let's play!" |
+| Context               | English Text                                                  |
+| --------------------- | ------------------------------------------------------------- |
+| Home greeting         | "Hello, friend!"                                              |
+| Game intro            | "Let's play!"                                                 |
 | Game intro (specific) | "Let's find the matches!" / "Let's draw something beautiful!" |
-| Positive event | "Beautiful!" / "Wonderful!" / "You're doing great!" |
-| Completion | "Amazing job!" / "You're wonderful!" |
-| Settings | "Here's where you can change things." |
+| Positive event        | "Beautiful!" / "Wonderful!" / "You're doing great!"           |
+| Completion            | "Amazing job!" / "You're wonderful!"                          |
+| Settings              | "Here's where you can change things."                         |
 
 **Mochi never says:** "Wrong", "Try again", "Not quite", "Oops", or anything that implies failure.
 
@@ -125,19 +125,20 @@ Single SVG component. Props:
 interface MochiProps {
   variant: 'floating' | 'idle' | 'happy';
   size?: 'sm' | 'md' | 'lg';
-  color?: string;          // overrides theme-aware default
-  animate?: boolean;       // false when reducedMotionEnabled
+  color?: string; // overrides theme-aware default
+  animate?: boolean; // false when reducedMotionEnabled
   className?: string;
 }
 ```
 
-| Variant | Animation |
-|---------|-----------|
-| `floating` | Gentle sine-wave vertical drift |
-| `idle` | Subtle breathing scale pulse |
-| `happy` | Quick vertical bounce + sparkle burst |
+| Variant    | Animation                             |
+| ---------- | ------------------------------------- |
+| `floating` | Gentle sine-wave vertical drift       |
+| `idle`     | Subtle breathing scale pulse          |
+| `happy`    | Quick vertical bounce + sparkle burst |
 
 The SVG is constructed from:
+
 - One `<ellipse>` for the body
 - Two small `<ellipse>` elements for legs
 - Two `<path>` elements for closed-eye smiles
@@ -161,7 +162,7 @@ interface UseMochiResult {
   mochiProps: MochiProps;
   showMochi: (phrase?: string) => void;
   hideMochi: () => void;
-  celebrate: () => void;     // triggers happy-bounce + sparkle
+  celebrate: () => void; // triggers happy-bounce + sparkle
 }
 ```
 
@@ -195,6 +196,7 @@ mascot.settingsHelper  → "Here's where you can change things."
 ## Rollout Plan
 
 ### Phase 1 (this spec)
+
 - Implement `Mochi.tsx` SVG component
 - Implement `MochiPresence.tsx` wrapper
 - Implement `useMochi()` hook
@@ -203,10 +205,12 @@ mascot.settingsHelper  → "Here's where you can change things."
 - Integrate on Memory Snap (game intro modal + in-game corner + completion)
 
 ### Phase 2 (follow-up)
+
 - Integrate on Bubble Pop, Keepy Uppy, Category Match, Drawing
 - Completion celebrations for remaining games
 
 ### Phase 3 (deferred)
+
 - Number Picnic, Pattern Train, Breathing Garden, Glitter Fall
 
 ---

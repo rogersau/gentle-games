@@ -15,11 +15,11 @@ const BALL_SIZE = Math.min(250, screenWidth * 0.5);
 
 // Calming, sensory-friendly color schemes that match their names
 const getColorSchemes = (): BallColorScheme[] => [
-  { primary: '#B4D7E8', accent: '#7FB3D5', name: 'Ocean' },      // Soft blues like calm water
-  { primary: '#F5C6D6', accent: '#E8A4C9', name: 'Rose' },       // Gentle pinks
-  { primary: '#C8E6C9', accent: '#A5D6A7', name: 'Mint' },       // Fresh soft greens
-  { primary: '#FFE0B2', accent: '#FFCC80', name: 'Sunset' },     // Warm soft orange/peach
-  { primary: '#E1BEE7', accent: '#CE93D8', name: 'Lavender' },   // Soft purples
+  { primary: '#B4D7E8', accent: '#7FB3D5', name: 'Ocean' }, // Soft blues like calm water
+  { primary: '#F5C6D6', accent: '#E8A4C9', name: 'Rose' }, // Gentle pinks
+  { primary: '#C8E6C9', accent: '#A5D6A7', name: 'Mint' }, // Fresh soft greens
+  { primary: '#FFE0B2', accent: '#FFCC80', name: 'Sunset' }, // Warm soft orange/peach
+  { primary: '#E1BEE7', accent: '#CE93D8', name: 'Lavender' }, // Soft purples
 ];
 
 export const BreathingGardenScreen: React.FC = () => {
@@ -41,10 +41,7 @@ export const BreathingGardenScreen: React.FC = () => {
   const phaseAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const phaseTransitionRef = useRef(0);
   const latestPhaseRef = useRef(phase);
-  const currentCount = useMemo(
-    () => Math.min(4, Math.max(1, Math.ceil(progress * 4))),
-    [progress]
-  );
+  const currentCount = useMemo(() => Math.min(4, Math.max(1, Math.ceil(progress * 4))), [progress]);
 
   latestPhaseRef.current = phase;
 
@@ -127,7 +124,7 @@ export const BreathingGardenScreen: React.FC = () => {
       countAnimationRef.current?.stop();
       phaseAnimationRef.current?.stop();
     },
-    []
+    [],
   );
 
   const cycleColors = useCallback(() => {
@@ -146,16 +143,18 @@ export const BreathingGardenScreen: React.FC = () => {
       return () => {
         stopMusic();
       };
-    }, [stopMusic])
+    }, [stopMusic]),
   );
 
   return (
     <AppScreen>
       <AppHeader title={t('games.breathingGarden.title')} onBack={handleBack} />
       <View style={styles.content}>
-        <AppCard variant="elevated" style={styles.breathCard}>
+        <AppCard variant='elevated' style={styles.breathCard}>
           <Animated.Text style={[styles.phaseLabel, { opacity: phaseOpacityRef.current }]}>
-            {displayedPhase === 'inhale' ? t('games.breathingGarden.inhale') : t('games.breathingGarden.exhale')}
+            {displayedPhase === 'inhale'
+              ? t('games.breathingGarden.inhale')
+              : t('games.breathingGarden.exhale')}
           </Animated.Text>
           <View style={styles.ballContainer}>
             <BreathingBall
@@ -173,20 +172,24 @@ export const BreathingGardenScreen: React.FC = () => {
         </AppCard>
 
         <View style={styles.statsRow}>
-          <Text style={styles.statText}>{t('games.breathingGarden.breaths', { count: breaths })}</Text>
+          <Text style={styles.statText}>
+            {t('games.breathingGarden.breaths', { count: breaths })}
+          </Text>
         </View>
 
         <View style={styles.actionsRow}>
           <AppButton
             label={t('games.breathingGarden.changeColor')}
             onPress={cycleColors}
-            variant="primary"
+            variant='primary'
             style={styles.colorButton}
           />
           <AppButton
-            label={isPlaying ? t('games.breathingGarden.musicOff') : t('games.breathingGarden.musicOn')}
+            label={
+              isPlaying ? t('games.breathingGarden.musicOff') : t('games.breathingGarden.musicOn')
+            }
             onPress={toggleMusic}
-            variant="secondary"
+            variant='secondary'
             style={styles.musicButton}
           />
         </View>

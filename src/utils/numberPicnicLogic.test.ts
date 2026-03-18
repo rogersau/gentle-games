@@ -24,7 +24,12 @@ describe('numberPicnicLogic', () => {
     it('updates basket count with clamping and completion check', () => {
       expect(updateNumberPicnicCount(0, -1)).toBe(0);
       expect(updateNumberPicnicCount(11, 4)).toBe(12);
-      const prompt = { itemEmoji: '🍎', itemName: 'apples', targetCount: 4, visualDots: ['🟢','🟢','🟢','🟢'] };
+      const prompt = {
+        itemEmoji: '🍎',
+        itemName: 'apples',
+        targetCount: 4,
+        visualDots: ['🟢', '🟢', '🟢', '🟢'],
+      };
       expect(isNumberPicnicPromptComplete(4, prompt)).toBe(true);
       expect(isNumberPicnicPromptComplete(3, prompt)).toBe(false);
     });

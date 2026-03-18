@@ -49,9 +49,7 @@ export interface Settings {
   telemetryEnabled: boolean;
 }
 
-export const UNFINISHED_GAMES: string[] = [
-  'number-picnic',
-];
+export const UNFINISHED_GAMES: string[] = ['number-picnic'];
 
 export type BreathingGardenPhase = 'inhale' | 'exhale';
 

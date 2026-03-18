@@ -10,7 +10,7 @@ export const getNumberPicnicMaxCount = (difficulty: Difficulty): number => {
 
 export const generateNumberPicnicPrompt = (
   difficulty: Difficulty,
-  rng: () => number = Math.random
+  rng: () => number = Math.random,
 ): NumberPicnicPrompt => {
   const item = NUMBER_PICNIC_ITEMS[Math.floor(rng() * NUMBER_PICNIC_ITEMS.length)];
   const max = getNumberPicnicMaxCount(difficulty);
@@ -31,8 +31,10 @@ export const clampNumberPicnicCount = (count: number): number =>
 export const updateNumberPicnicCount = (currentCount: number, delta: number): number =>
   clampNumberPicnicCount(currentCount + delta);
 
-export const isNumberPicnicPromptComplete = (currentCount: number, prompt: NumberPicnicPrompt): boolean =>
-  currentCount === prompt.targetCount;
+export const isNumberPicnicPromptComplete = (
+  currentCount: number,
+  prompt: NumberPicnicPrompt,
+): boolean => currentCount === prompt.targetCount;
 
 export interface UseNumberPicnicGameResult {
   // State
@@ -46,7 +48,7 @@ export interface UseNumberPicnicGameResult {
   blanketItemCount: number;
   basketItems: string[];
   isComplete: boolean;
-  
+
   // Actions
   handleDropStart: () => void;
   handleItemDrop: (index: number) => void;
@@ -77,17 +79,17 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
   useEffect(() => {
     basketCountRef.current = basketCount;
   }, [basketCount]);
-  
+
   useEffect(() => {
     isProcessingRef.current = isProcessing;
   }, [isProcessing]);
 
   const isComplete = isNumberPicnicPromptComplete(basketCount, prompt);
-  
+
   // Generate basket items array for display
-  const basketItems = useMemo(() => 
-    Array(basketCount).fill(prompt.itemEmoji),
-    [basketCount, prompt.itemEmoji]
+  const basketItems = useMemo(
+    () => Array(basketCount).fill(prompt.itemEmoji),
+    [basketCount, prompt.itemEmoji],
   );
 
   // Check for completion
@@ -107,32 +109,35 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
   }, []);
 
   // Handle item drop
-  const handleItemDrop = useCallback((_index: number) => {
-    if (isProcessingRef.current) {
-      return;
-    }
+  const handleItemDrop = useCallback(
+    (_index: number) => {
+      if (isProcessingRef.current) {
+        return;
+      }
 
-    const max = getNumberPicnicMaxCount(difficulty);
-    if (basketCountRef.current >= max) {
-      return;
-    }
+      const max = getNumberPicnicMaxCount(difficulty);
+      if (basketCountRef.current >= max) {
+        return;
+      }
 
-    setIsProcessing(true);
-    setIsDragging(false);
-    setIsOverBasket(false);
-    
-    // Add item to basket
-    setBasketCount(prev => {
-      return Math.min(prev + 1, max);
-    });
-    setBlanketItemCount(prev => {
-      return prev - 1;
-    });
-    
-    queueTimeout(() => {
-      setIsProcessing(false);
-    }, 300);
-  }, [difficulty, queueTimeout]);
+      setIsProcessing(true);
+      setIsDragging(false);
+      setIsOverBasket(false);
+
+      // Add item to basket
+      setBasketCount((prev) => {
+        return Math.min(prev + 1, max);
+      });
+      setBlanketItemCount((prev) => {
+        return prev - 1;
+      });
+
+      queueTimeout(() => {
+        setIsProcessing(false);
+      }, 300);
+    },
+    [difficulty, queueTimeout],
+  );
 
   // Handle drop end
   const handleDropEnd = useCallback(() => {
@@ -146,12 +151,12 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
     const newPrompt = generateNumberPicnicPrompt(difficulty);
     setPrompt(newPrompt);
     setBasketCount(0);
-    setCompletedPicnics(current => current + 1);
+    setCompletedPicnics((current) => current + 1);
     setIsProcessing(false);
     setIsSuccess(false);
     setIsDragging(false);
     setIsOverBasket(false);
-    
+
     // Reset blanket items for new round
     const max = getNumberPicnicMaxCount(difficulty);
     setBlanketItemCount(Math.max(12, max + 3));
@@ -169,7 +174,7 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
     blanketItemCount,
     basketItems,
     isComplete,
-    
+
     // Actions
     handleDropStart,
     handleItemDrop,

@@ -69,10 +69,10 @@ jest.mock('../components/GameBoard', () => {
       renderStats?: (stats: { time: string; moves: number }) => React.ReactNode;
     }) => (
       <View>
-        <Text testID="mock-text">Mock Memory Board</Text>
+        <Text testID='mock-text'>Mock Memory Board</Text>
         {renderStats?.({ time: '0:42', moves: 7 })}
         <TouchableOpacity onPress={onBackPress}>
-          <Text testID="board-back">Board Back</Text>
+          <Text testID='board-back'>Board Back</Text>
         </TouchableOpacity>
       </View>
     ),

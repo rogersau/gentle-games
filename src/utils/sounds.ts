@@ -31,7 +31,9 @@ const loadSound = async (name: keyof typeof soundAssets): Promise<void> => {
     sounds[name].player = player;
     sounds[name].isLoaded = true;
   } catch {
-    console.warn(`Sound file for "${name}" not found. Add MP3 files to src/assets/sounds/ to enable audio.`);
+    console.warn(
+      `Sound file for "${name}" not found. Add MP3 files to src/assets/sounds/ to enable audio.`,
+    );
   }
 };
 
@@ -45,13 +47,18 @@ export const initializeSounds = async (): Promise<void> => {
     console.warn('Failed to configure audio mode:', error);
   }
 
-  await Promise.all([loadSound('flip'), loadSound('match'), loadSound('complete'), loadSound('pop')]);
+  await Promise.all([
+    loadSound('flip'),
+    loadSound('match'),
+    loadSound('complete'),
+    loadSound('pop'),
+  ]);
 };
 
 const playSoundEffect = async (
   name: keyof typeof soundAssets,
   volumeMultiplier: number,
-  settings: Settings
+  settings: Settings,
 ): Promise<void> => {
   if (!settings.soundEnabled) return;
 
@@ -101,4 +108,3 @@ export const unloadSounds = async (): Promise<void> => {
   sounds.complete.isLoaded = false;
   sounds.pop.isLoaded = false;
 };
-

@@ -38,7 +38,9 @@ describe('reconcileObservability', () => {
   });
 
   it('throws a labeled aggregated error when only analytics consent reconciliation fails', async () => {
-    jest.mocked(reconcileAnalyticsConsent).mockRejectedValueOnce(new Error('Analytics unavailable'));
+    jest
+      .mocked(reconcileAnalyticsConsent)
+      .mockRejectedValueOnce(new Error('Analytics unavailable'));
 
     await expect(reconcileObservability(true)).rejects.toThrow(
       'Observability reconciliation failed: Analytics unavailable',
@@ -47,7 +49,9 @@ describe('reconcileObservability', () => {
 
   it('throws a labeled aggregated error when both consent reconcilers fail', async () => {
     jest.mocked(reconcileSentryConsent).mockRejectedValueOnce(new Error('Sentry unavailable'));
-    jest.mocked(reconcileAnalyticsConsent).mockRejectedValueOnce(new Error('Analytics unavailable'));
+    jest
+      .mocked(reconcileAnalyticsConsent)
+      .mockRejectedValueOnce(new Error('Analytics unavailable'));
 
     await expect(reconcileObservability(true)).rejects.toThrow(
       'Observability reconciliation failed: Sentry unavailable; Analytics unavailable',

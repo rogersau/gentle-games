@@ -13,16 +13,23 @@ provides:
 affects: [phase-03-stable-navigation-and-responsive-surfaces, number-picnic, memory-snap]
 tech-stack:
   added: []
-  patterns: [shared tracked timeout hook, replay-safe timer replacement, fake-timer gameplay regressions]
+  patterns:
+    [shared tracked timeout hook, replay-safe timer replacement, fake-timer gameplay regressions]
 key-files:
   created: [src/utils/useTrackedTimeouts.ts, src/utils/useTrackedTimeouts.test.ts]
-  modified: [src/utils/numberPicnicLogic.ts, src/utils/numberPicnicLogic.test.ts, src/components/GameBoard.tsx, src/components/GameBoard.test.tsx]
+  modified:
+    [
+      src/utils/numberPicnicLogic.ts,
+      src/utils/numberPicnicLogic.test.ts,
+      src/components/GameBoard.tsx,
+      src/components/GameBoard.test.tsx,
+    ]
 key-decisions:
-  - "Extracted the Pattern Train timeout-registry pattern into a shared hook so audited games can share one cancellable timer contract."
-  - "Memory Snap now clears all tracked timers before each restart so stale preview, match, and mismatch callbacks cannot mutate the next round."
+  - 'Extracted the Pattern Train timeout-registry pattern into a shared hook so audited games can share one cancellable timer contract.'
+  - 'Memory Snap now clears all tracked timers before each restart so stale preview, match, and mismatch callbacks cannot mutate the next round.'
 patterns-established:
-  - "Tracked gameplay timers: queueTimeout registers every delayed callback and clearAllTimeouts cancels them before replay or unmount."
-  - "Timer regressions: fake-timer tests should cover replay and unmount cleanup anywhere delayed game state updates exist."
+  - 'Tracked gameplay timers: queueTimeout registers every delayed callback and clearAllTimeouts cancels them before replay or unmount.'
+  - 'Timer regressions: fake-timer tests should cover replay and unmount cleanup anywhere delayed game state updates exist.'
 requirements-completed: [STAB-03, PERF-03]
 duration: 6min
 completed: 2026-03-17
@@ -41,6 +48,7 @@ completed: 2026-03-17
 - **Files modified:** 6
 
 ## Accomplishments
+
 - Added a reusable `useTrackedTimeouts` hook with queued timeout registration, bulk cancellation, and unmount cleanup.
 - Refactored Number Picnic to cancel delayed processing resets before replaying or leaving the game.
 - Refactored Memory Snap to clear preview, match, and mismatch timers before replacement rounds and during unmount.
@@ -57,6 +65,7 @@ Each task was committed atomically:
 **Plan metadata:** Pending final docs commit at summary creation time.
 
 ## Files Created/Modified
+
 - `src/utils/useTrackedTimeouts.ts` - Shared hook for queueing and cancelling tracked timeouts with unmount cleanup.
 - `src/utils/useTrackedTimeouts.test.ts` - Fake-timer coverage for registry cleanup and unmount cancellation.
 - `src/utils/numberPicnicLogic.ts` - Number Picnic processing-reset timers now use tracked cleanup before replay.
@@ -65,6 +74,7 @@ Each task was committed atomically:
 - `src/components/GameBoard.test.tsx` - Regressions for preview replacement, pending-match unmount safety, and stale mismatch replay cleanup.
 
 ## Decisions Made
+
 - Extracted the existing timeout-registry pattern into `useTrackedTimeouts` instead of duplicating local refs in each game, keeping timer cleanup small and phase-scoped.
 - Cleared all tracked Memory Snap timers at the start of `startNewGame` so replay paths cancel pending preview and resolution work before scheduling replacements.
 
@@ -73,6 +83,7 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 ## Issues Encountered
+
 - Initial Memory Snap regression tests were not scheduling second-tile resolution work because presses happened in the same render frame; splitting interactions to match existing test patterns made the new regressions exercise the real timer seams.
 
 ## User Setup Required
@@ -80,12 +91,15 @@ None - plan executed exactly as written.
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Phase 2 timer-driven gameplay flows now cancel audited delayed callbacks before replay and unmount, reducing stale-state risk for follow-on runtime hardening.
 - Phase 3 can build on the new tracked-timeout pattern if other audited interactive surfaces need similarly narrow timer cleanup.
 
 ## Self-Check
+
 PASSED
 
 ---
-*Phase: 02-correct-and-safe-gameplay-interactions*
-*Completed: 2026-03-17*
+
+_Phase: 02-correct-and-safe-gameplay-interactions_
+_Completed: 2026-03-17_

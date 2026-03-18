@@ -125,13 +125,15 @@ jest.mock('react-i18next', () => ({
         'settings.appearance.light': 'Light',
         'settings.appearance.dark': 'Dark',
         'settings.appearance.system': 'System',
-        'settings.appearance.description': 'Soft pastel tones are used in both light and dark modes',
+        'settings.appearance.description':
+          'Soft pastel tones are used in both light and dark modes',
         'settings.cardPreview.label': 'Show Card Preview',
         'settings.animations.label': 'Animations',
         'settings.keepyUppyEasyMode.label': 'Keepy Uppy Easy Mode',
         'settings.sound.label': 'Sound',
         'settings.telemetry.label': 'Share anonymous app updates',
-        'settings.telemetry.description': 'Analytics and crash reports stay off until you turn this on.',
+        'settings.telemetry.description':
+          'Analytics and crash reports stay off until you turn this on.',
         'settings.volume.title': 'Volume',
         'settings.gamesOnHomeScreen.title': 'Games on Home Screen',
         'settings.parentTimer.title': 'Parent Timer',
@@ -145,7 +147,7 @@ jest.mock('react-i18next', () => ({
         'games.bubblePop.title': 'Bubble Pop',
         'games.bubblePop.subtitle': 'Tap the falling bubbles to pop them.',
         'games.bubblePop.popped': 'Popped: {{count}}',
-        // Glitter Fall  
+        // Glitter Fall
         'games.glitterFall.title': 'Glitter Fall',
         'games.glitterFall.subtitle': 'Shake or swipe to make the glitter sparkle',
         'games.glitterFall.addGlitter': '⭐ Sprinkle',
@@ -189,7 +191,8 @@ jest.mock('react-i18next', () => ({
         // Common UI strings
         'common.selectOption': 'Select an option',
         'home.websiteLinkFallback.title': 'Website unavailable',
-        'home.websiteLinkFallback.message': "We couldn't open the Gentle Games website right now. Please try again later.",
+        'home.websiteLinkFallback.message':
+          "We couldn't open the Gentle Games website right now. Please try again later.",
         'common.openOptions': 'Open options',
         'common.close': 'Close',
         'common.on': 'On',
@@ -262,14 +265,16 @@ jest.mock('./src/utils/sounds', () => ({
   playCompleteSound: jest.fn(() => Promise.resolve()),
 }));
 
-export { };
+export {};
 
 // Animation mocks for GlitterGlobe
 let mockRafId = 0;
-(global as unknown as Record<string, unknown>).requestAnimationFrame = jest.fn((callback: (time: number) => void) => {
-  mockRafId += 1;
-  return setTimeout(() => callback(mockRafId * 16), 16);
-});
+(global as unknown as Record<string, unknown>).requestAnimationFrame = jest.fn(
+  (callback: (time: number) => void) => {
+    mockRafId += 1;
+    return setTimeout(() => callback(mockRafId * 16), 16);
+  },
+);
 
 (global as unknown as Record<string, unknown>).cancelAnimationFrame = jest.fn((id: number) => {
   clearTimeout(id);

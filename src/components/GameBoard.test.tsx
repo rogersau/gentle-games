@@ -62,12 +62,24 @@ jest.mock('../utils/gameLogic', () => {
 jest.mock('./Tile', () => {
   const { TouchableOpacity, Text } = require('react-native');
   return {
-    Tile: ({ tile, onPress, size }: { tile: { id: string; value: string; isFlipped: boolean; isMatched: boolean }; onPress: () => void; size: number }) => {
+    Tile: ({
+      tile,
+      onPress,
+      size,
+    }: {
+      tile: { id: string; value: string; isFlipped: boolean; isMatched: boolean };
+      onPress: () => void;
+      size: number;
+    }) => {
       renderedTileSize = size;
       return (
-        <TouchableOpacity testID={`tile-${tile.id}`} style={{ width: size, height: size }} onPress={onPress}>
-        <Text>{tile.isFlipped || tile.isMatched ? tile.value : '?'}</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          testID={`tile-${tile.id}`}
+          style={{ width: size, height: size }}
+          onPress={onPress}
+        >
+          <Text>{tile.isFlipped || tile.isMatched ? tile.value : '?'}</Text>
+        </TouchableOpacity>
       );
     },
   };
@@ -90,9 +102,7 @@ describe('GameBoard', () => {
   });
 
   it('starts timer on first tile flip', async () => {
-    const screen = render(
-      <GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />
-    );
+    const screen = render(<GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />);
 
     expect(screen.getByText('—')).toBeTruthy();
     await act(async () => {
@@ -110,9 +120,7 @@ describe('GameBoard', () => {
     let screen!: ReturnType<typeof render>;
 
     try {
-      screen = render(
-        <GameBoard onGameComplete={onGameComplete} onBackPress={jest.fn()} />
-      );
+      screen = render(<GameBoard onGameComplete={onGameComplete} onBackPress={jest.fn()} />);
 
       await act(async () => {
         fireEvent.press(screen.getByTestId('tile-1a'));
@@ -166,14 +174,12 @@ describe('GameBoard', () => {
     const now = Date.now();
     let mockTime = now;
     let screen!: ReturnType<typeof render>;
-    
+
     // Mock Date.now to return controlled times
     jest.spyOn(Date, 'now').mockImplementation(() => mockTime);
 
     try {
-      screen = render(
-        <GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />
-      );
+      screen = render(<GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />);
 
       // Simulate 3 seconds passing before user clicks first card
       mockTime = now + 3000;
@@ -194,15 +200,15 @@ describe('GameBoard', () => {
         const el = screen.queryByLabelText(/Time:/);
         expect(el).toBeTruthy();
       });
-      
+
       const timerElement = screen.queryByLabelText(/Time:/);
-      
+
       // Get the displayed time text - it should never start with minus
       const timerText = timerElement?.props?.children;
-      
+
       // Convert to string if it's a number or array
       const timerString = Array.isArray(timerText) ? timerText.join('') : String(timerText);
-      
+
       // The timer should show 0:00 or positive time, never negative
       // The bug causes it to show negative because currentTime is stale
       expect(timerString).not.toMatch(/^-/); // Should not start with minus sign
@@ -226,9 +232,7 @@ describe('GameBoard', () => {
     let screen!: ReturnType<typeof render>;
 
     try {
-      screen = render(
-        <GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />
-      );
+      screen = render(<GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />);
 
       expect(screen.queryAllByText('🐰').length).toBeGreaterThan(0);
       expect(screen.queryAllByText('?').length).toBe(0);
@@ -239,9 +243,7 @@ describe('GameBoard', () => {
 
       mockSettings.difficulty = 'medium';
 
-      screen.rerender(
-        <GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />
-      );
+      screen.rerender(<GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />);
 
       expect(screen.queryAllByText('🦊').length).toBeGreaterThan(0);
       expect(screen.queryAllByText('?').length).toBe(0);
@@ -276,9 +278,7 @@ describe('GameBoard', () => {
     let screen!: ReturnType<typeof render>;
 
     try {
-      screen = render(
-        <GameBoard onGameComplete={onGameComplete} onBackPress={jest.fn()} />
-      );
+      screen = render(<GameBoard onGameComplete={onGameComplete} onBackPress={jest.fn()} />);
 
       await act(async () => {
         fireEvent.press(screen.getByTestId('tile-1a'));
@@ -314,9 +314,7 @@ describe('GameBoard', () => {
     let screen!: ReturnType<typeof render>;
 
     try {
-      screen = render(
-        <GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />
-      );
+      screen = render(<GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />);
 
       await act(async () => {
         fireEvent.press(screen.getByTestId('tile-1a'));
@@ -331,9 +329,7 @@ describe('GameBoard', () => {
       mockSettings.difficulty = 'medium';
 
       await act(async () => {
-        screen.rerender(
-          <GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />
-        );
+        screen.rerender(<GameBoard onGameComplete={jest.fn()} onBackPress={jest.fn()} />);
       });
 
       await waitFor(() => {

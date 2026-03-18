@@ -37,8 +37,8 @@ const TestComponent: React.FC = () => {
 
   return (
     <View>
-      <Text testID="seconds">{secondsRemaining}</Text>
-      <Text testID="locked">{isLocked ? 'locked' : 'unlocked'}</Text>
+      <Text testID='seconds'>{secondsRemaining}</Text>
+      <Text testID='locked'>{isLocked ? 'locked' : 'unlocked'}</Text>
     </View>
   );
 };
@@ -59,7 +59,7 @@ describe('ParentTimerContext', () => {
     const { getByTestId } = render(
       <ParentTimerProvider>
         <TestComponent />
-      </ParentTimerProvider>
+      </ParentTimerProvider>,
     );
 
     expect(getByTestId('seconds').props.children).toBe(60);
@@ -72,7 +72,7 @@ describe('ParentTimerContext', () => {
     const { getByTestId } = render(
       <ParentTimerProvider>
         <TestComponent />
-      </ParentTimerProvider>
+      </ParentTimerProvider>,
     );
 
     expect(getByTestId('seconds').props.children).toBe(0);
@@ -82,7 +82,7 @@ describe('ParentTimerContext', () => {
     const { getByTestId } = render(
       <ParentTimerProvider>
         <TestComponent />
-      </ParentTimerProvider>
+      </ParentTimerProvider>,
     );
 
     expect(getByTestId('seconds').props.children).toBe(60);
@@ -104,7 +104,7 @@ describe('ParentTimerContext', () => {
     const { getByTestId } = render(
       <ParentTimerProvider>
         <TestComponent />
-      </ParentTimerProvider>
+      </ParentTimerProvider>,
     );
 
     expect(getByTestId('locked').props.children).toBe('unlocked');
@@ -122,7 +122,7 @@ describe('ParentTimerContext', () => {
     const { getByTestId } = render(
       <ParentTimerProvider>
         <TestComponent />
-      </ParentTimerProvider>
+      </ParentTimerProvider>,
     );
 
     // Lock the screen
@@ -145,7 +145,7 @@ describe('ParentTimerContext', () => {
     const { getByTestId, rerender } = render(
       <ParentTimerProvider>
         <TestComponent />
-      </ParentTimerProvider>
+      </ParentTimerProvider>,
     );
 
     // Advance timer partially
@@ -161,7 +161,7 @@ describe('ParentTimerContext', () => {
     rerender(
       <ParentTimerProvider>
         <TestComponent />
-      </ParentTimerProvider>
+      </ParentTimerProvider>,
     );
 
     expect(getByTestId('seconds').props.children).toBe(120);
@@ -172,7 +172,7 @@ describe('ParentTimerContext', () => {
     const { unmount } = render(
       <ParentTimerProvider>
         <TestComponent />
-      </ParentTimerProvider>
+      </ParentTimerProvider>,
     );
 
     unmount();
@@ -187,7 +187,7 @@ describe('ParentTimerContext', () => {
     const { getByText, queryByText } = render(
       <ParentTimerProvider>
         <TestComponent />
-      </ParentTimerProvider>
+      </ParentTimerProvider>,
     );
 
     // Should not show lock screen initially
@@ -208,7 +208,7 @@ describe('ParentTimerContext', () => {
     const { getByText } = render(
       <ParentTimerProvider>
         <TestComponent />
-      </ParentTimerProvider>
+      </ParentTimerProvider>,
     );
 
     // Lock the screen

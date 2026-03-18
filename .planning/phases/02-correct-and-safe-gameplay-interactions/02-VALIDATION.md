@@ -15,13 +15,13 @@ created: 2026-03-17
 
 ## Test Infrastructure
 
-| Property | Value |
-|----------|-------|
-| **Framework** | Jest 29 + `jest-expo` 54 |
-| **Config file** | `jest.config.js` |
-| **Quick run command** | `npm test -- --runInBand src/components/DrawingCanvas.test.tsx src/utils/numberPicnicLogic.test.ts src/screens/NumberPicnicScreen.test.tsx src/components/GameBoard.test.tsx` |
-| **Full suite command** | `npm run ci:shared` |
-| **Estimated runtime** | ~25 seconds |
+| Property               | Value                                                                                                                                                                         |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Framework**          | Jest 29 + `jest-expo` 54                                                                                                                                                      |
+| **Config file**        | `jest.config.js`                                                                                                                                                              |
+| **Quick run command**  | `npm test -- --runInBand src/components/DrawingCanvas.test.tsx src/utils/numberPicnicLogic.test.ts src/screens/NumberPicnicScreen.test.tsx src/components/GameBoard.test.tsx` |
+| **Full suite command** | `npm run ci:shared`                                                                                                                                                           |
+| **Estimated runtime**  | ~25 seconds                                                                                                                                                                   |
 
 ---
 
@@ -36,15 +36,15 @@ created: 2026-03-17
 
 ## Per-Task Verification Map
 
-| Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 02-01-01 | 01 | 1 | PLAY-01 | component integration | `npm test -- --runInBand src/components/DrawingCanvas.test.tsx` | ✅ | ⬜ pending |
-| 02-02-01 | 02 | 1 | PLAY-02, PLAY-03 | hook + screen integration | `npm test -- --runInBand src/utils/numberPicnicLogic.test.ts src/screens/NumberPicnicScreen.test.tsx` | ✅ | ⬜ pending |
-| 02-02-02 | 02 | 1 | PLAY-02, PLAY-03 | screen/component integration | `npm test -- --runInBand src/screens/NumberPicnicScreen.test.tsx src/utils/numberPicnicLogic.test.ts` | ✅ | ⬜ pending |
-| 02-03-01 | 03 | 2 | STAB-03, PERF-03 | hook/unit + fake timers | `npm test -- --runInBand src/utils/useTrackedTimeouts.test.ts src/utils/numberPicnicLogic.test.ts && npm run typecheck` | ❌ W0 | ⬜ pending |
-| 02-03-02 | 03 | 2 | STAB-03, PERF-03 | component integration + fake timers | `npm test -- --runInBand src/components/GameBoard.test.tsx src/utils/useTrackedTimeouts.test.ts && npm run typecheck` | ❌ W0 | ⬜ pending |
+| Task ID  | Plan | Wave | Requirement      | Test Type                           | Automated Command                                                                                                       | File Exists | Status     |
+| -------- | ---- | ---- | ---------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| 02-01-01 | 01   | 1    | PLAY-01          | component integration               | `npm test -- --runInBand src/components/DrawingCanvas.test.tsx`                                                         | ✅          | ⬜ pending |
+| 02-02-01 | 02   | 1    | PLAY-02, PLAY-03 | hook + screen integration           | `npm test -- --runInBand src/utils/numberPicnicLogic.test.ts src/screens/NumberPicnicScreen.test.tsx`                   | ✅          | ⬜ pending |
+| 02-02-02 | 02   | 1    | PLAY-02, PLAY-03 | screen/component integration        | `npm test -- --runInBand src/screens/NumberPicnicScreen.test.tsx src/utils/numberPicnicLogic.test.ts`                   | ✅          | ⬜ pending |
+| 02-03-01 | 03   | 2    | STAB-03, PERF-03 | hook/unit + fake timers             | `npm test -- --runInBand src/utils/useTrackedTimeouts.test.ts src/utils/numberPicnicLogic.test.ts && npm run typecheck` | ❌ W0       | ⬜ pending |
+| 02-03-02 | 03   | 2    | STAB-03, PERF-03 | component integration + fake timers | `npm test -- --runInBand src/components/GameBoard.test.tsx src/utils/useTrackedTimeouts.test.ts && npm run typecheck`   | ❌ W0       | ⬜ pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+_Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky_
 
 ---
 

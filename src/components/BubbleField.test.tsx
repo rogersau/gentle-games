@@ -62,7 +62,7 @@ jest.mock('../utils/bubbleLogic', () => {
       minimum: number,
       _width: number,
       _height: number,
-      maxBubbles: number
+      maxBubbles: number,
     ) => {
       const next = [...existing];
       while (next.length < minimum && next.length < maxBubbles) {
@@ -74,7 +74,7 @@ jest.mock('../utils/bubbleLogic', () => {
       existing: ReturnType<typeof createBubble>[],
       count: number,
       _width: number,
-      _height: number
+      _height: number,
     ) => {
       const next = [...existing];
       for (let index = 0; index < count; index += 1) {
@@ -106,16 +106,17 @@ describe('BubbleField', () => {
   };
 
   const getBubbleCircles = (screen: ReturnType<typeof render>) =>
-    screen.UNSAFE_root
-      .findAllByType(Circle)
-      .filter((node: any) => node.props.strokeWidth === 2 && node.props.fill !== 'none');
+    screen.UNSAFE_root.findAllByType(Circle).filter(
+      (node: any) => node.props.strokeWidth === 2 && node.props.fill !== 'none',
+    );
 
   const getPopIndicators = (screen: ReturnType<typeof render>) =>
-    screen.UNSAFE_root
-      .findAllByType(Circle)
-      .filter((node: any) => node.props.strokeWidth === 2 && node.props.fill === 'none');
+    screen.UNSAFE_root.findAllByType(Circle).filter(
+      (node: any) => node.props.strokeWidth === 2 && node.props.fill === 'none',
+    );
 
-  const getPopIndicatorLabels = (screen: ReturnType<typeof render>) => screen.UNSAFE_root.findAllByType(SvgText);
+  const getPopIndicatorLabels = (screen: ReturnType<typeof render>) =>
+    screen.UNSAFE_root.findAllByType(SvgText);
 
   beforeAll(() => {
     globalThis.requestAnimationFrame = jest.fn((callback: FrameRequestCallback) => {
@@ -134,7 +135,7 @@ describe('BubbleField', () => {
     nextFrameId = 0;
     jest
       .spyOn(PanResponder, 'create')
-      .mockImplementation((handlers: any) => ({ panHandlers: handlers } as any));
+      .mockImplementation((handlers: any) => ({ panHandlers: handlers }) as any);
   });
 
   afterEach(() => {
@@ -154,7 +155,7 @@ describe('BubbleField', () => {
         minActiveBubbles={2}
         maxActiveBubbles={4}
         spawnIntervalMs={100}
-      />
+      />,
     );
 
     expect(getBubbleCircles(screen)).toHaveLength(2);
@@ -169,7 +170,7 @@ describe('BubbleField', () => {
 
   it('cancels its animation frame on unmount even when the first frame id is zero', () => {
     const screen = render(
-      <BubbleField width={240} height={220} minActiveBubbles={1} maxActiveBubbles={2} />
+      <BubbleField width={240} height={220} minActiveBubbles={1} maxActiveBubbles={2} />,
     );
 
     screen.unmount();
@@ -180,16 +181,20 @@ describe('BubbleField', () => {
   it('removes the tapped bubble, creates an indicator, and calls onBubblePop', () => {
     const onBubblePop = jest.fn();
     const screen = render(
-      <BubbleField width={240} height={220} minActiveBubbles={1} maxActiveBubbles={2} onBubblePop={onBubblePop} />
+      <BubbleField
+        width={240}
+        height={220}
+        minActiveBubbles={1}
+        maxActiveBubbles={2}
+        onBubblePop={onBubblePop}
+      />,
     );
 
-    const touchLayer = screen.UNSAFE_getAllByType(View).find(
-      (node) => typeof node.props.onPanResponderRelease === 'function'
-    );
+    const touchLayer = screen
+      .UNSAFE_getAllByType(View)
+      .find((node) => typeof node.props.onPanResponderRelease === 'function');
 
-    expect(
-      getBubbleCircles(screen).length
-    ).toBeGreaterThan(0);
+    expect(getBubbleCircles(screen).length).toBeGreaterThan(0);
 
     const firstBubble = getBubbleCircles(screen)[0];
     const tappedBubblePosition = {
@@ -210,8 +215,8 @@ describe('BubbleField', () => {
     expect(
       getBubbleCircles(screen).some(
         (node: any) =>
-          node.props.cx === tappedBubblePosition.x && node.props.cy === tappedBubblePosition.y
-      )
+          node.props.cx === tappedBubblePosition.x && node.props.cy === tappedBubblePosition.y,
+      ),
     ).toBe(false);
     expect(getBubbleCircles(screen)).toHaveLength(1);
     expect(getPopIndicators(screen)).toHaveLength(1);

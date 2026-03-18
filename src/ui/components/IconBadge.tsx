@@ -33,14 +33,14 @@ export const IconBadge: React.FC<IconBadgeProps> = ({
   const { colors } = useThemeColors();
   const styles = useMemo(
     () => createStyles(colors, size, backgroundColor, showBorder),
-    [colors, size, backgroundColor, showBorder]
+    [colors, size, backgroundColor, showBorder],
   );
 
   return (
     <View
       style={styles.outerRing}
       accessibilityLabel={accessibilityLabel}
-      accessibilityRole="image"
+      accessibilityRole='image'
     >
       <View style={styles.innerCircle}>
         <Text style={styles.icon}>{icon}</Text>
@@ -53,7 +53,7 @@ const createStyles = (
   colors: ThemeColors,
   size: BadgeSize,
   backgroundColor: string | undefined,
-  showBorder: boolean
+  showBorder: boolean,
 ) => {
   const s = sizeMap[size];
   const bg = backgroundColor ?? colors.surfaceElevated;

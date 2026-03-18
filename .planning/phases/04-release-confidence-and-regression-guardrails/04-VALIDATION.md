@@ -15,13 +15,13 @@ created: 2026-03-17
 
 ## Test Infrastructure
 
-| Property | Value |
-|----------|-------|
-| **Framework** | Jest 29 + `jest-expo` 54 |
-| **Config file** | `jest.config.js` |
-| **Quick run command** | `npm test -- --runInBand <phase-targeted tests> && npm run typecheck` |
+| Property               | Value                                                                                        |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| **Framework**          | Jest 29 + `jest-expo` 54                                                                     |
+| **Config file**        | `jest.config.js`                                                                             |
+| **Quick run command**  | `npm test -- --runInBand <phase-targeted tests> && npm run typecheck`                        |
 | **Full suite command** | `npm run ci:shared && npm run build:web && npm run validate:android && npm run validate:ios` |
-| **Estimated runtime** | ~60 seconds |
+| **Estimated runtime**  | ~60 seconds                                                                                  |
 
 ---
 
@@ -36,17 +36,17 @@ created: 2026-03-17
 
 ## Per-Task Verification Map
 
-| Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 04-01-01 | 01 | 1 | RELG-04 | component integration | `npm test -- --runInBand src/components/numberpicnic/PicnicBlanket.test.tsx src/screens/NumberPicnicScreen.test.tsx` | ✅ | ⬜ pending |
-| 04-01-02 | 01 | 1 | RELG-04 | component + screen integration | `npm test -- --runInBand src/components/CategoryMatchBoard.test.tsx src/screens/CategoryMatchScreen.test.tsx` | ❌ W0 | ⬜ pending |
-| 04-01-03 | 01 | 1 | RELG-04 | screen/component integration | `npm test -- --runInBand src/screens/BubbleScreen.test.tsx src/screens/GameScreen.test.tsx src/components/BubbleField.test.tsx src/components/GameBoard.test.tsx` | ❌ W0 | ⬜ pending |
-| 04-02-01 | 02 | 2 | RELG-01, RELG-03 | node script unit test | `npm test -- --runInBand scripts/upload-sourcemaps.test.js` | ❌ W0 | ⬜ pending |
-| 04-02-02 | 02 | 2 | RELG-01, RELG-03 | script + export validation | `npm test -- --runInBand scripts/upload-sourcemaps.test.js && npm run build:web && npm run validate:android && npm run validate:ios` | ❌ W0 | ⬜ pending |
-| 04-03-01 | 03 | 2 | RELG-02 | app + utility regression | `npm test -- --runInBand App.test.tsx src/utils/observabilityBootstrap.test.ts && npm run typecheck` | ✅ | ⬜ pending |
-| 04-03-02 | 03 | 2 | RELG-02 | observability lifecycle regression | `npm test -- --runInBand src/utils/sentry.test.ts src/utils/analytics.test.ts src/utils/analytics-fallback.test.ts && npm run typecheck` | ✅ | ⬜ pending |
+| Task ID  | Plan | Wave | Requirement      | Test Type                          | Automated Command                                                                                                                                                 | File Exists | Status     |
+| -------- | ---- | ---- | ---------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| 04-01-01 | 01   | 1    | RELG-04          | component integration              | `npm test -- --runInBand src/components/numberpicnic/PicnicBlanket.test.tsx src/screens/NumberPicnicScreen.test.tsx`                                              | ✅          | ⬜ pending |
+| 04-01-02 | 01   | 1    | RELG-04          | component + screen integration     | `npm test -- --runInBand src/components/CategoryMatchBoard.test.tsx src/screens/CategoryMatchScreen.test.tsx`                                                     | ❌ W0       | ⬜ pending |
+| 04-01-03 | 01   | 1    | RELG-04          | screen/component integration       | `npm test -- --runInBand src/screens/BubbleScreen.test.tsx src/screens/GameScreen.test.tsx src/components/BubbleField.test.tsx src/components/GameBoard.test.tsx` | ❌ W0       | ⬜ pending |
+| 04-02-01 | 02   | 2    | RELG-01, RELG-03 | node script unit test              | `npm test -- --runInBand scripts/upload-sourcemaps.test.js`                                                                                                       | ❌ W0       | ⬜ pending |
+| 04-02-02 | 02   | 2    | RELG-01, RELG-03 | script + export validation         | `npm test -- --runInBand scripts/upload-sourcemaps.test.js && npm run build:web && npm run validate:android && npm run validate:ios`                              | ❌ W0       | ⬜ pending |
+| 04-03-01 | 03   | 2    | RELG-02          | app + utility regression           | `npm test -- --runInBand App.test.tsx src/utils/observabilityBootstrap.test.ts && npm run typecheck`                                                              | ✅          | ⬜ pending |
+| 04-03-02 | 03   | 2    | RELG-02          | observability lifecycle regression | `npm test -- --runInBand src/utils/sentry.test.ts src/utils/analytics.test.ts src/utils/analytics-fallback.test.ts && npm run typecheck`                          | ✅          | ⬜ pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+_Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky_
 
 ---
 

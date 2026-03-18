@@ -18,7 +18,7 @@ const mockT = (key: string, options?: Record<string, unknown>): string => {
     'games.patternTrain.feedback.incorrectOptions': 'Try again! Keep trying! Almost!',
     'games.patternTrain.feedback.reveal': 'The answer was {{answer}}',
   };
-  
+
   let result = translations[key] || key;
   if (options && typeof options === 'object') {
     Object.entries(options).forEach(([k, v]) => {
@@ -53,9 +53,7 @@ describe('usePatternTrainGame', () => {
 
   describe('Initial State', () => {
     it('should initialize with correct default state', () => {
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       expect(result.current.state.pattern).toBeNull();
       expect(result.current.state.completedRounds).toBe(0);
@@ -76,9 +74,7 @@ describe('usePatternTrainGame', () => {
       const mockPattern = createMockPattern();
       (patternTrainLogic.generateTrainPattern as jest.Mock).mockReturnValue(mockPattern);
 
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       act(() => {
         result.current.actions.handleDifficultySelect('medium');
@@ -90,9 +86,7 @@ describe('usePatternTrainGame', () => {
     });
 
     it('should handle closing difficulty selector', () => {
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       act(() => {
         result.current.actions.handleCloseDifficultySelector();
@@ -107,9 +101,7 @@ describe('usePatternTrainGame', () => {
       const mockPattern = createMockPattern();
       (patternTrainLogic.generateTrainPattern as jest.Mock).mockReturnValue(mockPattern);
 
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       // Set some state first
       act(() => {
@@ -132,9 +124,7 @@ describe('usePatternTrainGame', () => {
     });
 
     it('should handle correct answer and increment rounds', () => {
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       act(() => {
         result.current.actions.handleCorrectAnswer();
@@ -144,9 +134,7 @@ describe('usePatternTrainGame', () => {
     });
 
     it('should trigger milestone modal every 5 rounds', () => {
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       // Complete 4 rounds one at a time
       act(() => {
@@ -178,9 +166,7 @@ describe('usePatternTrainGame', () => {
       const mockPattern = createMockPattern();
       (patternTrainLogic.generateTrainPattern as jest.Mock).mockReturnValue(mockPattern);
 
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       // First set a pattern
       act(() => {
@@ -199,9 +185,7 @@ describe('usePatternTrainGame', () => {
       const mockPattern = createMockPattern();
       (patternTrainLogic.generateTrainPattern as jest.Mock).mockReturnValue(mockPattern);
 
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       // Set a pattern first
       act(() => {
@@ -226,9 +210,7 @@ describe('usePatternTrainGame', () => {
   describe('Timeout Management', () => {
     it('should queue and execute timeouts', () => {
       const callback = jest.fn();
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       act(() => {
         result.current.actions.queueTimeout(callback, 1000);
@@ -245,9 +227,7 @@ describe('usePatternTrainGame', () => {
 
     it('should clear all timeouts', () => {
       const callback = jest.fn();
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       act(() => {
         result.current.actions.queueTimeout(callback, 1000);
@@ -266,9 +246,7 @@ describe('usePatternTrainGame', () => {
 
     it('should clear all timeouts when requested', () => {
       const callback = jest.fn();
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       act(() => {
         result.current.actions.queueTimeout(callback, 1000);
@@ -289,9 +267,7 @@ describe('usePatternTrainGame', () => {
 
   describe('Feedback', () => {
     it('should return random feedback for correct answers', () => {
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       const feedback = result.current.actions.getRandomFeedback('correct');
       expect(feedback).toBeTruthy();
@@ -301,9 +277,7 @@ describe('usePatternTrainGame', () => {
     });
 
     it('should return random feedback for incorrect answers', () => {
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       const feedback = result.current.actions.getRandomFeedback('incorrect');
       expect(feedback).toBeTruthy();
@@ -313,9 +287,7 @@ describe('usePatternTrainGame', () => {
 
     it('should fallback to default feedback when options array is empty', () => {
       const emptyT = () => '';
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: emptyT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: emptyT }));
 
       const feedback = result.current.actions.getRandomFeedback('correct');
       expect(feedback).toBe('');
@@ -324,9 +296,7 @@ describe('usePatternTrainGame', () => {
 
   describe('State Setters', () => {
     it('should update showMilestoneModal', () => {
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       act(() => {
         result.current.actions.setShowMilestoneModal(true);
@@ -336,9 +306,7 @@ describe('usePatternTrainGame', () => {
     });
 
     it('should update selectedChoice', () => {
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       act(() => {
         result.current.actions.setSelectedChoice('🚃');
@@ -348,9 +316,7 @@ describe('usePatternTrainGame', () => {
     });
 
     it('should update attachedCarriage', () => {
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       act(() => {
         result.current.actions.setAttachedCarriage('🚃');
@@ -360,9 +326,7 @@ describe('usePatternTrainGame', () => {
     });
 
     it('should update feedback', () => {
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       act(() => {
         result.current.actions.setFeedback('Great job!');
@@ -372,9 +336,7 @@ describe('usePatternTrainGame', () => {
     });
 
     it('should update feedbackType', () => {
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       act(() => {
         result.current.actions.setFeedbackType('correct');
@@ -384,9 +346,7 @@ describe('usePatternTrainGame', () => {
     });
 
     it('should update trainPhase', () => {
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       act(() => {
         result.current.actions.setTrainPhase('entering');
@@ -396,9 +356,7 @@ describe('usePatternTrainGame', () => {
     });
 
     it('should update isProcessing', () => {
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       act(() => {
         result.current.actions.setIsProcessing(true);
@@ -410,9 +368,7 @@ describe('usePatternTrainGame', () => {
 
   describe('Reset Game', () => {
     it('should reset all state to initial values', () => {
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       // Set various state
       act(() => {
@@ -445,9 +401,7 @@ describe('usePatternTrainGame', () => {
 
   describe('Handle Reveal Answer', () => {
     it('should handle reveal answer', () => {
-      const { result } = renderHook(() =>
-        usePatternTrainGame({ difficulty: 'easy', t: mockT })
-      );
+      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
       // Just verify it doesn't throw
       act(() => {

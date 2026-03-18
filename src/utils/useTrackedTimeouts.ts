@@ -28,7 +28,7 @@ export const useTrackedTimeouts = (): UseTrackedTimeoutsResult => {
       timeoutIdsRef.current.push(timeoutId);
       syncPendingTimeoutCount();
     },
-    [syncPendingTimeoutCount]
+    [syncPendingTimeoutCount],
   );
 
   const clearAllTimeouts = useCallback(() => {
