@@ -39,6 +39,7 @@ export const GameScreen: React.FC = () => {
           onBackPress={handleBackPress}
           bottomInset={insets.bottom}
           onPositiveEvent={celebrate}
+          onGameStart={() => showMochi(undefined, 'floating')}
           renderStats={({ time, moves }) => (
             <Text
               style={[styles.stats, { color: colors.text }]}
@@ -50,7 +51,7 @@ export const GameScreen: React.FC = () => {
           )}
         />
 
-        {/* In-game Mochi (small, bottom-right corner) */}
+        {/* In-game Mochi — shown only after game starts (onGameStart), floating higher to avoid card grid */}
         <MochiPresence
           size="sm"
           style={styles.mochiInGame}
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
   },
   mochiInGame: {
     position: 'absolute',
-    bottom: Space.lg,
+    bottom: Space.xl + Space.lg,
     right: Space.lg,
   },
 });

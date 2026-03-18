@@ -184,13 +184,15 @@ export const HomeScreen: React.FC = () => {
         ]}
       >
         <View style={styles.titleArea}>
-          <MochiPresence
-            size="lg"
-            style={styles.mochiInTitle}
-          />
-          <Text style={styles.title} accessibilityRole="header">
-            {t("home.title")}
-          </Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title} accessibilityRole="header">
+              {t("home.title")}
+            </Text>
+            <MochiPresence
+              size="sm"
+              style={styles.mochiInHeader}
+            />
+          </View>
           <Text style={styles.subtitle}>{t("home.subtitle")}</Text>
         </View>
 
@@ -308,6 +310,14 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     titleArea: {
       alignItems: "center",
       marginBottom: Space["2xl"],
+    },
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Space.sm,
+    },
+    mochiInHeader: {
+      marginTop: -Space.xs,
     },
     mochiInTitle: {
       marginBottom: Space.md,
