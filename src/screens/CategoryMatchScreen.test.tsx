@@ -36,8 +36,10 @@ jest.mock('../components/CategoryMatchBoard', () => {
   return {
     CategoryMatchBoard: ({
       onCorrectMatch,
+      onIncorrectMatch,
     }: {
       onCorrectMatch?: (item: { emoji: string; name: string; color: string; category: 'sky' }, category: 'sky') => void;
+      onIncorrectMatch?: () => void;
     }) => (
       <View>
         <Text>Mock Category Match Board</Text>
@@ -50,6 +52,9 @@ jest.mock('../components/CategoryMatchBoard', () => {
           }
         >
           <Text>Match Correct Item</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => onIncorrectMatch?.()}>
+          <Text>Match Incorrect Item</Text>
         </TouchableOpacity>
       </View>
     ),
@@ -76,5 +81,24 @@ describe('CategoryMatchScreen', () => {
     expect(screen.getByText('Correct: 0')).toBeTruthy();
     fireEvent.press(screen.getByText('Match Correct Item'));
     expect(screen.getByText('Correct: 1')).toBeTruthy();
+  });
+
+  it('keeps the preview hidden, resets streaks on incorrect matches, and shows encouragement after three correct matches', () => {
+    const screen = render(<CategoryMatchScreen />);
+
+    fireEvent.press(screen.getByText('Start Sorting'));
+
+    expect(screen.queryByText('Start Sorting')).toBeNull();
+    fireEvent.press(screen.getByText('Match Correct Item'));
+    fireEvent.press(screen.getByText('Match Correct Item'));
+    fireEvent.press(screen.getByText('Match Incorrect Item'));
+    expect(screen.queryByText('Wonderful sorting streak! ✨')).toBeNull();
+
+    fireEvent.press(screen.getByText('Match Correct Item'));
+    fireEvent.press(screen.getByText('Match Correct Item'));
+    fireEvent.press(screen.getByText('Match Correct Item'));
+
+    expect(screen.getByText('Correct: 5')).toBeTruthy();
+    expect(screen.getByText('Wonderful sorting streak! ✨')).toBeTruthy();
   });
 });
