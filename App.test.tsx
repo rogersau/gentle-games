@@ -171,58 +171,68 @@ const mockedUseSettings = jest.mocked(useSettings);
 const mockedTrackScreenView = jest.mocked(trackScreenView);
 const mockedReconcileObservability = jest.mocked(reconcileObservability);
 
+const createSettingsValue = (overrides?: Partial<ReturnType<typeof useSettings>>) => ({
+  settings: {
+    animationsEnabled: true,
+    soundEnabled: true,
+    soundVolume: 0.5,
+    difficulty: 'medium' as const,
+    theme: 'mixed' as const,
+    showCardPreview: true,
+    keepyUppyEasyMode: true,
+    colorMode: 'system' as const,
+    hiddenGames: [],
+    parentTimerMinutes: 0,
+    enableUnfinishedGames: true,
+    language: 'en-US',
+    reducedMotionEnabled: false,
+    telemetryEnabled: false,
+    ...overrides?.settings,
+  },
+  updateSettings: jest.fn(),
+  isLoading: false,
+  ...overrides,
+});
+
 describe('AppContent observability bootstrap', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     renderedScreenNames.length = 0;
-    mockedUseSettings.mockReturnValue({
-      settings: {
-        animationsEnabled: true,
-        soundEnabled: true,
-        soundVolume: 0.5,
-        difficulty: 'medium',
-        theme: 'mixed',
-        showCardPreview: true,
-        keepyUppyEasyMode: true,
-        colorMode: 'system',
-        hiddenGames: [],
-        parentTimerMinutes: 0,
-        enableUnfinishedGames: true,
-        language: 'en-US',
-        reducedMotionEnabled: false,
-        telemetryEnabled: false,
-      },
-      updateSettings: jest.fn(),
-      isLoading: false,
-    });
+    mockedUseSettings.mockReturnValue(createSettingsValue());
   });
 
-  it('does not reconcile observability until settings finish loading', () => {
-    mockedUseSettings.mockReturnValue({
+  it('does not reconcile observability until settings finish loading, then reconciles once when ready', async () => {
+    let currentSettings = createSettingsValue({
+      isLoading: true,
       settings: {
-        animationsEnabled: true,
-        soundEnabled: true,
-        soundVolume: 0.5,
-        difficulty: 'medium',
-        theme: 'mixed',
-        showCardPreview: true,
-        keepyUppyEasyMode: true,
-        colorMode: 'system',
-        hiddenGames: [],
-        parentTimerMinutes: 0,
-        enableUnfinishedGames: true,
-        language: 'en-US',
-        reducedMotionEnabled: false,
         telemetryEnabled: true,
       },
-      updateSettings: jest.fn(),
-      isLoading: true,
     });
+    mockedUseSettings.mockImplementation(() => currentSettings);
 
-    const { queryByTestId } = render(<AppContent />);
+    const { queryByTestId, rerender, getByTestId } = render(<AppContent />);
 
     expect(mockedReconcileObservability).not.toHaveBeenCalled();
     expect(queryByTestId('app-shell')).toBeNull();
+
+    currentSettings = createSettingsValue({
+      isLoading: false,
+      settings: {
+        telemetryEnabled: true,
+      },
+    });
+
+    rerender(<AppContent />);
+
+    await waitFor(() => {
+      expect(mockedReconcileObservability).toHaveBeenCalledTimes(1);
+      expect(mockedReconcileObservability).toHaveBeenCalledWith(true);
+    });
+
+    rerender(<AppContent />);
+
+    expect(mockedReconcileObservability).toHaveBeenCalledTimes(1);
+    expect(getByTestId('app-shell')).toBeTruthy();
   });
 
   it('renders the app shell and reconciles with telemetry disabled', async () => {
@@ -250,6 +260,36 @@ describe('AppContent observability bootstrap', () => {
 
     expect(getByTestId('app-shell')).toBeTruthy();
     warningSpy.mockRestore();
+  });
+
+  it('reconciles disabled startup first and then enabled telemetry after consent changes', async () => {
+    let currentSettings = createSettingsValue({
+      settings: {
+        telemetryEnabled: false,
+      },
+    });
+    mockedUseSettings.mockImplementation(() => currentSettings);
+
+    const { rerender, getByTestId } = render(<AppContent />);
+
+    await waitFor(() => {
+      expect(mockedReconcileObservability).toHaveBeenNthCalledWith(1, false);
+    });
+
+    currentSettings = createSettingsValue({
+      settings: {
+        telemetryEnabled: true,
+      },
+    });
+
+    rerender(<AppContent />);
+
+    await waitFor(() => {
+      expect(mockedReconcileObservability).toHaveBeenCalledTimes(2);
+      expect(mockedReconcileObservability).toHaveBeenNthCalledWith(2, true);
+    });
+
+    expect(getByTestId('app-shell')).toBeTruthy();
   });
 
   it('anchors stack screens and route tracking to the shared app route contract', () => {

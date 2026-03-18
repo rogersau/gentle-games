@@ -28,4 +28,29 @@ describe('reconcileObservability', () => {
     expect(reconcileAnalyticsConsent).toHaveBeenCalledWith(true);
     expect(reconcileSentryConsent).toHaveBeenCalledWith(true);
   });
+
+  it('throws a labeled aggregated error when only Sentry consent reconciliation fails', async () => {
+    jest.mocked(reconcileSentryConsent).mockRejectedValueOnce(new Error('Sentry unavailable'));
+
+    await expect(reconcileObservability(true)).rejects.toThrow(
+      'Observability reconciliation failed: Sentry unavailable',
+    );
+  });
+
+  it('throws a labeled aggregated error when only analytics consent reconciliation fails', async () => {
+    jest.mocked(reconcileAnalyticsConsent).mockRejectedValueOnce(new Error('Analytics unavailable'));
+
+    await expect(reconcileObservability(true)).rejects.toThrow(
+      'Observability reconciliation failed: Analytics unavailable',
+    );
+  });
+
+  it('throws a labeled aggregated error when both consent reconcilers fail', async () => {
+    jest.mocked(reconcileSentryConsent).mockRejectedValueOnce(new Error('Sentry unavailable'));
+    jest.mocked(reconcileAnalyticsConsent).mockRejectedValueOnce(new Error('Analytics unavailable'));
+
+    await expect(reconcileObservability(true)).rejects.toThrow(
+      'Observability reconciliation failed: Sentry unavailable; Analytics unavailable',
+    );
+  });
 });
