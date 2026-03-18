@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   },
   mochiInGame: {
     position: 'absolute',
-    bottom: Space.xl + Space.lg,
+    top: Space.base,
     right: Space.lg,
   },
 });
