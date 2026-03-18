@@ -16,9 +16,10 @@ interface GameBoardProps {
   onBackPress?: () => void;
   bottomInset?: number;
   renderStats?: (stats: { time: string; moves: number }) => React.ReactNode;
+  onPositiveEvent?: () => void;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPress, bottomInset = 0, renderStats }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPress, bottomInset = 0, renderStats, onPositiveEvent }) => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const { settings } = useSettings();
   const { colors, resolvedMode } = useThemeColors();
@@ -132,6 +133,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
 
         if (isMatch) {
           playMatchSound(settings);
+          onPositiveEvent?.();
 
           const updatedTiles = prev.map(tile =>
             newSelected.includes(tile.id) ? { ...tile, isMatched: true } : tile
@@ -169,7 +171,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
         return prev;
       });
     }
-  }, [selectedTiles, isProcessing, isPreviewPhase, settings, startTime, onGameComplete, queueTimeout]);
+  }, [selectedTiles, isProcessing, isPreviewPhase, settings, startTime, onGameComplete, onPositiveEvent, queueTimeout]);
 
   const elapsed = endTime
     ? endTime - (startTime || 0)
