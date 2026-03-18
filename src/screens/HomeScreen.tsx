@@ -15,7 +15,9 @@ import {
   AppModal,
   GameCard,
   SegmentedControl,
+  MochiPresence,
 } from "../ui/components";
+import { useMochi } from "../hooks/useMochi";
 import { Space, TypeStyle } from "../ui/tokens";
 import { useLayout } from "../ui/useLayout";
 
@@ -103,9 +105,14 @@ export const HomeScreen: React.FC = () => {
   );
   const { gridColumns, contentWidth, isTablet } = useLayout();
   const { t } = useTranslation();
+  const { celebrate, showMochi } = useMochi();
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [showDifficultySelector, setShowDifficultySelector] = useState(false);
   const [showWebsiteFallback, setShowWebsiteFallback] = useState(false);
+
+  React.useEffect(() => {
+    showMochi('mascot.greeting', 'floating');
+  }, [showMochi]);
 
   const difficultyOptions: {
     value: Difficulty;
@@ -131,8 +138,11 @@ export const HomeScreen: React.FC = () => {
     if (game.id === "memory-snap") {
       setShowDifficultySelector(true);
     } else {
-      navigation.navigate(HOME_GAME_ROUTES[game.id]);
-      setSelectedGame(null);
+      celebrate();
+      setTimeout(() => {
+        navigation.navigate(HOME_GAME_ROUTES[game.id]);
+        setSelectedGame(null);
+      }, 200);
     }
   };
 
@@ -174,6 +184,10 @@ export const HomeScreen: React.FC = () => {
         ]}
       >
         <View style={styles.titleArea}>
+          <MochiPresence
+            size="lg"
+            style={styles.mochiInTitle}
+          />
           <Text style={styles.title} accessibilityRole="header">
             {t("home.title")}
           </Text>
@@ -294,6 +308,9 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     titleArea: {
       alignItems: "center",
       marginBottom: Space["2xl"],
+    },
+    mochiInTitle: {
+      marginBottom: Space.md,
     },
     title: {
       ...TypeStyle.h1,
