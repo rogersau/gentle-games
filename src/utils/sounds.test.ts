@@ -49,6 +49,7 @@ describe('sounds (mocked)', () => {
         enableUnfinishedGames: false,
         reducedMotionEnabled: false,
         telemetryEnabled: false,
+        showMochiInGames: true,
       };
 
       await playFlipSound(settings);
@@ -73,6 +74,7 @@ describe('sounds (mocked)', () => {
         enableUnfinishedGames: false,
         reducedMotionEnabled: false,
         telemetryEnabled: false,
+        showMochiInGames: true,
       };
 
       await playMatchSound(settings);
@@ -97,6 +99,7 @@ describe('sounds (mocked)', () => {
         enableUnfinishedGames: false,
         reducedMotionEnabled: false,
         telemetryEnabled: false,
+        showMochiInGames: true,
       };
 
       await playCompleteSound(settings);
@@ -121,6 +124,7 @@ describe('sounds (mocked)', () => {
         enableUnfinishedGames: false,
         reducedMotionEnabled: false,
         telemetryEnabled: false,
+        showMochiInGames: true,
       };
 
       await playBubblePopSound(settings);

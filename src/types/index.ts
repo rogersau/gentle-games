@@ -47,6 +47,7 @@ export interface Settings {
   language: import('./i18n').SupportedLanguage;
   reducedMotionEnabled: boolean;
   telemetryEnabled: boolean;
+  showMochiInGames: boolean;
 }
 
 export const UNFINISHED_GAMES: string[] = ['number-picnic'];

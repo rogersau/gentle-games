@@ -25,6 +25,7 @@ const defaultSettings: Settings = {
   language: DEFAULT_LANGUAGE,
   reducedMotionEnabled: false,
   telemetryEnabled: false,
+  showMochiInGames: true,
 };
 
 const toBoolean = (value: unknown, fallback: boolean): boolean => {
@@ -103,6 +104,7 @@ const sanitizeSettings = (candidate: unknown): Settings => {
       defaultSettings.reducedMotionEnabled,
     ),
     telemetryEnabled: toBoolean(parsed.telemetryEnabled, defaultSettings.telemetryEnabled),
+    showMochiInGames: toBoolean(parsed.showMochiInGames, defaultSettings.showMochiInGames),
   };
 };
 

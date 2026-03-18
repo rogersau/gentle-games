@@ -192,6 +192,7 @@ const createSettingsValue = (overrides?: {
     language: 'en-US',
     reducedMotionEnabled: false,
     telemetryEnabled: false,
+    showMochiInGames: true,
     ...overrides?.settings,
   };
 

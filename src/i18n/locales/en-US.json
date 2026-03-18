@@ -324,6 +324,10 @@
     "telemetry": {
       "label": "Share anonymous app updates",
       "description": "Analytics and crash reports stay off until you turn this on."
+    },
+    "showMochiInGames": {
+      "label": "Show Mochi in games",
+      "description": "Mochi appears to celebrate milestones and encourage during games. Turn off for a quieter experience."
     }
   },
   "parentTimer": {

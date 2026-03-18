@@ -110,6 +110,16 @@ export const SettingsScreen: React.FC = () => {
           />
         </View>
 
+        {/* Show Mochi in Games */}
+        <View style={styles.section}>
+          <SettingToggle
+            label={t('settings.showMochiInGames.label')}
+            description={t('settings.showMochiInGames.description')}
+            value={!!settings.showMochiInGames}
+            onValueChange={(value) => updateSettings({ showMochiInGames: value })}
+          />
+        </View>
+
         {/* Card Preview */}
         <View style={styles.section}>
           <SettingToggle
