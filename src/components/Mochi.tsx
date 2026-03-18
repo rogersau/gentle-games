@@ -6,6 +6,12 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 export type MochiVariant = 'floating' | 'idle' | 'happy';
 export type MochiSize = 'sm' | 'md' | 'lg';
+
+const SIZE_MAP: Record<MochiSize, { width: number; height: number }> = {
+  sm: { width: 60, height: 70 },
+  md: { width: 100, height: 116 },
+  lg: { width: 150, height: 174 },
+};
 export type MochiProps = {
   variant?: MochiVariant;
   size?: MochiSize;

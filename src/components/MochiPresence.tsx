@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Mochi, MochiVariant, MochiSize } from './Mochi';
-import { useMochi } from '../hooks/useMochi';
+import { useMochiContext } from '../context/MochiContext';
 import { useThemeColors, useReducedMotion } from '../utils/theme';
 import { Space, TypeStyle } from '../ui/tokens';
 
@@ -20,7 +20,7 @@ export const MochiPresence: React.FC<MochiPresenceProps> = ({
   const { resolvedMode } = useThemeColors();
   const reducedMotion = useReducedMotion();
   const { t } = useTranslation();
-  const { mochiProps } = useMochi();
+  const { mochiProps } = useMochiContext();
 
   const { variant = 'idle', visible, phrase } = mochiProps;
 

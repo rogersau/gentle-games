@@ -10,6 +10,7 @@ import { PostHogProvider } from 'posthog-react-native';
 import './src/i18n';
 import { SettingsProvider, useSettings } from './src/context/SettingsContext';
 import { ParentTimerProvider } from './src/context/ParentTimerContext';
+import { MochiProvider } from './src/context/MochiContext';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { GameScreen } from './src/screens/GameScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
@@ -228,7 +229,9 @@ export const AppContent: React.FC = () => {
 
   return (
     <ParentTimerProvider>
-      <AppNavigator />
+      <MochiProvider>
+        <AppNavigator />
+      </MochiProvider>
     </ParentTimerProvider>
   );
 };
