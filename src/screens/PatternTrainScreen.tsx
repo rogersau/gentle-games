@@ -27,6 +27,7 @@ import { AppScreen, AppHeader, AppButton, AppCard, AppModal } from '../ui/compon
 import { Space, TypeStyle } from '../ui/tokens';
 import { useGentleBounce } from '../ui/animations';
 import { TrainEngine, Carriage } from '../components/train';
+import { useMochi } from '../hooks/useMochi';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -83,6 +84,16 @@ export const PatternTrainScreen: React.FC = () => {
   );
   const feedbackOpacity = useRef<Animated.Value>(new Animated.Value(1)).current;
   const { bounce: successBounce } = useGentleBounce();
+  const { showMochi } = useMochi();
+  const lastPhraseIndexRef = useRef(-1);
+
+  const pickPhrase = (phrases: string[], lastIndex: number): { phrase: string; index: number } => {
+    let idx: number;
+    do {
+      idx = Math.floor(Math.random() * phrases.length);
+    } while (idx === lastIndex && phrases.length > 1);
+    return { phrase: phrases[idx], index: idx };
+  };
 
   const difficultyOptions: {
     value: Difficulty;
@@ -373,6 +384,14 @@ export const PatternTrainScreen: React.FC = () => {
           // Check for milestone
           if (newCount > 0 && newCount % MILESTONE_INTERVAL === 0) {
             playCompleteSound(settings);
+            if (settings.showMochiInGames) {
+              const { phrase, index } = pickPhrase(
+                t('mascot.patternTrainPhrases', { returnObjects: true }) as string[],
+                lastPhraseIndexRef.current,
+              );
+              lastPhraseIndexRef.current = index;
+              showMochi(phrase, 'happy');
+            }
             setShowMilestoneModal(true);
           } else {
             // Exit train after success delay
@@ -459,6 +478,7 @@ export const PatternTrainScreen: React.FC = () => {
       t,
       startTrainExit,
       queueTimeout,
+      showMochi,
     ],
   );
 

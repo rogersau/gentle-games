@@ -103,6 +103,15 @@ jest.mock('../ui/animations', () => ({
   }),
 }));
 
+jest.mock('../context/MochiContext', () => ({
+  useMochiContext: () => ({
+    mochiProps: { variant: 'idle', visible: false, phrase: null },
+    showMochi: jest.fn(),
+    hideMochi: jest.fn(),
+    celebrate: jest.fn(),
+  }),
+}));
+
 describe('PatternTrainScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
