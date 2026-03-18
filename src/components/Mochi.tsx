@@ -34,7 +34,7 @@ export const Mochi: React.FC<MochiProps> = ({
   blushColor = '#F0C0D8',
   animate = true,
   className,
-  testID = 'mochi-body',
+  testID = 'mochi',
 }) => {
   const { width, height } = SIZE_MAP[size];
   const floatAnim = useRef(new Animated.Value(0)).current;
@@ -44,6 +44,7 @@ export const Mochi: React.FC<MochiProps> = ({
   const sparkle2 = useRef(new Animated.Value(0)).current;
   const sparkle3 = useRef(new Animated.Value(0)).current;
   const sparkles = [sparkle1, sparkle2, sparkle3];
+  const sparkleAnimRefs = useRef<Animated.CompositeAnimation[]>([]);
 
   useEffect(() => {
     if (!animate) return;
@@ -99,9 +100,8 @@ export const Mochi: React.FC<MochiProps> = ({
           useNativeDriver: true,
         }),
       ]).start();
-      if (animate) {
-        sparkles.forEach((sparkle, i) => {
-          Animated.loop(
+      sparkles.forEach((sparkle) => {
+          const loop = Animated.loop(
             Animated.sequence([
               Animated.timing(sparkle, {
                 toValue: 1,
@@ -114,11 +114,16 @@ export const Mochi: React.FC<MochiProps> = ({
                 useNativeDriver: true,
               }),
             ])
-          ).start();
+          );
+          sparkleAnimRefs.current.push(loop);
+          loop.start();
         });
-      }
+      return () => {
+        sparkleAnimRefs.current.forEach(a => a.stop());
+        sparkleAnimRefs.current = [];
+      };
     }
-  }, [variant, animate, floatAnim, scaleAnim, bounceAnim, sparkles]);
+  }, [variant, animate, floatAnim, scaleAnim, bounceAnim, sparkle1, sparkle2, sparkle3]);
 
   const animatedStyle = {
     transform: [
@@ -129,7 +134,8 @@ export const Mochi: React.FC<MochiProps> = ({
   };
 
   return (
-    <Animated.View style={[styles.container, { width, height }, animatedStyle]} testID={testID}>
+    // @ts-expect-error className not supported in RN but kept for API parity
+    <Animated.View style={[styles.container, { width, height }, animatedStyle]} className={className} testID={testID}>
       <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         {/* Shadow */}
         <Ellipse
