@@ -266,7 +266,10 @@ Find where `addBalloon` is called — that's the positive action. Increment tap 
 
 - [ ] **Step 4: Commit**
 
----
+```bash
+git add src/screens/KeepyUppyScreen.tsx
+git commit -m "feat: add Mochi milestone celebrations to Keepy Uppy"
+```
 
 ## Task 6: NumberPicnicScreen Mochi Milestones
 
@@ -285,6 +288,11 @@ Use `useMochi` hook. On each completed picnic, increment counter. Every 5, call 
 
 - [ ] **Step 3: Commit**
 
+```bash
+git add src/screens/NumberPicnicScreen.tsx
+git commit -m "feat: add Mochi milestone celebrations to Number Picnic"
+```
+
 ---
 
 ## Task 7: PatternTrainScreen Mochi Milestones
@@ -301,6 +309,11 @@ Find where pattern completion is detected — likely when `trainPhase` transitio
 - [ ] **Step 2: Add pattern completion counter and milestone check**
 
 - [ ] **Step 3: Commit**
+
+```bash
+git add src/screens/PatternTrainScreen.tsx
+git commit -m "feat: add Mochi milestone celebrations to Pattern Train"
+```
 
 ---
 
@@ -323,6 +336,11 @@ Important: This should fire only once on mount, not on every render.
 
 - [ ] **Step 3: Commit**
 
+```bash
+git add src/screens/DrawingScreen.tsx
+git commit -m "feat: add Mochi welcome back to Drawing"
+```
+
 ---
 
 ## Task 9: GlitterScreen Mochi Check-In
@@ -343,6 +361,11 @@ Track last interaction time. Reset timer on any touch/shake. When 15 seconds ela
 Implementation approach: On each touch/shake, record timestamp. Use a `setInterval` or check on each frame to see if 15s has passed since last interaction. If timer fires, show Mochi once and don't repeat until user interacts again (then reset).
 
 - [ ] **Step 3: Commit**
+
+```bash
+git add src/screens/GlitterScreen.tsx
+git commit -m "feat: add Mochi check-in to Glitter Globe"
+```
 
 ---
 
