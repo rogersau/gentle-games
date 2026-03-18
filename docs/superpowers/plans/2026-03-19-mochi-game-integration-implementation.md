@@ -350,7 +350,8 @@ Implementation approach: On each touch/shake, record timestamp. Use a `setInterv
 
 **Files:**
 - Modify: `src/screens/BreathingGardenScreen.tsx`
-- Modify: `src/components/BreathingBall.tsx` (may need conditional rendering)
+- Modify: `src/components/Mochi.tsx`
+- Note: `BreathingBall.tsx` is NOT modified — when `showMochiInGames` is OFF, the existing `<BreathingBall>` component is rendered instead (toggle handled in BreathingGardenScreen)
 
 **This is the most complex task.** Mochi replaces the abstract expanding ball as the breathing guide. Mochi sits centered and expands/contracts with the breath cycle.
 
@@ -358,21 +359,47 @@ Implementation approach: On each touch/shake, record timestamp. Use a `setInterv
 
 Understand how the breathing timing is controlled — the `phase` (inhale/exhale) and `progress` (0-1 through each phase) from `breathingGardenLogic.ts`.
 
-- [ ] **Step 2: Understand Mochi SVG scaling**
+- [ ] **Step 2: Read Mochi.tsx**
 
-Mochi is currently a static SVG. We need to make it scale (expand/contract) with the breathing phase.
+Study the existing `scaleAnim` Animated.Value (currently drives subtle idle breathing at 1.0-1.02). The breathing guide needs scale driven by external progress (0.67 contracted → 1.0 expanded).
 
-Looking at Mochi.tsx, check how size is controlled. May need to add an `animate` prop that drives a scale transform.
+- [ ] **Step 3: Add breathing props to Mochi**
 
-- [ ] **Step 3: Add breathing animation to Mochi**
+Modify `src/components/Mochi.tsx`:
 
-In `src/components/Mochi.tsx`, add a new prop or variant that supports breathing scale:
-
+Add to `MochiProps`:
 ```typescript
-// Add to MochiProps:
-scale?: number; // 0.0-1.0, where 1.0 is full size, 0.67 is contracted
+breathingPhase?: 'inhale' | 'exhale' | null;
+breathingProgress?: number; // 0.0-1.0 through current phase
+```
 
-// Or add a breathingPhase?: 'inhale' | 'exhale' prop
+Stop the idle breathing animation when `breathingPhase` is set. When `breathingPhase='inhale'`, drive `scaleAnim` from 0.67 (start) to 1.0 (end) as `breathingProgress` goes 0→1. When `breathingPhase='exhale'`, drive from 1.0 back to 0.67 as `breathingProgress` goes 0→1.
+
+Implementation approach: Add a `useEffect` that listens to `breathingProgress` and calls `Animated.timing(scaleAnim, { toValue: scale, ... })` when `breathingPhase` is set. Use ` Animated.Sequence` or direct value updates.
+
+Add open eyes to the SVG: add a `<Ellipse>` for left and right open eyes, wrapped in an `<Animated>` with opacity driven by an `eyeOpenAnim` Animated.Value (1 when inhale, 0 when exhale). Existing arc eyes stay visible (they represent closed/relaxed state for exhale).
+
+When `breathingPhase='inhale'`: `eyeOpenAnim` → 1, arc eyes opacity → 0.
+When `breathingPhase='exhale'`: `eyeOpenAnim` → 0, arc eyes opacity → 1.
+When `breathingPhase` is null/undefined: show default closed-arc eyes (existing behavior).
+
+- [ ] **Step 4: Update BreathingGardenScreen to use Mochi**
+
+Replace the `<BreathingBall>` component with `<Mochi breathingPhase={phase} breathingProgress={progress} />` centered on screen.
+
+Use the existing `phase` and `progress` values from the breathing logic. Center Mochi in the same position BreathingBall currently occupies.
+
+Position all existing UI (cycle counter, phase labels, color scheme selector) around Mochi — same layout but Mochi is the focal point.
+
+- [ ] **Step 5: Handle parent toggle**
+
+In BreathingGardenScreen, check `settings.showMochiInGames`. If true, render `<Mochi ...>`. If false, render existing `<BreathingBall ...>`.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/components/Mochi.tsx src/screens/BreathingGardenScreen.tsx
+git commit -m "feat: replace BreathingBall with Mochi as breathing guide"
 ```
 
 When `breathingPhase='inhale'` and `progress` increases, scale increases (e.g., 0.67 → 1.0).
