@@ -3,6 +3,7 @@ import { Animated, StyleSheet } from 'react-native';
 import Svg, { Ellipse, Path, Circle } from 'react-native-svg';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const AnimatedEllipse = Animated.createAnimatedComponent(Ellipse);
 
 export type MochiVariant = 'floating' | 'idle' | 'happy';
 export type MochiSize = 'sm' | 'md' | 'lg';
@@ -22,6 +23,8 @@ export type MochiProps = {
   animate?: boolean;
   className?: string;
   testID?: string;
+  breathingPhase?: 'inhale' | 'exhale' | null;
+  breathingProgress?: number;
 };
 
 export const Mochi: React.FC<MochiProps> = ({
@@ -34,6 +37,8 @@ export const Mochi: React.FC<MochiProps> = ({
   animate = true,
   className,
   testID = 'mochi',
+  breathingPhase = null,
+  breathingProgress = 0,
 }) => {
   const { width, height } = SIZE_MAP[size];
   const floatAnim = useRef(new Animated.Value(0)).current;
@@ -44,9 +49,43 @@ export const Mochi: React.FC<MochiProps> = ({
   const sparkle3 = useRef(new Animated.Value(0)).current;
   const sparkles = [sparkle1, sparkle2, sparkle3];
   const sparkleAnimRefs = useRef<Animated.CompositeAnimation[]>([]);
+  const eyeOpenAnim = useRef(new Animated.Value(0)).current;
+  const prevBreathingPhase = useRef<typeof breathingPhase>(null);
+
+  const isBreathing = breathingPhase !== null;
+  const MIN_SCALE = 0.67;
+  const MAX_SCALE = 1.0;
+
+  useEffect(() => {
+    if (isBreathing) {
+      scaleAnim.stopAnimation();
+      floatAnim.stopAnimation();
+      const targetScale =
+        breathingPhase === 'inhale'
+          ? MIN_SCALE + breathingProgress * (MAX_SCALE - MIN_SCALE)
+          : MAX_SCALE - breathingProgress * (MAX_SCALE - MIN_SCALE);
+      scaleAnim.setValue(targetScale);
+    }
+  }, [isBreathing, breathingPhase, breathingProgress, scaleAnim, floatAnim]);
+
+  useEffect(() => {
+    if (isBreathing) {
+      const targetEyeOpen = breathingPhase === 'inhale' ? 1 : 0;
+      if (prevBreathingPhase.current !== breathingPhase) {
+        Animated.timing(eyeOpenAnim, {
+          toValue: targetEyeOpen,
+          duration: 500,
+          useNativeDriver: true,
+        }).start();
+      }
+      prevBreathingPhase.current = breathingPhase;
+    }
+  }, [isBreathing, breathingPhase, eyeOpenAnim]);
 
   useEffect(() => {
     if (!animate) return;
+
+    if (isBreathing) return;
 
     if (variant === 'floating') {
       const float = Animated.loop(
@@ -181,6 +220,24 @@ export const Mochi: React.FC<MochiProps> = ({
           strokeWidth={2}
           fill='none'
           strokeLinecap='round'
+        />
+        {/* Left open eye (visible during inhale) */}
+        <AnimatedEllipse
+          cx={width * 0.37}
+          cy={height * 0.45}
+          rx={width * 0.05}
+          ry={height * 0.04}
+          fill={shadowColor}
+          opacity={eyeOpenAnim}
+        />
+        {/* Right open eye (visible during inhale) */}
+        <AnimatedEllipse
+          cx={width * 0.63}
+          cy={height * 0.45}
+          rx={width * 0.05}
+          ry={height * 0.04}
+          fill={shadowColor}
+          opacity={eyeOpenAnim}
         />
         {/* Left blush */}
         <Circle cx={width * 0.25} cy={height * 0.52} r={4} fill={blushColor} opacity={0.5} />

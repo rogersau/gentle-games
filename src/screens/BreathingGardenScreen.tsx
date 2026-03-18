@@ -4,6 +4,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { ThemeColors } from '../types';
 import { BreathingBall, BallColorScheme } from '../components/BreathingBall';
+import { Mochi } from '../components/Mochi';
 import { useThemeColors } from '../utils/theme';
 import { useBackgroundMusic } from '../utils/music';
 import { useSettings } from '../context/SettingsContext';
@@ -157,14 +158,26 @@ export const BreathingGardenScreen: React.FC = () => {
               : t('games.breathingGarden.exhale')}
           </Animated.Text>
           <View style={styles.ballContainer}>
-            <BreathingBall
-              size={BALL_SIZE}
-              colorScheme={ballColors}
-              autoStart={true}
-              onPhaseChange={setPhase}
-              onCycleComplete={setBreaths}
-              onProgress={setProgress}
-            />
+            <View style={settings.showMochiInGames ? styles.hiddenBall : undefined}>
+              <BreathingBall
+                size={BALL_SIZE}
+                colorScheme={ballColors}
+                autoStart={true}
+                onPhaseChange={setPhase}
+                onCycleComplete={setBreaths}
+                onProgress={setProgress}
+              />
+            </View>
+            {settings.showMochiInGames ? (
+              <Mochi
+                size='lg'
+                breathingPhase={phase}
+                breathingProgress={progress}
+                color={ballColors.primary}
+                highlightColor={ballColors.accent}
+                shadowColor={ballColors.accent}
+              />
+            ) : null}
             <Animated.Text style={[styles.countText, { opacity: countOpacityRef.current }]}>
               {currentCount > 0 ? currentCount : ''}
             </Animated.Text>
@@ -256,5 +269,9 @@ const createStyles = (colors: ThemeColors) =>
     musicButton: {
       flex: 1,
       maxWidth: 300,
+    },
+    hiddenBall: {
+      opacity: 0,
+      position: 'absolute',
     },
   });
