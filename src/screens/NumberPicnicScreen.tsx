@@ -10,7 +10,7 @@ import { AppScreen, AppHeader, AppCard } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { PicnicBasket, PicnicBlanket } from '../components/numberpicnic';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: _SCREEN_WIDTH } = Dimensions.get('window');
 
 interface WindowRect {
   x: number;

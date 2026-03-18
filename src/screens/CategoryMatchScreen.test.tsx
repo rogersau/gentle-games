@@ -54,7 +54,6 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 jest.mock('../components/CategoryMatchBoard', () => {
-  const React = require('react');
   const { Text, TouchableOpacity, View } = require('react-native');
 
   return {

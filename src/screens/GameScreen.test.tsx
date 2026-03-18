@@ -54,19 +54,18 @@ jest.mock('../utils/theme', () => ({
 }));
 
 jest.mock('../components/GameBoard', () => {
-  const React = require('react');
   const { Text, TouchableOpacity, View } = require('react-native');
 
   return {
     GameBoard: ({
       onBackPress,
-      onPositiveEvent,
-      onGameStart,
+      _onPositiveEvent,
+      _onGameStart,
       renderStats,
     }: {
       onBackPress?: () => void;
-      onPositiveEvent?: () => void;
-      onGameStart?: () => void;
+      _onPositiveEvent?: () => void;
+      _onGameStart?: () => void;
       renderStats?: (stats: { time: string; moves: number }) => React.ReactNode;
     }) => (
       <View>

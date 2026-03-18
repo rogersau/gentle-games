@@ -52,7 +52,7 @@ export const GameCard: React.FC<GameCardProps> = ({
   );
 };
 
-const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
+const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
     card: {
       marginBottom: Space.md,

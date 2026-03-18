@@ -107,7 +107,7 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
   }, []);
 
   // Handle item drop
-  const handleItemDrop = useCallback((index: number) => {
+  const handleItemDrop = useCallback((_index: number) => {
     if (isProcessingRef.current) {
       return;
     }

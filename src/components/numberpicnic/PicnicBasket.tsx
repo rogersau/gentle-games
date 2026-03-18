@@ -41,14 +41,11 @@ interface PicnicBasketProps {
 export const PicnicBasket: React.FC<PicnicBasketProps> = ({
   items,
   targetCount,
-  onPress,
   onDropZoneLayout,
   isDropTarget = false,
   isSuccess = false,
   onAnimationComplete,
   style,
-  accessibilityLabel,
-  accessibilityHint,
   testID,
 }) => {
   const { colors } = useThemeColors();

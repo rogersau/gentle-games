@@ -169,7 +169,7 @@ const clampParticleToGlobe = (
 export const resolveParticleCollisions = (particles: GlitterParticle[]): GlitterParticle[] => {
   if (particles.length < 2) return particles;
 
-  const result: GlitterParticle[] = new Array(particles.length);
+  const result: GlitterParticle[] = Array.from({ length: particles.length });
   for (let k = 0; k < particles.length; k++) {
     result[k] = { ...particles[k] };
   }
@@ -247,7 +247,7 @@ const stepParticles = (
 
   const collided = resolveParticleCollisions(moved);
 
-  const result: GlitterParticle[] = new Array(collided.length);
+  const result: GlitterParticle[] = Array.from({ length: collided.length });
   for (let i = 0; i < collided.length; i++) {
     const p = collided[i];
     const clampedVx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, p.vx));

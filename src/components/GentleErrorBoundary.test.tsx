@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
-import { Text } from 'react-native';
 import { GentleErrorBoundary } from './GentleErrorBoundary';
 import { APP_ROUTES } from '../types/navigation';
 import { captureScreenError } from '../utils/sentry';
@@ -12,7 +11,6 @@ jest.mock('../utils/sentry', () => ({
 }));
 
 jest.mock('../ui/components', () => {
-  const React = require('react');
   const ReactNative = require('react-native');
 
   return {

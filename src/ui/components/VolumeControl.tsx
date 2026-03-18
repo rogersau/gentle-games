@@ -69,7 +69,7 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
   );
 };
 
-const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
+const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
     container: {
       flexDirection: 'row',

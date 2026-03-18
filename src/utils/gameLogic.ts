@@ -22,8 +22,8 @@ export const getGridConfig = (difficulty: Difficulty): { cols: number; rows: num
 
 export const calculateGridDimensions = (
   difficulty: Difficulty,
-  screenWidth: number,
-  screenHeight: number
+  _screenWidth: number,
+  _screenHeight: number
 ): { cols: number; rows: number } => {
   const { cols, rows } = GRID_CONFIGS[difficulty];
   return { cols, rows };

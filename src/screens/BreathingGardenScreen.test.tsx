@@ -78,7 +78,6 @@ jest.mock('../components/BreathingBall', () => ({
     onProgress?: (progress: number) => void;
     colorScheme?: { name: string };
   }) => {
-    const React = require('react');
     const { Pressable, Text, View } = require('react-native');
 
     return (

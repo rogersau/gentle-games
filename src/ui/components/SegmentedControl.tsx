@@ -54,7 +54,7 @@ export const SegmentedControl = <T extends string | number>({
   );
 };
 
-const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
+const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
     container: {
       flexDirection: 'row',

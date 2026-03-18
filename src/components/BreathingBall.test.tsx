@@ -1,13 +1,12 @@
 import React, { useRef, useState } from 'react';
 import { Button, View } from 'react-native';
-import { act, render, waitFor } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import {
   BreathingBall,
   BreathingBallRef,
   defaultColorSchemes,
 } from './BreathingBall';
-import { BREATHING_CYCLE_DURATION_MS, BREATHING_PHASE_DURATION_MS } from '../utils/breathingGardenLogic';
 
 // Mock requestAnimationFrame
 const mockRequestAnimationFrame = jest.fn((callback: FrameRequestCallback) => {

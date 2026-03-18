@@ -128,7 +128,6 @@ describe('numberPicnicLogic', () => {
 
     it('starts new round correctly', () => {
       const { result } = renderHook(() => useNumberPicnicGame('easy'));
-      const firstPrompt = result.current.prompt;
       const initialBlanketCount = result.current.blanketItemCount;
 
       // Add some items

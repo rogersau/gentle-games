@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Mochi, MochiVariant, MochiSize } from './Mochi';
+import { Mochi, MochiSize } from './Mochi';
 import { useMochiContext } from '../context/MochiContext';
 import { useThemeColors, useReducedMotion } from '../utils/theme';
 import { Space, TypeStyle } from '../ui/tokens';
@@ -35,7 +35,7 @@ export const MochiPresence: React.FC<MochiPresenceProps> = ({
     <View style={[styles.container, style]} testID={testID}>
       {phrase && (
         <View style={styles.phraseContainer}>
-          <Text style={styles.phraseText}>{t(phrase)}</Text>
+          <Text style={styles.phraseText}>{t(phrase as any)}</Text>
         </View>
       )}
       <Mochi

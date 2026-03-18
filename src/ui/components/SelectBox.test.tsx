@@ -44,7 +44,7 @@ describe('SelectBox', () => {
   });
 
   it('selects option and closes dropdown', async () => {
-    const { getByText, queryByText } = render(
+    const { getByText } = render(
       <SelectBox
         options={mockOptions}
         value="option1"

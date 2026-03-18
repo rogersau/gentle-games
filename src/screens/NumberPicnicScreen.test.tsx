@@ -1,6 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
-import { Text, View } from 'react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import { NumberPicnicScreen } from './NumberPicnicScreen';
 
 const mockGoBack = jest.fn();
@@ -64,7 +63,6 @@ jest.mock('react-i18next', () => ({
 }));
 
 jest.mock('../components/numberpicnic', () => {
-  const React = require('react');
   const { View, Text, Pressable } = require('react-native');
 
   return {

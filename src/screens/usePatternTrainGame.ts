@@ -2,7 +2,6 @@ import { useState, useCallback, useRef } from 'react';
 import { Difficulty } from '../types';
 import {
   generateTrainPattern,
-  isTrainChoiceCorrect,
   removeWrongChoices,
   TrainPattern,
 } from '../utils/patternTrainLogic';

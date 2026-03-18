@@ -1,6 +1,5 @@
 import { renderHook, act } from '@testing-library/react-native';
 import { usePatternTrainGame } from './usePatternTrainGame';
-import { Difficulty } from '../types';
 import * as patternTrainLogic from '../utils/patternTrainLogic';
 
 // Mock the patternTrainLogic module

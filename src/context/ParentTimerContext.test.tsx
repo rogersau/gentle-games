@@ -1,6 +1,6 @@
 import React from 'react';
-import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
-import { Text, View, Button } from 'react-native';
+import { render, act } from '@testing-library/react-native';
+import { Text, View } from 'react-native';
 import { ParentTimerProvider, useParentTimer } from './ParentTimerContext';
 
 // Mock SettingsContext

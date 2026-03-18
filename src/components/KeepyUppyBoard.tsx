@@ -14,7 +14,6 @@ import {
   flickBalloon,
   KeepyUppyBalloon,
   KeepyUppyBounds,
-  MAX_BALLOONS,
   stepBalloons,
   tapBalloon,
 } from '../utils/keepyUppyLogic';

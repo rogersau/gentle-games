@@ -1,6 +1,6 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { Animated, View } from 'react-native';
+import { render, fireEvent } from '@testing-library/react-native';
+import { Animated } from 'react-native';
 import { PatternTrainScreen } from '../screens/PatternTrainScreen';
 
 const mockGoBack = jest.fn();
@@ -15,7 +15,7 @@ jest.mock('@react-navigation/native', () => ({
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, options?: Record<string, unknown>) => {
+    t: (key: string, _options?: Record<string, unknown>) => {
       const translations: Record<string, string> = {
         'games.patternTrain.title': 'Pattern Train',
         'games.patternTrain.subtitle': 'Complete the train pattern',

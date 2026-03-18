@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
-import { Space, Radius, Shadow } from '../tokens';
+import { Radius, Shadow } from '../tokens';
 import { ThemeColors } from '../../types';
 
 type BadgeSize = 'sm' | 'md' | 'lg';

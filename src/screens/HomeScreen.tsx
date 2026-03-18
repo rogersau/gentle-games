@@ -14,7 +14,6 @@ import {
   AppButton,
   AppModal,
   GameCard,
-  SegmentedControl,
   MochiPresence,
 } from "../ui/components";
 import { useMochi } from "../hooks/useMochi";
@@ -300,7 +299,7 @@ export const HomeScreen: React.FC = () => {
   );
 };
 
-const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
+const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
     content: {
       flex: 1,

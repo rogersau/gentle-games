@@ -1,5 +1,3 @@
-import Constants from 'expo-constants';
-
 jest.mock('expo-constants', () => ({
     expoConfig: {
         extra: {

@@ -113,7 +113,7 @@ export const SelectBox = <T extends string | number>({
   );
 };
 
-const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
+const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
     selectBox: {
       backgroundColor: colors.surface,

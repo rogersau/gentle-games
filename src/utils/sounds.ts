@@ -30,7 +30,7 @@ const loadSound = async (name: keyof typeof soundAssets): Promise<void> => {
 
     sounds[name].player = player;
     sounds[name].isLoaded = true;
-  } catch (error) {
+  } catch {
     console.warn(`Sound file for "${name}" not found. Add MP3 files to src/assets/sounds/ to enable audio.`);
   }
 };

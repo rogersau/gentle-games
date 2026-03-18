@@ -25,7 +25,7 @@ const BALLOON_RADIUS = 34;
 const BOUNCE = 0.62;
 
 // default palette used when no theme is supplied (for backwards compatibility/testing)
-const DEFAULT_BALLOON_COLORS = [...BALLOON_PALETTE];
+const _DEFAULT_BALLOON_COLORS = [...BALLOON_PALETTE];
 
 /**
  * Build a balloon colour palette adapted for the current theme.

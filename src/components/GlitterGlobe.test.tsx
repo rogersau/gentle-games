@@ -1,7 +1,6 @@
 import React, { createRef } from 'react';
 import { act, render, waitFor } from '@testing-library/react-native';
 import { PanResponder, View } from 'react-native';
-import { Accelerometer } from 'expo-sensors';
 import { Circle, Polygon, Rect } from 'react-native-svg';
 import { GlitterGlobe, GlitterGlobeRef, resolveParticleCollisions } from './GlitterGlobe';
 

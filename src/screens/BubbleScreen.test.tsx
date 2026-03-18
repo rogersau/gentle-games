@@ -50,7 +50,6 @@ jest.mock('../utils/sounds', () => ({
 }));
 
 jest.mock('../components/BubbleField', () => {
-  const React = require('react');
   const { Text, TouchableOpacity, View } = require('react-native');
 
   return {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TouchableOpacity } from 'react-native';
+import { Text } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { AppButton } from './AppButton';
 import { AppCard } from './AppCard';

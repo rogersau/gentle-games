@@ -60,7 +60,6 @@ jest.mock('../utils/gameLogic', () => {
 });
 
 jest.mock('./Tile', () => {
-  const React = require('react');
   const { TouchableOpacity, Text } = require('react-native');
   return {
     Tile: ({ tile, onPress, size }: { tile: { id: string; value: string; isFlipped: boolean; isMatched: boolean }; onPress: () => void; size: number }) => {
@@ -142,9 +141,6 @@ describe('GameBoard', () => {
       });
       expect(onGameComplete).toHaveBeenCalledTimes(1);
       // Verify move counter is still visible
-      const movesElement = screen.root.findAll(
-        (node: any) => node.props?.accessibilityLabel === '2 moves'
-      );
       // The accessibilityLabel uses the translation key with interpolation
       // so we need to check for the rendered text instead
       expect(screen.getByText(/moves/i)).toBeTruthy();

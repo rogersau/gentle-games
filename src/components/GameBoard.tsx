@@ -41,7 +41,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
   const headerHeight = 60;
   const tileMargin = 4;
 
-  const { cols, boardWidth, boardHeight, tileSize } = useMemo(() => {
+  const { boardWidth, boardHeight, tileSize } = useMemo(() => {
     const { cols, rows } = calculateGridDimensions(settings.difficulty, screenWidth, screenHeight);
 
     const maxBoardWidth = screenWidth - padding * 2;
@@ -250,7 +250,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameComplete, onBackPres
   );
 };
 
-const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
+const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
     container: {
       flex: 1,

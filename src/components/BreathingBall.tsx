@@ -42,8 +42,6 @@ interface BreathingBallProps {
   onProgress?: (progress: number) => void;
 }
 
-const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-
 export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
   (
     {

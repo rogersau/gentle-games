@@ -21,7 +21,7 @@ import { useThemeColors } from '../utils/theme';
 import { AppScreen, AppHeader, AppButton, AppCard, AppModal } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useGentleBounce } from '../ui/animations';
-import { TrainEngine, Carriage, TrainTrack } from '../components/train';
+import { TrainEngine, Carriage } from '../components/train';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -61,7 +61,7 @@ export const PatternTrainScreen: React.FC = () => {
   const [attachedCarriage, setAttachedCarriage] = useState<string | null>(null);
 
   // Train animation state
-  const [trainPhase, setTrainPhase] = useState<'entering' | 'waiting' | 'exiting' | 'offscreen'>('offscreen');
+  const [_trainPhase, setTrainPhase] = useState<'entering' | 'waiting' | 'exiting' | 'offscreen'>('offscreen');
   const trainPosition = useRef<Animated.Value>(new Animated.Value(SCREEN_WIDTH)).current;
   const trainOpacity = useRef<Animated.Value>(new Animated.Value(0)).current;
   const timeoutIdsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
