@@ -3,6 +3,8 @@ import { PanResponder } from 'react-native';
 import { act, render } from '@testing-library/react-native';
 import { PicnicBlanket } from './PicnicBlanket';
 
+type NodeMockElement = React.ReactElement<unknown>;
+
 let mockSettings = {
   animationsEnabled: false,
   reducedMotionEnabled: false,
@@ -106,8 +108,8 @@ describe('PicnicBlanket', () => {
         dropZoneLayout={{ x: 20, y: 50, width: 120, height: 120 }}
       />,
       {
-        createNodeMock: (element) =>
-          element.props.testID === 'picnic-item-0'
+        createNodeMock: (element: NodeMockElement) =>
+          (element.props as { testID?: string }).testID === 'picnic-item-0'
             ? {
                 measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) =>
                   callback(
@@ -159,8 +161,8 @@ describe('PicnicBlanket', () => {
         dropZoneLayout={{ x: 220, y: 20, width: 100, height: 100 }}
       />,
       {
-        createNodeMock: (element) =>
-          element.props.testID === 'picnic-item-0'
+        createNodeMock: (element: NodeMockElement) =>
+          (element.props as { testID?: string }).testID === 'picnic-item-0'
             ? {
                 measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) =>
                   callback(

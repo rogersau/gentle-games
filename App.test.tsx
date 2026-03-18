@@ -2,6 +2,7 @@ import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
 import { AppContent } from './App';
 import { useSettings } from './src/context/SettingsContext';
+import type { Settings } from './src/types';
 import { APP_ROUTES } from './src/types/navigation';
 import { trackScreenView } from './src/utils/analytics';
 import { reconcileObservability } from './src/utils/observabilityBootstrap';
@@ -170,17 +171,20 @@ jest.mock('./src/screens/NumberPicnicScreen', () => ({
 const mockedUseSettings = jest.mocked(useSettings);
 const mockedTrackScreenView = jest.mocked(trackScreenView);
 const mockedReconcileObservability = jest.mocked(reconcileObservability);
+type SettingsValue = ReturnType<typeof useSettings>;
 
-const createSettingsValue = (overrides?: Partial<ReturnType<typeof useSettings>>) => ({
-  settings: {
+const createSettingsValue = (
+  overrides?: { settings?: Partial<Settings>; isLoading?: boolean },
+): SettingsValue => {
+  const settings: Settings = {
     animationsEnabled: true,
     soundEnabled: true,
     soundVolume: 0.5,
-    difficulty: 'medium' as const,
-    theme: 'mixed' as const,
+    difficulty: 'medium',
+    theme: 'mixed',
     showCardPreview: true,
     keepyUppyEasyMode: true,
-    colorMode: 'system' as const,
+    colorMode: 'system',
     hiddenGames: [],
     parentTimerMinutes: 0,
     enableUnfinishedGames: true,
@@ -188,11 +192,14 @@ const createSettingsValue = (overrides?: Partial<ReturnType<typeof useSettings>>
     reducedMotionEnabled: false,
     telemetryEnabled: false,
     ...overrides?.settings,
-  },
-  updateSettings: jest.fn(),
-  isLoading: false,
-  ...overrides,
-});
+  };
+
+  return {
+    settings,
+    updateSettings: jest.fn(),
+    isLoading: overrides?.isLoading ?? false,
+  };
+};
 
 describe('AppContent observability bootstrap', () => {
   beforeEach(() => {
