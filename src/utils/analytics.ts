@@ -104,13 +104,14 @@ export async function reconcileAnalyticsConsent(enabled: boolean): Promise<void>
     return;
   }
 
+  const hadExistingClient = !!posthogClient;
   const client = await getOrCreatePostHogClient();
 
   if (!client) {
     return;
   }
 
-  if (pendingInstallId) {
+  if (pendingInstallId && hadExistingClient) {
     client.identify(pendingInstallId);
   }
 
