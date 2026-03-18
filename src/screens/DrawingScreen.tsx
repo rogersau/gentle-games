@@ -13,6 +13,8 @@ import {
   DEFAULT_DRAWING_SAVE_DEBOUNCE_MS,
   useDebouncedDrawingSave,
 } from './useDebouncedDrawingSave';
+import { useMochi } from '../hooks/useMochi';
+import { useSettings } from '../context/SettingsContext';
 
 const DRAWING_STORAGE_KEY = '@gentle_match_saved_drawing';
 export const DRAWING_HEADER_HEIGHT = 60;
@@ -29,6 +31,10 @@ export const DrawingScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const allowNextBeforeRemoveRef = useRef(false);
+  const hasShownWelcomeMochiRef = useRef(false);
+
+  const { settings } = useSettings();
+  const { showMochi } = useMochi();
 
   const [savedHistory, setSavedHistory] = useState<HistoryEntry[]>([]);
   const [showContinueModal, setShowContinueModal] = useState(false);
@@ -60,6 +66,17 @@ export const DrawingScreen: React.FC = () => {
           if (parsed && Array.isArray(parsed) && parsed.length > 0) {
             setSavedHistory(parsed);
             setShowContinueModal(true);
+            if (
+              settings.showMochiInGames &&
+              !hasShownWelcomeMochiRef.current
+            ) {
+              hasShownWelcomeMochiRef.current = true;
+              const phrases = t('mascot.drawingWelcomePhrases', {
+                returnObjects: true,
+              }) as string[];
+              const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+              showMochi(phrase, 'happy');
+            }
           }
         }
       } catch (error) {
@@ -72,7 +89,7 @@ export const DrawingScreen: React.FC = () => {
     };
 
     checkSavedDrawing();
-  }, []);
+  }, [settings.showMochiInGames, showMochi, t]);
 
   const handleSaveError = useCallback((error: unknown) => {
     console.warn('Error saving drawing:', error);

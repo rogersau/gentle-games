@@ -78,6 +78,25 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
+jest.mock('../context/SettingsContext', () => ({
+  useSettings: () => ({
+    settings: {
+      animationsEnabled: false,
+      reducedMotionEnabled: false,
+      showMochiInGames: true,
+    },
+  }),
+}));
+
+jest.mock('../context/MochiContext', () => ({
+  useMochiContext: () => ({
+    mochiProps: { variant: 'idle', visible: false, phrase: null },
+    showMochi: jest.fn(),
+    hideMochi: jest.fn(),
+    celebrate: jest.fn(),
+  }),
+}));
+
 import {
   DrawingScreen,
   DRAWING_HEADER_HEIGHT,
