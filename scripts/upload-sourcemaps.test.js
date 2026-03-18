@@ -31,7 +31,7 @@ describe('upload-sourcemaps', () => {
   let warnSpy;
   let errorSpy;
 
-  const projectRoot = `${__dirname}/../scripts/..`;
+  const projectRoot = `${__dirname}/..`;
   const distRoot = `${projectRoot}/dist`;
   const androidRoot = `${distRoot}/android`;
   const iosRoot = `${distRoot}/ios`;
@@ -61,8 +61,17 @@ describe('upload-sourcemaps', () => {
     mockExistsSync.mockImplementation((targetPath) =>
       [
         distRoot,
+        `${distRoot}/_expo`,
+        `${distRoot}/_expo/static`,
+        `${distRoot}/_expo/static/js`,
         androidRoot,
+        `${androidRoot}/_expo`,
+        `${androidRoot}/_expo/static`,
+        `${androidRoot}/_expo/static/js`,
         iosRoot,
+        `${iosRoot}/_expo`,
+        `${iosRoot}/_expo/static`,
+        `${iosRoot}/_expo/static/js`,
         webAssetsRoot,
         androidAssetsRoot,
         iosAssetsRoot,
@@ -167,11 +176,12 @@ describe('upload-sourcemaps', () => {
 
     uploadSourceMaps();
 
-    expect(logSpy).toHaveBeenCalledWith('   📁 Found 1 source map(s) for web');
+    expect(mockExecSync).toHaveBeenCalledTimes(3);
     expect(mockExecSync).toHaveBeenCalledWith(
       expect.stringContaining(`upload-sourcemaps ${distRoot} --url-prefix ~/web --rewrite`),
       { stdio: 'inherit' }
     );
+    expect(logSpy).toHaveBeenCalledWith('\n✅ Successfully uploaded 3 source map(s) to Sentry!');
   });
 
   it('skips missing platform directories without failing the release path', () => {

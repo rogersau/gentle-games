@@ -21,6 +21,25 @@ const fs = require('fs');
 const path = require('path');
 
 const REQUIRED_ENV_VARS = ['SENTRY_AUTH_TOKEN', 'SENTRY_ORG', 'SENTRY_PROJECT'];
+const PROJECT_ROOT = path.join(__dirname, '..');
+const DIST_ROOT = path.join(PROJECT_ROOT, 'dist');
+const PLATFORM_CONFIG = {
+  web: {
+    distDir: DIST_ROOT,
+    ignoredDirectories: ['android', 'ios'],
+    urlPrefix: '~/web',
+  },
+  ios: {
+    distDir: path.join(DIST_ROOT, 'ios'),
+    ignoredDirectories: [],
+    urlPrefix: '~/ios',
+  },
+  android: {
+    distDir: path.join(DIST_ROOT, 'android'),
+    ignoredDirectories: [],
+    urlPrefix: '~/android',
+  },
+};
 
 function checkEnvironment() {
   const missing = REQUIRED_ENV_VARS.filter(varName => !process.env[varName]);
@@ -38,7 +57,8 @@ function getVersion() {
   return packageJson.version;
 }
 
-function findSourceMaps(distDir) {
+function findSourceMaps(distDir, options = {}) {
+  const ignoredDirectories = new Set(options.ignoredDirectories || []);
   const sourceMaps = [];
 
   function searchDir(dir) {
@@ -50,6 +70,9 @@ function findSourceMaps(distDir) {
       const fullPath = path.join(dir, entry.name);
 
       if (entry.isDirectory()) {
+        if (ignoredDirectories.has(entry.name)) {
+          continue;
+        }
         searchDir(fullPath);
       } else if (entry.name.endsWith('.map')) {
         sourceMaps.push(fullPath);
@@ -59,6 +82,10 @@ function findSourceMaps(distDir) {
 
   searchDir(distDir);
   return sourceMaps;
+}
+
+function getPlatformDistDir(platform) {
+  return PLATFORM_CONFIG[platform].distDir;
 }
 
 function uploadSourceMaps() {
@@ -76,14 +103,17 @@ function uploadSourceMaps() {
   let uploadedCount = 0;
 
   for (const platform of platforms) {
-    const distDir = path.join(__dirname, '..', 'dist', platform);
+    const platformConfig = PLATFORM_CONFIG[platform];
+    const distDir = platformConfig.distDir;
 
     if (!fs.existsSync(distDir)) {
       console.log(`   ⏭️  Skipping ${platform} (no dist directory)`);
       continue;
     }
 
-    const sourceMaps = findSourceMaps(distDir);
+    const sourceMaps = findSourceMaps(distDir, {
+      ignoredDirectories: platformConfig.ignoredDirectories,
+    });
 
     if (sourceMaps.length === 0) {
       console.log(`   ⏭️  Skipping ${platform} (no source maps found)`);
@@ -104,7 +134,7 @@ function uploadSourceMaps() {
         'upload-sourcemaps',
         distDir,
         '--url-prefix',
-        `~/${platform}`,
+        platformConfig.urlPrefix,
         '--rewrite',
       ].join(' ');
 
@@ -128,7 +158,19 @@ function uploadSourceMaps() {
   console.log(`   Release: ${release}`);
 }
 
-// Main execution
-console.log('🚀 Sentry Source Map Upload\n');
-checkEnvironment();
-uploadSourceMaps();
+function run() {
+  console.log('🚀 Sentry Source Map Upload\n');
+  checkEnvironment();
+  uploadSourceMaps();
+}
+
+if (require.main === module) {
+  run();
+}
+
+module.exports = {
+  findSourceMaps,
+  getPlatformDistDir,
+  run,
+  uploadSourceMaps,
+};
