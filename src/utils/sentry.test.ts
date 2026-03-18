@@ -4,10 +4,15 @@ describe('sentry consent-aware wrappers', () => {
   const mockSetContext = jest.fn();
   const mockAddBreadcrumb = jest.fn();
   const mockCaptureException = jest.fn();
+  const mockStorageGetItem = jest.fn();
+  const mockStorageSetItem = jest.fn();
+  const mockSetAnalyticsUser = jest.fn();
 
   beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
+    mockStorageGetItem.mockResolvedValue('install_test');
+    mockStorageSetItem.mockResolvedValue(undefined);
 
     jest.doMock('expo-constants', () => ({
       __esModule: true,
@@ -30,11 +35,11 @@ describe('sentry consent-aware wrappers', () => {
     jest.doMock('@react-native-async-storage/async-storage', () => ({
       __esModule: true,
       default: {
-        getItem: jest.fn(() => Promise.resolve('install_test')),
-        setItem: jest.fn(() => Promise.resolve()),
+        getItem: mockStorageGetItem,
+        setItem: mockStorageSetItem,
       },
-      getItem: jest.fn(() => Promise.resolve('install_test')),
-      setItem: jest.fn(() => Promise.resolve()),
+      getItem: mockStorageGetItem,
+      setItem: mockStorageSetItem,
     }));
 
     jest.doMock('@sentry/react-native', () => ({
@@ -48,7 +53,7 @@ describe('sentry consent-aware wrappers', () => {
 
     jest.doMock('./analytics', () => ({
       __esModule: true,
-      setAnalyticsUser: jest.fn(),
+      setAnalyticsUser: mockSetAnalyticsUser,
     }));
   });
 
@@ -130,5 +135,37 @@ describe('sentry consent-aware wrappers', () => {
         screen: 'Home',
       },
     });
+  });
+
+  it('persists a generated install ID, shares it with analytics, and avoids reinitializing on repeated enable', async () => {
+    mockStorageGetItem.mockResolvedValueOnce(null);
+
+    const sentry = require('./sentry');
+
+    await sentry.reconcileSentryConsent(true);
+    await sentry.reconcileSentryConsent(true);
+
+    expect(mockStorageSetItem).toHaveBeenCalledTimes(1);
+    expect(mockStorageSetItem).toHaveBeenCalledWith(
+      '@gentle_games_install_id',
+      expect.stringMatching(/^install_/),
+    );
+    expect(mockInit).toHaveBeenCalledTimes(1);
+    expect(mockSetUser).toHaveBeenCalledWith({
+      id: expect.stringMatching(/^install_/),
+    });
+    expect(mockSetAnalyticsUser).toHaveBeenCalledWith(expect.stringMatching(/^install_/));
+  });
+
+  it('continues without crashing when install ID storage fails', async () => {
+    mockStorageGetItem.mockRejectedValueOnce(new Error('storage offline'));
+
+    const sentry = require('./sentry');
+
+    await expect(sentry.reconcileSentryConsent(true)).resolves.toBeUndefined();
+
+    expect(mockInit).toHaveBeenCalledTimes(1);
+    expect(mockSetUser).not.toHaveBeenCalled();
+    expect(mockSetAnalyticsUser).not.toHaveBeenCalled();
   });
 });

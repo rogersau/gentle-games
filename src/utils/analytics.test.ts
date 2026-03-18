@@ -79,4 +79,18 @@ describe('analytics consent-aware wrappers', () => {
     });
     expect(mockScreen).toHaveBeenCalledWith('Home');
   });
+
+  it('identifies a pending install ID once after client creation and opts out after disable', async () => {
+    const analytics = require('./analytics');
+
+    analytics.setAnalyticsUser('install_pending');
+    await analytics.reconcileAnalyticsConsent(true);
+    await analytics.reconcileAnalyticsConsent(false);
+
+    expect(MockPostHog).toHaveBeenCalledTimes(1);
+    expect(mockIdentify).toHaveBeenCalledTimes(1);
+    expect(mockIdentify).toHaveBeenCalledWith('install_pending');
+    expect(mockOptIn).toHaveBeenCalledTimes(1);
+    expect(mockOptOut).toHaveBeenCalledTimes(1);
+  });
 });
