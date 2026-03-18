@@ -45,6 +45,7 @@ interface GlitterGlobeProps {
   height: number;
   initialCount?: number;
   maxParticles?: number;
+  onInteraction?: () => void;
 }
 
 interface GlitterGlobeSnapshot {
@@ -322,7 +323,7 @@ const applyFingerImpulse = (
 };
 
 export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
-  ({ width, height, initialCount = 36, maxParticles = 120 }, ref) => {
+  ({ width, height, initialCount = 36, maxParticles = 120, onInteraction }, ref) => {
     const { colors } = useThemeColors();
     const { t } = useTranslation();
     const [snapshot, setSnapshot] = useState<GlitterGlobeSnapshot>(() => ({
@@ -380,6 +381,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
             const now = Date.now();
             if (shouldTriggerShake(reading, lastShakeAtRef.current, now)) {
               lastShakeAtRef.current = now;
+              onInteraction?.();
               publishSnapshot(
                 applyShakeImpulse(
                   particlesRef.current,
@@ -494,6 +496,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
             ) {
               const now = Date.now();
               lastWakeAtRef.current = now;
+              onInteraction?.();
               publishSnapshot(
                 particlesRef.current,
                 [
@@ -545,6 +548,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
                   },
                 ].slice(-WAKE_MAX_TRAIL);
               }
+              onInteraction?.();
             }
 
             publishSnapshot(

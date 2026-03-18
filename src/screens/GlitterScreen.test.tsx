@@ -31,6 +31,25 @@ jest.mock('@react-navigation/native', () => ({
   }),
 }));
 
+jest.mock('../context/SettingsContext', () => ({
+  useSettings: () => ({
+    settings: {
+      animationsEnabled: false,
+      reducedMotionEnabled: false,
+      showMochiInGames: true,
+    },
+  }),
+}));
+
+jest.mock('../context/MochiContext', () => ({
+  useMochiContext: () => ({
+    mochiProps: { variant: 'idle' as const, visible: false, phrase: null },
+    showMochi: jest.fn(),
+    hideMochi: jest.fn(),
+    celebrate: jest.fn(),
+  }),
+}));
+
 jest.mock('../components/GlitterGlobe', () => {
   const React = require('react');
   const { Text, View } = require('react-native');
