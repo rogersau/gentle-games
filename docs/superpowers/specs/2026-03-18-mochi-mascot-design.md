@@ -131,6 +131,12 @@ interface MochiProps {
 }
 ```
 
+| Variant | Animation |
+|---------|-----------|
+| `floating` | Gentle sine-wave vertical drift |
+| `idle` | Subtle breathing scale pulse |
+| `happy` | Quick vertical bounce + sparkle burst |
+
 The SVG is constructed from:
 - One `<ellipse>` for the body
 - Two small `<ellipse>` elements for legs
