@@ -23,6 +23,16 @@ export const GlitterScreen: React.FC = () => {
 
   const lastInteractionRef = useRef(Date.now());
   const checkInShownRef = useRef(false);
+  const showMochiRef = useRef(showMochi);
+  const tRef = useRef(t);
+
+  useEffect(() => {
+    showMochiRef.current = showMochi;
+  }, [showMochi]);
+
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
 
   const handleInteraction = () => {
     lastInteractionRef.current = Date.now();
@@ -41,14 +51,14 @@ export const GlitterScreen: React.FC = () => {
 
       if (Date.now() - lastInteractionRef.current >= 15000) {
         checkInShownRef.current = true;
-        const phrases = t('mascot.glitterPhrases', { returnObjects: true }) as string[];
+        const phrases = tRef.current('mascot.glitterPhrases', { returnObjects: true }) as string[];
         const phrase = phrases[Math.floor(Math.random() * phrases.length)];
-        showMochi(phrase, 'happy');
+        showMochiRef.current(phrase, 'happy');
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [settings.showMochiInGames, showMochi, t]);
+  }, [settings.showMochiInGames]);
 
   const globeSize = useMemo(() => {
     const maxWidth = screenWidth - 32;

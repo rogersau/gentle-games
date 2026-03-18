@@ -349,6 +349,11 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
       });
     };
 
+    const onInteractionRef = useRef(onInteraction);
+    useEffect(() => {
+      onInteractionRef.current = onInteraction;
+    }, [onInteraction]);
+
     useEffect(() => {
       sizeRef.current = { width, height };
     }, [width, height]);
@@ -381,7 +386,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
             const now = Date.now();
             if (shouldTriggerShake(reading, lastShakeAtRef.current, now)) {
               lastShakeAtRef.current = now;
-              onInteraction?.();
+              onInteractionRef.current?.();
               publishSnapshot(
                 applyShakeImpulse(
                   particlesRef.current,
