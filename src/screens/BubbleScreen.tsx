@@ -37,10 +37,11 @@ export const BubbleScreen: React.FC = () => {
     return { phrase: phrases[idx], index: idx };
   };
 
+  const MILESTONES = [10, 25, 50];
+
   const handleBubblePop = useCallback(() => {
     setPoppedCount((count) => count + 1);
     popCountRef.current += 1;
-    const MILESTONES = [10, 25, 50];
     if (MILESTONES.includes(popCountRef.current) && settings.showMochiInGames) {
       const { phrase, index } = pickPhrase(
         t('mascot.bubblePhrases', { returnObjects: true }) as string[],
