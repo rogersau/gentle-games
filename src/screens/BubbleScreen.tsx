@@ -1,10 +1,11 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { BubbleField } from '../components/BubbleField';
 import { ThemeColors } from '../types';
 import { useSettings } from '../context/SettingsContext';
+import { useMochi } from '../hooks/useMochi';
 import { playBubblePopSound } from '../utils/sounds';
 import { useThemeColors } from '../utils/theme';
 import { AppScreen, AppHeader } from '../ui/components';
@@ -17,6 +18,9 @@ export const BubbleScreen: React.FC = () => {
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [poppedCount, setPoppedCount] = useState(0);
+  const popCountRef = useRef(0);
+  const lastPhraseIndexRef = useRef(-1);
+  const { showMochi } = useMochi();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const boardSize = useMemo(() => {
@@ -25,10 +29,28 @@ export const BubbleScreen: React.FC = () => {
     return { width, height };
   }, [screenHeight, screenWidth]);
 
+  const pickPhrase = (phrases: string[], lastIndex: number): { phrase: string; index: number } => {
+    let idx: number;
+    do {
+      idx = Math.floor(Math.random() * phrases.length);
+    } while (idx === lastIndex && phrases.length > 1);
+    return { phrase: phrases[idx], index: idx };
+  };
+
   const handleBubblePop = useCallback(() => {
     setPoppedCount((count) => count + 1);
+    popCountRef.current += 1;
+    const MILESTONES = [10, 25, 50];
+    if (MILESTONES.includes(popCountRef.current) && settings.showMochiInGames) {
+      const { phrase, index } = pickPhrase(
+        t('mascot.bubblePhrases', { returnObjects: true }) as string[],
+        lastPhraseIndexRef.current,
+      );
+      lastPhraseIndexRef.current = index;
+      showMochi(phrase, 'happy');
+    }
     void playBubblePopSound(settings);
-  }, [settings]);
+  }, [settings, showMochi, t]);
 
   return (
     <AppScreen>
