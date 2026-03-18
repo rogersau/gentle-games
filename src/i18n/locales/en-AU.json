@@ -356,6 +356,13 @@
     "greatJob": "Amazing job!",
     "amazing": "You're amazing!",
     "takingTime": "You're doing great!",
-    "settingsHelper": "Here's where you can change things."
+    "settingsHelper": "Here's where you can change things.",
+    "celebratePhrases": ["You did it!", "Amazing!", "Wonderful!", "So clever!", "Fantastic!"],
+    "bubblePhrases": ["You're on a roll!", "Pop pop pop!", "So satisfying!", "Keep going!", "Amazing!"],
+    "keepyUppyPhrases": ["Balloon friend loves you!", "Look at them fly!", "Beautiful taps!", "You're doing amazing!", "So graceful!"],
+    "numberPicnicPhrases": ["Delicious!", "What a feast!", "Picnic master!", "Yum yum yum!", "Perfect!"],
+    "patternTrainPhrases": ["All aboard!", "Pattern pro!", "Choo choo!", "You're on track!", "Brilliant!"],
+    "drawingWelcomePhrases": ["So happy to see you!", "Your drawing awaits!", "Missed you!"],
+    "glitterPhrases": ["This is beautiful!", "You're so creative!", "Sparkly!", "Magnificent!"]
   }
 }
