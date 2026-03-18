@@ -81,9 +81,10 @@ describe('BubbleScreen', () => {
     const screen = render(<BubbleScreen />);
 
     expect(screen.getByText('Popped: 0')).toBeTruthy();
+    expect(screen.getByLabelText('Popped: 0')).toBeTruthy();
     fireEvent.press(screen.getByText('Pop Mock Bubble'));
     expect(screen.getByText('Popped: 1')).toBeTruthy();
+    expect(screen.getByLabelText('Popped: 1')).toBeTruthy();
     expect(mockPlayBubblePopSound).toHaveBeenCalledWith(mockSettings);
   });
 });
-
