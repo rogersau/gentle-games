@@ -11,6 +11,7 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 jest.mock('react-native-safe-area-context', () => ({
+  SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
   useSafeAreaInsets: () => ({
     bottom: 24,
   }),
@@ -35,6 +36,7 @@ jest.mock('react-i18next', () => ({
 jest.mock('../utils/theme', () => ({
   useThemeColors: () => ({
     colors: {
+      background: '#FFFEF7',
       text: '#5A5A5A',
     },
   }),

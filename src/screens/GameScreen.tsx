@@ -34,6 +34,7 @@ export const GameScreen: React.FC = () => {
             <Text
               style={[styles.stats, { color: colors.text }]}
               accessibilityLabel={`Time ${time}, ${moves} moves`}
+              testID="memory-snap-stats"
             >
               Time: {time} · Moves: {moves}
             </Text>
