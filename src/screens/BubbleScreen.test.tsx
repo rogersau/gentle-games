@@ -45,6 +45,15 @@ jest.mock('../context/SettingsContext', () => ({
   }),
 }));
 
+jest.mock('../context/MochiContext', () => ({
+  useMochiContext: () => ({
+    showMochi: jest.fn(),
+    hideMochi: jest.fn(),
+    celebrate: jest.fn(),
+    mochiProps: { visible: false, phrase: null, variant: 'idle' },
+  }),
+}));
+
 jest.mock('../utils/sounds', () => ({
   playBubblePopSound: (...args: unknown[]) => mockPlayBubblePopSound(...args),
 }));
