@@ -23,6 +23,30 @@ jest.mock('../utils/theme', () => ({
   }),
 }));
 
+jest.mock('react-i18next', () => ({
+  initReactI18next: {
+    type: '3rdParty',
+    init: () => {},
+  },
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        'common.back': '← Back',
+        'games.categoryMatch.title': 'Category Match',
+        'games.categoryMatch.subtitle': 'Sort each emoji into Sky, Land, or Ocean.',
+        'games.categoryMatch.correct': 'Correct',
+        'games.categoryMatch.quickPreview': 'Quick Preview',
+        'games.categoryMatch.dragInstruction': 'Drag each emoji into the matching place.',
+        'games.categoryMatch.startSorting': 'Start Sorting',
+        'games.categoryMatch.startSortingHint': 'Begin the sorting round.',
+        'games.categoryMatch.greatStreak': 'Wonderful sorting streak!',
+        'games.categoryMatch.streakMessage': 'Wonderful sorting streak!',
+      };
+      return translations[key] || key;
+    },
+  }),
+}));
+
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     goBack: mockGoBack,

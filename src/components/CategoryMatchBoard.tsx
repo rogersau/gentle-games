@@ -252,6 +252,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
             key={zone.category}
             accessibilityRole="button"
             accessibilityLabel={`${zone.label} category`}
+            testID={`category-zone-${zone.category}`}
             style={[
               styles.zoneCard,
               { width: zone.width, height: zone.height },
@@ -334,4 +335,3 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       textAlign: 'center',
     },
   });
-
