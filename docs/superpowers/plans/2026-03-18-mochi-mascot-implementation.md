@@ -309,7 +309,7 @@ git commit -m "feat: add Mochi SVG component with idle/floating/happy variants"
 
 The spec defines: `{ mochiProps, showMochi, hideMochi, celebrate }`.
 `mochiProps` is of type `MochiProps` (variant, size, color, etc.) and drives what `MochiPresence` renders.
-`showMochi(phrase?)` sets visible=true, stores the phrase, and sets variant to `idle`.
+`showMochi(phrase?, variant?)` sets visible=true, stores the phrase, and sets the variant (defaults to `idle`).
 `hideMochi()` sets visible=false.
 `celebrate()` sets variant to `happy` (for 1.5s then returns to idle).
 
@@ -320,7 +320,7 @@ import { MochiProps } from '../components/Mochi';
 
 export interface UseMochiResult {
   mochiProps: MochiProps & { visible: boolean; phrase: string | null };
-  showMochi: (phrase?: string) => void;
+  showMochi: (phrase?: string, variant?: MochiProps['variant']) => void;
   hideMochi: () => void;
   celebrate: () => void;
 }
@@ -331,9 +331,9 @@ export const useMochi = (): UseMochiResult => {
   const [variant, setVariant] = useState<MochiProps['variant']>('idle');
   const celebrateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const showMochi = useCallback((p?: string) => {
+  const showMochi = useCallback((p?: string, v?: MochiProps['variant']) => {
     setPhrase(p || null);
-    setVariant('idle');
+    setVariant(v || 'idle');
     setVisible(true);
   }, []);
 
@@ -548,7 +548,7 @@ Add `MochiPresence` to the titleArea — Home screen Mochi is always visible (ca
 ```tsx
 // Inside component — call once on mount
 React.useEffect(() => {
-  showMochi(); // shows Mochi with idle variant
+  showMochi('mascot.greeting', 'floating');
 }, [showMochi]);
 ```
 
@@ -597,11 +597,32 @@ This integrates Mochi into Memory Snap at three points:
 2. **In-game corner** — small Mochi sits quietly during gameplay
 3. **Completion modal** — Mochi celebrates when the game ends
 
-- [ ] **Step 1: Update GameBoard to expose positive event callback**
+- [ ] **Step 1: Update GameBoard to fire `onPositiveEvent` on match**
 
-In `GameBoard.tsx`, add `onPositiveEvent?: () => void` to `GameBoardProps` and fire it inside `handleTilePress` after a successful match (after `playMatchSound`).
+In `GameBoard.tsx`:
 
-In `GameScreen.tsx`, pass `onPositiveEvent={celebrate}` to `GameBoard` so Mochi does a micro-celebration when the child finds a match.
+**Add to `GameBoardProps` interface** (near line 14-19):
+```tsx
+onPositiveEvent?: () => void;  // fires when a match is found
+```
+
+**Fire it inside `handleTilePress`** — after `playMatchSound(settings);` inside the `if (isMatch)` block (around line 134):
+```tsx
+onPositiveEvent?.();
+```
+
+**Pass `celebrate` from GameScreen** — in `GameScreen.tsx`, add to the `GameBoard` JSX:
+```tsx
+<GameBoard
+  onGameComplete={handleGameComplete}
+  onBackPress={handleBackPress}
+  bottomInset={insets.bottom}
+  onPositiveEvent={celebrate}
+  renderStats={({ time, moves }) => (
+    <Text ...>Time: {time} · Moves: {moves}</Text>
+  )}
+/>
+```
 
 - [ ] **Step 2: Add Mochi to GameScreen**
 
