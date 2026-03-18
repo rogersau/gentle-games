@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,7 @@ import { ThemeColors } from '../types';
 import { useSettings } from '../context/SettingsContext';
 import { useNumberPicnicGame } from '../utils/numberPicnicLogic';
 import { useThemeColors } from '../utils/theme';
+import { useMochi } from '../hooks/useMochi';
 import { AppScreen, AppHeader, AppCard } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { PicnicBasket, PicnicBlanket } from '../components/numberpicnic';
@@ -46,6 +47,28 @@ export const NumberPicnicScreen: React.FC = () => {
     handleDragOverBasket,
     startNewRound,
   } = useNumberPicnicGame(settings.difficulty);
+
+  const { showMochi } = useMochi();
+  const lastPhraseIndexRef = useRef(-1);
+
+  const pickPhrase = (phrases: string[], lastIndex: number): { phrase: string; index: number } => {
+    let idx: number;
+    do {
+      idx = Math.floor(Math.random() * phrases.length);
+    } while (idx === lastIndex && phrases.length > 1);
+    return { phrase: phrases[idx], index: idx };
+  };
+
+  useEffect(() => {
+    if (completedPicnics > 0 && completedPicnics % 5 === 0 && settings.showMochiInGames) {
+      const { phrase, index } = pickPhrase(
+        t('mascot.numberPicnicPhrases', { returnObjects: true }) as string[],
+        lastPhraseIndexRef.current,
+      );
+      lastPhraseIndexRef.current = index;
+      showMochi(phrase, 'happy');
+    }
+  }, [completedPicnics, settings.showMochiInGames, showMochi, t]);
 
   return (
     <AppScreen>

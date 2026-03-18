@@ -42,7 +42,17 @@ jest.mock('../context/SettingsContext', () => ({
       animationsEnabled: false,
       reducedMotionEnabled: false,
       difficulty: 'easy',
+      showMochiInGames: true,
     },
+  }),
+}));
+
+jest.mock('../context/MochiContext', () => ({
+  useMochiContext: () => ({
+    mochiProps: { variant: 'idle', visible: false, phrase: null },
+    showMochi: jest.fn(),
+    hideMochi: jest.fn(),
+    celebrate: jest.fn(),
   }),
 }));
 
