@@ -12,6 +12,8 @@ Children can access calm, predictable, pressure-free play that parents and careg
 
 **Goal:** Resolve the known privacy, correctness, stability, performance, and release-quality concerns in the shipped app without disrupting its sensory-safe experience.
 
+**Status:** Complete as of 2026-03-18
+
 **Target features:**
 - Parent-controlled telemetry consent and safer observability defaults
 - Fixes for known gameplay and release-tooling bugs
@@ -28,12 +30,12 @@ Children can access calm, predictable, pressure-free play that parents and careg
 - ✓ Parent timer and lock-screen controls can gate continued play across the app — existing shipped app baseline
 - ✓ The app already ships a shared UI shell, localization layer, and reusable game architecture that future work must preserve — existing shipped app baseline
 
-### Active
+### Completed
 
-- [ ] Resolve the identified privacy and telemetry concerns while preserving the calm default experience
-- [ ] Fix the currently known gameplay and release-tooling bugs called out in the codebase concerns audit
-- [ ] Harden the runtime architecture so navigation, startup, timers, and state synchronization are safer to change
-- [ ] Reduce performance hotspots and close the highest-risk regression gaps in concern-prone areas
+- [x] Resolve the identified privacy and telemetry concerns while preserving the calm default experience
+- [x] Fix the currently known gameplay and release-tooling bugs called out in the codebase concerns audit
+- [x] Harden the runtime architecture so navigation, startup, timers, and state synchronization are safer to change
+- [x] Reduce performance hotspots and close the highest-risk regression gaps in concern-prone areas
 
 ### Out of Scope
 
@@ -61,4 +63,4 @@ The current app already ships a broad gentle-play experience, including multiple
 | Skip external ecosystem research for this milestone | The concern inventory is codebase-specific and already detailed enough to define requirements directly | — Pending |
 
 ---
-*Last updated: 2026-03-17 after milestone v1.1 initialization*
+*Last updated: 2026-03-18 after milestone v1.1 completion*

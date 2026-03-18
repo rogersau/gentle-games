@@ -17,7 +17,7 @@ Milestone `v1.1 Resolve Identified Concerns` hardens the shipped app without cha
 - [x] **Phase 1: Privacy-Safe Bootstrap** - Parent-controlled telemetry and safer startup observability defaults land first. (completed 2026-03-17)
 - [x] **Phase 2: Correct and Safe Gameplay Interactions** - Audited gameplay interactions behave correctly and timer-driven flows stop cleanly. (completed 2026-03-17)
 - [x] **Phase 3: Stable Navigation and Responsive Surfaces** - High-risk routed and interactive surfaces become safer to change and smoother to use. (completed 2026-03-17)
-- [ ] **Phase 4: Release Confidence and Regression Guardrails** - Cross-platform release tooling and targeted regression coverage lock in the milestone.
+- [x] **Phase 4: Release Confidence and Regression Guardrails** - Cross-platform release tooling and targeted regression coverage lock in the milestone. (completed 2026-03-18)
 
 ## Phase Details
 
@@ -84,9 +84,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Restore the regression baseline and add targeted Bubble Pop, Category Match, and Memory Snap guardrails
-- [ ] 04-02-PLAN.md — Fix source-map fallback path handling and add automated upload-path regression coverage
-- [ ] 04-03-PLAN.md — Expand startup telemetry and bootstrap regression coverage around observability lifecycle edges
+- [x] 04-01-PLAN.md — Restore the regression baseline and add targeted Bubble Pop, Category Match, and Memory Snap guardrails
+- [x] 04-02-PLAN.md — Fix source-map fallback path handling and add automated upload-path regression coverage
+- [x] 04-03-PLAN.md — Expand startup telemetry and bootstrap regression coverage around observability lifecycle edges
 
 ## Coverage Check
 
@@ -121,4 +121,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Privacy-Safe Bootstrap | 3/3 | Complete   | 2026-03-17 |
 | 2. Correct and Safe Gameplay Interactions | 3/3 | Complete | 2026-03-17 |
 | 3. Stable Navigation and Responsive Surfaces | 4/4 | Complete | 2026-03-17 |
-| 4. Release Confidence and Regression Guardrails | 0/TBD | Not started | - |
+| 4. Release Confidence and Regression Guardrails | 3/3 | Complete | 2026-03-18 |

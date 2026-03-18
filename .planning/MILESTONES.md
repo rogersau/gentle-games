@@ -8,6 +8,7 @@
 
 ## v1.1 Resolve Identified Concerns
 
-- Status: Active
+- Status: Complete
 - Goal: Resolve the known privacy, correctness, stability, performance, and release-quality concerns captured in `.planning/codebase/CONCERNS.md`
 - Starting phase number: 1
+- Completion: 2026-03-18

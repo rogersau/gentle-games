@@ -15,8 +15,8 @@
 ### Gameplay Correctness
 
 - [x] **PLAY-01**: User can undo one mirrored drawing action with a single undo step in half and quarter symmetry modes
-- [ ] **PLAY-02**: User can only complete a Number Picnic basket drop when the dragged item overlaps the visible basket target
-- [ ] **PLAY-03**: User sees Number Picnic basket hover feedback only when the dragged item is actually over the basket
+- [x] **PLAY-02**: User can only complete a Number Picnic basket drop when the dragged item overlaps the visible basket target
+- [x] **PLAY-03**: User sees Number Picnic basket hover feedback only when the dragged item is actually over the basket
 
 ### Runtime Stability
 
