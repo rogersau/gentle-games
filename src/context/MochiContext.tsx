@@ -72,16 +72,21 @@ export const MochiProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setVariant('happy');
     setVisible(true);
     if (celebrateTimer.current) clearTimeout(celebrateTimer.current);
+    if (autoHideTimer.current) clearTimeout(autoHideTimer.current);
     celebrateTimer.current = setTimeout(() => {
       setVariant('idle');
       celebrateTimer.current = null;
+      autoHideTimer.current = setTimeout(() => {
+        hideMochiInternal();
+      }, 1500);
     }, 1500);
-  }, []);
+  }, [hideMochiInternal]);
 
   useEffect(() => {
     return () => {
       if (celebrateTimer.current) clearTimeout(celebrateTimer.current);
       if (autoHideTimer.current) clearTimeout(autoHideTimer.current);
+      queuedShow.current = null;
     };
   }, []);
 
