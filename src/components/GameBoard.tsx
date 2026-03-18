@@ -23,7 +23,6 @@ interface GameBoardProps {
   bottomInset?: number;
   renderStats?: (stats: { time: string; moves: number }) => React.ReactNode;
   onPositiveEvent?: () => void;
-  onGameStart?: () => void;
 }
 
 export const GameBoard: React.FC<GameBoardProps> = ({
@@ -32,7 +31,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   bottomInset = 0,
   renderStats,
   onPositiveEvent,
-  onGameStart,
 }) => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const { settings } = useSettings();
@@ -133,7 +131,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         const now = Date.now();
         setStartTime(now);
         setCurrentTime(now); // Ensure currentTime is synchronized to prevent negative timer
-        onGameStart?.();
       }
 
       const newSelected = [...selectedTiles, tileId];

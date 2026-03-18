@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { GameBoard } from '../components/GameBoard';
-import { AppScreen, AppHeader, AppModal, AppButton, MochiPresence } from '../ui/components';
+import { AppScreen, AppHeader } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useThemeColors } from '../utils/theme';
 import { useMochi } from '../hooks/useMochi';
@@ -14,19 +14,13 @@ export const GameScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { colors } = useThemeColors();
   const { t } = useTranslation();
-  const { celebrate, showMochi, hideMochi } = useMochi();
-  const [showIntro, setShowIntro] = useState(true);
-
-  React.useEffect(() => {
-    showMochi('mascot.letsMatch', 'idle');
-  }, [showMochi]);
+  const { celebrate } = useMochi();
 
   const handleGameComplete = (_time: number) => {
     celebrate();
   };
 
   const handleBackPress = () => {
-    hideMochi();
     navigation.goBack();
   };
 
@@ -39,36 +33,16 @@ export const GameScreen: React.FC = () => {
           onBackPress={handleBackPress}
           bottomInset={insets.bottom}
           onPositiveEvent={celebrate}
-          onGameStart={() => showMochi(undefined, 'floating')}
           renderStats={({ time, moves }) => (
             <Text
               style={[styles.stats, { color: colors.text }]}
               accessibilityLabel={`Time ${time}, ${moves} moves`}
-              testID='memory-snap-stats'
+              testID="memory-snap-stats"
             >
               Time: {time} · Moves: {moves}
             </Text>
           )}
         />
-
-        {/* In-game Mochi — shown only after game starts (onGameStart), floating higher to avoid card grid */}
-        <MochiPresence size='sm' style={styles.mochiInGame} />
-
-        <AppModal
-          visible={showIntro}
-          onClose={() => {
-            setShowIntro(false);
-            hideMochi();
-          }}
-          showClose={false}
-        >
-          <MochiPresence size='md' />
-          <AppButton
-            label={t('common.play')}
-            variant='primary'
-            onPress={() => setShowIntro(false)}
-          />
-        </AppModal>
       </View>
     </AppScreen>
   );
@@ -85,10 +59,5 @@ const styles = StyleSheet.create({
   stats: {
     ...TypeStyle.label,
     marginBottom: Space.md,
-  },
-  mochiInGame: {
-    position: 'absolute',
-    top: Space.base,
-    right: Space.lg,
   },
 });

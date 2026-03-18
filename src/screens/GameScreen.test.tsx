@@ -60,12 +60,10 @@ jest.mock('../components/GameBoard', () => {
     GameBoard: ({
       onBackPress,
       _onPositiveEvent,
-      _onGameStart,
       renderStats,
     }: {
       onBackPress?: () => void;
       _onPositiveEvent?: () => void;
-      _onGameStart?: () => void;
       renderStats?: (stats: { time: string; moves: number }) => React.ReactNode;
     }) => (
       <View>
