@@ -119,9 +119,37 @@ export function useGlitterParticles({
     };
   }, []);
 
+  const syncParticles = useCallback((particles: GlitterParticle[]) => {
+    particlesRef.current = particles;
+    setParticles(particles);
+  }, []);
+
+  const addParticles = useCallback((particles: GlitterParticle[]) => {
+    particlesRef.current = [...particlesRef.current, ...particles];
+    setParticles([...particlesRef.current]);
+  }, []);
+
+  const clearParticles = useCallback(() => {
+    particlesRef.current = [];
+    setParticles([]);
+  }, []);
+
+  const clearRipples = useCallback(() => {
+    setRipples([]);
+  }, []);
+
+  const syncRipples = useCallback((ripples: WakeRipple[]) => {
+    setRipples(ripples);
+  }, []);
+
   return {
     particles,
     ripples,
+    syncParticles,
+    addParticles,
+    clearParticles,
+    clearRipples,
+    syncRipples,
     startAnimation,
     stopAnimation,
   };
