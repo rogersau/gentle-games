@@ -168,9 +168,9 @@ export const Mochi: React.FC<MochiProps> = ({
   };
 
   return (
-    // @ts-expect-error className not supported in RN but kept for API parity
     <Animated.View
       style={[styles.container, { width, height }, animatedStyle]}
+      // @ts-expect-error className not supported in RN but kept for API parity
       className={className}
       testID={testID}
     >
