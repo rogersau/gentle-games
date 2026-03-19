@@ -30,9 +30,11 @@ export function useGlitterGestures({
   }, [onWake]);
 
   useEffect(() => {
+    if (subscriptionRef.current) {
+      return;
+    }
+
     if (!enabled) {
-      subscriptionRef.current?.remove();
-      subscriptionRef.current = null;
       return;
     }
 
@@ -46,8 +48,7 @@ export function useGlitterGestures({
     subscriptionRef.current = subscription;
 
     return () => {
-      subscription.remove();
-      subscriptionRef.current = null;
+      subscriptionRef.current?.remove();
     };
   }, [enabled, handleShake]);
 
