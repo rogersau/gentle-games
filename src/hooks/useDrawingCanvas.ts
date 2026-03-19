@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { PanResponder } from 'react-native';
 import { useDrawingHistory } from './useDrawingHistory';
 import { useDrawingTools } from './useDrawingTools';
@@ -23,6 +23,10 @@ export function useDrawingCanvas({
   const symmetryHook = useSymmetry(toolsHook.symmetryMode);
 
   const [currentStrokes, setCurrentStrokes] = useState<Array<Omit<Stroke, 'kind' | 'id'>>>([]);
+  const currentStrokesRef = useRef(currentStrokes);
+  useEffect(() => {
+    currentStrokesRef.current = currentStrokes;
+  }, [currentStrokes]);
 
   const panResponder = useMemo(() => {
     return PanResponder.create({
@@ -65,7 +69,7 @@ export function useDrawingCanvas({
       },
       onPanResponderRelease: () => {
         if (toolsHook.toolRef.current === 'pen') {
-          currentStrokes.forEach((stroke, idx) => {
+          currentStrokesRef.current.forEach((stroke, idx) => {
             historyHook.addToHistory({
               kind: 'stroke',
               id: `stroke-${Date.now()}-${idx}`,
