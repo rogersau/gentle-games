@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -14,6 +14,7 @@ import { useThemeColors } from '../../utils/theme';
 import { Space, TypeStyle, Radius } from '../../ui/tokens';
 import { ThemeColors } from '../../types';
 import { useSettings } from '../../context/SettingsContext';
+import { usePicnicDrag } from '../../hooks/usePicnicDrag';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -29,6 +30,7 @@ interface PicnicBasketProps {
   targetCount: number;
   onPress: () => void;
   onDropZoneLayout?: (layout: { x: number; y: number; width: number; height: number }) => void;
+  onDrop?: (itemId: string, valid: boolean) => void;
   isDropTarget?: boolean;
   isSuccess?: boolean;
   onAnimationComplete?: () => void;
@@ -42,6 +44,7 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
   items,
   targetCount,
   onDropZoneLayout,
+  onDrop,
   isDropTarget = false,
   isSuccess = false,
   onAnimationComplete,
@@ -52,6 +55,15 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
   const { settings } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const basketRef = useRef<View>(null);
+
+  const [dropZoneBounds, setDropZoneBounds] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+
+  const { isOverBasket, panResponder } = usePicnicDrag({
+    onDrop: onDrop ?? (() => {}),
+    dropZoneBounds,
+  });
+
+  const effectiveIsDropTarget = isOverBasket || isDropTarget;
 
   // Animation state
   const [basketPhase, setBasketPhase] = useState<'entering' | 'waiting' | 'exiting' | 'offscreen'>(
@@ -73,12 +85,14 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
   const remainingCount = Math.max(0, items.length - 12);
 
   const measureDropZone = React.useCallback(() => {
-    if (!basketRef.current || !onDropZoneLayout) {
+    if (!basketRef.current) {
       return;
     }
 
     basketRef.current.measureInWindow?.((x, y, width, height) => {
-      onDropZoneLayout({ x, y, width, height });
+      const bounds = { x, y, width, height };
+      setDropZoneBounds(bounds);
+      onDropZoneLayout?.(bounds);
     });
   }, [onDropZoneLayout]);
 
@@ -172,7 +186,7 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
 
   // Animate drop highlight
   useEffect(() => {
-    if (isDropTarget && basketPhase === 'waiting') {
+    if (effectiveIsDropTarget && basketPhase === 'waiting') {
       Animated.timing(dropHighlight, {
         toValue: 1,
         duration: 200,
@@ -185,7 +199,7 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
         useNativeDriver: false,
       }).start();
     }
-  }, [isDropTarget, basketPhase]);
+  }, [effectiveIsDropTarget, basketPhase]);
 
   // Start entry on mount
   useEffect(() => {
