@@ -1,9 +1,18 @@
 import { useState, useCallback, useRef } from 'react';
+import { Animated } from 'react-native';
 import { Difficulty } from '../types';
 import { generateTrainPattern, removeWrongChoices, TrainPattern } from '../utils/patternTrainLogic';
 
 export type TrainPhase = 'entering' | 'waiting' | 'exiting' | 'offscreen';
 export type FeedbackType = 'initial' | 'correct' | 'incorrect' | 'reveal';
+
+export interface DraggableCarriage {
+  emoji: string;
+  position: Animated.ValueXY;
+  scale: Animated.Value;
+  opacity: Animated.Value;
+  isAvailable: boolean;
+}
 
 export interface PatternTrainGameState {
   // Game state
@@ -15,6 +24,7 @@ export interface PatternTrainGameState {
   showDifficultySelector: boolean;
   selectedChoice: string | null;
   attachedCarriage: string | null;
+  draggableCarriages: DraggableCarriage[];
 
   // Train state
   trainPhase: TrainPhase;
@@ -43,6 +53,7 @@ export interface PatternTrainGameActions {
   setFeedbackType: (type: FeedbackType) => void;
   setTrainPhase: (phase: TrainPhase) => void;
   setIsProcessing: (processing: boolean) => void;
+  setDraggableCarriages: (carriages: DraggableCarriage[]) => void;
 
   // Utility
   queueTimeout: (callback: () => void, delay: number) => void;
@@ -76,6 +87,7 @@ export function usePatternTrainGame(
   const [showDifficultySelector, setShowDifficultySelector] = useState(true);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [attachedCarriage, setAttachedCarriage] = useState<string | null>(null);
+  const [draggableCarriages, setDraggableCarriages] = useState<DraggableCarriage[]>([]);
 
   // Train state
   const [trainPhase, setTrainPhase] = useState<TrainPhase>('offscreen');
@@ -196,6 +208,7 @@ export function usePatternTrainGame(
     showDifficultySelector,
     selectedChoice,
     attachedCarriage,
+    draggableCarriages,
     trainPhase,
     feedback,
     feedbackType,
@@ -217,6 +230,7 @@ export function usePatternTrainGame(
     setFeedbackType,
     setTrainPhase,
     setIsProcessing,
+    setDraggableCarriages,
     queueTimeout,
     clearAllTimeouts,
     getRandomFeedback,
