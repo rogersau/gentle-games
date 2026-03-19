@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { StackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
 import { Difficulty, PASTEL_COLORS, ThemeColors, UNFINISHED_GAMES } from '../types';
@@ -11,16 +11,9 @@ import { openExternalUrl } from '../utils/externalLinks';
 import { TranslationKey } from '../i18n/types';
 import { AppScreen, AppButton, AppModal, GameCard, MochiPresence } from '../ui/components';
 import { useMochi } from '../hooks/useMochi';
+import { useGameSelection, Game } from '../hooks/useGameSelection';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useLayout } from '../ui/useLayout';
-
-interface Game {
-  id: HomeGameId;
-  nameKey: TranslationKey;
-  descriptionKey: TranslationKey;
-  icon: string;
-  accentColor?: string;
-}
 
 const GAMES: Game[] = [
   {
@@ -96,8 +89,7 @@ export const HomeScreen: React.FC = () => {
   const { gridColumns, contentWidth, isTablet } = useLayout();
   const { t } = useTranslation();
   const { celebrate, showMochi } = useMochi();
-  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-  const [showDifficultySelector, setShowDifficultySelector] = useState(false);
+  const { selectedGame, showDifficultySelector, handleGameSelect: onGameSelect, handleDifficultySelect: onDifficultySelect, handleCloseModal: onCloseModal } = useGameSelection();
   const [showWebsiteFallback, setShowWebsiteFallback] = useState(false);
 
   React.useEffect(() => {
@@ -137,28 +129,23 @@ export const HomeScreen: React.FC = () => {
   );
 
   const handleGameSelect = (game: Game) => {
-    setSelectedGame(game);
-    if (game.id === 'memory-snap') {
-      setShowDifficultySelector(true);
-    } else {
+    onGameSelect(game);
+    if (game.id !== 'memory-snap') {
       celebrate();
       setTimeout(() => {
         navigation.navigate(HOME_GAME_ROUTES[game.id]);
-        setSelectedGame(null);
       }, 200);
     }
   };
 
   const handleDifficultySelect = async (difficulty: Difficulty) => {
     await updateSettings({ difficulty });
-    setShowDifficultySelector(false);
+    await onDifficultySelect(difficulty);
     navigation.navigate(APP_ROUTES.Game);
-    setSelectedGame(null);
   };
 
   const handleCloseModal = () => {
-    setShowDifficultySelector(false);
-    setSelectedGame(null);
+    onCloseModal();
   };
 
   const handleWebsitePress = async () => {
