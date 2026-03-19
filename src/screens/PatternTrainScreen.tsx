@@ -28,6 +28,8 @@ import { Space, TypeStyle } from '../ui/tokens';
 import { useGentleBounce } from '../ui/animations';
 import { TrainEngine, Carriage } from '../components/train';
 import { useMochi } from '../hooks/useMochi';
+import { usePatternTrainUI } from '../hooks/usePatternTrainUI';
+import { usePatternTrainGame, DraggableCarriage } from './usePatternTrainGame';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -38,16 +40,6 @@ const TRAIN_ANIMATION = {
   SUCCESS_DELAY: 1000,
   CHOICE_FADE_DURATION: 300,
 };
-
-const MILESTONE_INTERVAL = 5;
-
-interface DraggableCarriage {
-  emoji: string;
-  position: Animated.ValueXY;
-  scale: Animated.Value;
-  opacity: Animated.Value;
-  isAvailable: boolean;
-}
 
 const pickPhrase = (phrases: string[], lastIndex: number): { phrase: string; index: number } => {
   let idx: number;
@@ -64,15 +56,42 @@ export const PatternTrainScreen: React.FC = () => {
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  // Game state
-  const [pattern, setPattern] = useState<TrainPattern | null>(null);
-  const [completedRounds, setCompletedRounds] = useState(0);
-  const [wrongAttempts, setWrongAttempts] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
-  const [showDifficultySelector, setShowDifficultySelector] = useState(true);
-  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
-  const [attachedCarriage, setAttachedCarriage] = useState<string | null>(null);
+  const { showCelebration, celebrationPhrase, milestoneCount, onPatternComplete } = usePatternTrainUI();
+  const { state, actions } = usePatternTrainGame({ difficulty: settings.difficulty, t: t as (key: string, options?: Record<string, unknown>) => string });
+
+  const {
+    pattern,
+    completedRounds,
+    wrongAttempts,
+    isProcessing,
+    showMilestoneModal,
+    showDifficultySelector,
+    selectedChoice,
+    attachedCarriage,
+    draggableCarriages,
+    trainPhase,
+    feedback,
+    feedbackType,
+  } = state;
+
+  const {
+    handleDifficultySelect: gameHandleDifficultySelect,
+    handleCloseDifficultySelector,
+    startNewRound: gameStartNewRound,
+    handleCorrectAnswer,
+    handleIncorrectAnswer,
+    queueTimeout,
+    clearAllTimeouts,
+    getRandomFeedback,
+    setSelectedChoice,
+    setAttachedCarriage,
+    setWrongAttempts,
+    setFeedback,
+    setFeedbackType,
+    setShowMilestoneModal,
+    setDraggableCarriages,
+    setIsProcessing,
+  } = actions;
 
   // Train animation state
   const [_trainPhase, setTrainPhase] = useState<'entering' | 'waiting' | 'exiting' | 'offscreen'>(
@@ -82,14 +101,6 @@ export const PatternTrainScreen: React.FC = () => {
   const trainOpacity = useRef<Animated.Value>(new Animated.Value(0)).current;
   const timeoutIdsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  // Draggable carriages state
-  const [draggableCarriages, setDraggableCarriages] = useState<DraggableCarriage[]>([]);
-
-  // Feedback state
-  const [feedback, setFeedback] = useState(t('games.patternTrain.feedback.initial'));
-  const [feedbackType, setFeedbackType] = useState<'initial' | 'correct' | 'incorrect' | 'reveal'>(
-    'initial',
-  );
   const feedbackOpacity = useRef<Animated.Value>(new Animated.Value(1)).current;
   const { bounce: successBounce } = useGentleBounce();
   const { showMochi } = useMochi();
@@ -124,15 +135,11 @@ export const PatternTrainScreen: React.FC = () => {
 
   const handleDifficultySelect = async (difficulty: Difficulty) => {
     await updateSettings({ difficulty });
-    // Generate pattern with selected difficulty
-    const newPattern = generateTrainPattern(difficulty);
-    setPattern(newPattern);
-    setShowDifficultySelector(false);
+    gameHandleDifficultySelect(difficulty);
   };
 
   const handleCloseDifficultyModal = () => {
-    setShowDifficultySelector(false);
-    // Go back if user cancels difficulty selection
+    handleCloseDifficultySelector();
     navigation.goBack();
   };
 
@@ -140,22 +147,6 @@ export const PatternTrainScreen: React.FC = () => {
   const trainZoneRef = useRef<View>(null);
   const platformRef = useRef<View>(null);
   const [trainZoneLayout, setTrainZoneLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
-
-  const queueTimeout = useCallback((callback: () => void, delay: number) => {
-    const timeoutId = setTimeout(() => {
-      timeoutIdsRef.current = timeoutIdsRef.current.filter((id) => id !== timeoutId);
-      callback();
-    }, delay);
-    timeoutIdsRef.current.push(timeoutId);
-  }, []);
-
-  useEffect(
-    () => () => {
-      timeoutIdsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
-      timeoutIdsRef.current = [];
-    },
-    [],
-  );
 
   // Initialize draggable carriages when pattern changes
   useEffect(() => {
@@ -226,15 +217,7 @@ export const PatternTrainScreen: React.FC = () => {
   }, [showDifficultySelector, pattern, startTrainEntry]);
 
   const startNewRound = useCallback(() => {
-    const newPattern = generateTrainPattern(settings.difficulty);
-    setPattern(newPattern);
-    setWrongAttempts(0);
-    setSelectedChoice(null);
-    setAttachedCarriage(null);
-    setIsProcessing(false);
-    setFeedback(t('games.patternTrain.feedback.initial'));
-    setFeedbackType('initial');
-
+    gameStartNewRound();
     if (settings.animationsEnabled) {
       Animated.timing(feedbackOpacity, {
         toValue: 1,
@@ -244,7 +227,7 @@ export const PatternTrainScreen: React.FC = () => {
     } else {
       feedbackOpacity.setValue(1);
     }
-  }, [settings.difficulty, t, feedbackOpacity, settings.animationsEnabled]);
+  }, [gameStartNewRound, feedbackOpacity, settings.animationsEnabled]);
 
   const startTrainExit = useCallback(() => {
     setTrainPhase('exiting');
@@ -314,27 +297,6 @@ export const PatternTrainScreen: React.FC = () => {
     [trainZoneLayout],
   );
 
-  const getRandomFeedback = useCallback(
-    (type: 'correct' | 'incorrect'): string => {
-      const optionsKey =
-        type === 'correct'
-          ? 'games.patternTrain.feedback.correctOptions'
-          : 'games.patternTrain.feedback.incorrectOptions';
-      const fallbackKey =
-        type === 'correct'
-          ? 'games.patternTrain.feedback.correct'
-          : 'games.patternTrain.feedback.incorrect';
-
-      const messages = t(optionsKey, { returnObjects: true }) as string[];
-      if (Array.isArray(messages) && messages.length > 0) {
-        const index = Math.floor(Math.random() * messages.length);
-        return messages[index];
-      }
-      return t(fallbackKey);
-    },
-    [t],
-  );
-
   const handleCarriageDrop = useCallback(
     async (carriage: DraggableCarriage, gestureState: PanResponderGestureState) => {
       if (isProcessing || !carriage.isAvailable || !pattern) return;
@@ -377,28 +339,13 @@ export const PatternTrainScreen: React.FC = () => {
             }),
           ]).start();
 
-          // Increment completed rounds
-          const newCount = completedRounds + 1;
-          setCompletedRounds(newCount);
+          // Increment completed rounds and notify hook
+          onPatternComplete();
 
-          // Check for milestone
-          if (newCount > 0 && newCount % MILESTONE_INTERVAL === 0) {
-            playCompleteSound(settings);
-            if (settings.showMochiInGames) {
-              const { phrase, index } = pickPhrase(
-                t('mascot.patternTrainPhrases', { returnObjects: true }) as string[],
-                lastPhraseIndexRef.current,
-              );
-              lastPhraseIndexRef.current = index;
-              showMochi(phrase, 'happy');
-            }
-            setShowMilestoneModal(true);
-          } else {
-            // Exit train after success delay
-            queueTimeout(() => {
-              startTrainExit();
-            }, TRAIN_ANIMATION.SUCCESS_DELAY);
-          }
+          // Exit train after success delay
+          queueTimeout(() => {
+            startTrainExit();
+          }, TRAIN_ANIMATION.SUCCESS_DELAY);
         } else {
           await playFlipSound(settings);
 
@@ -428,11 +375,10 @@ export const PatternTrainScreen: React.FC = () => {
                   duration: TRAIN_ANIMATION.CHOICE_FADE_DURATION,
                   useNativeDriver: Platform.OS !== 'web',
                 }).start(() => {
-                  setDraggableCarriages((prevCarriages) =>
-                    prevCarriages.map((prevCarriage, prevIndex) =>
-                      prevIndex === index ? { ...prevCarriage, isAvailable: false } : prevCarriage,
-                    ),
+                  const updatedCarriages = draggableCarriages.map((prevCarriage, prevIndex) =>
+                    prevIndex === index ? { ...prevCarriage, isAvailable: false } : prevCarriage,
                   );
+                  setDraggableCarriages(updatedCarriages);
                 });
               }
             });
