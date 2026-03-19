@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/native-stack';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
 import { Difficulty, PASTEL_COLORS, ThemeColors, UNFINISHED_GAMES } from '../types';
