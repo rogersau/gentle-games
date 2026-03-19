@@ -11,14 +11,14 @@ describe('VolumeControl', () => {
 
   it('renders with initial volume', () => {
     const { getByLabelText } = render(
-      <VolumeControl value={0.5} onValueChange={mockOnValueChange} />
+      <VolumeControl value={0.5} onValueChange={mockOnValueChange} />,
     );
     expect(getByLabelText('Volume 50%')).toBeTruthy();
   });
 
   it('decreases volume when minus button pressed', () => {
     const { getByLabelText } = render(
-      <VolumeControl value={0.5} onValueChange={mockOnValueChange} />
+      <VolumeControl value={0.5} onValueChange={mockOnValueChange} />,
     );
 
     fireEvent.press(getByLabelText('Decrease volume'));
@@ -27,7 +27,7 @@ describe('VolumeControl', () => {
 
   it('increases volume when plus button pressed', () => {
     const { getByLabelText } = render(
-      <VolumeControl value={0.5} onValueChange={mockOnValueChange} />
+      <VolumeControl value={0.5} onValueChange={mockOnValueChange} />,
     );
 
     fireEvent.press(getByLabelText('Increase volume'));
@@ -36,7 +36,7 @@ describe('VolumeControl', () => {
 
   it('does not decrease below 0', () => {
     const { getByLabelText } = render(
-      <VolumeControl value={0} onValueChange={mockOnValueChange} />
+      <VolumeControl value={0} onValueChange={mockOnValueChange} />,
     );
 
     const decreaseButton = getByLabelText('Decrease volume');
@@ -45,7 +45,7 @@ describe('VolumeControl', () => {
 
   it('does not increase above 1', () => {
     const { getByLabelText } = render(
-      <VolumeControl value={1} onValueChange={mockOnValueChange} />
+      <VolumeControl value={1} onValueChange={mockOnValueChange} />,
     );
 
     const increaseButton = getByLabelText('Increase volume');
@@ -54,7 +54,7 @@ describe('VolumeControl', () => {
 
   it('sets volume directly via segment press', () => {
     const { getByLabelText } = render(
-      <VolumeControl value={0.2} onValueChange={mockOnValueChange} />
+      <VolumeControl value={0.2} onValueChange={mockOnValueChange} />,
     );
 
     fireEvent.press(getByLabelText('Set volume to 70%'));
@@ -63,14 +63,14 @@ describe('VolumeControl', () => {
 
   it('renders with custom step count', () => {
     const { getByLabelText } = render(
-      <VolumeControl value={0.5} onValueChange={mockOnValueChange} steps={5} />
+      <VolumeControl value={0.5} onValueChange={mockOnValueChange} steps={5} />,
     );
     expect(getByLabelText('Volume 50%')).toBeTruthy();
   });
 
   it('updates volume with different step counts', () => {
     const { getByLabelText } = render(
-      <VolumeControl value={0.4} onValueChange={mockOnValueChange} steps={5} />
+      <VolumeControl value={0.4} onValueChange={mockOnValueChange} steps={5} />,
     );
 
     fireEvent.press(getByLabelText('Increase volume'));

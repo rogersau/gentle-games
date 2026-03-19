@@ -1,16 +1,45 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { Text, View } from 'react-native';
+import { render, waitFor } from '@testing-library/react-native';
+import { AppContent } from './App';
+import { useSettings } from './src/context/SettingsContext';
+import type { Settings } from './src/types';
+import { APP_ROUTES } from './src/types/navigation';
+import { trackScreenView } from './src/utils/analytics';
+import { reconcileObservability } from './src/utils/observabilityBootstrap';
 
-// Mock dependencies
+const mockNavigationContainer = jest.fn();
+const renderedScreenNames: string[] = [];
+
 jest.mock('expo-splash-screen', () => ({
   preventAutoHideAsync: jest.fn(() => Promise.resolve()),
   hideAsync: jest.fn(() => Promise.resolve()),
 }));
 
-jest.mock('expo-font', () => ({
-  useFonts: jest.fn(() => [true, null]),
+jest.mock('./src/i18n', () => ({}));
+
+jest.mock('./src/context/SettingsContext', () => ({
+  SettingsProvider: ({ children }: { children: React.ReactNode }) => children,
+  useSettings: jest.fn(),
+}));
+
+jest.mock('./src/context/ParentTimerContext', () => ({
+  ParentTimerProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+jest.mock('./src/ui/fonts', () => ({
+  useFonts: jest.fn(() => ({ fontsLoaded: true, fontError: null })),
+}));
+
+jest.mock('./src/utils/theme', () => ({
+  useThemeColors: jest.fn(() => ({
+    resolvedMode: 'light',
+    colors: {
+      background: '#ffffff',
+      text: '#000000',
+      textLight: '#666666',
+      primary: '#4A90E2',
+    },
+  })),
 }));
 
 jest.mock('./src/utils/sounds', () => ({
@@ -22,131 +51,279 @@ jest.mock('./src/utils/pwaBackGuard', () => ({
   installPwaBackNavigationGuard: jest.fn(() => jest.fn()),
 }));
 
-jest.mock('./src/utils/sentry', () => ({
-  initSentry: jest.fn(() => Promise.resolve()),
+jest.mock('./src/utils/pwaInteractionGuards', () => ({
+  installPwaInteractionGuards: jest.fn(() => jest.fn()),
 }));
 
-jest.mock('./src/utils/theme', () => ({
-  useThemeColors: jest.fn(() => ({ resolvedMode: 'light' })),
+jest.mock('./src/utils/analytics', () => ({
+  getPostHogClient: jest.fn(() => null),
+  trackScreenView: jest.fn(),
 }));
 
-jest.mock('./src/ui/fonts', () => ({
-  useFonts: jest.fn(() => ({ fontsLoaded: true, fontError: null })),
+jest.mock('./src/utils/observabilityBootstrap', () => ({
+  reconcileObservability: jest.fn(() => Promise.resolve()),
 }));
-
-jest.mock('./src/context/ParentTimerContext', () => ({
-  ParentTimerProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
-
-jest.mock('./src/i18n', () => ({}));
-
-// Mock PostHogProvider to simulate the real behavior
-const mockPostHogProvider = jest.fn();
 
 jest.mock('posthog-react-native', () => ({
-  __esModule: true,
-  default: jest.fn(),
-  PostHogProvider: (props: { client?: unknown; children: React.ReactNode }) => {
-    mockPostHogProvider(props);
-    // Simulate the actual PostHogProvider behavior - throws without client or apiKey
-    if (!props.client) {
-      throw new Error('Either a PostHog client or an apiKey is required. If you want to use the PostHogProvider without a client, please provide an apiKey and the options={ disabled: true }.');
-    }
-    return props.children;
-  },
-  usePostHog: () => ({
-    capture: jest.fn(),
-    screen: jest.fn(),
-  }),
+  PostHogProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-// Test component that mimics AppNavigator structure
-const TestNavigator: React.FC<{ posthogClient: unknown }> = ({ posthogClient }) => {
-  const { PostHogProvider } = require('posthog-react-native');
-  
-  return (
-    <NavigationContainer>
-      <PostHogProvider
-        client={posthogClient}
-        autocapture={{
-          captureScreens: false,
-          captureTouches: false,
-        }}
-      >
-        <View testID="app-content">
-          <Text>App Content</Text>
-        </View>
-      </PostHogProvider>
-    </NavigationContainer>
-  );
+jest.mock('@react-navigation/native', () => ({
+  NavigationContainer: (props: { children: React.ReactNode }) => {
+    mockNavigationContainer(props);
+    return props.children;
+  },
+}));
+
+jest.mock('@react-navigation/stack', () => ({
+  createStackNavigator: () => {
+    return {
+      Navigator: ({ children }: { children: React.ReactNode }) => children,
+      Screen: ({ name, children }: { name: string; children: () => React.ReactNode }) => {
+        renderedScreenNames.push(name);
+        return children();
+      },
+    };
+  },
+}));
+
+jest.mock('./src/components/GentleErrorBoundary', () => ({
+  GentleErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+jest.mock('./src/screens/HomeScreen', () => ({
+  HomeScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text testID='app-shell'>Home</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/GameScreen', () => ({
+  GameScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>Game</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/SettingsScreen', () => ({
+  SettingsScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>Settings</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/DrawingScreen', () => ({
+  DrawingScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>Drawing</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/GlitterScreen', () => ({
+  GlitterScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>Glitter</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/BubbleScreen', () => ({
+  BubbleScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>Bubble</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/CategoryMatchScreen', () => ({
+  CategoryMatchScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>CategoryMatch</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/KeepyUppyScreen', () => ({
+  KeepyUppyScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>KeepyUppy</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/BreathingGardenScreen', () => ({
+  BreathingGardenScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>BreathingGarden</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/PatternTrainScreen', () => ({
+  PatternTrainScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>PatternTrain</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/NumberPicnicScreen', () => ({
+  NumberPicnicScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>NumberPicnic</ReactNative.Text>;
+  },
+}));
+
+const mockedUseSettings = jest.mocked(useSettings);
+const mockedTrackScreenView = jest.mocked(trackScreenView);
+const mockedReconcileObservability = jest.mocked(reconcileObservability);
+type SettingsValue = ReturnType<typeof useSettings>;
+
+const createSettingsValue = (overrides?: {
+  settings?: Partial<Settings>;
+  isLoading?: boolean;
+}): SettingsValue => {
+  const settings: Settings = {
+    animationsEnabled: true,
+    soundEnabled: true,
+    soundVolume: 0.5,
+    difficulty: 'medium',
+    theme: 'mixed',
+    showCardPreview: true,
+    keepyUppyEasyMode: true,
+    colorMode: 'system',
+    hiddenGames: [],
+    parentTimerMinutes: 0,
+    enableUnfinishedGames: true,
+    language: 'en-US',
+    reducedMotionEnabled: false,
+    telemetryEnabled: false,
+    showMochiInGames: true,
+    ...overrides?.settings,
+  };
+
+  return {
+    settings,
+    updateSettings: jest.fn(),
+    isLoading: overrides?.isLoading ?? false,
+  };
 };
 
-describe('PostHogProvider error handling', () => {
+describe('AppContent observability bootstrap', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    renderedScreenNames.length = 0;
+    mockedUseSettings.mockReturnValue(createSettingsValue());
   });
 
-  it('should throw error when PostHogProvider is rendered without a client', () => {
-    // This reproduces the production error
-    expect(() => {
-      render(<TestNavigator posthogClient={undefined} />);
-    }).toThrow('Either a PostHog client or an apiKey is required');
+  it('does not reconcile observability until settings finish loading, then reconciles once when ready', async () => {
+    let currentSettings = createSettingsValue({
+      isLoading: true,
+      settings: {
+        telemetryEnabled: true,
+      },
+    });
+    mockedUseSettings.mockImplementation(() => currentSettings);
+
+    const { queryByTestId, rerender, getByTestId } = render(<AppContent />);
+
+    expect(mockedReconcileObservability).not.toHaveBeenCalled();
+    expect(queryByTestId('app-shell')).toBeNull();
+
+    currentSettings = createSettingsValue({
+      isLoading: false,
+      settings: {
+        telemetryEnabled: true,
+      },
+    });
+
+    rerender(<AppContent />);
+
+    await waitFor(() => {
+      expect(mockedReconcileObservability).toHaveBeenCalledTimes(1);
+      expect(mockedReconcileObservability).toHaveBeenCalledWith(true);
+    });
+
+    rerender(<AppContent />);
+
+    expect(mockedReconcileObservability).toHaveBeenCalledTimes(1);
+    expect(getByTestId('app-shell')).toBeTruthy();
   });
 
-  it('should not throw error when PostHogProvider has a valid client', () => {
-    const mockClient = { id: 'test-client' };
-    
-    expect(() => {
-      render(<TestNavigator posthogClient={mockClient} />);
-    }).not.toThrow();
+  it('renders the app shell and reconciles with telemetry disabled', async () => {
+    const { getByTestId } = render(<AppContent />);
+
+    await waitFor(() => {
+      expect(mockedReconcileObservability).toHaveBeenCalledWith(false);
+    });
+
+    expect(getByTestId('app-shell')).toBeTruthy();
   });
 
-  it('should not throw error when PostHogProvider has null client', () => {
-    // This is what happens when there's no API key
-    expect(() => {
-      render(<TestNavigator posthogClient={null} />);
-    }).toThrow('Either a PostHog client or an apiKey is required');
-  });
-});
+  it('logs a warning and keeps rendering when bootstrap fails', async () => {
+    const warningSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockedReconcileObservability.mockRejectedValueOnce(new Error('bootstrap failed'));
 
-describe('App should work without PostHog configuration', () => {
-  it('should be able to conditionally render PostHogProvider based on client availability', () => {
-    // This is the fix we need - conditionally render the provider
-    const ConditionalNavigator: React.FC<{ posthogClient: unknown }> = ({ posthogClient }) => {
-      const { PostHogProvider } = require('posthog-react-native');
-      const content = (
-        <View testID="app-content">
-          <Text>App Content</Text>
-        </View>
+    const { getByTestId } = render(<AppContent />);
+
+    await waitFor(() => {
+      expect(warningSpy).toHaveBeenCalledWith(
+        'Observability bootstrap failed. Continuing without analytics or crash reporting.',
+        expect.any(Error),
       );
-      
-      // Only wrap with PostHogProvider if we have a client
-      if (posthogClient) {
-        return (
-          <NavigationContainer>
-            <PostHogProvider
-              client={posthogClient}
-              autocapture={{
-                captureScreens: false,
-                captureTouches: false,
-              }}
-            >
-              {content}
-            </PostHogProvider>
-          </NavigationContainer>
-        );
-      }
-      
-      return <NavigationContainer>{content}</NavigationContainer>;
-    };
-    
-    // Should work without client
-    const { getByTestId: getByTestIdNoClient } = render(<ConditionalNavigator posthogClient={null} />);
-    expect(getByTestIdNoClient('app-content')).toBeTruthy();
-    
-    // Should also work with client
-    const mockClient = { id: 'test-client' };
-    const { getByTestId: getByTestIdWithClient } = render(<ConditionalNavigator posthogClient={mockClient} />);
-    expect(getByTestIdWithClient('app-content')).toBeTruthy();
+    });
+
+    expect(getByTestId('app-shell')).toBeTruthy();
+    warningSpy.mockRestore();
+  });
+
+  it('reconciles disabled startup first and then enabled telemetry after consent changes', async () => {
+    let currentSettings = createSettingsValue({
+      settings: {
+        telemetryEnabled: false,
+      },
+    });
+    mockedUseSettings.mockImplementation(() => currentSettings);
+
+    const { rerender, getByTestId } = render(<AppContent />);
+
+    await waitFor(() => {
+      expect(mockedReconcileObservability).toHaveBeenNthCalledWith(1, false);
+    });
+
+    currentSettings = createSettingsValue({
+      settings: {
+        telemetryEnabled: true,
+      },
+    });
+
+    rerender(<AppContent />);
+
+    await waitFor(() => {
+      expect(mockedReconcileObservability).toHaveBeenCalledTimes(2);
+      expect(mockedReconcileObservability).toHaveBeenNthCalledWith(2, true);
+    });
+
+    expect(getByTestId('app-shell')).toBeTruthy();
+  });
+
+  it('anchors stack screens and route tracking to the shared app route contract', () => {
+    render(<AppContent />);
+
+    expect(renderedScreenNames).toEqual(Object.values(APP_ROUTES));
+
+    const navigationContainerProps = mockNavigationContainer.mock.calls.at(-1)?.[0];
+    expect(navigationContainerProps).toBeTruthy();
+
+    navigationContainerProps?.onStateChange?.({
+      index: 0,
+      routes: [{ key: 'home', name: APP_ROUTES.Home }],
+    });
+    navigationContainerProps?.onStateChange?.({
+      index: 0,
+      routes: [{ key: 'unknown', name: 'SurpriseRoute' }],
+    });
+    navigationContainerProps?.onStateChange?.({
+      index: 0,
+      routes: [{ key: 'settings', name: APP_ROUTES.Settings }],
+    });
+
+    expect(mockedTrackScreenView).toHaveBeenCalledTimes(2);
+    expect(mockedTrackScreenView).toHaveBeenNthCalledWith(1, APP_ROUTES.Home);
+    expect(mockedTrackScreenView).toHaveBeenNthCalledWith(2, APP_ROUTES.Settings);
   });
 });

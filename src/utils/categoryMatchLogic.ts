@@ -12,7 +12,7 @@ export interface CategoryMatchRound {
 }
 
 const CATEGORY_SEQUENCE: CategoryMatchCategory[] = CATEGORY_MATCH_CATEGORIES.map(
-  (category) => category.id
+  (category) => category.id,
 );
 
 const CATEGORY_ITEMS: Record<CategoryMatchCategory, CategoryMatchItem[]> = {
@@ -29,7 +29,7 @@ const getPoolLimitForRound = (roundsCompleted: number): number => {
 
 const getNextCategory = (
   previousCategory: CategoryMatchCategory | undefined,
-  random: () => number
+  random: () => number,
 ): CategoryMatchCategory => {
   if (!previousCategory) {
     const startIndex = Math.floor(random() * CATEGORY_SEQUENCE.length);
@@ -44,7 +44,7 @@ const getNextCategory = (
 const getRoundItem = (
   previousItem: CategoryMatchItem | undefined,
   roundsCompleted: number,
-  random: () => number
+  random: () => number,
 ): CategoryMatchItem => {
   const nextCategory = getNextCategory(previousItem?.category, random);
   const inCategoryPool = CATEGORY_ITEMS[nextCategory];
@@ -60,7 +60,7 @@ const getRoundItem = (
 export const createCategoryMatchRound = (
   previousItem?: CategoryMatchItem,
   roundsCompleted: number = 0,
-  random: () => number = Math.random
+  random: () => number = Math.random,
 ): CategoryMatchRound => ({
   item: getRoundItem(previousItem, roundsCompleted, random),
   categories: [...CATEGORY_MATCH_CATEGORIES],
@@ -68,5 +68,5 @@ export const createCategoryMatchRound = (
 
 export const isCategoryMatchCorrect = (
   item: CategoryMatchItem,
-  droppedCategory: CategoryMatchCategory
+  droppedCategory: CategoryMatchCategory,
 ): boolean => item.category === droppedCategory;

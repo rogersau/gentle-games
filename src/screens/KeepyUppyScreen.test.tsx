@@ -37,7 +37,17 @@ jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: {
       keepyUppyEasyMode: true,
+      showMochiInGames: true,
     },
+  }),
+}));
+
+jest.mock('../context/MochiContext', () => ({
+  useMochiContext: () => ({
+    mochiProps: { variant: 'idle', visible: false, phrase: null },
+    showMochi: jest.fn(),
+    hideMochi: jest.fn(),
+    celebrate: jest.fn(),
   }),
 }));
 

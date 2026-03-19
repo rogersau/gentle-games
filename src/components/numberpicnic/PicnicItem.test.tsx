@@ -28,7 +28,7 @@ describe('PicnicItem', () => {
           start: (callback?: () => void) => callback?.(),
           stop: jest.fn(),
           reset: jest.fn(),
-        }) as any
+        }) as any,
     );
 
     jest.spyOn(Animated, 'parallel').mockImplementation(
@@ -39,7 +39,7 @@ describe('PicnicItem', () => {
             callback?.();
           },
           stop: jest.fn(),
-        }) as any
+        }) as any,
     );
   });
 
@@ -49,7 +49,7 @@ describe('PicnicItem', () => {
 
   it('calls onPress when item is not animating', () => {
     const onPress = jest.fn();
-    const { getByRole } = render(<PicnicItem emoji="🍎" onPress={onPress} isAnimating={false} />);
+    const { getByRole } = render(<PicnicItem emoji='🍎' onPress={onPress} isAnimating={false} />);
 
     fireEvent.press(getByRole('button'));
 
@@ -58,7 +58,7 @@ describe('PicnicItem', () => {
 
   it('blocks presses while animating', () => {
     const onPress = jest.fn();
-    const { getByRole } = render(<PicnicItem emoji="🍎" onPress={onPress} isAnimating />);
+    const { getByRole } = render(<PicnicItem emoji='🍎' onPress={onPress} isAnimating />);
 
     fireEvent.press(getByRole('button'));
 
@@ -70,11 +70,11 @@ describe('PicnicItem', () => {
 
     render(
       <PicnicItem
-        emoji="🍓"
+        emoji='🍓'
         onPress={jest.fn()}
         isAnimating
         onAnimationComplete={onAnimationComplete}
-      />
+      />,
     );
 
     expect(Animated.parallel).toHaveBeenCalledTimes(1);
@@ -84,7 +84,7 @@ describe('PicnicItem', () => {
   it('uses reduced timing when animations are disabled', () => {
     mockSettings.animationsEnabled = false;
 
-    render(<PicnicItem emoji="🍇" onPress={jest.fn()} isAnimating />);
+    render(<PicnicItem emoji='🍇' onPress={jest.fn()} isAnimating />);
 
     const timingCalls = (Animated.timing as jest.Mock).mock.calls;
     const durations = timingCalls

@@ -1,4 +1,10 @@
-import { ensureMinimumBubbles, stepBubbles, spawnBubbles, Bubble, createBubble } from './bubbleLogic';
+import {
+  ensureMinimumBubbles,
+  stepBubbles,
+  spawnBubbles,
+  Bubble,
+  createBubble,
+} from './bubbleLogic';
 
 const sequenceRng = (values: number[]) => {
   let index = 0;
@@ -22,7 +28,14 @@ describe('bubbleLogic', () => {
 
   it('can spawn a bubble lower in the field with a smaller initial size', () => {
     const fieldHeight = 400;
-    const [bubble] = ensureMinimumBubbles([], 1, 300, fieldHeight, 3, sequenceRng([0.5, 0.2, 0.3, 0.4, 0.7]));
+    const [bubble] = ensureMinimumBubbles(
+      [],
+      1,
+      300,
+      fieldHeight,
+      3,
+      sequenceRng([0.5, 0.2, 0.3, 0.4, 0.7]),
+    );
     expect(bubble.y).toBeGreaterThanOrEqual(fieldHeight * 0.22);
     expect(bubble.y).toBeLessThanOrEqual(fieldHeight * 0.62);
     expect(bubble.radius).toBeLessThan(bubble.targetRadius);
@@ -109,9 +122,39 @@ describe('bubbleLogic', () => {
 
     it('trims excess bubbles when existing exceeds max', () => {
       const existing: Bubble[] = [
-        { id: '1', x: 10, y: 10, radius: 20, targetRadius: 20, growthPerSecond: 0, speed: 10, color: '#fff', opacity: 0.5 },
-        { id: '2', x: 20, y: 20, radius: 20, targetRadius: 20, growthPerSecond: 0, speed: 10, color: '#fff', opacity: 0.5 },
-        { id: '3', x: 30, y: 30, radius: 20, targetRadius: 20, growthPerSecond: 0, speed: 10, color: '#fff', opacity: 0.5 },
+        {
+          id: '1',
+          x: 10,
+          y: 10,
+          radius: 20,
+          targetRadius: 20,
+          growthPerSecond: 0,
+          speed: 10,
+          color: '#fff',
+          opacity: 0.5,
+        },
+        {
+          id: '2',
+          x: 20,
+          y: 20,
+          radius: 20,
+          targetRadius: 20,
+          growthPerSecond: 0,
+          speed: 10,
+          color: '#fff',
+          opacity: 0.5,
+        },
+        {
+          id: '3',
+          x: 30,
+          y: 30,
+          radius: 20,
+          targetRadius: 20,
+          growthPerSecond: 0,
+          speed: 10,
+          color: '#fff',
+          opacity: 0.5,
+        },
       ];
       const result = ensureMinimumBubbles(existing, 1, 300, 400, 2, Math.random);
       expect(result).toHaveLength(2);

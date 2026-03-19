@@ -7,7 +7,7 @@ export type ResolvedThemeMode = 'light' | 'dark';
 
 export const resolveThemeMode = (
   mode: ColorMode | undefined,
-  systemScheme: ReturnType<typeof useColorScheme>
+  systemScheme: ReturnType<typeof useColorScheme>,
 ): ResolvedThemeMode => {
   if (mode === 'light' || mode === 'dark') {
     return mode;
@@ -58,4 +58,3 @@ export const useReducedMotion = (): boolean => {
 
   return systemPrefersReducedMotion;
 };
-

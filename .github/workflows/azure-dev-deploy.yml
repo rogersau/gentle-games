@@ -29,7 +29,7 @@ jobs:
 
       - name: Build web export for Azure (root path)
         env:
-          EXPO_BASE_URL: ""
+          EXPO_BASE_URL: ''
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
@@ -59,7 +59,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GENTLE_GAMES_DEV }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: "upload"
-          app_location: "/dist"
-          output_location: ""
+          action: 'upload'
+          app_location: '/dist'
+          output_location: ''
           skip_app_build: true

@@ -71,7 +71,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
         width: zoneWidth,
         height: zoneHeight,
       })),
-    [boardPadding, round.categories, zoneHeight, zoneTop, zoneWidth, zoneGap]
+    [boardPadding, round.categories, zoneHeight, zoneTop, zoneWidth, zoneGap],
   );
 
   useEffect(
@@ -80,7 +80,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
         clearTimeout(feedbackTimerRef.current);
       }
     },
-    []
+    [],
   );
 
   const snapTokenBack = () => {
@@ -134,12 +134,9 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
     (x: number, y: number): DropZone | undefined =>
       zones.find(
         (zone) =>
-          x >= zone.x &&
-          x <= zone.x + zone.width &&
-          y >= zone.y &&
-          y <= zone.y + zone.height
+          x >= zone.x && x <= zone.x + zone.width && y >= zone.y && y <= zone.y + zone.height,
       ),
-    [zones]
+    [zones],
   );
 
   const panResponder = useMemo(
@@ -206,29 +203,34 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
       tokenCenterY,
       tokenScale,
       zones,
-    ]
+    ],
   );
 
   return (
-    <View style={[styles.container, { width, height }]} accessibilityLabel={t('games.categoryMatch.accessibilityLabel') }>
-      <Text style={styles.promptText} accessibilityRole="text">{t('games.categoryMatch.dragToMatchingCategory')}</Text>
+    <View
+      style={[styles.container, { width, height }]}
+      accessibilityLabel={t('games.categoryMatch.accessibilityLabel')}
+    >
+      <Text style={styles.promptText} accessibilityRole='text'>
+        {t('games.categoryMatch.dragToMatchingCategory')}
+      </Text>
 
       <Animated.View
-        testID="category-draggable-token"
-        accessibilityRole="button"
+        testID='category-draggable-token'
+        accessibilityRole='button'
         accessibilityLabel={`${round.item.emoji}, ${t('games.categoryMatch.dragToMatchingCategory')}`}
         accessibilityHint={t('games.categoryMatch.dragInstruction')}
         style={[
           styles.draggableToken,
-            {
-              left: tokenStartX,
-              top: tokenStartY,
-              width: tokenSize,
-              height: tokenSize,
-              transform: [...dragPosition.getTranslateTransform(), { scale: tokenScale }],
-            },
-          ]}
-          {...panResponder.panHandlers}
+          {
+            left: tokenStartX,
+            top: tokenStartY,
+            width: tokenSize,
+            height: tokenSize,
+            transform: [...dragPosition.getTranslateTransform(), { scale: tokenScale }],
+          },
+        ]}
+        {...panResponder.panHandlers}
       >
         <Text style={[styles.emojiText, { fontSize: Math.floor(tokenSize * 0.5) }]}>
           {round.item.emoji}
@@ -250,8 +252,9 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
         {zones.map((zone) => (
           <View
             key={zone.category}
-            accessibilityRole="button"
+            accessibilityRole='button'
             accessibilityLabel={`${zone.label} category`}
+            testID={`category-zone-${zone.category}`}
             style={[
               styles.zoneCard,
               { width: zone.width, height: zone.height },
@@ -334,4 +337,3 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       textAlign: 'center',
     },
   });
-

@@ -37,8 +37,8 @@ export const SettingToggle: React.FC<SettingToggleProps> = ({
           disabled={disabled}
           trackColor={{ false: colors.border, true: colors.primary }}
           thumbColor={colors.surface}
-          accessibilityLabel={`${label}, ${value ? t('common.on') : t('common.off')}` }
-          accessibilityRole="switch"
+          accessibilityLabel={`${label}, ${value ? t('common.on') : t('common.off')}`}
+          accessibilityRole='switch'
           accessibilityState={{ checked: value, disabled }}
         />
       </View>

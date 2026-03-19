@@ -24,7 +24,12 @@ describe('numberPicnicLogic', () => {
     it('updates basket count with clamping and completion check', () => {
       expect(updateNumberPicnicCount(0, -1)).toBe(0);
       expect(updateNumberPicnicCount(11, 4)).toBe(12);
-      const prompt = { itemEmoji: '🍎', itemName: 'apples', targetCount: 4, visualDots: ['🟢','🟢','🟢','🟢'] };
+      const prompt = {
+        itemEmoji: '🍎',
+        itemName: 'apples',
+        targetCount: 4,
+        visualDots: ['🟢', '🟢', '🟢', '🟢'],
+      };
       expect(isNumberPicnicPromptComplete(4, prompt)).toBe(true);
       expect(isNumberPicnicPromptComplete(3, prompt)).toBe(false);
     });
@@ -128,7 +133,6 @@ describe('numberPicnicLogic', () => {
 
     it('starts new round correctly', () => {
       const { result } = renderHook(() => useNumberPicnicGame('easy'));
-      const firstPrompt = result.current.prompt;
       const initialBlanketCount = result.current.blanketItemCount;
 
       // Add some items
@@ -156,22 +160,102 @@ describe('numberPicnicLogic', () => {
       expect(result.current.prompt.itemName).toBeDefined();
     });
 
+    it('clears pending processing reset before a new round starts', () => {
+      const { result } = renderHook(() => useNumberPicnicGame('easy'));
+
+      act(() => {
+        result.current.handleItemDrop(0);
+      });
+
+      expect(result.current.isProcessing).toBe(true);
+
+      act(() => {
+        jest.advanceTimersByTime(100);
+        result.current.startNewRound();
+      });
+
+      act(() => {
+        result.current.handleItemDrop(0);
+      });
+
+      expect(result.current.completedPicnics).toBe(1);
+      expect(result.current.basketCount).toBe(1);
+      expect(result.current.isProcessing).toBe(true);
+
+      act(() => {
+        jest.advanceTimersByTime(200);
+      });
+
+      expect(result.current.isProcessing).toBe(true);
+
+      act(() => {
+        jest.advanceTimersByTime(100);
+      });
+
+      expect(result.current.isProcessing).toBe(false);
+    });
+
+    it('cleans up pending processing reset timeout on unmount', () => {
+      const { result, unmount } = renderHook(() => useNumberPicnicGame('easy'));
+
+      act(() => {
+        result.current.handleItemDrop(0);
+      });
+
+      expect(result.current.isProcessing).toBe(true);
+      expect(jest.getTimerCount()).toBe(1);
+
+      unmount();
+
+      expect(jest.getTimerCount()).toBe(0);
+    });
+
     it('updates dragging state', () => {
       const { result } = renderHook(() => useNumberPicnicGame('easy'));
 
       expect(result.current.isDragging).toBe(false);
+      expect(result.current.isOverBasket).toBe(false);
+
+      act(() => {
+        result.current.handleDropStart();
+      });
+
+      expect(result.current.isDragging).toBe(true);
+      expect(result.current.isOverBasket).toBe(false);
 
       act(() => {
         result.current.handleDragOverBasket(true);
       });
 
       expect(result.current.isDragging).toBe(true);
+      expect(result.current.isOverBasket).toBe(true);
 
       act(() => {
         result.current.handleDropEnd();
       });
 
       expect(result.current.isDragging).toBe(false);
+      expect(result.current.isOverBasket).toBe(false);
+      expect(result.current.basketCount).toBe(0);
+    });
+
+    it('cleans up transient drag state after a successful drop', () => {
+      const { result } = renderHook(() => useNumberPicnicGame('easy'));
+
+      act(() => {
+        result.current.handleDropStart();
+        result.current.handleDragOverBasket(true);
+        result.current.handleDropEnd();
+        result.current.handleItemDrop(0);
+      });
+
+      act(() => {
+        jest.advanceTimersByTime(300);
+      });
+
+      expect(result.current.basketCount).toBe(1);
+      expect(result.current.isDragging).toBe(false);
+      expect(result.current.isOverBasket).toBe(false);
     });
 
     it('generates basket items based on count', () => {
@@ -199,4 +283,3 @@ describe('numberPicnicLogic', () => {
     });
   });
 });
-

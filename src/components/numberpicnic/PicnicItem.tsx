@@ -46,9 +46,7 @@ export const PicnicItem: React.FC<PicnicItemProps> = ({
 
   useEffect(() => {
     if (isAnimating) {
-      const duration = settings.animationsEnabled && !settings.reducedMotionEnabled
-        ? 300
-        : 50;
+      const duration = settings.animationsEnabled && !settings.reducedMotionEnabled ? 300 : 50;
 
       Animated.parallel([
         Animated.timing(scaleAnim, {
@@ -78,13 +76,13 @@ export const PicnicItem: React.FC<PicnicItemProps> = ({
     }
   }, [isAnimating, settings.animationsEnabled, settings.reducedMotionEnabled, onAnimationComplete]);
 
-  const animatedStyle = useMemo(() => ({
-    transform: [
-      { scale: scaleAnim },
-      { translateY },
-    ],
-    opacity,
-  }), [scaleAnim, translateY, opacity]);
+  const animatedStyle = useMemo(
+    () => ({
+      transform: [{ scale: scaleAnim }, { translateY }],
+      opacity,
+    }),
+    [scaleAnim, translateY, opacity],
+  );
 
   return (
     <TouchableOpacity
@@ -93,7 +91,7 @@ export const PicnicItem: React.FC<PicnicItemProps> = ({
       disabled={isAnimating}
       accessible={accessible}
       accessibilityLabel={accessibilityLabel || emoji}
-      accessibilityRole="button"
+      accessibilityRole='button'
       accessibilityHint={accessibilityHint}
       testID={testID}
     >
@@ -110,9 +108,7 @@ interface PicnicItemPlaceholderProps {
   style?: ViewStyle;
 }
 
-export const PicnicItemPlaceholder: React.FC<PicnicItemPlaceholderProps> = ({
-  style,
-}) => (
+export const PicnicItemPlaceholder: React.FC<PicnicItemPlaceholderProps> = ({ style }) => (
   <View style={[styles.container, styles.placeholder, style]}>
     <View style={styles.placeholderInner} />
   </View>

@@ -37,7 +37,7 @@ export const AppModal: React.FC<AppModalProps> = ({
 
   return (
     <Modal
-      animationType="fade"
+      animationType='fade'
       transparent
       visible={visible}
       onRequestClose={onClose}
@@ -49,13 +49,13 @@ export const AppModal: React.FC<AppModalProps> = ({
             style={StyleSheet.absoluteFill}
             onPress={onClose}
             activeOpacity={1}
-            accessibilityLabel={t('common.close') }
-            accessibilityRole="button"
+            accessibilityLabel={t('common.close')}
+            accessibilityRole='button'
           />
         )}
         <View style={[styles.content, contentStyle]}>
           {title && (
-            <Text style={styles.title} accessibilityRole="header">
+            <Text style={styles.title} accessibilityRole='header'>
               {title}
             </Text>
           )}
@@ -65,7 +65,7 @@ export const AppModal: React.FC<AppModalProps> = ({
               style={styles.closeButton}
               onPress={onClose}
               accessibilityLabel={displayedCloseLabel}
-              accessibilityRole="button"
+              accessibilityRole='button'
             >
               <Text style={styles.closeText}>{displayedCloseLabel}</Text>
             </TouchableOpacity>
