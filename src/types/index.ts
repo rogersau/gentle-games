@@ -41,7 +41,7 @@ export interface Settings {
   showCardPreview: boolean;
   keepyUppyEasyMode: boolean;
   colorMode: ColorMode;
-  hiddenGames: string[];
+  hiddenGames: import('../games/registry').GameId[];
   parentTimerMinutes: number;
   enableUnfinishedGames: boolean;
   language: import('./i18n').SupportedLanguage;
@@ -49,8 +49,6 @@ export interface Settings {
   telemetryEnabled: boolean;
   showMochiInGames: boolean;
 }
-
-export const UNFINISHED_GAMES: string[] = ['number-picnic'];
 
 export type BreathingGardenPhase = 'inhale' | 'exhale';
 

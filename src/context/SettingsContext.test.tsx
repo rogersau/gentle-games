@@ -35,6 +35,7 @@ const TestConsumer = () => {
       <Text testID='theme'>{settings.theme}</Text>
       <Text testID='keepyEasy'>{String(settings.keepyUppyEasyMode)}</Text>
       <Text testID='colorMode'>{settings.colorMode}</Text>
+      <Text testID='hiddenGames'>{settings.hiddenGames.join(',')}</Text>
       <Text testID='telemetry'>{String(settings.telemetryEnabled)}</Text>
       <TouchableOpacity testID='set-hard' onPress={() => updateSettings({ difficulty: 'hard' })}>
         <Text>set-hard</Text>
@@ -98,6 +99,24 @@ describe('SettingsContext', () => {
     expect(screen.getByTestId('keepyEasy').props.children).toBe('true');
     expect(screen.getByTestId('colorMode').props.children).toBe('system');
     expect(screen.getByTestId('telemetry').props.children).toBe('false');
+  });
+
+  it('drops invalid persisted hidden game ids on load', async () => {
+    storage.getItem.mockResolvedValueOnce(
+      JSON.stringify({
+        hiddenGames: ['memory-snap', 'not-a-game', 42, 'bubble-pop'],
+      }),
+    );
+
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+
+    expect(screen.getByTestId('hiddenGames').props.children).toBe('memory-snap,bubble-pop');
   });
 
   it('removes corrupted persisted settings', async () => {

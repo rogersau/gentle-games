@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ColorMode, Settings } from '../types';
 import { SupportedLanguage, DEFAULT_LANGUAGE } from '../types/i18n';
 import { changeLanguage } from '../i18n';
+import { GameId, isGameId } from '../games/registry';
 
 interface SettingsContextType {
   settings: Settings;
@@ -60,9 +61,9 @@ const toColorMode = (value: unknown, fallback: ColorMode): ColorMode => {
   return fallback;
 };
 
-const toHiddenGames = (value: unknown): string[] => {
+const toHiddenGames = (value: unknown): GameId[] => {
   if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === 'string');
+  return value.filter((item): item is GameId => typeof item === 'string' && isGameId(item));
 };
 
 const toParentTimerMinutes = (value: unknown): number => {
