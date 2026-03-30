@@ -1,9 +1,10 @@
-import { PASTEL_COLORS, UNFINISHED_GAMES } from '../types';
+import { PASTEL_COLORS } from '../types';
 import type { AppRouteName, HomeGameId } from '../types/navigation';
 import { APP_ROUTES } from '../types/navigation';
 import type { TranslationKey } from '../i18n/types';
 
 export type GameId = HomeGameId;
+export type GameLaunchMode = 'direct' | 'difficulty-select';
 
 export interface GameDefinition {
   id: GameId;
@@ -12,6 +13,8 @@ export interface GameDefinition {
   descriptionKey: TranslationKey;
   icon: string;
   accentColor: string;
+  isUnfinished: boolean;
+  launchMode: GameLaunchMode;
 }
 
 export const GAME_REGISTRY: readonly GameDefinition[] = [
@@ -22,6 +25,8 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     descriptionKey: 'games.memorySnap.description',
     icon: '🧩',
     accentColor: PASTEL_COLORS.primary,
+    isUnfinished: false,
+    launchMode: 'difficulty-select',
   },
   {
     id: 'drawing',
@@ -30,6 +35,8 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     descriptionKey: 'games.drawing.description',
     icon: '🎨',
     accentColor: PASTEL_COLORS.secondary,
+    isUnfinished: false,
+    launchMode: 'direct',
   },
   {
     id: 'glitter-fall',
@@ -38,6 +45,8 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     descriptionKey: 'games.glitterFall.description',
     icon: '✨',
     accentColor: PASTEL_COLORS.accent,
+    isUnfinished: false,
+    launchMode: 'direct',
   },
   {
     id: 'bubble-pop',
@@ -46,6 +55,8 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     descriptionKey: 'games.bubblePop.description',
     icon: '🫧',
     accentColor: PASTEL_COLORS.success,
+    isUnfinished: false,
+    launchMode: 'direct',
   },
   {
     id: 'category-match',
@@ -54,6 +65,8 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     descriptionKey: 'games.categoryMatch.description',
     icon: '🗂️',
     accentColor: PASTEL_COLORS.cardBack,
+    isUnfinished: false,
+    launchMode: 'direct',
   },
   {
     id: 'keepy-uppy',
@@ -62,6 +75,8 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     descriptionKey: 'games.keepyUppy.description',
     icon: '🎈',
     accentColor: PASTEL_COLORS.secondary,
+    isUnfinished: false,
+    launchMode: 'direct',
   },
   {
     id: 'breathing-garden',
@@ -70,6 +85,8 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     descriptionKey: 'games.breathingGarden.description',
     icon: '🌸',
     accentColor: PASTEL_COLORS.accent,
+    isUnfinished: false,
+    launchMode: 'direct',
   },
   {
     id: 'pattern-train',
@@ -78,6 +95,8 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     descriptionKey: 'games.patternTrain.description',
     icon: '🚂',
     accentColor: PASTEL_COLORS.primary,
+    isUnfinished: false,
+    launchMode: 'direct',
   },
   {
     id: 'number-picnic',
@@ -86,12 +105,14 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     descriptionKey: 'games.numberPicnic.description',
     icon: '🧺',
     accentColor: PASTEL_COLORS.success,
+    isUnfinished: true,
+    launchMode: 'direct',
   },
 ] as const;
 
-const GAME_REGISTRY_BY_ID: Readonly<Record<GameId, GameDefinition>> = Object.fromEntries(
+const GAME_REGISTRY_BY_ID = new Map<GameId, GameDefinition>(
   GAME_REGISTRY.map((game) => [game.id, game]),
-) as Record<GameId, GameDefinition>;
+);
 
 export function getVisibleGames(
   hiddenGames: readonly string[],
@@ -102,7 +123,7 @@ export function getVisibleGames(
       return false;
     }
 
-    if (!includeUnfinishedGames && UNFINISHED_GAMES.includes(game.id)) {
+    if (!includeUnfinishedGames && game.isUnfinished) {
       return false;
     }
 
@@ -111,15 +132,17 @@ export function getVisibleGames(
 }
 
 export function isGameId(gameId: string | undefined): gameId is GameId {
-  return !!gameId && gameId in GAME_REGISTRY_BY_ID;
+  return !!gameId && GAME_REGISTRY_BY_ID.has(gameId as GameId);
 }
 
 export function getGameById(gameId: string): GameDefinition {
-  if (!isGameId(gameId)) {
+  const game = GAME_REGISTRY_BY_ID.get(gameId as GameId);
+
+  if (!game) {
     throw new Error(`Unknown game id: ${gameId}`);
   }
 
-  return GAME_REGISTRY_BY_ID[gameId];
+  return game;
 }
 
 export function getGameRoute(gameId: string): AppRouteName {

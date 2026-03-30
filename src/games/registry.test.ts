@@ -40,6 +40,19 @@ describe('game registry', () => {
     expect(getGameRoute('number-picnic')).toBe(APP_ROUTES.NumberPicnic);
   });
 
+  it('returns the full game definition for direct id lookups', () => {
+    expect(getGameById('memory-snap')).toEqual({
+      id: 'memory-snap',
+      route: APP_ROUTES.Game,
+      nameKey: 'games.memorySnap.name',
+      descriptionKey: 'games.memorySnap.description',
+      icon: '🧩',
+      accentColor: PASTEL_COLORS.primary,
+      isUnfinished: false,
+      launchMode: 'difficulty-select',
+    });
+  });
+
   it('throws for invalid route lookups', () => {
     expect(() => getGameRoute('not-a-game')).toThrow("Unknown game id: not-a-game");
     expect(() => getGameById('not-a-game')).toThrow("Unknown game id: not-a-game");
@@ -49,7 +62,14 @@ describe('game registry', () => {
     expect(isGameId('memory-snap')).toBe(true);
     expect(isGameId('number-picnic')).toBe(true);
     expect(isGameId('not-a-game')).toBe(false);
+    expect(isGameId('toString')).toBe(false);
+    expect(isGameId('constructor')).toBe(false);
     expect(isGameId(undefined)).toBe(false);
+  });
+
+  it('rejects prototype-chain keys during route lookup', () => {
+    expect(() => getGameRoute('toString')).toThrow('Unknown game id: toString');
+    expect(() => getGameRoute('constructor')).toThrow('Unknown game id: constructor');
   });
 
   it('does not include duplicate game ids', () => {
@@ -66,6 +86,8 @@ describe('game registry', () => {
         descriptionKey: 'games.memorySnap.description',
         icon: '🧩',
         accentColor: PASTEL_COLORS.primary,
+        isUnfinished: false,
+        launchMode: 'difficulty-select',
       },
       {
         id: 'drawing',
@@ -74,6 +96,8 @@ describe('game registry', () => {
         descriptionKey: 'games.drawing.description',
         icon: '🎨',
         accentColor: PASTEL_COLORS.secondary,
+        isUnfinished: false,
+        launchMode: 'direct',
       },
       {
         id: 'glitter-fall',
@@ -82,6 +106,8 @@ describe('game registry', () => {
         descriptionKey: 'games.glitterFall.description',
         icon: '✨',
         accentColor: PASTEL_COLORS.accent,
+        isUnfinished: false,
+        launchMode: 'direct',
       },
       {
         id: 'bubble-pop',
@@ -90,6 +116,8 @@ describe('game registry', () => {
         descriptionKey: 'games.bubblePop.description',
         icon: '🫧',
         accentColor: PASTEL_COLORS.success,
+        isUnfinished: false,
+        launchMode: 'direct',
       },
       {
         id: 'category-match',
@@ -98,6 +126,8 @@ describe('game registry', () => {
         descriptionKey: 'games.categoryMatch.description',
         icon: '🗂️',
         accentColor: PASTEL_COLORS.cardBack,
+        isUnfinished: false,
+        launchMode: 'direct',
       },
       {
         id: 'keepy-uppy',
@@ -106,6 +136,8 @@ describe('game registry', () => {
         descriptionKey: 'games.keepyUppy.description',
         icon: '🎈',
         accentColor: PASTEL_COLORS.secondary,
+        isUnfinished: false,
+        launchMode: 'direct',
       },
       {
         id: 'breathing-garden',
@@ -114,6 +146,8 @@ describe('game registry', () => {
         descriptionKey: 'games.breathingGarden.description',
         icon: '🌸',
         accentColor: PASTEL_COLORS.accent,
+        isUnfinished: false,
+        launchMode: 'direct',
       },
       {
         id: 'pattern-train',
@@ -122,6 +156,8 @@ describe('game registry', () => {
         descriptionKey: 'games.patternTrain.description',
         icon: '🚂',
         accentColor: PASTEL_COLORS.primary,
+        isUnfinished: false,
+        launchMode: 'direct',
       },
       {
         id: 'number-picnic',
@@ -130,6 +166,8 @@ describe('game registry', () => {
         descriptionKey: 'games.numberPicnic.description',
         icon: '🧺',
         accentColor: PASTEL_COLORS.success,
+        isUnfinished: true,
+        launchMode: 'direct',
       },
     ]);
   });
