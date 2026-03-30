@@ -117,6 +117,26 @@ describe('SettingsContext', () => {
     await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
 
     expect(screen.getByTestId('hiddenGames').props.children).toBe('memory-snap,bubble-pop');
+    expect(storage.setItem).toHaveBeenCalledWith(
+      'gentleMatchSettings',
+      JSON.stringify({
+        animationsEnabled: true,
+        soundEnabled: true,
+        soundVolume: 0.5,
+        difficulty: 'medium',
+        theme: 'mixed',
+        showCardPreview: true,
+        keepyUppyEasyMode: true,
+        colorMode: 'system',
+        hiddenGames: ['memory-snap', 'bubble-pop'],
+        parentTimerMinutes: 0,
+        enableUnfinishedGames: true,
+        language: 'en-AU',
+        reducedMotionEnabled: false,
+        telemetryEnabled: false,
+        showMochiInGames: true,
+      }),
+    );
   });
 
   it('removes corrupted persisted settings', async () => {

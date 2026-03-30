@@ -16,7 +16,7 @@ export type GameId =
 export type GameLaunchMode = 'direct' | 'difficulty-select';
 
 export interface VisibleGamesOptions {
-  hiddenGames: GameId[];
+  hiddenGames: readonly GameId[];
   enableUnfinishedGames: boolean;
 }
 

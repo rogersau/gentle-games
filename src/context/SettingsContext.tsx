@@ -109,6 +109,10 @@ const sanitizeSettings = (candidate: unknown): Settings => {
   };
 };
 
+const areSettingsEqual = (left: Settings, right: Settings): boolean => {
+  return JSON.stringify(left) === JSON.stringify(right);
+};
+
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -126,6 +130,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const parsed = JSON.parse(savedSettings);
         const sanitized = sanitizeSettings(parsed);
         setSettings(sanitized);
+        if (!areSettingsEqual(sanitized, parsed as Settings)) {
+          await AsyncStorage.setItem('gentleMatchSettings', JSON.stringify(sanitized));
+        }
         // Initialize i18n with saved language
         void changeLanguage(sanitized.language);
       }
