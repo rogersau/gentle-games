@@ -1,5 +1,5 @@
-import { PASTEL_COLORS, UNFINISHED_GAMES } from '../types';
-import { APP_ROUTES, HOME_GAME_ROUTES } from '../types/navigation';
+import { PASTEL_COLORS } from '../types';
+import { APP_ROUTES } from '../types/navigation';
 import {
   GAME_REGISTRY,
   getGameById,
@@ -10,24 +10,33 @@ import {
 
 describe('game registry', () => {
   it('filters hidden and unfinished games from visible games', () => {
-    const visibleGames = getVisibleGames(['drawing'], false);
+    const visibleGames = getVisibleGames({
+      hiddenGames: ['drawing'],
+      enableUnfinishedGames: false,
+    });
 
     expect(visibleGames.map((game) => game.id)).not.toContain('drawing');
-
-    for (const unfinishedGameId of UNFINISHED_GAMES) {
-      expect(visibleGames.map((game) => game.id)).not.toContain(unfinishedGameId);
-    }
-
+    expect(visibleGames.map((game) => game.id)).not.toContain('number-picnic');
     expect(visibleGames.map((game) => game.id)).toContain('memory-snap');
   });
 
-  it('keeps every game route aligned with the shared navigation map', () => {
+  it('keeps every game route aligned with the registry contract', () => {
     expect(
       Object.fromEntries(GAME_REGISTRY.map((game) => [game.id, game.route])) as Record<
         string,
         string
       >,
-    ).toEqual(HOME_GAME_ROUTES);
+    ).toEqual({
+      'memory-snap': APP_ROUTES.Game,
+      drawing: APP_ROUTES.Drawing,
+      'glitter-fall': APP_ROUTES.Glitter,
+      'bubble-pop': APP_ROUTES.Bubble,
+      'category-match': APP_ROUTES.CategoryMatch,
+      'keepy-uppy': APP_ROUTES.KeepyUppy,
+      'breathing-garden': APP_ROUTES.BreathingGarden,
+      'pattern-train': APP_ROUTES.PatternTrain,
+      'number-picnic': APP_ROUTES.NumberPicnic,
+    });
 
     for (const game of GAME_REGISTRY) {
       expect(game.route).toBe(APP_ROUTES[game.route]);
@@ -55,7 +64,10 @@ describe('game registry', () => {
 
   it('throws for invalid route lookups', () => {
     expect(() => getGameRoute('not-a-game')).toThrow("Unknown game id: not-a-game");
-    expect(() => getGameById('not-a-game')).toThrow("Unknown game id: not-a-game");
+  });
+
+  it('returns undefined for unknown game ids', () => {
+    expect(getGameById('not-a-game')).toBeUndefined();
   });
 
   it('recognizes valid and invalid game ids', () => {

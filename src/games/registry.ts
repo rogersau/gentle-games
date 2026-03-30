@@ -1,10 +1,24 @@
 import { PASTEL_COLORS } from '../types';
-import type { AppRouteName, HomeGameId } from '../types/navigation';
+import type { AppRouteName } from '../types/navigation';
 import { APP_ROUTES } from '../types/navigation';
 import type { TranslationKey } from '../i18n/types';
 
-export type GameId = HomeGameId;
+export type GameId =
+  | 'memory-snap'
+  | 'drawing'
+  | 'glitter-fall'
+  | 'bubble-pop'
+  | 'category-match'
+  | 'keepy-uppy'
+  | 'breathing-garden'
+  | 'pattern-train'
+  | 'number-picnic';
 export type GameLaunchMode = 'direct' | 'difficulty-select';
+
+export interface VisibleGamesOptions {
+  hiddenGames: readonly string[];
+  enableUnfinishedGames: boolean;
+}
 
 export interface GameDefinition {
   id: GameId;
@@ -114,16 +128,16 @@ const GAME_REGISTRY_BY_ID = new Map<GameId, GameDefinition>(
   GAME_REGISTRY.map((game) => [game.id, game]),
 );
 
-export function getVisibleGames(
-  hiddenGames: readonly string[],
-  includeUnfinishedGames = true,
-): readonly GameDefinition[] {
+export function getVisibleGames({
+  hiddenGames,
+  enableUnfinishedGames,
+}: VisibleGamesOptions): readonly GameDefinition[] {
   return GAME_REGISTRY.filter((game) => {
     if (hiddenGames.includes(game.id)) {
       return false;
     }
 
-    if (!includeUnfinishedGames && game.isUnfinished) {
+    if (!enableUnfinishedGames && game.isUnfinished) {
       return false;
     }
 
@@ -135,16 +149,16 @@ export function isGameId(gameId: string | undefined): gameId is GameId {
   return !!gameId && GAME_REGISTRY_BY_ID.has(gameId as GameId);
 }
 
-export function getGameById(gameId: string): GameDefinition {
-  const game = GAME_REGISTRY_BY_ID.get(gameId as GameId);
+export function getGameById(gameId: string): GameDefinition | undefined {
+  return GAME_REGISTRY_BY_ID.get(gameId as GameId);
+}
+
+export function getGameRoute(gameId: string): AppRouteName {
+  const game = getGameById(gameId);
 
   if (!game) {
     throw new Error(`Unknown game id: ${gameId}`);
   }
 
-  return game;
-}
-
-export function getGameRoute(gameId: string): AppRouteName {
-  return getGameById(gameId).route;
+  return game.route;
 }
