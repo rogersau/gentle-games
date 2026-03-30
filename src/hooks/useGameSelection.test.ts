@@ -1,20 +1,28 @@
 import { renderHook, act } from '@testing-library/react-native';
+import type { GameDefinition } from '../games/registry';
+import { APP_ROUTES } from '../types/navigation';
 import { useGameSelection } from './useGameSelection';
 
-const memorySnapGame = {
-  id: 'memory-snap' as const,
-  nameKey: 'games.memorySnap.name' as const,
-  descriptionKey: 'games.memorySnap.description' as const,
+const memorySnapGame: GameDefinition = {
+  id: 'memory-snap',
+  route: APP_ROUTES.Game,
+  nameKey: 'games.memorySnap.name',
+  descriptionKey: 'games.memorySnap.description',
   icon: '🧩',
   accentColor: '#abc123',
+  isUnfinished: false,
+  launchMode: 'difficulty-select',
 };
 
-const drawingGame = {
-  id: 'drawing' as const,
-  nameKey: 'games.drawing.name' as const,
-  descriptionKey: 'games.drawing.description' as const,
+const drawingGame: GameDefinition = {
+  id: 'drawing',
+  route: APP_ROUTES.Drawing,
+  nameKey: 'games.drawing.name',
+  descriptionKey: 'games.drawing.description',
   icon: '🎨',
   accentColor: '#def456',
+  isUnfinished: false,
+  launchMode: 'direct',
 };
 
 describe('useGameSelection', () => {
@@ -35,16 +43,10 @@ describe('useGameSelection', () => {
     const { result } = renderHook(() => useGameSelection());
 
     act(() => {
-      result.current.handleGameSelect({
-        ...drawingGame,
-        launchMode: 'difficulty-select',
-      });
+      result.current.handleGameSelect(memorySnapGame);
     });
 
-    expect(result.current.selectedGame).toEqual({
-      ...drawingGame,
-      launchMode: 'difficulty-select',
-    });
+    expect(result.current.selectedGame).toEqual(memorySnapGame);
     expect(result.current.showDifficultySelector).toBe(true);
   });
 
@@ -52,44 +54,10 @@ describe('useGameSelection', () => {
     const { result } = renderHook(() => useGameSelection());
 
     act(() => {
-      result.current.handleGameSelect({
-        ...memorySnapGame,
-        launchMode: 'direct',
-      });
-    });
-
-    expect(result.current.selectedGame).toEqual({
-      ...memorySnapGame,
-      launchMode: 'direct',
-    });
-    expect(result.current.showDifficultySelector).toBe(false);
-  });
-
-  it('defaults memory snap to difficulty-select launch mode for HomeScreen compatibility', () => {
-    const { result } = renderHook(() => useGameSelection());
-
-    act(() => {
-      result.current.handleGameSelect(memorySnapGame);
-    });
-
-    expect(result.current.selectedGame).toEqual({
-      ...memorySnapGame,
-      launchMode: 'difficulty-select',
-    });
-    expect(result.current.showDifficultySelector).toBe(true);
-  });
-
-  it('defaults non-memory-snap games to direct launch mode for HomeScreen compatibility', () => {
-    const { result } = renderHook(() => useGameSelection());
-
-    act(() => {
       result.current.handleGameSelect(drawingGame);
     });
 
-    expect(result.current.selectedGame).toEqual({
-      ...drawingGame,
-      launchMode: 'direct',
-    });
+    expect(result.current.selectedGame).toEqual(drawingGame);
     expect(result.current.showDifficultySelector).toBe(false);
   });
 

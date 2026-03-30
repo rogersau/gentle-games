@@ -1,10 +1,8 @@
 import React from 'react';
-import fs from 'fs';
-import path from 'path';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Linking, StyleSheet } from 'react-native';
 import { HomeScreen } from './HomeScreen';
-import { APP_ROUTES, HOME_GAME_ROUTES } from '../types/navigation';
+import { APP_ROUTES } from '../types/navigation';
 import { openExternalUrl } from '../utils/externalLinks';
 
 const mockNavigate = jest.fn();
@@ -15,6 +13,7 @@ let mockSettings = {
   soundEnabled: true,
   soundVolume: 0.5,
   difficulty: 'medium' as const,
+  enableUnfinishedGames: true,
   theme: 'mixed' as const,
   showCardPreview: true,
   keepyUppyEasyMode: true,
@@ -67,6 +66,7 @@ describe('HomeScreen', () => {
       soundEnabled: true,
       soundVolume: 0.5,
       difficulty: 'medium',
+      enableUnfinishedGames: true,
       theme: 'mixed',
       showCardPreview: true,
       keepyUppyEasyMode: true,
@@ -81,7 +81,7 @@ describe('HomeScreen', () => {
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Drawing Pad'));
     jest.advanceTimersByTime(300);
-    expect(mockNavigate).toHaveBeenCalledWith(HOME_GAME_ROUTES.drawing);
+    expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Drawing);
     jest.useRealTimers();
   });
 
@@ -90,7 +90,7 @@ describe('HomeScreen', () => {
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Glitter Fall'));
     jest.advanceTimersByTime(300);
-    expect(mockNavigate).toHaveBeenCalledWith(HOME_GAME_ROUTES['glitter-fall']);
+    expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Glitter);
     jest.useRealTimers();
   });
 
@@ -99,7 +99,7 @@ describe('HomeScreen', () => {
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Bubble Pop'));
     jest.advanceTimersByTime(300);
-    expect(mockNavigate).toHaveBeenCalledWith(HOME_GAME_ROUTES['bubble-pop']);
+    expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Bubble);
     jest.useRealTimers();
   });
 
@@ -108,7 +108,7 @@ describe('HomeScreen', () => {
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Category Match'));
     jest.advanceTimersByTime(300);
-    expect(mockNavigate).toHaveBeenCalledWith(HOME_GAME_ROUTES['category-match']);
+    expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.CategoryMatch);
     jest.useRealTimers();
   });
 
@@ -117,8 +117,17 @@ describe('HomeScreen', () => {
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Keepy Uppy'));
     jest.advanceTimersByTime(300);
-    expect(mockNavigate).toHaveBeenCalledWith(HOME_GAME_ROUTES['keepy-uppy']);
+    expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.KeepyUppy);
     jest.useRealTimers();
+  });
+
+  it('shows registry direct-launch games even when unfinished games are disabled', () => {
+    mockSettings = { ...mockSettings, enableUnfinishedGames: false };
+    const screen = render(<HomeScreen />);
+
+    expect(screen.getByText('Drawing Pad')).toBeTruthy();
+    expect(screen.getByText('Keepy Uppy')).toBeTruthy();
+    expect(screen.queryByText('Number Picnic')).toBeNull();
   });
 
   it('shows difficulty modal for Memory Snap and navigates to Game after selection', async () => {
@@ -207,12 +216,4 @@ describe('HomeScreen', () => {
     },
   );
 
-  it('uses the shared typed route helpers instead of local route strings and casts', () => {
-    const source = fs.readFileSync(path.join(__dirname, 'HomeScreen.tsx'), 'utf8');
-
-    expect(source).toContain('HOME_GAME_ROUTES');
-    expect(source).toContain('APP_ROUTES.Settings');
-    expect(source).not.toContain('const ROUTE_MAP: Record<string, string>');
-    expect(source).not.toContain('as never');
-  });
 });
