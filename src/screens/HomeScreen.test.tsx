@@ -2,6 +2,8 @@ import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Linking, StyleSheet } from 'react-native';
 import { HomeScreen } from './HomeScreen';
+import type { GameDefinition } from '../games/registry';
+import * as registry from '../games/registry';
 import { APP_ROUTES } from '../types/navigation';
 import { openExternalUrl } from '../utils/externalLinks';
 
@@ -47,6 +49,16 @@ jest.mock('../utils/externalLinks', () => ({
   openExternalUrl: jest.fn(),
 }));
 
+jest.mock('../games/registry', () => {
+  const actual = jest.requireActual('../games/registry');
+
+  return {
+    ...actual,
+    getVisibleGames: jest.fn(actual.getVisibleGames),
+    getGameRoute: jest.fn(actual.getGameRoute),
+  };
+});
+
 jest.mock('../context/MochiContext', () => ({
   useMochiContext: () => ({
     mochiProps: { variant: 'idle', visible: false, phrase: null },
@@ -56,10 +68,16 @@ jest.mock('../context/MochiContext', () => ({
   }),
 }));
 
+const actualRegistry = jest.requireActual('../games/registry') as typeof import('../games/registry');
+const mockGetVisibleGames = jest.mocked(registry.getVisibleGames);
+const mockGetGameRoute = jest.mocked(registry.getGameRoute);
+
 describe('HomeScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockOpenExternalUrl.mockResolvedValue('opened');
+    mockGetVisibleGames.mockImplementation(actualRegistry.getVisibleGames);
+    mockGetGameRoute.mockImplementation(actualRegistry.getGameRoute);
     jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     mockSettings = {
       animationsEnabled: true,
@@ -151,6 +169,37 @@ describe('HomeScreen', () => {
     await waitFor(() => {
       expect(mockUpdateSettings).toHaveBeenCalledWith({ difficulty: 'hard' });
       expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Game);
+    });
+  });
+
+  it('routes difficulty-select games to their own route after picking a difficulty', async () => {
+    const routedDifficultyGame: GameDefinition = {
+      id: 'pattern-train',
+      route: APP_ROUTES.PatternTrain,
+      nameKey: 'games.patternTrain.name',
+      descriptionKey: 'games.patternTrain.description',
+      icon: '🚂',
+      accentColor: '#A8DADC',
+      isUnfinished: false,
+      launchMode: 'difficulty-select',
+    };
+
+    mockGetVisibleGames.mockReturnValue([routedDifficultyGame]);
+
+    const screen = render(<HomeScreen />);
+
+    fireEvent.press(screen.getByText('Pattern Train'));
+    expect(screen.getByText(/Select difficulty/)).toBeTruthy();
+
+    const easyButton = screen
+      .getAllByRole('button')
+      .find((el: any) => el.props.accessibilityLabel?.includes('Easy'));
+    expect(easyButton).toBeTruthy();
+    fireEvent.press(easyButton!);
+
+    await waitFor(() => {
+      expect(mockUpdateSettings).toHaveBeenCalledWith({ difficulty: 'easy' });
+      expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.PatternTrain);
     });
   });
 
