@@ -5,6 +5,17 @@ import { useTranslation } from 'react-i18next';
 import { SettingsScreen } from './SettingsScreen';
 import { TranslationKey } from '../i18n/types';
 
+jest.mock('../games/registry', () => {
+  const actual = jest.requireActual('../games/registry');
+
+  return {
+    ...actual,
+    GAME_REGISTRY: actual.GAME_REGISTRY.map((game: { id: string }) =>
+      game.id === 'number-picnic' ? { ...game, isUnfinished: false } : game,
+    ),
+  };
+});
+
 const mockGoBack = jest.fn();
 const mockUpdateSettings = jest.fn();
 let mockSettings = {
@@ -115,6 +126,26 @@ describe('SettingsScreen', () => {
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({
       hiddenGames: ['memory-snap'],
+    });
+  });
+
+  it('shows games based on registry unfinished flags', () => {
+    mockSettings.enableUnfinishedGames = false;
+
+    const screen = render(React.createElement(SettingsScreen));
+
+    expect(screen.getByRole('switch', { name: /Number Picnic/i })).toBeTruthy();
+  });
+
+  it('removes a game from hidden games when re-enabled', () => {
+    mockSettings.hiddenGames = ['memory-snap'];
+
+    const screen = render(React.createElement(SettingsScreen));
+    const memorySnapSwitch = screen.getByRole('switch', { name: /Memory Snap/i });
+    fireEvent(memorySnapSwitch, 'valueChange', true);
+
+    expect(mockUpdateSettings).toHaveBeenCalledWith({
+      hiddenGames: [],
     });
   });
 

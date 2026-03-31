@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
-import { ColorMode, ThemeColors, UNFINISHED_GAMES } from '../types';
+import { ColorMode, ThemeColors } from '../types';
+import { GAME_REGISTRY } from '../games/registry';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { LANGUAGE_OPTIONS } from '../types/i18n';
-import { TranslationKey } from '../i18n/types';
 import {
   AppScreen,
   AppHeader,
@@ -19,18 +19,6 @@ import {
 } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useLayout } from '../ui/useLayout';
-
-const ALL_GAMES: { id: string; nameKey: TranslationKey; icon: string }[] = [
-  { id: 'memory-snap', nameKey: 'games.memorySnap.name', icon: '🧩' },
-  { id: 'drawing', nameKey: 'games.drawing.name', icon: '🎨' },
-  { id: 'glitter-fall', nameKey: 'games.glitterFall.name', icon: '✨' },
-  { id: 'bubble-pop', nameKey: 'games.bubblePop.name', icon: '🫧' },
-  { id: 'category-match', nameKey: 'games.categoryMatch.name', icon: '🗂️' },
-  { id: 'keepy-uppy', nameKey: 'games.keepyUppy.name', icon: '🎈' },
-  { id: 'breathing-garden', nameKey: 'games.breathingGarden.name', icon: '🌸' },
-  { id: 'pattern-train', nameKey: 'games.patternTrain.name', icon: '🚂' },
-  { id: 'number-picnic', nameKey: 'games.numberPicnic.name', icon: '🧺' },
-];
 
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -185,8 +173,8 @@ export const SettingsScreen: React.FC = () => {
         {/* Games on Home Screen */}
         <View style={styles.section}>
           <SectionHeader title={t('settings.gamesOnHomeScreen.title')} />
-          {ALL_GAMES.filter(
-            (game) => settings.enableUnfinishedGames || !UNFINISHED_GAMES.includes(game.id),
+          {GAME_REGISTRY.filter(
+            (game) => settings.enableUnfinishedGames || !game.isUnfinished,
           ).map((game) => {
             const isVisible = !settings.hiddenGames.includes(game.id);
             return (

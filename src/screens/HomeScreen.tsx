@@ -4,89 +4,16 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
-import { Difficulty, PASTEL_COLORS, ThemeColors, UNFINISHED_GAMES } from '../types';
-import { APP_ROUTES, AppStackParamList, HOME_GAME_ROUTES, HomeGameId } from '../types/navigation';
+import { Difficulty, ThemeColors } from '../types';
+import { APP_ROUTES, AppStackParamList } from '../types/navigation';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { openExternalUrl } from '../utils/externalLinks';
-import { TranslationKey } from '../i18n/types';
 import { AppScreen, AppButton, AppModal, GameCard, MochiPresence } from '../ui/components';
 import { useMochi } from '../hooks/useMochi';
+import { GameDefinition, getGameRoute, getVisibleGames } from '../games/registry';
+import { useGameSelection } from '../hooks/useGameSelection';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useLayout } from '../ui/useLayout';
-
-interface Game {
-  id: HomeGameId;
-  nameKey: TranslationKey;
-  descriptionKey: TranslationKey;
-  icon: string;
-  accentColor?: string;
-}
-
-const GAMES: Game[] = [
-  {
-    id: 'memory-snap',
-    nameKey: 'games.memorySnap.name',
-    descriptionKey: 'games.memorySnap.description',
-    icon: '🧩',
-    accentColor: PASTEL_COLORS.primary,
-  },
-  {
-    id: 'drawing',
-    nameKey: 'games.drawing.name',
-    descriptionKey: 'games.drawing.description',
-    icon: '🎨',
-    accentColor: PASTEL_COLORS.secondary,
-  },
-  {
-    id: 'glitter-fall',
-    nameKey: 'games.glitterFall.name',
-    descriptionKey: 'games.glitterFall.description',
-    icon: '✨',
-    accentColor: PASTEL_COLORS.accent,
-  },
-  {
-    id: 'bubble-pop',
-    nameKey: 'games.bubblePop.name',
-    descriptionKey: 'games.bubblePop.description',
-    icon: '🫧',
-    accentColor: PASTEL_COLORS.success,
-  },
-  {
-    id: 'category-match',
-    nameKey: 'games.categoryMatch.name',
-    descriptionKey: 'games.categoryMatch.description',
-    icon: '🗂️',
-    accentColor: PASTEL_COLORS.cardBack,
-  },
-  {
-    id: 'keepy-uppy',
-    nameKey: 'games.keepyUppy.name',
-    descriptionKey: 'games.keepyUppy.description',
-    icon: '🎈',
-    accentColor: PASTEL_COLORS.secondary,
-  },
-  {
-    id: 'breathing-garden',
-    nameKey: 'games.breathingGarden.name',
-    descriptionKey: 'games.breathingGarden.description',
-    icon: '🌸',
-    accentColor: PASTEL_COLORS.accent,
-  },
-  {
-    id: 'pattern-train',
-    nameKey: 'games.patternTrain.name',
-    descriptionKey: 'games.patternTrain.description',
-    icon: '🚂',
-    accentColor: PASTEL_COLORS.primary,
-  },
-  {
-    id: 'number-picnic',
-    nameKey: 'games.numberPicnic.name',
-    descriptionKey: 'games.numberPicnic.description',
-    icon: '🧺',
-    accentColor: PASTEL_COLORS.success,
-  },
-];
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<AppStackParamList>>();
@@ -96,8 +23,13 @@ export const HomeScreen: React.FC = () => {
   const { gridColumns, contentWidth, isTablet } = useLayout();
   const { t } = useTranslation();
   const { celebrate, showMochi } = useMochi();
-  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-  const [showDifficultySelector, setShowDifficultySelector] = useState(false);
+  const {
+    selectedGame,
+    showDifficultySelector,
+    handleGameSelect: onGameSelect,
+    handleDifficultySelect: onDifficultySelect,
+    handleCloseModal: onCloseModal,
+  } = useGameSelection();
   const [showWebsiteFallback, setShowWebsiteFallback] = useState(false);
 
   React.useEffect(() => {
@@ -128,37 +60,32 @@ export const HomeScreen: React.FC = () => {
 
   const visibleGames = useMemo(
     () =>
-      GAMES.filter((game) => {
-        if (settings.hiddenGames.includes(game.id)) return false;
-        if (!settings.enableUnfinishedGames && UNFINISHED_GAMES.includes(game.id)) return false;
-        return true;
+      getVisibleGames({
+        hiddenGames: settings.hiddenGames,
+        enableUnfinishedGames: settings.enableUnfinishedGames,
       }),
     [settings.hiddenGames, settings.enableUnfinishedGames],
   );
 
-  const handleGameSelect = (game: Game) => {
-    setSelectedGame(game);
-    if (game.id === 'memory-snap') {
-      setShowDifficultySelector(true);
-    } else {
+  const handleGameSelect = (game: GameDefinition) => {
+    onGameSelect(game);
+    if (game.launchMode !== 'difficulty-select') {
       celebrate();
       setTimeout(() => {
-        navigation.navigate(HOME_GAME_ROUTES[game.id]);
-        setSelectedGame(null);
+        navigation.navigate(getGameRoute(game.id));
       }, 200);
     }
   };
 
   const handleDifficultySelect = async (difficulty: Difficulty) => {
+    const selectedGameRoute = selectedGame ? getGameRoute(selectedGame.id) : APP_ROUTES.Game;
     await updateSettings({ difficulty });
-    setShowDifficultySelector(false);
-    navigation.navigate(APP_ROUTES.Game);
-    setSelectedGame(null);
+    await onDifficultySelect(difficulty);
+    navigation.navigate(selectedGameRoute);
   };
 
   const handleCloseModal = () => {
-    setShowDifficultySelector(false);
-    setSelectedGame(null);
+    onCloseModal();
   };
 
   const handleWebsitePress = async () => {
