@@ -60,9 +60,6 @@
         }
       ]
     },
-    "plugins": [
-      "expo-audio",
-      "expo-font"
-    ]
+    "plugins": ["expo-audio", "expo-font"]
   }
 }

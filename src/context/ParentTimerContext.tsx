@@ -103,11 +103,31 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setUserAnswer('');
       if (settings.animationsEnabled) {
         Animated.sequence([
-          Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: Platform.OS !== 'web' }),
-          Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: Platform.OS !== 'web' }),
-          Animated.timing(shakeAnim, { toValue: 8, duration: 50, useNativeDriver: Platform.OS !== 'web' }),
-          Animated.timing(shakeAnim, { toValue: -8, duration: 50, useNativeDriver: Platform.OS !== 'web' }),
-          Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: Platform.OS !== 'web' }),
+          Animated.timing(shakeAnim, {
+            toValue: 10,
+            duration: 50,
+            useNativeDriver: Platform.OS !== 'web',
+          }),
+          Animated.timing(shakeAnim, {
+            toValue: -10,
+            duration: 50,
+            useNativeDriver: Platform.OS !== 'web',
+          }),
+          Animated.timing(shakeAnim, {
+            toValue: 8,
+            duration: 50,
+            useNativeDriver: Platform.OS !== 'web',
+          }),
+          Animated.timing(shakeAnim, {
+            toValue: -8,
+            duration: 50,
+            useNativeDriver: Platform.OS !== 'web',
+          }),
+          Animated.timing(shakeAnim, {
+            toValue: 0,
+            duration: 50,
+            useNativeDriver: Platform.OS !== 'web',
+          }),
         ]).start(() => {
           setMathChallenge(generateMathQuestion());
         });
@@ -116,7 +136,13 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setMathChallenge(generateMathQuestion());
       }
     }
-  }, [userAnswer, mathChallenge.answer, settings.parentTimerMinutes, shakeAnim, settings.animationsEnabled]);
+  }, [
+    userAnswer,
+    mathChallenge.answer,
+    settings.parentTimerMinutes,
+    shakeAnim,
+    settings.animationsEnabled,
+  ]);
 
   const { t } = useTranslation();
   const styles = React.useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
@@ -124,18 +150,11 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
   return (
     <ParentTimerContext.Provider value={{ secondsRemaining, isLocked }}>
       {children}
-      <Modal
-        animationType="fade"
-        transparent={false}
-        visible={isLocked}
-        onRequestClose={() => {}}
-      >
+      <Modal animationType='fade' transparent={false} visible={isLocked} onRequestClose={() => {}}>
         <View style={styles.lockContainer}>
           <Text style={styles.lockIcon}>⏰</Text>
           <Text style={styles.lockTitle}>{t('parentTimer.lockTitle')}</Text>
-          <Text style={styles.lockSubtitle}>
-            {t('parentTimer.lockSubtitle')}
-          </Text>
+          <Text style={styles.lockSubtitle}>{t('parentTimer.lockSubtitle')}</Text>
 
           <Animated.View style={[styles.challengeCard, { transform: [{ translateX: shakeAnim }] }]}>
             <Text style={styles.challengeLabel}>{t('parentTimer.challengeLabel')}</Text>
@@ -147,22 +166,20 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
                 setUserAnswer(text.replace(/[^0-9-]/g, ''));
                 setShowError(false);
               }}
-              keyboardType="number-pad"
+              keyboardType='number-pad'
               placeholder={t('parentTimer.answerPlaceholder')}
               placeholderTextColor={colors.textLight}
               autoFocus
               onSubmitEditing={handleUnlock}
-              testID="parent-timer-answer-input"
+              testID='parent-timer-answer-input'
             />
-            {showError && (
-              <Text style={styles.errorText}>{t('parentTimer.error')}</Text>
-            )}
+            {showError && <Text style={styles.errorText}>{t('parentTimer.error')}</Text>}
           </Animated.View>
 
           <TouchableOpacity
             style={styles.unlockButton}
             onPress={handleUnlock}
-            testID="parent-timer-unlock-button"
+            testID='parent-timer-unlock-button'
           >
             <Text style={styles.unlockButtonText}>{t('parentTimer.continue')}</Text>
           </TouchableOpacity>

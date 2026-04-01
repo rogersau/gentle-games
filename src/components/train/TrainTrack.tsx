@@ -11,41 +11,41 @@ export const TrainTrack: React.FC<TrainTrackProps> = ({ width = 400 }) => {
   const { colors } = useThemeColors();
   const tieSpacing = 40;
   const numTies = Math.ceil(width / tieSpacing);
-  
+
   return (
     <View style={styles.container}>
-      <Svg width={width} height="24" viewBox={`0 0 ${width} 24`}>
+      <Svg width={width} height='24' viewBox={`0 0 ${width} 24`}>
         {/* Rails */}
         <Line
-          x1="0"
-          y1="6"
+          x1='0'
+          y1='6'
           x2={width}
-          y2="6"
+          y2='6'
           stroke={colors.textLight}
-          strokeWidth="3"
-          strokeLinecap="round"
+          strokeWidth='3'
+          strokeLinecap='round'
         />
         <Line
-          x1="0"
-          y1="18"
+          x1='0'
+          y1='18'
           x2={width}
-          y2="18"
+          y2='18'
           stroke={colors.textLight}
-          strokeWidth="3"
-          strokeLinecap="round"
+          strokeWidth='3'
+          strokeLinecap='round'
         />
-        
+
         {/* Railroad ties */}
         {Array.from({ length: numTies }, (_, i) => (
           <Rect
             key={i}
             x={i * tieSpacing + 10}
-            y="2"
-            width="8"
-            height="20"
-            rx="2"
+            y='2'
+            width='8'
+            height='20'
+            rx='2'
             fill={colors.border}
-            opacity="0.6"
+            opacity='0.6'
           />
         ))}
       </Svg>

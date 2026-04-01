@@ -1,15 +1,21 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { Linking, StyleSheet } from 'react-native';
 import { HomeScreen } from './HomeScreen';
+import type { GameDefinition } from '../games/registry';
+import * as registry from '../games/registry';
+import { APP_ROUTES } from '../types/navigation';
+import { openExternalUrl } from '../utils/externalLinks';
 
 const mockNavigate = jest.fn();
 const mockUpdateSettings = jest.fn().mockResolvedValue(undefined);
+const mockOpenExternalUrl = openExternalUrl as jest.MockedFunction<typeof openExternalUrl>;
 let mockSettings = {
   animationsEnabled: true,
   soundEnabled: true,
   soundVolume: 0.5,
   difficulty: 'medium' as const,
+  enableUnfinishedGames: true,
   theme: 'mixed' as const,
   showCardPreview: true,
   keepyUppyEasyMode: true,
@@ -31,14 +37,54 @@ jest.mock('../context/SettingsContext', () => ({
   }),
 }));
 
+jest.mock('../utils/theme', () => ({
+  useThemeColors: () => ({
+    colors: { background: '#FFFEF7', text: '#5A5A5A' },
+    resolvedMode: 'light',
+  }),
+  useReducedMotion: () => false,
+}));
+
+jest.mock('../utils/externalLinks', () => ({
+  openExternalUrl: jest.fn(),
+}));
+
+jest.mock('../games/registry', () => {
+  const actual = jest.requireActual('../games/registry');
+
+  return {
+    ...actual,
+    getVisibleGames: jest.fn(actual.getVisibleGames),
+    getGameRoute: jest.fn(actual.getGameRoute),
+  };
+});
+
+jest.mock('../context/MochiContext', () => ({
+  useMochiContext: () => ({
+    mochiProps: { variant: 'idle', visible: false, phrase: null },
+    showMochi: jest.fn(),
+    hideMochi: jest.fn(),
+    celebrate: jest.fn(),
+  }),
+}));
+
+const actualRegistry = jest.requireActual('../games/registry') as typeof import('../games/registry');
+const mockGetVisibleGames = jest.mocked(registry.getVisibleGames);
+const mockGetGameRoute = jest.mocked(registry.getGameRoute);
+
 describe('HomeScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockOpenExternalUrl.mockResolvedValue('opened');
+    mockGetVisibleGames.mockImplementation(actualRegistry.getVisibleGames);
+    mockGetGameRoute.mockImplementation(actualRegistry.getGameRoute);
+    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     mockSettings = {
       animationsEnabled: true,
       soundEnabled: true,
       soundVolume: 0.5,
       difficulty: 'medium',
+      enableUnfinishedGames: true,
       theme: 'mixed',
       showCardPreview: true,
       keepyUppyEasyMode: true,
@@ -49,62 +95,120 @@ describe('HomeScreen', () => {
   });
 
   it('navigates directly to Drawing screen when Drawing Pad is selected', () => {
+    jest.useFakeTimers();
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Drawing Pad'));
-
-    expect(mockNavigate).toHaveBeenCalledWith('Drawing');
+    jest.advanceTimersByTime(300);
+    expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Drawing);
+    jest.useRealTimers();
   });
 
   it('navigates directly to Glitter screen when Glitter Fall is selected', () => {
+    jest.useFakeTimers();
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Glitter Fall'));
-
-    expect(mockNavigate).toHaveBeenCalledWith('Glitter');
+    jest.advanceTimersByTime(300);
+    expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Glitter);
+    jest.useRealTimers();
   });
 
   it('navigates directly to Bubble screen when Bubble Pop is selected', () => {
+    jest.useFakeTimers();
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Bubble Pop'));
-
-    expect(mockNavigate).toHaveBeenCalledWith('Bubble');
+    jest.advanceTimersByTime(300);
+    expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Bubble);
+    jest.useRealTimers();
   });
 
   it('navigates directly to Category Match screen when Category Match is selected', () => {
+    jest.useFakeTimers();
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Category Match'));
-
-    expect(mockNavigate).toHaveBeenCalledWith('CategoryMatch');
+    jest.advanceTimersByTime(300);
+    expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.CategoryMatch);
+    jest.useRealTimers();
   });
 
   it('navigates directly to Keepy Uppy screen when Keepy Uppy is selected', () => {
+    jest.useFakeTimers();
     const screen = render(<HomeScreen />);
     fireEvent.press(screen.getByText('Keepy Uppy'));
+    jest.advanceTimersByTime(300);
+    expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.KeepyUppy);
+    jest.useRealTimers();
+  });
 
-    expect(mockNavigate).toHaveBeenCalledWith('KeepyUppy');
+  it('shows registry direct-launch games even when unfinished games are disabled', () => {
+    mockSettings = { ...mockSettings, enableUnfinishedGames: false };
+    const screen = render(<HomeScreen />);
+
+    expect(screen.getByText('Drawing Pad')).toBeTruthy();
+    expect(screen.getByText('Keepy Uppy')).toBeTruthy();
+    expect(screen.queryByText('Number Picnic')).toBeNull();
   });
 
   it('shows difficulty modal for Memory Snap and navigates to Game after selection', async () => {
     const screen = render(<HomeScreen />);
 
     // GameCard wraps content in TouchableOpacity with accessibility label
-    const memorySnapCard = screen.getAllByRole('button').find(
-      (el: any) => el.props.accessibilityLabel?.includes('Memory Snap')
-    );
+    const memorySnapCard = screen
+      .getAllByRole('button')
+      .find((el: any) => el.props.accessibilityLabel?.includes('Memory Snap'));
     expect(memorySnapCard).toBeTruthy();
     fireEvent.press(memorySnapCard!);
     expect(screen.getByText(/Select difficulty/)).toBeTruthy();
 
     // Find the Hard difficulty button
-    const hardButton = screen.getAllByRole('button').find(
-      (el: any) => el.props.accessibilityLabel?.includes('Hard')
-    );
+    const hardButton = screen
+      .getAllByRole('button')
+      .find((el: any) => el.props.accessibilityLabel?.includes('Hard'));
     expect(hardButton).toBeTruthy();
     fireEvent.press(hardButton!);
 
     await waitFor(() => {
       expect(mockUpdateSettings).toHaveBeenCalledWith({ difficulty: 'hard' });
-      expect(mockNavigate).toHaveBeenCalledWith('Game');
+      expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Game);
     });
+  });
+
+  it('routes difficulty-select games to their own route after picking a difficulty', async () => {
+    const routedDifficultyGame: GameDefinition = {
+      id: 'pattern-train',
+      route: APP_ROUTES.PatternTrain,
+      nameKey: 'games.patternTrain.name',
+      descriptionKey: 'games.patternTrain.description',
+      icon: '🚂',
+      accentColor: '#A8DADC',
+      isUnfinished: false,
+      launchMode: 'difficulty-select',
+    };
+
+    mockGetVisibleGames.mockReturnValue([routedDifficultyGame]);
+
+    const screen = render(<HomeScreen />);
+
+    fireEvent.press(screen.getByText('Pattern Train'));
+    expect(screen.getByText(/Select difficulty/)).toBeTruthy();
+
+    const easyButton = screen
+      .getAllByRole('button')
+      .find((el: any) => el.props.accessibilityLabel?.includes('Easy'));
+    expect(easyButton).toBeTruthy();
+    fireEvent.press(easyButton!);
+
+    await waitFor(() => {
+      expect(mockUpdateSettings).toHaveBeenCalledWith({ difficulty: 'easy' });
+      expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.PatternTrain);
+    });
+  });
+
+  it('navigates to Settings through the shared app route contract', () => {
+    const screen = render(<HomeScreen />);
+
+    fireEvent.press(screen.getByLabelText('⚙️  Settings'));
+
+    expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Settings);
   });
 
   it('hides games listed in hiddenGames setting', () => {
@@ -127,4 +231,38 @@ describe('HomeScreen', () => {
     expect(flex).toBe(1);
     expect(maxHeight).toBeUndefined();
   });
+
+  it('routes website link presses through openExternalUrl', async () => {
+    const screen = render(<HomeScreen />);
+
+    fireEvent.press(screen.getByRole('link'));
+
+    await waitFor(() => {
+      expect(mockOpenExternalUrl).toHaveBeenCalledWith('https://gentlegames.org');
+    });
+    expect(Linking.openURL).not.toHaveBeenCalled();
+  });
+
+  it.each(['unsupported', 'failed'] as const)(
+    'shows a calm website fallback modal when the helper returns %s',
+    async (result) => {
+      mockOpenExternalUrl.mockResolvedValue(result);
+      const screen = render(<HomeScreen />);
+
+      fireEvent.press(screen.getByRole('link'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Website unavailable')).toBeTruthy();
+        expect(
+          screen.getByText(
+            "We couldn't open the Gentle Games website right now. Please try again later.",
+          ),
+        ).toBeTruthy();
+      });
+
+      expect(screen.queryByText(/exploded|Error:|TypeError/i)).toBeNull();
+      expect(Linking.openURL).not.toHaveBeenCalled();
+    },
+  );
+
 });

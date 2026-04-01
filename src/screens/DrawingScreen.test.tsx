@@ -1,13 +1,25 @@
 import React from 'react';
-import { render, waitFor, fireEvent } from '@testing-library/react-native';
+import { render, waitFor, fireEvent, act } from '@testing-library/react-native';
 import { Dimensions, ScaledSize } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const mockGoBack = jest.fn();
 const mockDispatch = jest.fn();
-const mockAddListener = jest.fn(() => jest.fn());
+const mockClearCanvas = jest.fn();
 const mockDrawingCanvas = jest.fn();
 const mockInsets = { top: 500, bottom: 500, left: 0, right: 0 };
+let mockCanvasHistory: unknown[] = [];
+let beforeRemoveListener:
+  | ((event: { preventDefault: () => void; data: { action: unknown } }) => void | Promise<void>)
+  | undefined;
+
+const mockAddListener = jest.fn((eventName: string, listener: unknown) => {
+  if (eventName === 'beforeRemove') {
+    beforeRemoveListener = listener as typeof beforeRemoveListener;
+  }
+
+  return jest.fn();
+});
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
@@ -22,10 +34,17 @@ jest.mock('../components/DrawingCanvas', () => {
   const { View } = require('react-native');
 
   return {
-    DrawingCanvas: React.forwardRef((props: Record<string, unknown>, _ref: React.ForwardedRef<unknown>) => {
-      mockDrawingCanvas(props);
-      return React.createElement(View, { testID: 'drawing-canvas' });
-    }),
+    DrawingCanvas: React.forwardRef(
+      (props: Record<string, unknown>, ref: React.ForwardedRef<unknown>) => {
+        React.useImperativeHandle(ref, () => ({
+          clear: mockClearCanvas,
+          getHistory: () => mockCanvasHistory,
+        }));
+
+        mockDrawingCanvas(props);
+        return React.createElement(View, { testID: 'drawing-canvas' });
+      },
+    ),
   };
 });
 
@@ -53,21 +72,61 @@ jest.mock('react-native-safe-area-context', () => {
   const { View } = require('react-native');
 
   return {
-    SafeAreaView: ({ children }: { children: React.ReactNode }) => React.createElement(View, null, children),
+    SafeAreaView: ({ children }: { children: React.ReactNode }) =>
+      React.createElement(View, null, children),
     useSafeAreaInsets: () => mockInsets,
   };
 });
 
+jest.mock('../context/SettingsContext', () => ({
+  useSettings: () => ({
+    settings: {
+      animationsEnabled: false,
+      reducedMotionEnabled: false,
+      showMochiInGames: true,
+    },
+  }),
+}));
+
+jest.mock('../context/MochiContext', () => ({
+  useMochiContext: () => ({
+    mochiProps: { variant: 'idle', visible: false, phrase: null },
+    showMochi: jest.fn(),
+    hideMochi: jest.fn(),
+    celebrate: jest.fn(),
+  }),
+}));
+
 import {
   DrawingScreen,
   DRAWING_HEADER_HEIGHT,
-  DRAWING_TOOLBAR_HEIGHT,
   DRAWING_LAYOUT_PADDING,
+  DRAWING_TOOLBAR_HEIGHT,
+  DRAWING_SAVE_DEBOUNCE_MS,
 } from './DrawingScreen';
+
+const historyA = [
+  { kind: 'shape', id: 'shape-a', type: 'circle', x: 10, y: 20, size: 20, color: '#000', width: 5 },
+];
+const historyB = [
+  { kind: 'shape', id: 'shape-b', type: 'square', x: 30, y: 40, size: 24, color: '#f00', width: 5 },
+];
+
+const getLatestCanvasProps = () =>
+  mockDrawingCanvas.mock.calls[mockDrawingCanvas.mock.calls.length - 1][0] as {
+    width: number;
+    height: number;
+    bottomInset: number;
+    initialHistory: typeof historyA;
+    onHistoryChange: (history: typeof historyA) => void;
+  };
 
 describe('DrawingScreen', () => {
   beforeEach(() => {
+    jest.useRealTimers();
     jest.clearAllMocks();
+    beforeRemoveListener = undefined;
+    mockCanvasHistory = [];
     jest.spyOn(Dimensions, 'get').mockReturnValue({
       width: 390,
       height: 844,
@@ -90,14 +149,16 @@ describe('DrawingScreen', () => {
       expect(mockDrawingCanvas).toHaveBeenCalled();
     });
 
-    const latestProps = mockDrawingCanvas.mock.calls[mockDrawingCanvas.mock.calls.length - 1][0] as {
-      height: number;
-    };
-
+    const latestProps = getLatestCanvasProps();
     const screenHeight = Dimensions.get('window').height;
     const expectedRemainingHeight = Math.max(
       0,
-      screenHeight - 500 - 500 - DRAWING_HEADER_HEIGHT - DRAWING_TOOLBAR_HEIGHT - DRAWING_LAYOUT_PADDING
+      screenHeight -
+        500 -
+        500 -
+        DRAWING_HEADER_HEIGHT -
+        DRAWING_TOOLBAR_HEIGHT -
+        DRAWING_LAYOUT_PADDING,
     );
 
     expect(latestProps.height).toBe(expectedRemainingHeight);
@@ -114,14 +175,16 @@ describe('DrawingScreen', () => {
       expect(mockDrawingCanvas).toHaveBeenCalled();
     });
 
-    const latestProps = mockDrawingCanvas.mock.calls[mockDrawingCanvas.mock.calls.length - 1][0] as {
-      height: number;
-    };
-
+    const latestProps = getLatestCanvasProps();
     const screenHeight = Dimensions.get('window').height;
     const expectedRemainingHeight = Math.max(
       0,
-      screenHeight - 44 - 34 - DRAWING_HEADER_HEIGHT - DRAWING_TOOLBAR_HEIGHT - DRAWING_LAYOUT_PADDING
+      screenHeight -
+        44 -
+        34 -
+        DRAWING_HEADER_HEIGHT -
+        DRAWING_TOOLBAR_HEIGHT -
+        DRAWING_LAYOUT_PADDING,
     );
 
     expect(latestProps.height).toBe(expectedRemainingHeight);
@@ -129,7 +192,7 @@ describe('DrawingScreen', () => {
   });
 
   it('shows loading state initially', () => {
-    (AsyncStorage.getItem as jest.Mock).mockImplementation(() => new Promise(() => undefined)); // Never resolves
+    (AsyncStorage.getItem as jest.Mock).mockImplementation(() => new Promise(() => undefined));
     const { getByText } = render(React.createElement(DrawingScreen));
     expect(getByText('common.loading')).toBeTruthy();
   });
@@ -178,6 +241,7 @@ describe('DrawingScreen', () => {
     await waitFor(() => {
       expect(AsyncStorage.removeItem).toHaveBeenCalledWith('@gentle_match_saved_drawing');
     });
+    expect(mockClearCanvas).toHaveBeenCalled();
   });
 
   it('handles no saved drawing gracefully', async () => {
@@ -200,22 +264,6 @@ describe('DrawingScreen', () => {
     });
   });
 
-  it('handles back press and saves drawing', async () => {
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
-
-    const { getByLabelText } = render(React.createElement(DrawingScreen));
-
-    await waitFor(() => {
-      expect(getByLabelText('← Back')).toBeTruthy();
-    });
-
-    fireEvent.press(getByLabelText('← Back'));
-
-    await waitFor(() => {
-      expect(mockGoBack).toHaveBeenCalled();
-    });
-  });
-
   it('passes canvas dimensions to DrawingCanvas', async () => {
     mockInsets.top = 44;
     mockInsets.bottom = 34;
@@ -226,14 +274,9 @@ describe('DrawingScreen', () => {
       expect(mockDrawingCanvas).toHaveBeenCalled();
     });
 
-    const latestProps = mockDrawingCanvas.mock.calls[mockDrawingCanvas.mock.calls.length - 1][0] as {
-      width: number;
-      height: number;
-      canvasBackgroundColor: string;
-      bottomInset: number;
-    };
-
+    const latestProps = getLatestCanvasProps();
     const screenWidth = Dimensions.get('window').width;
+
     expect(latestProps.width).toBe(screenWidth - DRAWING_LAYOUT_PADDING);
     expect(latestProps.bottomInset).toBe(34);
   });
@@ -248,58 +291,138 @@ describe('DrawingScreen', () => {
       expect(mockDrawingCanvas).toHaveBeenCalled();
     });
 
-    // Canvas should be rendered with saved history
-    const latestProps = mockDrawingCanvas.mock.calls[mockDrawingCanvas.mock.calls.length - 1][0] as {
-      initialHistory: typeof savedDrawing;
-    };
+    const latestProps = getLatestCanvasProps();
     expect(latestProps.initialHistory).toEqual(savedDrawing);
   });
 
-  it('auto-saves on history change', async () => {
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
-
+  it('debounces history writes instead of saving on every edit', async () => {
+    jest.useFakeTimers();
     render(React.createElement(DrawingScreen));
 
     await waitFor(() => {
       expect(mockDrawingCanvas).toHaveBeenCalled();
     });
 
-    const latestProps = mockDrawingCanvas.mock.calls[mockDrawingCanvas.mock.calls.length - 1][0] as {
-      onHistoryChange: (history: unknown[]) => void;
-    };
+    const latestProps = getLatestCanvasProps();
 
-    // Simulate history change
-    latestProps.onHistoryChange([{ paths: ['newPath'] }]);
-
-    await waitFor(() => {
-      expect(AsyncStorage.setItem).toHaveBeenCalled();
+    act(() => {
+      latestProps.onHistoryChange(historyA);
+      latestProps.onHistoryChange(historyB);
+      jest.advanceTimersByTime(DRAWING_SAVE_DEBOUNCE_MS - 1);
     });
+
+    expect(AsyncStorage.setItem).not.toHaveBeenCalled();
+
+    await act(async () => {
+      jest.advanceTimersByTime(1);
+      await Promise.resolve();
+    });
+
+    expect(AsyncStorage.setItem).toHaveBeenCalledTimes(1);
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+      '@gentle_match_saved_drawing',
+      JSON.stringify(historyB),
+    );
   });
 
-  it('removes saved drawing when history is cleared', async () => {
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
+  it('flushes the latest history before navigating back', async () => {
+    jest.useFakeTimers();
+    mockCanvasHistory = historyB;
+    const { getByLabelText } = render(React.createElement(DrawingScreen));
 
+    await waitFor(() => {
+      expect(mockDrawingCanvas).toHaveBeenCalled();
+      expect(getByLabelText('← Back')).toBeTruthy();
+    });
+
+    const latestProps = getLatestCanvasProps();
+
+    act(() => {
+      latestProps.onHistoryChange(historyA);
+      jest.advanceTimersByTime(DRAWING_SAVE_DEBOUNCE_MS - 1);
+    });
+
+    expect(AsyncStorage.setItem).not.toHaveBeenCalled();
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('← Back'));
+      await Promise.resolve();
+    });
+
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+      '@gentle_match_saved_drawing',
+      JSON.stringify(historyB),
+    );
+    expect(mockGoBack).toHaveBeenCalled();
+    expect((AsyncStorage.setItem as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(
+      mockGoBack.mock.invocationCallOrder[0],
+    );
+  });
+
+  it('flushes pending history during beforeRemove before dispatching the intercepted action', async () => {
+    jest.useFakeTimers();
+    mockCanvasHistory = historyB;
+    render(React.createElement(DrawingScreen));
+
+    await waitFor(() => {
+      expect(mockDrawingCanvas).toHaveBeenCalled();
+      expect(beforeRemoveListener).toBeDefined();
+    });
+
+    const latestProps = getLatestCanvasProps();
+    const preventDefault = jest.fn();
+    const action = { type: 'GO_BACK' };
+
+    act(() => {
+      latestProps.onHistoryChange(historyA);
+      jest.advanceTimersByTime(DRAWING_SAVE_DEBOUNCE_MS - 1);
+    });
+
+    await act(async () => {
+      await beforeRemoveListener?.({
+        preventDefault,
+        data: { action },
+      });
+    });
+
+    expect(preventDefault).toHaveBeenCalled();
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+      '@gentle_match_saved_drawing',
+      JSON.stringify(historyB),
+    );
+    expect(mockDispatch).toHaveBeenCalledWith(action);
+    expect((AsyncStorage.setItem as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(
+      mockDispatch.mock.invocationCallOrder[0],
+    );
+  });
+
+  it('removes saved drawing after the debounce window when history is cleared', async () => {
+    jest.useFakeTimers();
     render(React.createElement(DrawingScreen));
 
     await waitFor(() => {
       expect(mockDrawingCanvas).toHaveBeenCalled();
     });
 
-    const latestProps = mockDrawingCanvas.mock.calls[mockDrawingCanvas.mock.calls.length - 1][0] as {
-      onHistoryChange: (history: unknown[]) => void;
-    };
+    const latestProps = getLatestCanvasProps();
 
-    // Simulate empty history
-    latestProps.onHistoryChange([]);
-
-    await waitFor(() => {
-      expect(AsyncStorage.removeItem).toHaveBeenCalledWith('@gentle_match_saved_drawing');
+    act(() => {
+      latestProps.onHistoryChange([]);
+      jest.advanceTimersByTime(DRAWING_SAVE_DEBOUNCE_MS - 1);
     });
+
+    expect(AsyncStorage.removeItem).not.toHaveBeenCalledWith('@gentle_match_saved_drawing');
+
+    await act(async () => {
+      jest.advanceTimersByTime(1);
+      await Promise.resolve();
+    });
+
+    expect(AsyncStorage.removeItem).toHaveBeenCalledWith('@gentle_match_saved_drawing');
   });
 
   it('handles storage errors gracefully', async () => {
     (AsyncStorage.getItem as jest.Mock).mockRejectedValue(new Error('Storage error'));
-
     const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     render(React.createElement(DrawingScreen));

@@ -74,13 +74,13 @@ export const useBackgroundMusic = () => {
       const player = createAudioPlayer(musicTracks[trackName], {
         keepAudioSessionActive: true,
       });
-      
+
       player.volume = 0.3; // Gentle background volume
       player.loop = true;
-      
+
       playerRef.current = player;
       setIsLoaded(true);
-      
+
       player.play();
       setMusicState({ isPlaying: true, currentTrack: trackName });
     } catch (error) {
@@ -95,23 +95,23 @@ export const useBackgroundMusic = () => {
       if (playerRef.current) {
         playerRef.current.pause();
       }
-      setMusicState(prev => ({ ...prev, isPlaying: false }));
+      setMusicState((prev) => ({ ...prev, isPlaying: false }));
     } else {
       // Check if tracks are available
       if (Object.keys(musicTracks).length === 0) {
         console.log('Music: No tracks available to play.');
         return;
       }
-      
+
       // Start music with random track
       const track = getRandomTrack();
-      
+
       if (!track) return;
-      
+
       if (musicState.currentTrack && playerRef.current) {
         // Resume current track
         playerRef.current.play();
-        setMusicState(prev => ({ ...prev, isPlaying: true }));
+        setMusicState((prev) => ({ ...prev, isPlaying: true }));
       } else {
         // Load and play new random track
         await loadAndPlayTrack(track);
@@ -123,7 +123,7 @@ export const useBackgroundMusic = () => {
     if (playerRef.current) {
       playerRef.current.pause();
     }
-    setMusicState(prev => ({ ...prev, isPlaying: false }));
+    setMusicState((prev) => ({ ...prev, isPlaying: false }));
   }, []);
 
   return {

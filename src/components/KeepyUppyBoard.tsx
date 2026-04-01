@@ -14,7 +14,6 @@ import {
   flickBalloon,
   KeepyUppyBalloon,
   KeepyUppyBounds,
-  MAX_BALLOONS,
   stepBalloons,
   tapBalloon,
 } from '../utils/keepyUppyLogic';
@@ -45,50 +44,46 @@ const MIN_FLICK_DISTANCE = 8;
 const MAX_FLICK_DURATION_MS = 500;
 
 export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>(
-  (
-    { bounds, onScoreChange, onBalloonCountChange, onPoppedChange, easyMode = false },
-    ref
-  ) => {
+  ({ bounds, onScoreChange, onBalloonCountChange, onPoppedChange, easyMode = false }, ref) => {
     const { colors, resolvedMode } = useThemeColors();
     const { t } = useTranslation();
     const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
+    const createBoardBalloon = useCallback(
+      () => createBalloon(bounds, { colors, resolvedMode }),
+      [bounds, colors, resolvedMode],
+    );
     const [score, setScore] = useState(0);
     const [popped, setPopped] = useState(0);
     const touchStartRef = useRef<Record<string, { x: number; y: number; startedAt: number }>>({});
-
-    const [balloons, setBalloons] = useState<KeepyUppyBalloon[]>(() => [
-      createBalloon(bounds, { colors, resolvedMode }),
-    ]);
-
-    // Use refs to avoid stale callbacks in effects while preventing re-render cycles
+    const [balloons, setBalloons] = useState<KeepyUppyBalloon[]>(() => [createBoardBalloon()]);
     const onBalloonCountChangeRef = useRef(onBalloonCountChange);
     const onScoreChangeRef = useRef(onScoreChange);
     const onPoppedChangeRef = useRef(onPoppedChange);
 
-    // Update refs when callbacks change
-    useEffect(() => {
-      onBalloonCountChangeRef.current = onBalloonCountChange;
-      onScoreChangeRef.current = onScoreChange;
-      onPoppedChangeRef.current = onPoppedChange;
-    }, [onBalloonCountChange, onScoreChange, onPoppedChange]);
+    onBalloonCountChangeRef.current = onBalloonCountChange;
+    onScoreChangeRef.current = onScoreChange;
+    onPoppedChangeRef.current = onPoppedChange;
 
     useEffect(() => {
       if (balloons.length === 0) {
-        const nextBalloons = [createBalloon(bounds, { colors, resolvedMode })];
-        setBalloons(nextBalloons);
-        // Use setTimeout to defer the callback to avoid setState during render
-        setTimeout(() => {
-          onBalloonCountChangeRef.current?.(nextBalloons.length);
-        }, 0);
+        setBalloons([createBoardBalloon()]);
         return;
       }
-      // Use setTimeout to defer the callback to avoid setState during render
-      setTimeout(() => {
+    }, [balloons.length, createBoardBalloon]);
+
+    useEffect(() => {
+      if (balloons.length > 0) {
         onBalloonCountChangeRef.current?.(balloons.length);
-      }, 0);
-      // Note: Intentionally omitting callback refs from deps to prevent loops
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [balloons.length, bounds, colors, resolvedMode]);
+      }
+    }, [balloons.length]);
+
+    useEffect(() => {
+      onScoreChangeRef.current?.(score);
+    }, [score]);
+
+    useEffect(() => {
+      onPoppedChangeRef.current?.(popped);
+    }, [popped]);
 
     useEffect(() => {
       const timer = setInterval(() => {
@@ -96,46 +91,33 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
         setBalloons((previous) => {
           const stepped = stepBalloons(previous, bounds, STEP_MS / 1000, now);
           if (stepped.popped > 0) {
-            setPopped((currentPopped) => {
-              const newPopped = currentPopped + stepped.popped;
-              // Use setTimeout to defer the callback to avoid setState during render
-              setTimeout(() => {
-                onPoppedChangeRef.current?.(newPopped);
-              }, 0);
-              return newPopped;
-            });
+            setPopped((currentPopped) => currentPopped + stepped.popped);
           }
           return stepped.balloons;
         });
       }, STEP_MS);
 
       return () => clearInterval(timer);
-      // Note: Intentionally using ref instead of callback in deps
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [bounds]);
+
+    const resetBoard = useCallback(() => {
+      setBalloons([createBoardBalloon()]);
+      setScore(0);
+      setPopped(0);
+    }, [createBoardBalloon]);
+
+    const addBoardBalloon = useCallback(() => {
+      setBalloons((previous) => addBalloon(previous, bounds, { colors, resolvedMode }));
+    }, [bounds, colors, resolvedMode]);
 
     useImperativeHandle(
       ref,
       () => ({
-        addBalloon: () => {
-          setBalloons((previous) => addBalloon(previous, bounds, { colors, resolvedMode }));
-        },
-        resetBalloons: () => {
-          setBalloons([createBalloon(bounds, { colors, resolvedMode })]);
-          setScore(0);
-          setPopped(0);
-          // Defer callbacks to avoid setState during render
-          setTimeout(() => {
-            onScoreChangeRef.current?.(0);
-            onPoppedChangeRef.current?.(0);
-            onBalloonCountChangeRef.current?.(1);
-          }, 0);
-        },
+        addBalloon: addBoardBalloon,
+        resetBalloons: resetBoard,
         getBalloonCount: () => balloons.length,
       }),
-      // Note: Using stable refs instead of callbacks in deps
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      [bounds, colors, resolvedMode, balloons.length]
+      [addBoardBalloon, balloons.length, resetBoard],
     );
 
     const toBoardPoint = useCallback(
@@ -147,31 +129,22 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
           y: balloon.y - balloonH / 2 + locationY,
         };
       },
-      []
+      [],
     );
 
     const handleBalloonPress = useCallback(
       (balloon: KeepyUppyBalloon, locationX: number, locationY: number) => {
         const tapPoint = toBoardPoint(balloon, locationX, locationY);
-        setScore((currentScore) => {
-          const newScore = currentScore + 1;
-          // Defer callback to avoid setState during render
-          setTimeout(() => {
-            onScoreChangeRef.current?.(newScore);
-          }, 0);
-          return newScore;
-        });
+        setScore((currentScore) => currentScore + 1);
         setBalloons((previous) =>
           previous.map((current) =>
             current.id === balloon.id
               ? tapBalloon(current, tapPoint.x, tapPoint.y, easyMode)
-              : current
-          )
+              : current,
+          ),
         );
       },
-      // Note: Using ref instead of callback in deps
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      [easyMode, toBoardPoint]
+      [easyMode, toBoardPoint],
     );
 
     const handleBalloonRelease = useCallback(
@@ -184,21 +157,16 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
         const deltaX = pageX - touchStart.x;
         const deltaY = pageY - touchStart.y;
         const durationMs = Math.max(1, Date.now() - touchStart.startedAt);
-        if (
-          Math.hypot(deltaX, deltaY) < MIN_FLICK_DISTANCE ||
-          durationMs > MAX_FLICK_DURATION_MS
-        ) {
+        if (Math.hypot(deltaX, deltaY) < MIN_FLICK_DISTANCE || durationMs > MAX_FLICK_DURATION_MS) {
           return;
         }
         setBalloons((previous) =>
           previous.map((current) =>
-            current.id === balloon.id
-              ? flickBalloon(current, deltaX, deltaY, durationMs)
-              : current
-          )
+            current.id === balloon.id ? flickBalloon(current, deltaX, deltaY, durationMs) : current,
+          ),
         );
       },
-      []
+      [],
     );
 
     return (
@@ -216,8 +184,8 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
           return (
             <TouchableOpacity
               key={balloon.id}
-              accessibilityRole="button"
-              accessibilityLabel={t('games.keepyUppy.balloonAccessibility') }
+              accessibilityRole='button'
+              accessibilityLabel={t('games.keepyUppy.balloonAccessibility')}
               testID={`balloon-${balloon.id}`}
               onPressIn={(event) => {
                 touchStartRef.current[balloon.id] = {
@@ -228,15 +196,11 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
                 handleBalloonPress(
                   balloon,
                   event.nativeEvent.locationX,
-                  event.nativeEvent.locationY
+                  event.nativeEvent.locationY,
                 );
               }}
               onPressOut={(event) =>
-                handleBalloonRelease(
-                  balloon,
-                  event.nativeEvent.pageX,
-                  event.nativeEvent.pageY
-                )
+                handleBalloonRelease(balloon, event.nativeEvent.pageX, event.nativeEvent.pageY)
               }
               style={[
                 styles.balloonHitArea,
@@ -269,7 +233,7 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
         })}
       </View>
     );
-  }
+  },
 );
 
 const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>

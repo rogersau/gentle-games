@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Difficulty, NumberPicnicPrompt, NUMBER_PICNIC_ITEMS } from '../types';
+import { useTrackedTimeouts } from './useTrackedTimeouts';
 
 export const getNumberPicnicMaxCount = (difficulty: Difficulty): number => {
   if (difficulty === 'easy') return 5;
@@ -9,7 +10,7 @@ export const getNumberPicnicMaxCount = (difficulty: Difficulty): number => {
 
 export const generateNumberPicnicPrompt = (
   difficulty: Difficulty,
-  rng: () => number = Math.random
+  rng: () => number = Math.random,
 ): NumberPicnicPrompt => {
   const item = NUMBER_PICNIC_ITEMS[Math.floor(rng() * NUMBER_PICNIC_ITEMS.length)];
   const max = getNumberPicnicMaxCount(difficulty);
@@ -30,8 +31,10 @@ export const clampNumberPicnicCount = (count: number): number =>
 export const updateNumberPicnicCount = (currentCount: number, delta: number): number =>
   clampNumberPicnicCount(currentCount + delta);
 
-export const isNumberPicnicPromptComplete = (currentCount: number, prompt: NumberPicnicPrompt): boolean =>
-  currentCount === prompt.targetCount;
+export const isNumberPicnicPromptComplete = (
+  currentCount: number,
+  prompt: NumberPicnicPrompt,
+): boolean => currentCount === prompt.targetCount;
 
 export interface UseNumberPicnicGameResult {
   // State
@@ -40,12 +43,14 @@ export interface UseNumberPicnicGameResult {
   completedPicnics: number;
   isProcessing: boolean;
   isDragging: boolean;
+  isOverBasket: boolean;
   isSuccess: boolean;
   blanketItemCount: number;
   basketItems: string[];
   isComplete: boolean;
-  
+
   // Actions
+  handleDropStart: () => void;
   handleItemDrop: (index: number) => void;
   handleDropEnd: () => void;
   handleDragOverBasket: (isOver: boolean) => void;
@@ -53,12 +58,15 @@ export interface UseNumberPicnicGameResult {
 }
 
 export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGameResult => {
+  const { queueTimeout, clearAllTimeouts } = useTrackedTimeouts();
+
   // Game state
   const [prompt, setPrompt] = useState(() => generateNumberPicnicPrompt(difficulty));
   const [basketCount, setBasketCount] = useState(0);
   const [completedPicnics, setCompletedPicnics] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isOverBasket, setIsOverBasket] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [blanketItemCount, setBlanketItemCount] = useState(() => {
     const max = getNumberPicnicMaxCount(difficulty);
@@ -68,22 +76,20 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
   // Use refs for values that change frequently to avoid recreating callbacks
   const basketCountRef = useRef(basketCount);
   const isProcessingRef = useRef(isProcessing);
-  const isOverBasketRef = useRef(false);
-  
   useEffect(() => {
     basketCountRef.current = basketCount;
   }, [basketCount]);
-  
+
   useEffect(() => {
     isProcessingRef.current = isProcessing;
   }, [isProcessing]);
 
   const isComplete = isNumberPicnicPromptComplete(basketCount, prompt);
-  
+
   // Generate basket items array for display
-  const basketItems = useMemo(() => 
-    Array(basketCount).fill(prompt.itemEmoji),
-    [basketCount, prompt.itemEmoji]
+  const basketItems = useMemo(
+    () => Array(basketCount).fill(prompt.itemEmoji),
+    [basketCount, prompt.itemEmoji],
   );
 
   // Check for completion
@@ -93,55 +99,68 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
     }
   }, [isComplete, isSuccess]);
 
+  const handleDropStart = useCallback(() => {
+    setIsDragging(true);
+  }, []);
+
   // Handle when item is dragged over basket (for highlighting)
   const handleDragOverBasket = useCallback((isOver: boolean) => {
-    isOverBasketRef.current = isOver;
-    setIsDragging(isOver);
+    setIsOverBasket(isOver);
   }, []);
 
   // Handle item drop
-  const handleItemDrop = useCallback((index: number) => {
-    if (isProcessingRef.current) {
-      return;
-    }
+  const handleItemDrop = useCallback(
+    (_index: number) => {
+      if (isProcessingRef.current) {
+        return;
+      }
 
-    const max = getNumberPicnicMaxCount(difficulty);
-    if (basketCountRef.current >= max) {
-      return;
-    }
+      const max = getNumberPicnicMaxCount(difficulty);
+      if (basketCountRef.current >= max) {
+        return;
+      }
 
-    setIsProcessing(true);
-    
-    // Add item to basket
-    setBasketCount(prev => {
-      return Math.min(prev + 1, max);
-    });
-    setBlanketItemCount(prev => {
-      return prev - 1;
-    });
-    
-    setTimeout(() => {
-      setIsProcessing(false);
-    }, 300);
-  }, [difficulty]);
+      setIsProcessing(true);
+      setIsDragging(false);
+      setIsOverBasket(false);
+
+      // Add item to basket
+      setBasketCount((prev) => {
+        return Math.min(prev + 1, max);
+      });
+      setBlanketItemCount((prev) => {
+        return prev - 1;
+      });
+
+      queueTimeout(() => {
+        setIsProcessing(false);
+      }, 300);
+    },
+    [difficulty, queueTimeout],
+  );
 
   // Handle drop end
   const handleDropEnd = useCallback(() => {
     setIsDragging(false);
+    setIsOverBasket(false);
   }, []);
 
   // Start new round after basket exits
   const startNewRound = useCallback(() => {
+    clearAllTimeouts();
     const newPrompt = generateNumberPicnicPrompt(difficulty);
     setPrompt(newPrompt);
     setBasketCount(0);
-    setCompletedPicnics(current => current + 1);
+    setCompletedPicnics((current) => current + 1);
+    setIsProcessing(false);
     setIsSuccess(false);
-    
+    setIsDragging(false);
+    setIsOverBasket(false);
+
     // Reset blanket items for new round
     const max = getNumberPicnicMaxCount(difficulty);
     setBlanketItemCount(Math.max(12, max + 3));
-  }, [difficulty]);
+  }, [clearAllTimeouts, difficulty]);
 
   return {
     // State
@@ -150,16 +169,17 @@ export const useNumberPicnicGame = (difficulty: Difficulty): UseNumberPicnicGame
     completedPicnics,
     isProcessing,
     isDragging,
+    isOverBasket,
     isSuccess,
     blanketItemCount,
     basketItems,
     isComplete,
-    
+
     // Actions
+    handleDropStart,
     handleItemDrop,
     handleDropEnd,
     handleDragOverBasket,
     startNewRound,
   };
 };
-

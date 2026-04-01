@@ -1,4 +1,11 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import {
@@ -42,8 +49,6 @@ interface BreathingBallProps {
   onProgress?: (progress: number) => void;
 }
 
-const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-
 export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
   (
     {
@@ -56,7 +61,7 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
       onCycleComplete,
       onProgress,
     },
-    ref
+    ref,
   ) => {
     const [isRunning, setIsRunning] = useState(autoStart);
     const [elapsedMs, setElapsedMs] = useState(0);
@@ -119,7 +124,7 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
         pause: () => setIsRunning(false),
         resume: () => setIsRunning(true),
       }),
-      [phase, cycleCount, elapsedMs]
+      [phase, cycleCount, elapsedMs],
     );
 
     useEffect(() => {
@@ -156,7 +161,7 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
     const center = size / 2;
     const ballRadius = ballSize / 2;
     // Rings expand to the edge of the container (size/2 minus padding for stroke)
-    const maxRingRadius = (size / 2) - 2;
+    const maxRingRadius = size / 2 - 2;
 
     // Generate breathing rings that expand outward
     const ringCount = 5;
@@ -172,11 +177,9 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
         const easedPhase = Math.pow(ringPhase, 0.5);
         const ringRadius = ballRadius + easedPhase * (maxRingRadius - ballRadius);
         // Opacity fades to zero as ring reaches the edge
-        const baseOpacity = phase === 'inhale'
-          ? (1 - adjustedProgress)
-          : adjustedProgress;
+        const baseOpacity = phase === 'inhale' ? 1 - adjustedProgress : adjustedProgress;
         // Additional fade based on how close to edge (0 at edge, 1 at center)
-        const edgeFade = 1 - (ringRadius / maxRingRadius);
+        const edgeFade = 1 - ringRadius / maxRingRadius;
         const ringOpacity = baseOpacity * edgeFade * 0.6;
         const ringStrokeWidth = 5 * (1 - adjustedProgress * 0.7);
 
@@ -193,15 +196,15 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
       <View
         style={[styles.container, { width: size, height: size }]}
         accessible={true}
-        accessibilityRole="progressbar"
+        accessibilityRole='progressbar'
         accessibilityLabel={`Breathing ball. Current phase: ${phase}. ${cycleCount} cycles completed.`}
         accessibilityValue={{ min: 0, max: 100, now: Math.round(phaseProgress * 100) }}
       >
         <Svg width={size} height={size}>
           <Defs>
-            <RadialGradient id="ballFill" cx="35%" cy="35%" rx="60%" ry="60%">
-              <Stop offset="0%" stopColor={colorScheme.primary} stopOpacity="1" />
-              <Stop offset="100%" stopColor={colorScheme.accent} stopOpacity="0.95" />
+            <RadialGradient id='ballFill' cx='35%' cy='35%' rx='60%' ry='60%'>
+              <Stop offset='0%' stopColor={colorScheme.primary} stopOpacity='1' />
+              <Stop offset='100%' stopColor={colorScheme.accent} stopOpacity='0.95' />
             </RadialGradient>
           </Defs>
 
@@ -212,7 +215,7 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
               cx={center}
               cy={center}
               r={ring.r}
-              fill="none"
+              fill='none'
               stroke={colorScheme.accent}
               strokeWidth={ring.strokeWidth}
               opacity={ring.opacity}
@@ -224,7 +227,7 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
             cx={center}
             cy={center}
             r={ballRadius}
-            fill="url(#ballFill)"
+            fill='url(#ballFill)'
             stroke={colorScheme.accent}
             strokeWidth={4}
             opacity={0.9}
@@ -232,7 +235,7 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
         </Svg>
       </View>
     );
-  }
+  },
 );
 
 const styles = StyleSheet.create({

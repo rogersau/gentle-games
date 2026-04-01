@@ -1,14 +1,18 @@
 import { useState, useCallback, useRef } from 'react';
+import { Animated } from 'react-native';
 import { Difficulty } from '../types';
-import {
-  generateTrainPattern,
-  isTrainChoiceCorrect,
-  removeWrongChoices,
-  TrainPattern,
-} from '../utils/patternTrainLogic';
+import { generateTrainPattern, removeWrongChoices, TrainPattern } from '../utils/patternTrainLogic';
 
 export type TrainPhase = 'entering' | 'waiting' | 'exiting' | 'offscreen';
 export type FeedbackType = 'initial' | 'correct' | 'incorrect' | 'reveal';
+
+export interface DraggableCarriage {
+  emoji: string;
+  position: Animated.ValueXY;
+  scale: Animated.Value;
+  opacity: Animated.Value;
+  isAvailable: boolean;
+}
 
 export interface PatternTrainGameState {
   // Game state
@@ -20,6 +24,7 @@ export interface PatternTrainGameState {
   showDifficultySelector: boolean;
   selectedChoice: string | null;
   attachedCarriage: string | null;
+  draggableCarriages: DraggableCarriage[];
 
   // Train state
   trainPhase: TrainPhase;
@@ -48,6 +53,7 @@ export interface PatternTrainGameActions {
   setFeedbackType: (type: FeedbackType) => void;
   setTrainPhase: (phase: TrainPhase) => void;
   setIsProcessing: (processing: boolean) => void;
+  setDraggableCarriages: (carriages: DraggableCarriage[]) => void;
 
   // Utility
   queueTimeout: (callback: () => void, delay: number) => void;
@@ -68,7 +74,7 @@ interface UsePatternTrainGameOptions {
 const MILESTONE_INTERVAL = 5;
 
 export function usePatternTrainGame(
-  options: UsePatternTrainGameOptions
+  options: UsePatternTrainGameOptions,
 ): UsePatternTrainGameReturn {
   const { difficulty: initialDifficulty, t } = options;
 
@@ -81,6 +87,7 @@ export function usePatternTrainGame(
   const [showDifficultySelector, setShowDifficultySelector] = useState(true);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [attachedCarriage, setAttachedCarriage] = useState<string | null>(null);
+  const [draggableCarriages, setDraggableCarriages] = useState<DraggableCarriage[]>([]);
 
   // Train state
   const [trainPhase, setTrainPhase] = useState<TrainPhase>('offscreen');
@@ -123,7 +130,7 @@ export function usePatternTrainGame(
       }
       return t(fallbackKey);
     },
-    [t]
+    [t],
   );
 
   const startNewRound = useCallback(() => {
@@ -137,14 +144,11 @@ export function usePatternTrainGame(
     setFeedbackType('initial');
   }, [initialDifficulty, t]);
 
-  const handleDifficultySelect = useCallback(
-    (difficulty: Difficulty) => {
-      const newPattern = generateTrainPattern(difficulty);
-      setPattern(newPattern);
-      setShowDifficultySelector(false);
-    },
-    []
-  );
+  const handleDifficultySelect = useCallback((difficulty: Difficulty) => {
+    const newPattern = generateTrainPattern(difficulty);
+    setPattern(newPattern);
+    setShowDifficultySelector(false);
+  }, []);
 
   const handleCloseDifficultySelector = useCallback(() => {
     setShowDifficultySelector(false);
@@ -172,7 +176,7 @@ export function usePatternTrainGame(
         removeWrongChoices(pattern.choices, pattern.answer, 1, carriageEmoji);
       }
     },
-    [pattern, wrongAttempts]
+    [pattern, wrongAttempts],
   );
 
   const handleRevealAnswer = useCallback(() => {
@@ -204,6 +208,7 @@ export function usePatternTrainGame(
     showDifficultySelector,
     selectedChoice,
     attachedCarriage,
+    draggableCarriages,
     trainPhase,
     feedback,
     feedbackType,
@@ -225,6 +230,7 @@ export function usePatternTrainGame(
     setFeedbackType,
     setTrainPhase,
     setIsProcessing,
+    setDraggableCarriages,
     queueTimeout,
     clearAllTimeouts,
     getRandomFeedback,

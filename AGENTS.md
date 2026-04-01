@@ -7,6 +7,7 @@ Generally speaking, you should browse the codebase to figure out what is going o
 ## Core Principles
 
 ### Accessibility First
+
 - **No hidden features** - Everything accessible from the start
 - **No disruptive elements** - No ads, pop-ups, or forced interactions
 - **Clear, predictable navigation** - Consistent UI patterns throughout
@@ -16,9 +17,9 @@ Generally speaking, you should browse the codebase to figure out what is going o
 - **Offline-first** - Works without internet connection
 
 ### Design Philosophy
+
 - **Minimal visual noise** - Clean, uncluttered interfaces
 - **Soft color palettes** - Avoid harsh contrasts and bright colors
 - **Optional audio** - All sounds can be muted globally
 - **Predictable animations** - Smooth, non-jarring transitions
 - **No time pressure** - Games never rush the player
-

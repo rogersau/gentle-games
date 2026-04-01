@@ -23,20 +23,28 @@ const TestConsumer = () => {
   const { settings, isLoading, updateSettings } = useSettings();
 
   if (isLoading) {
-    return <Text testID="loading">loading</Text>;
+    return <Text testID='loading'>loading</Text>;
   }
 
   return (
     <View>
-      <Text testID="animations">{String(settings.animationsEnabled)}</Text>
-      <Text testID="sound">{String(settings.soundEnabled)}</Text>
-      <Text testID="volume">{String(settings.soundVolume)}</Text>
-      <Text testID="difficulty">{settings.difficulty}</Text>
-      <Text testID="theme">{settings.theme}</Text>
-      <Text testID="keepyEasy">{String(settings.keepyUppyEasyMode)}</Text>
-      <Text testID="colorMode">{settings.colorMode}</Text>
-      <TouchableOpacity testID="set-hard" onPress={() => updateSettings({ difficulty: 'hard' })}>
+      <Text testID='animations'>{String(settings.animationsEnabled)}</Text>
+      <Text testID='sound'>{String(settings.soundEnabled)}</Text>
+      <Text testID='volume'>{String(settings.soundVolume)}</Text>
+      <Text testID='difficulty'>{settings.difficulty}</Text>
+      <Text testID='theme'>{settings.theme}</Text>
+      <Text testID='keepyEasy'>{String(settings.keepyUppyEasyMode)}</Text>
+      <Text testID='colorMode'>{settings.colorMode}</Text>
+      <Text testID='hiddenGames'>{settings.hiddenGames.join(',')}</Text>
+      <Text testID='telemetry'>{String(settings.telemetryEnabled)}</Text>
+      <TouchableOpacity testID='set-hard' onPress={() => updateSettings({ difficulty: 'hard' })}>
         <Text>set-hard</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID='set-telemetry'
+        onPress={() => updateSettings({ telemetryEnabled: true })}
+      >
+        <Text>set-telemetry</Text>
       </TouchableOpacity>
     </View>
   );
@@ -47,7 +55,21 @@ describe('SettingsContext', () => {
     jest.clearAllMocks();
   });
 
-  it('sanitizes persisted settings values', async () => {
+  it('defaults telemetryEnabled to false for fresh installs', async () => {
+    storage.getItem.mockResolvedValueOnce(null);
+
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+
+    expect(screen.getByTestId('telemetry').props.children).toBe('false');
+  });
+
+  it('sanitizes invalid persisted telemetryEnabled values back to false', async () => {
     storage.getItem.mockResolvedValueOnce(
       JSON.stringify({
         animationsEnabled: 'false',
@@ -57,13 +79,14 @@ describe('SettingsContext', () => {
         theme: 'invalid',
         keepyUppyEasyMode: 'invalid',
         colorMode: 'invalid',
-      })
+        telemetryEnabled: 'maybe',
+      }),
     );
 
     const screen = render(
       <SettingsProvider>
         <TestConsumer />
-      </SettingsProvider>
+      </SettingsProvider>,
     );
 
     await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
@@ -75,6 +98,45 @@ describe('SettingsContext', () => {
     expect(screen.getByTestId('theme').props.children).toBe('mixed');
     expect(screen.getByTestId('keepyEasy').props.children).toBe('true');
     expect(screen.getByTestId('colorMode').props.children).toBe('system');
+    expect(screen.getByTestId('telemetry').props.children).toBe('false');
+  });
+
+  it('drops invalid persisted hidden game ids on load', async () => {
+    storage.getItem.mockResolvedValueOnce(
+      JSON.stringify({
+        hiddenGames: ['memory-snap', 'not-a-game', 42, 'bubble-pop'],
+      }),
+    );
+
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+
+    expect(screen.getByTestId('hiddenGames').props.children).toBe('memory-snap,bubble-pop');
+    expect(storage.setItem).toHaveBeenCalledWith(
+      'gentleMatchSettings',
+      JSON.stringify({
+        animationsEnabled: true,
+        soundEnabled: true,
+        soundVolume: 0.5,
+        difficulty: 'medium',
+        theme: 'mixed',
+        showCardPreview: true,
+        keepyUppyEasyMode: true,
+        colorMode: 'system',
+        hiddenGames: ['memory-snap', 'bubble-pop'],
+        parentTimerMinutes: 0,
+        enableUnfinishedGames: true,
+        language: 'en-AU',
+        reducedMotionEnabled: false,
+        telemetryEnabled: false,
+        showMochiInGames: true,
+      }),
+    );
   });
 
   it('removes corrupted persisted settings', async () => {
@@ -84,7 +146,7 @@ describe('SettingsContext', () => {
     render(
       <SettingsProvider>
         <TestConsumer />
-      </SettingsProvider>
+      </SettingsProvider>,
     );
 
     await waitFor(() => {
@@ -100,20 +162,37 @@ describe('SettingsContext', () => {
     const screen = render(
       <SettingsProvider>
         <TestConsumer />
-      </SettingsProvider>
+      </SettingsProvider>,
     );
 
     await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
     fireEvent.press(screen.getByTestId('set-hard'));
 
     await waitFor(() => {
-      expect(storage.setItem).toHaveBeenCalledWith(
-        'gentleMatchSettings',
-        expect.any(String)
-      );
+      expect(storage.setItem).toHaveBeenCalledWith('gentleMatchSettings', expect.any(String));
     });
 
     const saved = storage.setItem.mock.calls[0][1];
     expect(JSON.parse(saved).difficulty).toBe('hard');
+  });
+
+  it('persists telemetryEnabled updates to storage', async () => {
+    storage.getItem.mockResolvedValueOnce(null);
+
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+    fireEvent.press(screen.getByTestId('set-telemetry'));
+
+    await waitFor(() => {
+      expect(storage.setItem).toHaveBeenCalledWith('gentleMatchSettings', expect.any(String));
+    });
+
+    const saved = storage.setItem.mock.calls[0][1];
+    expect(JSON.parse(saved).telemetryEnabled).toBe(true);
   });
 });

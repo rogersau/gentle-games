@@ -1,11 +1,6 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { Animated } from 'react-native';
-import {
-  useAnimationEnabled,
-  useFadeIn,
-  useGentleBounce,
-  useScalePress,
-} from './animations';
+import { useAnimationEnabled, useFadeIn, useGentleBounce, useScalePress } from './animations';
 
 let mockSettings = {
   animationsEnabled: true,
@@ -28,7 +23,7 @@ describe('ui animations hooks', () => {
           start: (callback?: () => void) => callback?.(),
           stop: jest.fn(),
           reset: jest.fn(),
-        }) as any
+        }) as any,
     );
 
     jest.spyOn(Animated, 'sequence').mockImplementation(
@@ -37,7 +32,7 @@ describe('ui animations hooks', () => {
           start: (callback?: () => void) => callback?.(),
           stop: jest.fn(),
           reset: jest.fn(),
-        }) as any
+        }) as any,
     );
   });
 
@@ -76,7 +71,7 @@ describe('ui animations hooks', () => {
       expect.objectContaining({
         toValue: 1,
         duration: 450,
-      })
+      }),
     );
   });
 
@@ -110,7 +105,7 @@ describe('ui animations hooks', () => {
     });
 
     const toValues = (Animated.timing as jest.Mock).mock.calls.map(
-      ([, config]) => (config as { toValue: number }).toValue
+      ([, config]) => (config as { toValue: number }).toValue,
     );
     expect(toValues).toEqual(expect.arrayContaining([0.96, 1]));
   });

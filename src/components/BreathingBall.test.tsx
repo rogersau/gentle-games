@@ -1,13 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { Button, View } from 'react-native';
-import { act, render, waitFor } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
-import {
-  BreathingBall,
-  BreathingBallRef,
-  defaultColorSchemes,
-} from './BreathingBall';
-import { BREATHING_CYCLE_DURATION_MS, BREATHING_PHASE_DURATION_MS } from '../utils/breathingGardenLogic';
+import { BreathingBall, BreathingBallRef, defaultColorSchemes } from './BreathingBall';
 
 // Mock requestAnimationFrame
 const mockRequestAnimationFrame = jest.fn((callback: FrameRequestCallback) => {
@@ -37,8 +32,7 @@ describe('BreathingBall', () => {
   });
 
   it('renders with default props', () => {
-    const { getByRole } = render(<BreathingBall size={300} />
-    );
+    const { getByRole } = render(<BreathingBall size={300} />);
     // SVG elements don't have specific roles, but we can verify it renders
     expect(getByRole('progressbar')).toBeTruthy();
   });
@@ -50,21 +44,14 @@ describe('BreathingBall', () => {
       name: 'Custom',
     };
 
-    const { getByRole } = render(
-      <BreathingBall size={300} colorScheme={customScheme} />
-    );
+    const { getByRole } = render(<BreathingBall size={300} colorScheme={customScheme} />);
     expect(getByRole('progressbar')).toBeTruthy();
   });
 
   it('exposes ref methods', () => {
     const ref = { current: null as BreathingBallRef | null };
 
-    render(
-      <BreathingBall
-        size={300}
-        ref={ref}
-      />
-    );
+    render(<BreathingBall size={300} ref={ref} />);
 
     expect(ref.current).toBeTruthy();
     expect(typeof ref.current?.getPhase).toBe('function');
@@ -78,13 +65,7 @@ describe('BreathingBall', () => {
   it('returns correct initial state from ref', () => {
     const ref = { current: null as BreathingBallRef | null };
 
-    render(
-      <BreathingBall
-        size={300}
-        autoStart={false}
-        ref={ref}
-      />
-    );
+    render(<BreathingBall size={300} autoStart={false} ref={ref} />);
 
     expect(ref.current?.getPhase()).toBe('inhale');
     expect(ref.current?.getCycleCount()).toBe(0);
@@ -94,13 +75,7 @@ describe('BreathingBall', () => {
   it('pauses and resumes animation', () => {
     const ref = { current: null as BreathingBallRef | null };
 
-    render(
-      <BreathingBall
-        size={300}
-        autoStart={true}
-        ref={ref}
-      />
-    );
+    render(<BreathingBall size={300} autoStart={true} ref={ref} />);
 
     const elapsedBefore = ref.current?.getElapsedMs() || 0;
 
@@ -122,13 +97,7 @@ describe('BreathingBall', () => {
   it('resets the animation state', () => {
     const ref = { current: null as BreathingBallRef | null };
 
-    render(
-      <BreathingBall
-        size={300}
-        autoStart={true}
-        ref={ref}
-      />
-    );
+    render(<BreathingBall size={300} autoStart={true} ref={ref} />);
 
     // Simulate time passing by forcing a re-render with elapsed time
     // This is tricky in tests, so we verify reset clears state
@@ -145,14 +114,7 @@ describe('BreathingBall', () => {
     const onPhaseChange = jest.fn();
     const ref = { current: null as BreathingBallRef | null };
 
-    render(
-      <BreathingBall
-        size={300}
-        autoStart={false}
-        onPhaseChange={onPhaseChange}
-        ref={ref}
-      />
-    );
+    render(<BreathingBall size={300} autoStart={false} onPhaseChange={onPhaseChange} ref={ref} />);
 
     // Phase is initially inhale
     expect(ref.current?.getPhase()).toBe('inhale');
@@ -166,13 +128,7 @@ describe('BreathingBall', () => {
   it('respects autoStart prop', () => {
     const ref = { current: null as BreathingBallRef | null };
 
-    render(
-      <BreathingBall
-        size={300}
-        autoStart={false}
-        ref={ref}
-      />
-    );
+    render(<BreathingBall size={300} autoStart={false} ref={ref} />);
 
     const elapsedAuto = ref.current?.getElapsedMs();
     expect(elapsedAuto).toBe(0);
@@ -210,22 +166,10 @@ describe('BreathingBall with Controls', () => {
           onCycleComplete={(count) => setCycles(count)}
           onPhaseChange={(p) => setPhase(p)}
         />
-        <Button
-          testID="reset"
-          title="Reset"
-          onPress={() => ballRef.current?.reset()}
-        />
-        <Button
-          testID="pause"
-          title="Pause"
-          onPress={() => ballRef.current?.pause()}
-        />
-        <Button
-          testID="resume"
-          title="Resume"
-          onPress={() => ballRef.current?.resume()}
-        />
-        <View testID="stats">
+        <Button testID='reset' title='Reset' onPress={() => ballRef.current?.reset()} />
+        <Button testID='pause' title='Pause' onPress={() => ballRef.current?.pause()} />
+        <Button testID='resume' title='Resume' onPress={() => ballRef.current?.resume()} />
+        <View testID='stats'>
           Cycles: {cycles} Phase: {phase}
         </View>
       </View>
