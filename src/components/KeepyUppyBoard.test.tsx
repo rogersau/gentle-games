@@ -1,6 +1,7 @@
 import React from 'react';
-import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
-import { KeepyUppyBoard } from './KeepyUppyBoard';
+import { act, fireEvent, render } from '@testing-library/react-native';
+import { KeepyUppyBoard, KeepyUppyBoardRef } from './KeepyUppyBoard';
+import { MAX_BALLOONS } from '../utils/keepyUppyLogic';
 
 const mockOnScoreChange = jest.fn();
 const mockOnBalloonCountChange = jest.fn();
@@ -37,117 +38,8 @@ describe('KeepyUppyBoard', () => {
     jest.useRealTimers();
   });
 
-  it('renders with initial balloon', async () => {
-    render(
-      <KeepyUppyBoard
-        bounds={defaultBounds}
-        onScoreChange={mockOnScoreChange}
-        onBalloonCountChange={mockOnBalloonCountChange}
-      />
-    );
-
-    // Wait for setTimeout to execute
-    act(() => {
-      jest.advanceTimersByTime(0);
-    });
-
-    await waitFor(() => {
-      expect(mockOnBalloonCountChange).toHaveBeenCalledWith(1);
-    });
-  });
-
-  it('adds balloon via ref', async () => {
-    const ref = React.createRef<{
-      addBalloon: () => void;
-      resetBalloons: () => void;
-      getBalloonCount: () => number;
-    }>();
-
-    render(
-      <KeepyUppyBoard
-        ref={ref}
-        bounds={defaultBounds}
-        onBalloonCountChange={mockOnBalloonCountChange}
-      />
-    );
-
-    // Wait for initial callback
-    act(() => {
-      jest.advanceTimersByTime(0);
-    });
-
-    await waitFor(() => {
-      expect(ref.current?.getBalloonCount()).toBe(1);
-    });
-
-    act(() => {
-      ref.current?.addBalloon();
-    });
-
-    await waitFor(() => {
-      expect(ref.current?.getBalloonCount()).toBe(2);
-    });
-
-    // Wait for callback
-    act(() => {
-      jest.advanceTimersByTime(0);
-    });
-
-    await waitFor(() => {
-      expect(mockOnBalloonCountChange).toHaveBeenCalledWith(2);
-    });
-  });
-
-  it('limits balloons to max of 3', async () => {
-    const ref = React.createRef<{
-      addBalloon: () => void;
-      resetBalloons: () => void;
-      getBalloonCount: () => number;
-    }>();
-
-    render(
-      <KeepyUppyBoard
-        ref={ref}
-        bounds={defaultBounds}
-        onBalloonCountChange={mockOnBalloonCountChange}
-      />
-    );
-
-    await waitFor(() => {
-      expect(ref.current?.getBalloonCount()).toBe(1);
-    });
-
-    act(() => {
-      ref.current?.addBalloon();
-    });
-
-    await waitFor(() => {
-      expect(ref.current?.getBalloonCount()).toBe(2);
-    });
-
-    act(() => {
-      ref.current?.addBalloon();
-    });
-
-    await waitFor(() => {
-      expect(ref.current?.getBalloonCount()).toBe(3);
-    });
-
-    act(() => {
-      ref.current?.addBalloon();
-    });
-
-    await waitFor(() => {
-      expect(ref.current?.getBalloonCount()).toBe(3);
-    });
-  });
-
-  it('resets balloons via ref', async () => {
-    const ref = React.createRef<{
-      addBalloon: () => void;
-      resetBalloons: () => void;
-      getBalloonCount: () => number;
-    }>();
+  it('publishes committed initial and reset values without timer flushing', () => {
+    const ref = React.createRef<KeepyUppyBoardRef>();
 
     render(
       <KeepyUppyBoard
@@ -156,50 +48,86 @@ describe('KeepyUppyBoard', () => {
         onScoreChange={mockOnScoreChange}
         onBalloonCountChange={mockOnBalloonCountChange}
         onPoppedChange={mockOnPoppedChange}
-      />
+      />,
     );
 
-    await waitFor(() => {
-      expect(ref.current?.getBalloonCount()).toBe(1);
-    });
-
-    act(() => {
-      ref.current?.addBalloon();
-    });
-
-    await waitFor(() => {
-      expect(ref.current?.getBalloonCount()).toBe(2);
-    });
+    expect(mockOnScoreChange).toHaveBeenLastCalledWith(0);
+    expect(mockOnBalloonCountChange).toHaveBeenLastCalledWith(1);
+    expect(mockOnPoppedChange).toHaveBeenLastCalledWith(0);
 
     act(() => {
       ref.current?.resetBalloons();
     });
 
-    // Wait for setTimeout callbacks
-    act(() => {
-      jest.advanceTimersByTime(0);
-    });
-
-    await waitFor(() => {
-      expect(ref.current?.getBalloonCount()).toBe(1);
-    });
-
-    await waitFor(() => {
-      expect(mockOnScoreChange).toHaveBeenCalledWith(0);
-      expect(mockOnPoppedChange).toHaveBeenCalledWith(0);
-      expect(mockOnBalloonCountChange).toHaveBeenLastCalledWith(1);
-    });
+    expect(ref.current?.getBalloonCount()).toBe(1);
+    expect(mockOnScoreChange).toHaveBeenLastCalledWith(0);
+    expect(mockOnBalloonCountChange).toHaveBeenLastCalledWith(1);
+    expect(mockOnPoppedChange).toHaveBeenLastCalledWith(0);
   });
 
-  it('increments score when balloon is tapped', async () => {
-    const { getByTestId } = render(
+  it('keeps callback payloads aligned across repeated add and reset interactions', () => {
+    const ref = React.createRef<KeepyUppyBoardRef>();
+
+    render(
       <KeepyUppyBoard
+        ref={ref}
         bounds={defaultBounds}
         onScoreChange={mockOnScoreChange}
-      />
+        onBalloonCountChange={mockOnBalloonCountChange}
+        onPoppedChange={mockOnPoppedChange}
+      />,
     );
 
-    const balloon = getByTestId(/balloon-/);
+    expect(ref.current?.getBalloonCount()).toBe(1);
+    act(() => {
+      ref.current?.addBalloon();
+    });
+
+    expect(ref.current?.getBalloonCount()).toBe(2);
+    expect(mockOnBalloonCountChange).toHaveBeenLastCalledWith(2);
+
+    act(() => {
+      ref.current?.addBalloon();
+    });
+
+    expect(ref.current?.getBalloonCount()).toBe(3);
+    expect(mockOnBalloonCountChange).toHaveBeenLastCalledWith(3);
+
+    act(() => {
+      ref.current?.resetBalloons();
+    });
+
+    expect(ref.current?.getBalloonCount()).toBe(1);
+    expect(mockOnScoreChange).toHaveBeenLastCalledWith(0);
+    expect(mockOnPoppedChange).toHaveBeenLastCalledWith(0);
+    expect(mockOnBalloonCountChange).toHaveBeenLastCalledWith(1);
+  });
+
+  it('preserves the imperative ref API, balloon cap, and easy-mode taps', () => {
+    const ref = React.createRef<KeepyUppyBoardRef>();
+    const { getAllByTestId } = render(
+      <KeepyUppyBoard
+        ref={ref}
+        bounds={defaultBounds}
+        easyMode={true}
+        onScoreChange={mockOnScoreChange}
+        onBalloonCountChange={mockOnBalloonCountChange}
+      />,
+    );
+
+    expect(typeof ref.current?.addBalloon).toBe('function');
+    expect(typeof ref.current?.resetBalloons).toBe('function');
+    expect(typeof ref.current?.getBalloonCount).toBe('function');
+    expect(ref.current?.getBalloonCount()).toBe(1);
+
+    act(() => {
+      for (let count = 0; count < MAX_BALLOONS + 2; count += 1) {
+        ref.current?.addBalloon();
+      }
+    });
+
+    const balloon = getAllByTestId(/balloon-/)[0];
+
     fireEvent(balloon, 'pressIn', {
       nativeEvent: {
         locationX: 50,
@@ -209,13 +137,8 @@ describe('KeepyUppyBoard', () => {
       },
     });
 
-    // Wait for setTimeout callback
-    act(() => {
-      jest.advanceTimersByTime(0);
-    });
-
-    await waitFor(() => {
-      expect(mockOnScoreChange).toHaveBeenCalledWith(1);
-    });
+    expect(ref.current?.getBalloonCount()).toBe(MAX_BALLOONS);
+    expect(mockOnBalloonCountChange).toHaveBeenLastCalledWith(MAX_BALLOONS);
+    expect(mockOnScoreChange).toHaveBeenLastCalledWith(1);
   });
 });

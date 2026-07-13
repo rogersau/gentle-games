@@ -30,7 +30,8 @@ export const installPwaBackNavigationGuard = (
   browser?: BrowserLike,
   standaloneFlag?: boolean,
 ) => {
-  const activeBrowser = browser ?? (typeof window !== 'undefined' ? (window as unknown as BrowserLike) : undefined);
+  const activeBrowser =
+    browser ?? (typeof window !== 'undefined' ? (window as unknown as BrowserLike) : undefined);
   if (!activeBrowser) {
     return () => {};
   }

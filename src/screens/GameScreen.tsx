@@ -7,15 +7,17 @@ import { GameBoard } from '../components/GameBoard';
 import { AppScreen, AppHeader } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useThemeColors } from '../utils/theme';
+import { useMochi } from '../hooks/useMochi';
 
 export const GameScreen: React.FC = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { colors } = useThemeColors();
   const { t } = useTranslation();
+  const { celebrate } = useMochi();
 
   const handleGameComplete = (_time: number) => {
-    // Extension point for future analytics
+    celebrate();
   };
 
   const handleBackPress = () => {
@@ -30,10 +32,12 @@ export const GameScreen: React.FC = () => {
           onGameComplete={handleGameComplete}
           onBackPress={handleBackPress}
           bottomInset={insets.bottom}
+          onPositiveEvent={celebrate}
           renderStats={({ time, moves }) => (
             <Text
               style={[styles.stats, { color: colors.text }]}
               accessibilityLabel={`Time ${time}, ${moves} moves`}
+              testID="memory-snap-stats"
             >
               Time: {time} · Moves: {moves}
             </Text>

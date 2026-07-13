@@ -1,9 +1,10 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View, Animated, Dimensions, Platform } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { ThemeColors } from '../types';
 import { BreathingBall, BallColorScheme } from '../components/BreathingBall';
+import { Mochi } from '../components/Mochi';
 import { useThemeColors } from '../utils/theme';
 import { useBackgroundMusic } from '../utils/music';
 import { useSettings } from '../context/SettingsContext';
@@ -15,11 +16,11 @@ const BALL_SIZE = Math.min(250, screenWidth * 0.5);
 
 // Calming, sensory-friendly color schemes that match their names
 const getColorSchemes = (): BallColorScheme[] => [
-  { primary: '#B4D7E8', accent: '#7FB3D5', name: 'Ocean' },      // Soft blues like calm water
-  { primary: '#F5C6D6', accent: '#E8A4C9', name: 'Rose' },       // Gentle pinks
-  { primary: '#C8E6C9', accent: '#A5D6A7', name: 'Mint' },       // Fresh soft greens
-  { primary: '#FFE0B2', accent: '#FFCC80', name: 'Sunset' },     // Warm soft orange/peach
-  { primary: '#E1BEE7', accent: '#CE93D8', name: 'Lavender' },   // Soft purples
+  { primary: '#B4D7E8', accent: '#7FB3D5', name: 'Ocean' }, // Soft blues like calm water
+  { primary: '#F5C6D6', accent: '#E8A4C9', name: 'Rose' }, // Gentle pinks
+  { primary: '#C8E6C9', accent: '#A5D6A7', name: 'Mint' }, // Fresh soft greens
+  { primary: '#FFE0B2', accent: '#FFCC80', name: 'Sunset' }, // Warm soft orange/peach
+  { primary: '#E1BEE7', accent: '#CE93D8', name: 'Lavender' }, // Soft purples
 ];
 
 export const BreathingGardenScreen: React.FC = () => {
@@ -27,70 +28,113 @@ export const BreathingGardenScreen: React.FC = () => {
   const { colors } = useThemeColors();
   const { settings } = useSettings();
   const { t } = useTranslation();
-  const colorSchemes = React.useMemo(() => getColorSchemes(), []);
+  const colorSchemes = useMemo(() => getColorSchemes(), []);
   const [colorIndex, setColorIndex] = useState(0);
   const ballColors = colorSchemes[colorIndex];
-  const styles = React.useMemo(() => createStyles(colors as ThemeColors), [colors]);
+  const styles = useMemo(() => createStyles(colors as ThemeColors), [colors]);
   const [phase, setPhase] = useState<'inhale' | 'exhale'>('inhale');
   const [displayedPhase, setDisplayedPhase] = useState<'inhale' | 'exhale'>('inhale');
   const [breaths, setBreaths] = useState(0);
   const [progress, setProgress] = useState(0);
-  const countOpacity = useRef(new Animated.Value(0)).current;
-  const phaseOpacity = useRef(new Animated.Value(1)).current;
-  const [currentCount, setCurrentCount] = useState(0);
+  const countOpacityRef = useRef(new Animated.Value(0));
+  const phaseOpacityRef = useRef(new Animated.Value(1));
+  const countAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const phaseAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const phaseTransitionRef = useRef(0);
+  const latestPhaseRef = useRef(phase);
+  const currentCount = useMemo(() => Math.min(4, Math.max(1, Math.ceil(progress * 4))), [progress]);
 
-  // Handle phase transitions with fade animation
+  latestPhaseRef.current = phase;
+
   useEffect(() => {
-    if (phase !== displayedPhase) {
-      if (settings.animationsEnabled) {
-        // Fade out
-        Animated.timing(phaseOpacity, {
-          toValue: 0,
-          duration: 400,
-          useNativeDriver: Platform.OS !== 'web',
-        }).start(() => {
-          // Change text after fade out
-          setDisplayedPhase(phase);
-          // Fade in
-          Animated.timing(phaseOpacity, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: Platform.OS !== 'web',
-          }).start();
-        });
-      } else {
-        // Instant transition
-        setDisplayedPhase(phase);
-        phaseOpacity.setValue(1);
-      }
+    const phaseOpacity = phaseOpacityRef.current;
+
+    phaseAnimationRef.current?.stop();
+
+    if (phase === displayedPhase) {
+      phaseOpacity.setValue(1);
+      return;
     }
-    // Note: phaseOpacity is a ref and should not be in deps to avoid infinite re-renders
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    if (!settings.animationsEnabled) {
+      setDisplayedPhase(phase);
+      phaseOpacity.setValue(1);
+      return;
+    }
+
+    const transitionId = phaseTransitionRef.current + 1;
+    phaseTransitionRef.current = transitionId;
+
+    const fadeOut = Animated.timing(phaseOpacity, {
+      toValue: 0,
+      duration: 400,
+      useNativeDriver: Platform.OS !== 'web',
+    });
+
+    phaseAnimationRef.current = fadeOut;
+    fadeOut.start(({ finished }) => {
+      if (
+        !finished ||
+        phaseTransitionRef.current !== transitionId ||
+        latestPhaseRef.current !== phase
+      ) {
+        return;
+      }
+
+      setDisplayedPhase(phase);
+
+      const fadeIn = Animated.timing(phaseOpacityRef.current, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: Platform.OS !== 'web',
+      });
+      phaseAnimationRef.current = fadeIn;
+      fadeIn.start();
+    });
+
+    return () => {
+      fadeOut.stop();
+    };
   }, [phase, displayedPhase, settings.animationsEnabled]);
 
-  // Calculate count (1-4) during both inhale and exhale based on progress
   useEffect(() => {
-    // Map 0-1 progress to count 1-4 for both phases
-    const count = Math.min(4, Math.max(1, Math.ceil(progress * 4)));
-    setCurrentCount(count);
+    const countOpacity = countOpacityRef.current;
 
-    if (settings.animationsEnabled) {
-      // Fade in
-      Animated.timing(countOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: Platform.OS !== 'web',
-      }).start();
-    } else {
+    countAnimationRef.current?.stop();
+
+    if (!settings.animationsEnabled) {
       countOpacity.setValue(1);
+      return;
     }
-    // Note: countOpacity is a ref and should not be in deps to avoid infinite re-renders
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, progress, settings.animationsEnabled]);
 
-  const cycleColors = () => {
+    const fadeCountIn = Animated.timing(countOpacity, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: Platform.OS !== 'web',
+    });
+    countAnimationRef.current = fadeCountIn;
+    fadeCountIn.start();
+
+    return () => {
+      fadeCountIn.stop();
+    };
+  }, [currentCount, settings.animationsEnabled]);
+
+  useEffect(
+    () => () => {
+      countAnimationRef.current?.stop();
+      phaseAnimationRef.current?.stop();
+    },
+    [],
+  );
+
+  const cycleColors = useCallback(() => {
     setColorIndex((prev) => (prev + 1) % colorSchemes.length);
-  };
+  }, [colorSchemes.length]);
+
+  const handleBack = useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
 
   const { isPlaying, toggleMusic, stopMusic } = useBackgroundMusic();
 
@@ -100,47 +144,65 @@ export const BreathingGardenScreen: React.FC = () => {
       return () => {
         stopMusic();
       };
-    }, [stopMusic])
+    }, [stopMusic]),
   );
 
   return (
     <AppScreen>
-      <AppHeader title={t('games.breathingGarden.title')} onBack={() => navigation.goBack()} />
+      <AppHeader title={t('games.breathingGarden.title')} onBack={handleBack} />
       <View style={styles.content}>
-        <AppCard variant="elevated" style={styles.breathCard}>
-          <Animated.Text style={[styles.phaseLabel, { opacity: phaseOpacity }]}>
-            {displayedPhase === 'inhale' ? t('games.breathingGarden.inhale') : t('games.breathingGarden.exhale')}
+        <AppCard variant='elevated' style={styles.breathCard}>
+          <Animated.Text style={[styles.phaseLabel, { opacity: phaseOpacityRef.current }]}>
+            {displayedPhase === 'inhale'
+              ? t('games.breathingGarden.inhale')
+              : t('games.breathingGarden.exhale')}
           </Animated.Text>
           <View style={styles.ballContainer}>
-            <BreathingBall
-              size={BALL_SIZE}
-              colorScheme={ballColors}
-              autoStart={true}
-              onPhaseChange={setPhase}
-              onCycleComplete={setBreaths}
-              onProgress={setProgress}
-            />
-            <Animated.Text style={[styles.countText, { opacity: countOpacity }]}>
+            <View style={settings.showMochiInGames ? styles.hiddenBall : undefined}>
+              <BreathingBall
+                size={BALL_SIZE}
+                colorScheme={ballColors}
+                autoStart={true}
+                onPhaseChange={setPhase}
+                onCycleComplete={setBreaths}
+                onProgress={setProgress}
+              />
+            </View>
+            {settings.showMochiInGames ? (
+              <Mochi
+                size='lg'
+                breathingPhase={phase}
+                breathingProgress={progress}
+                color={ballColors.primary}
+                highlightColor={ballColors.accent}
+                shadowColor={ballColors.accent}
+              />
+            ) : null}
+            <Animated.Text style={[styles.countText, { opacity: countOpacityRef.current }]}>
               {currentCount > 0 ? currentCount : ''}
             </Animated.Text>
           </View>
         </AppCard>
 
         <View style={styles.statsRow}>
-          <Text style={styles.statText}>{t('games.breathingGarden.breaths', { count: breaths })}</Text>
+          <Text style={styles.statText}>
+            {t('games.breathingGarden.breaths', { count: breaths })}
+          </Text>
         </View>
 
         <View style={styles.actionsRow}>
           <AppButton
             label={t('games.breathingGarden.changeColor')}
             onPress={cycleColors}
-            variant="primary"
+            variant='primary'
             style={styles.colorButton}
           />
           <AppButton
-            label={isPlaying ? t('games.breathingGarden.musicOff') : t('games.breathingGarden.musicOn')}
+            label={
+              isPlaying ? t('games.breathingGarden.musicOff') : t('games.breathingGarden.musicOn')
+            }
             onPress={toggleMusic}
-            variant="secondary"
+            variant='secondary'
             style={styles.musicButton}
           />
         </View>
@@ -207,5 +269,9 @@ const createStyles = (colors: ThemeColors) =>
     musicButton: {
       flex: 1,
       maxWidth: 300,
+    },
+    hiddenBall: {
+      opacity: 0,
+      position: 'absolute',
     },
   });

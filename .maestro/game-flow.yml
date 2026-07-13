@@ -2,25 +2,25 @@ appId: com.gentlegames.app
 ---
 # Game Flow E2E Test - Complete game flow from home to playing Memory Match
 - launchApp
-- assertVisible: "Gentle Games"
+- assertVisible: 'Gentle Games'
 
 # Navigate to Memory Match game
-- tapOn: "Memory Match"
-- assertVisible: "Memory Match"
+- tapOn: 'Memory Match'
+- assertVisible: 'Memory Match'
 
 # Start a new game
-- tapOn: "Start Game"
-- assertVisible: "Moves"
+- tapOn: 'Start Game'
+- assertVisible: 'Moves'
 
 # Play a few moves (flip tiles)
-- tapOn: ".*Tile.*"
+- tapOn: '.*Tile.*'
 - waitForAnimationToEnd
-- tapOn: ".*Tile.*"
+- tapOn: '.*Tile.*'
 - waitForAnimationToEnd
 
 # Verify moves are tracked
-- assertVisible: "Moves:"
+- assertVisible: 'Moves:'
 
 # Go back to home screen
-- tapOn: "Back"
-- assertVisible: "Gentle Games"
+- tapOn: 'Back'
+- assertVisible: 'Gentle Games'

@@ -17,22 +17,14 @@ describe('SelectBox', () => {
 
   it('renders with options', () => {
     const { getByText } = render(
-      <SelectBox
-        options={mockOptions}
-        value="option1"
-        onValueChange={mockOnValueChange}
-      />
+      <SelectBox options={mockOptions} value='option1' onValueChange={mockOnValueChange} />,
     );
     expect(getByText('Option 1')).toBeTruthy();
   });
 
   it('opens dropdown when pressed', async () => {
     const { getByText } = render(
-      <SelectBox
-        options={mockOptions}
-        value="option1"
-        onValueChange={mockOnValueChange}
-      />
+      <SelectBox options={mockOptions} value='option1' onValueChange={mockOnValueChange} />,
     );
 
     fireEvent.press(getByText('Option 1'));
@@ -44,12 +36,8 @@ describe('SelectBox', () => {
   });
 
   it('selects option and closes dropdown', async () => {
-    const { getByText, queryByText } = render(
-      <SelectBox
-        options={mockOptions}
-        value="option1"
-        onValueChange={mockOnValueChange}
-      />
+    const { getByText } = render(
+      <SelectBox options={mockOptions} value='option1' onValueChange={mockOnValueChange} />,
     );
 
     // Open dropdown
@@ -69,32 +57,24 @@ describe('SelectBox', () => {
     const { getByText } = render(
       <SelectBox
         options={mockOptions}
-        value=""
+        value=''
         onValueChange={mockOnValueChange}
-        placeholder="Choose an option"
-      />
+        placeholder='Choose an option'
+      />,
     );
     expect(getByText('Choose an option')).toBeTruthy();
   });
 
   it('uses default placeholder when not provided', () => {
     const { getByText } = render(
-      <SelectBox
-        options={mockOptions}
-        value=""
-        onValueChange={mockOnValueChange}
-      />
+      <SelectBox options={mockOptions} value='' onValueChange={mockOnValueChange} />,
     );
     expect(getByText('Select an option')).toBeTruthy();
   });
 
   it('closes dropdown on backdrop press', async () => {
     const { getByText, getByLabelText } = render(
-      <SelectBox
-        options={mockOptions}
-        value="option1"
-        onValueChange={mockOnValueChange}
-      />
+      <SelectBox options={mockOptions} value='option1' onValueChange={mockOnValueChange} />,
     );
 
     // Open dropdown
@@ -116,11 +96,7 @@ describe('SelectBox', () => {
 
   it('shows checkmark for selected option', async () => {
     const { getByText } = render(
-      <SelectBox
-        options={mockOptions}
-        value="option1"
-        onValueChange={mockOnValueChange}
-      />
+      <SelectBox options={mockOptions} value='option1' onValueChange={mockOnValueChange} />,
     );
 
     fireEvent.press(getByText('Option 1'));
@@ -139,11 +115,7 @@ describe('SelectBox', () => {
     ];
 
     const { getByText } = render(
-      <SelectBox
-        options={numberOptions}
-        value={1}
-        onValueChange={mockOnValueChange}
-      />
+      <SelectBox options={numberOptions} value={1} onValueChange={mockOnValueChange} />,
     );
     expect(getByText('One')).toBeTruthy();
   });

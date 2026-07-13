@@ -1,10 +1,5 @@
 import React, { useMemo } from 'react';
-import {
-  StyleSheet,
-  View,
-  TouchableOpacity,
-  ViewStyle,
-} from 'react-native';
+import { StyleSheet, View, TouchableOpacity, ViewStyle } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
 import { Space, Radius, Shadow } from '../tokens';
 import { ThemeColors } from '../../types';
@@ -53,7 +48,7 @@ export const AppCard: React.FC<AppCardProps> = ({
         onPress={onPress}
         activeOpacity={0.85}
         accessibilityLabel={accessibilityLabel}
-        accessibilityRole="button"
+        accessibilityRole='button'
         accessibilityHint={accessibilityHint}
       >
         {content}

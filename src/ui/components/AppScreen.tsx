@@ -35,7 +35,7 @@ export const AppScreen: React.FC<AppScreenProps> = ({
         style={styles.scroll}
         contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
         showsVerticalScrollIndicator
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps='handled'
       >
         {children}
       </ScrollView>

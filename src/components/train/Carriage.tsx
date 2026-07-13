@@ -11,7 +11,7 @@ interface CarriageProps {
   isHighlighted?: boolean;
 }
 
-export const Carriage: React.FC<CarriageProps> = ({ 
+export const Carriage: React.FC<CarriageProps> = ({
   content,
   size = 56,
   color,
@@ -20,59 +20,61 @@ export const Carriage: React.FC<CarriageProps> = ({
 }) => {
   const { colors } = useThemeColors();
   const carriageColor = color || colors.secondary;
-  
+
   return (
-    <View style={[
-      styles.container, 
-      { width: size, height: size * 0.8 },
-      isMissing && styles.missingContainer,
-      isHighlighted && styles.highlightedContainer,
-    ]}>
-      <Svg width={size} height={size * 0.8} viewBox="0 0 70 56">
+    <View
+      style={[
+        styles.container,
+        { width: size, height: size * 0.8 },
+        isMissing && styles.missingContainer,
+        isHighlighted && styles.highlightedContainer,
+      ]}
+    >
+      <Svg width={size} height={size * 0.8} viewBox='0 0 70 56'>
         {/* Main carriage body - outline style */}
         <Rect
-          x="5"
-          y="10"
-          width="60"
-          height="36"
-          rx="6"
-          fill="transparent"
+          x='5'
+          y='10'
+          width='60'
+          height='36'
+          rx='6'
+          fill='transparent'
           stroke={isMissing ? colors.primary : carriageColor}
           strokeWidth={isMissing ? 3 : 2}
-          strokeDasharray={isMissing ? "8,4" : undefined}
+          strokeDasharray={isMissing ? '8,4' : undefined}
         />
-        
+
         {/* Wheels */}
-        <Circle cx="18" cy="48" r="7" fill="#4A4A4A" />
-        <Circle cx="18" cy="48" r="3.5" fill="#666666" />
-        <Circle cx="52" cy="48" r="7" fill="#4A4A4A" />
-        <Circle cx="52" cy="48" r="3.5" fill="#666666" />
-        
+        <Circle cx='18' cy='48' r='7' fill='#4A4A4A' />
+        <Circle cx='18' cy='48' r='3.5' fill='#666666' />
+        <Circle cx='52' cy='48' r='7' fill='#4A4A4A' />
+        <Circle cx='52' cy='48' r='3.5' fill='#666666' />
+
         {/* Connector on left */}
         <Rect
-          x="0"
-          y="22"
-          width="8"
-          height="12"
-          rx="2"
-          fill="transparent"
+          x='0'
+          y='22'
+          width='8'
+          height='12'
+          rx='2'
+          fill='transparent'
           stroke={isMissing ? colors.primary : carriageColor}
           strokeWidth={isMissing ? 2 : 1}
         />
-        
+
         {/* Connector on right */}
         <Rect
-          x="62"
-          y="22"
-          width="8"
-          height="12"
-          rx="2"
-          fill="transparent"
+          x='62'
+          y='22'
+          width='8'
+          height='12'
+          rx='2'
+          fill='transparent'
           stroke={isMissing ? colors.primary : carriageColor}
           strokeWidth={isMissing ? 2 : 1}
         />
       </Svg>
-      
+
       {content && (
         <View style={styles.contentContainer}>
           <Text style={[styles.contentText, { fontSize: size * 0.4 }]}>{content}</Text>

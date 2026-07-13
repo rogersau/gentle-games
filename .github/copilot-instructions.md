@@ -36,6 +36,7 @@ Gentle Games is a React Native app built with Expo. It uses a collection of scre
 ## Key Conventions
 
 ### Colors — always use `PASTEL_COLORS`
+
 All UI colors should come from a shared pastel color constant rather than hard‑coding values. The palette avoids high‑contrast or saturated hues to suit visually sensitive users.
 
 ```typescript
@@ -44,32 +45,40 @@ import { PASTEL_COLORS } from '../types';
 ```
 
 ### Named exports everywhere
+
 All screens and components use named exports (`export const Foo: React.FC = ...`), not default exports.
 
 ### Styles at the bottom
+
 Each file ends with a `const styles = StyleSheet.create({...})` block. Inline styles are avoided.
 
 ### SafeAreaView
+
 Use the `SafeAreaView` component from `react-native-safe-area-context` with appropriate edge props to handle notch/sensor areas.
+
 ```typescript
 import { SafeAreaView } from 'react-native-safe-area-context';
 <SafeAreaView style={...} edges={['top', 'bottom']}>
 ```
 
 ### Settings sanitization
+
 When handling persisted settings, always go through `sanitizeSettings()` in `SettingsContext.tsx` to guard against corrupted AsyncStorage values. Adding a new setting field requires updating `sanitizeSettings`, `defaultSettings`, and the `Settings` interface in `src/types/index.ts`.
 
 ### TypeScript strict mode
+
 `tsconfig.json` enables `"strict": true` (extends `expo/tsconfig.base`).
 
 ## Extending the App
 
 **Add animals or shapes** (Memory Snap tile pool): append to `ANIMALS` or `SHAPES` arrays in `src/types/index.ts`:
+
 ```typescript
 { emoji: '🦁', name: 'lion', color: '#F0E68C' }
 ```
 
 **Add a new game**:
+
 1. Create `src/screens/MyGameScreen.tsx`
 2. Add an entry to the `GAMES` array in `src/screens/HomeScreen.tsx`
 3. Add the route to the `Stack.Navigator` in `App.tsx`

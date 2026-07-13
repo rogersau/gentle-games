@@ -8,8 +8,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PostHogProvider } from 'posthog-react-native';
 // Initialize i18n before app renders
 import './src/i18n';
-import { SettingsProvider } from './src/context/SettingsContext';
+import { SettingsProvider, useSettings } from './src/context/SettingsContext';
 import { ParentTimerProvider } from './src/context/ParentTimerContext';
+import { MochiProvider } from './src/context/MochiContext';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { GameScreen } from './src/screens/GameScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
@@ -23,27 +24,25 @@ import { PatternTrainScreen } from './src/screens/PatternTrainScreen';
 import { NumberPicnicScreen } from './src/screens/NumberPicnicScreen';
 import { initializeSounds, unloadSounds } from './src/utils/sounds';
 import { installPwaBackNavigationGuard } from './src/utils/pwaBackGuard';
-import { initSentry } from './src/utils/sentry';
-import { initAnalytics, getPostHogClient, trackScreenView } from './src/utils/analytics';
+import { getPostHogClient, trackScreenView } from './src/utils/analytics';
 import { PASTEL_COLORS } from './src/types';
 import { useThemeColors } from './src/utils/theme';
 import { useFonts } from './src/ui/fonts';
 import { GentleErrorBoundary } from './src/components/GentleErrorBoundary';
-
-// Initialize Sentry and PostHog before React mounts (production only)
-void initSentry().catch((error: unknown) => {
-  console.warn('Sentry initialization failed. Continuing without error monitoring.', error);
-});
-
-void initAnalytics().catch((error: unknown) => {
-  console.warn('PostHog initialization failed. Continuing without analytics.', error);
-});
+import { installPwaInteractionGuards } from './src/utils/pwaInteractionGuards';
+import { reconcileObservability } from './src/utils/observabilityBootstrap';
+import {
+  APP_ROUTES,
+  AppRouteName,
+  AppStackParamList,
+  isAppRouteName,
+} from './src/types/navigation';
 
 void SplashScreen.preventAutoHideAsync().catch((error) => {
   console.warn('Unable to keep splash screen visible during app startup.', error);
 });
 
-const Stack = createStackNavigator();
+const Stack = createStackNavigator<AppStackParamList>();
 
 /**
  * Extract the active route name from the navigation state.
@@ -59,10 +58,10 @@ function getActiveRouteName(state: NavigationState | undefined): string | undefi
 }
 
 // Conditional PostHogProvider wrapper - only renders provider if client exists
-const ConditionalPostHogProvider: React.FC<{ client: ReturnType<typeof getPostHogClient>; children: React.ReactNode }> = ({
-  client,
-  children,
-}) => {
+const ConditionalPostHogProvider: React.FC<{
+  client: ReturnType<typeof getPostHogClient>;
+  children: React.ReactNode;
+}> = ({ client, children }) => {
   if (!client) {
     // No PostHog client (no API key configured) - render children without provider
     return <>{children}</>;
@@ -83,7 +82,7 @@ const ConditionalPostHogProvider: React.FC<{ client: ReturnType<typeof getPostHo
 
 const AppNavigator: React.FC = () => {
   const { resolvedMode } = useThemeColors();
-  const routeNameRef = useRef<string | undefined>(undefined);
+  const routeNameRef = useRef<AppRouteName | undefined>(undefined);
   const posthogClient = getPostHogClient();
 
   useEffect(() => {
@@ -103,19 +102,18 @@ const AppNavigator: React.FC = () => {
 
   const handleStateChange = useCallback((state: NavigationState | undefined) => {
     const currentRouteName = getActiveRouteName(state);
+    const typedRouteName = isAppRouteName(currentRouteName) ? currentRouteName : undefined;
     const previousRouteName = routeNameRef.current;
 
-    if (currentRouteName && currentRouteName !== previousRouteName) {
-      trackScreenView(currentRouteName);
+    if (typedRouteName && typedRouteName !== previousRouteName) {
+      trackScreenView(typedRouteName);
     }
-    routeNameRef.current = currentRouteName;
+    routeNameRef.current = typedRouteName;
   }, []);
 
   return (
     <>
-      <NavigationContainer
-        onStateChange={handleStateChange}
-      >
+      <NavigationContainer onStateChange={handleStateChange}>
         <ConditionalPostHogProvider client={posthogClient}>
           <Stack.Navigator
             screenOptions={{
@@ -123,79 +121,79 @@ const AppNavigator: React.FC = () => {
               cardStyle: { flex: 1, minHeight: 0 },
             }}
           >
-            <Stack.Screen name="Home">
+            <Stack.Screen name={APP_ROUTES.Home}>
               {() => (
-                <GentleErrorBoundary screenName="Home">
+                <GentleErrorBoundary screenName={APP_ROUTES.Home}>
                   <HomeScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="Game">
+            <Stack.Screen name={APP_ROUTES.Game}>
               {() => (
-                <GentleErrorBoundary screenName="Game">
+                <GentleErrorBoundary screenName={APP_ROUTES.Game}>
                   <GameScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="Settings">
+            <Stack.Screen name={APP_ROUTES.Settings}>
               {() => (
-                <GentleErrorBoundary screenName="Settings">
+                <GentleErrorBoundary screenName={APP_ROUTES.Settings}>
                   <SettingsScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="Drawing">
+            <Stack.Screen name={APP_ROUTES.Drawing}>
               {() => (
-                <GentleErrorBoundary screenName="Drawing">
+                <GentleErrorBoundary screenName={APP_ROUTES.Drawing}>
                   <DrawingScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="Glitter">
+            <Stack.Screen name={APP_ROUTES.Glitter}>
               {() => (
-                <GentleErrorBoundary screenName="Glitter">
+                <GentleErrorBoundary screenName={APP_ROUTES.Glitter}>
                   <GlitterScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="Bubble">
+            <Stack.Screen name={APP_ROUTES.Bubble}>
               {() => (
-                <GentleErrorBoundary screenName="Bubble">
+                <GentleErrorBoundary screenName={APP_ROUTES.Bubble}>
                   <BubbleScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="CategoryMatch">
+            <Stack.Screen name={APP_ROUTES.CategoryMatch}>
               {() => (
-                <GentleErrorBoundary screenName="CategoryMatch">
+                <GentleErrorBoundary screenName={APP_ROUTES.CategoryMatch}>
                   <CategoryMatchScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="KeepyUppy">
+            <Stack.Screen name={APP_ROUTES.KeepyUppy}>
               {() => (
-                <GentleErrorBoundary screenName="KeepyUppy">
+                <GentleErrorBoundary screenName={APP_ROUTES.KeepyUppy}>
                   <KeepyUppyScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="BreathingGarden">
+            <Stack.Screen name={APP_ROUTES.BreathingGarden}>
               {() => (
-                <GentleErrorBoundary screenName="BreathingGarden">
+                <GentleErrorBoundary screenName={APP_ROUTES.BreathingGarden}>
                   <BreathingGardenScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="PatternTrain">
+            <Stack.Screen name={APP_ROUTES.PatternTrain}>
               {() => (
-                <GentleErrorBoundary screenName="PatternTrain">
+                <GentleErrorBoundary screenName={APP_ROUTES.PatternTrain}>
                   <PatternTrainScreen />
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
-            <Stack.Screen name="NumberPicnic">
+            <Stack.Screen name={APP_ROUTES.NumberPicnic}>
               {() => (
-                <GentleErrorBoundary screenName="NumberPicnic">
+                <GentleErrorBoundary screenName={APP_ROUTES.NumberPicnic}>
                   <NumberPicnicScreen />
                 </GentleErrorBoundary>
               )}
@@ -205,6 +203,39 @@ const AppNavigator: React.FC = () => {
         </ConditionalPostHogProvider>
       </NavigationContainer>
     </>
+  );
+};
+
+export const AppContent: React.FC = () => {
+  const { settings, isLoading } = useSettings();
+
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+
+    void reconcileObservability(settings.telemetryEnabled).catch((error: unknown) => {
+      console.warn(
+        'Observability bootstrap failed. Continuing without analytics or crash reporting.',
+        error,
+      );
+    });
+  }, [isLoading, settings.telemetryEnabled]);
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size='large' color={PASTEL_COLORS.primary} />
+      </View>
+    );
+  }
+
+  return (
+    <ParentTimerProvider>
+      <MochiProvider>
+        <AppNavigator />
+      </MochiProvider>
+    </ParentTimerProvider>
   );
 };
 
@@ -230,10 +261,14 @@ export default function App() {
     return installPwaBackNavigationGuard();
   }, []);
 
+  useEffect(() => {
+    return installPwaInteractionGuards();
+  }, []);
+
   if (!fontsLoaded && !fontError) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={PASTEL_COLORS.primary} />
+        <ActivityIndicator size='large' color={PASTEL_COLORS.primary} />
       </View>
     );
   }
@@ -241,9 +276,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <SettingsProvider>
-        <ParentTimerProvider>
-          <AppNavigator />
-        </ParentTimerProvider>
+        <AppContent />
       </SettingsProvider>
     </SafeAreaProvider>
   );

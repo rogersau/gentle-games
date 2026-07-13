@@ -25,6 +25,12 @@ interface BubbleFieldProps {
 }
 
 const POP_INDICATOR_DECAY_PER_SECOND = 3;
+const POP_INDICATOR_FLOAT_PER_SECOND = 28;
+
+interface BubbleFieldSnapshot {
+  bubbles: Bubble[];
+  popIndicators: PopIndicator[];
+}
 
 export const BubbleField: React.FC<BubbleFieldProps> = ({
   width,
@@ -37,26 +43,44 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   const { colors } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { t } = useTranslation();
-  const [bubbles, setBubbles] = useState<Bubble[]>(() =>
-    ensureMinimumBubbles([], minActiveBubbles, width, height, maxActiveBubbles)
-  );
-  const [popIndicators, setPopIndicators] = useState<PopIndicator[]>([]);
+  const [snapshot, setSnapshot] = useState<BubbleFieldSnapshot>(() => {
+    const initialBubbles = ensureMinimumBubbles(
+      [],
+      minActiveBubbles,
+      width,
+      height,
+      maxActiveBubbles,
+    );
+    return {
+      bubbles: initialBubbles,
+      popIndicators: [],
+    };
+  });
 
   const frameRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number>(0);
   const spawnAccumulatorRef = useRef<number>(0);
   const widthRef = useRef<number>(width);
   const heightRef = useRef<number>(height);
-  const bubblesRef = useRef<Bubble[]>(bubbles);
+  const bubblesRef = useRef<Bubble[]>(snapshot.bubbles);
+  const popIndicatorsRef = useRef<PopIndicator[]>(snapshot.popIndicators);
 
-  useEffect(() => {
-    bubblesRef.current = bubbles;
-  }, [bubbles]);
+  const publishSnapshot = (nextBubbles: Bubble[], nextPopIndicators: PopIndicator[]) => {
+    bubblesRef.current = nextBubbles;
+    popIndicatorsRef.current = nextPopIndicators;
+    setSnapshot({
+      bubbles: nextBubbles,
+      popIndicators: nextPopIndicators,
+    });
+  };
 
   useEffect(() => {
     widthRef.current = width;
     heightRef.current = height;
-    setBubbles((prev) => ensureMinimumBubbles(prev, minActiveBubbles, width, height, maxActiveBubbles));
+    publishSnapshot(
+      ensureMinimumBubbles(bubblesRef.current, minActiveBubbles, width, height, maxActiveBubbles),
+      popIndicatorsRef.current,
+    );
   }, [height, maxActiveBubbles, minActiveBubbles, width]);
 
   useEffect(() => {
@@ -74,43 +98,40 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
         spawnAccumulatorRef.current -= spawnCount * spawnIntervalMs;
       }
 
-      setBubbles((prev) => {
-        let next = stepBubbles(prev, elapsedMs / 1000, heightRef.current);
+      let nextBubbles = stepBubbles(bubblesRef.current, elapsedMs / 1000, heightRef.current);
 
-        if (spawnCount > 0 && next.length < maxActiveBubbles) {
-          next = spawnBubbles(
-            next,
-            Math.min(spawnCount, maxActiveBubbles - next.length),
-            widthRef.current,
-            heightRef.current
-          );
-        }
-
-        next = ensureMinimumBubbles(
-          next,
-          minActiveBubbles,
+      if (spawnCount > 0 && nextBubbles.length < maxActiveBubbles) {
+        nextBubbles = spawnBubbles(
+          nextBubbles,
+          Math.min(spawnCount, maxActiveBubbles - nextBubbles.length),
           widthRef.current,
           heightRef.current,
-          maxActiveBubbles
         );
-        return next;
-      });
-      setPopIndicators((prev) =>
-        prev
-          .map((indicator) => ({
-            ...indicator,
-            y: indicator.y - (elapsedMs / 1000) * 28,
-            life: indicator.life - (elapsedMs / 1000) * POP_INDICATOR_DECAY_PER_SECOND,
-          }))
-          .filter((indicator) => indicator.life > 0)
+      }
+
+      nextBubbles = ensureMinimumBubbles(
+        nextBubbles,
+        minActiveBubbles,
+        widthRef.current,
+        heightRef.current,
+        maxActiveBubbles,
       );
+      const nextPopIndicators = popIndicatorsRef.current
+        .map((indicator) => ({
+          ...indicator,
+          y: indicator.y - (elapsedMs / 1000) * POP_INDICATOR_FLOAT_PER_SECOND,
+          life: indicator.life - (elapsedMs / 1000) * POP_INDICATOR_DECAY_PER_SECOND,
+        }))
+        .filter((indicator) => indicator.life > 0);
+
+      publishSnapshot(nextBubbles, nextPopIndicators);
 
       frameRef.current = requestAnimationFrame(tick);
     };
 
     frameRef.current = requestAnimationFrame(tick);
     return () => {
-      if (frameRef.current) {
+      if (frameRef.current !== null) {
         cancelAnimationFrame(frameRef.current);
       }
     };
@@ -133,29 +154,28 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
             return;
           }
 
-          setBubbles((prev) => {
-            const next = prev.filter((bubble) => bubble.id !== poppedBubble.id);
-            return ensureMinimumBubbles(
-              next,
-              minActiveBubbles,
-              widthRef.current,
-              heightRef.current,
-              maxActiveBubbles
-            );
-          });
-          setPopIndicators((prev) => [
-            ...prev,
+          const nextBubbles = ensureMinimumBubbles(
+            bubblesRef.current.filter((bubble) => bubble.id !== poppedBubble.id),
+            minActiveBubbles,
+            widthRef.current,
+            heightRef.current,
+            maxActiveBubbles,
+          );
+          const nextPopIndicators = [
+            ...popIndicatorsRef.current,
             {
               id: `pop-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
               x: locationX,
               y: locationY,
               life: 1,
             },
-          ]);
+          ];
+
+          publishSnapshot(nextBubbles, nextPopIndicators);
           onBubblePop?.();
         },
       }),
-    [maxActiveBubbles, minActiveBubbles, onBubblePop]
+    [maxActiveBubbles, minActiveBubbles, onBubblePop],
   );
 
   return (
@@ -165,7 +185,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
       accessibilityLabel={t('games.bubblePop.accessibility')}
     >
       <Svg width={width} height={height}>
-        {bubbles.map((bubble) => (
+        {snapshot.bubbles.map((bubble) => (
           <React.Fragment key={bubble.id}>
             <Circle
               cx={bubble.x}
@@ -185,13 +205,13 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
             />
           </React.Fragment>
         ))}
-        {popIndicators.map((indicator) => (
+        {snapshot.popIndicators.map((indicator) => (
           <React.Fragment key={indicator.id}>
             <Circle
               cx={indicator.x}
               cy={indicator.y}
               r={10 + (1 - indicator.life) * 14}
-              fill="none"
+              fill='none'
               stroke={colors.cardFront}
               strokeWidth={2}
               opacity={indicator.life * 0.8}
@@ -202,8 +222,8 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
               fill={colors.secondary}
               fontSize={16}
               fontFamily={FontFamily.bold}
-              fontWeight="700"
-              textAnchor="middle"
+              fontWeight='700'
+              textAnchor='middle'
               opacity={indicator.life}
             >
               {t('games.bubblePop.pop')}

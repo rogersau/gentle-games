@@ -1,0 +1,2 @@
+- `npm run typecheck` still fails in the unrelated pre-existing file `src/screens/BreathingGardenScreen.test.tsx`:
+  - `TS2345` on the mocked `Animated.timing` signature.

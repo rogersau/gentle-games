@@ -31,6 +31,25 @@ jest.mock('@react-navigation/native', () => ({
   }),
 }));
 
+jest.mock('../context/SettingsContext', () => ({
+  useSettings: () => ({
+    settings: {
+      animationsEnabled: false,
+      reducedMotionEnabled: false,
+      showMochiInGames: true,
+    },
+  }),
+}));
+
+jest.mock('../context/MochiContext', () => ({
+  useMochiContext: () => ({
+    mochiProps: { variant: 'idle' as const, visible: false, phrase: null },
+    showMochi: jest.fn(),
+    hideMochi: jest.fn(),
+    celebrate: jest.fn(),
+  }),
+}));
+
 jest.mock('../components/GlitterGlobe', () => {
   const React = require('react');
   const { Text, View } = require('react-native');
@@ -65,10 +84,20 @@ describe('GlitterScreen', () => {
   it('calls globe controls from the action buttons', () => {
     const screen = render(<GlitterScreen />);
 
-    fireEvent.press(screen.getByText('⭐ Sprinkle'));
     fireEvent.press(screen.getByText('🧹 Clear'));
+    fireEvent.press(screen.getByText('⭐ Sprinkle'));
 
-    expect(mockAddGlitter).toHaveBeenCalledWith(12);
     expect(mockClearGlitter).toHaveBeenCalledTimes(1);
+    expect(mockAddGlitter).toHaveBeenCalledWith(12);
+  });
+
+  it('keeps the negative action before the positive action', () => {
+    const screen = render(<GlitterScreen />);
+
+    const buttonRow = screen.getByTestId('glitter-controls');
+    const [firstButtonContainer, secondButtonContainer] = buttonRow.children;
+
+    expect(firstButtonContainer.findByProps({ testID: 'glitter-clear-button' })).toBeTruthy();
+    expect(secondButtonContainer.findByProps({ testID: 'glitter-add-button' })).toBeTruthy();
   });
 });

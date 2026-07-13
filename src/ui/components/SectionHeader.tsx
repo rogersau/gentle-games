@@ -15,7 +15,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({ title, style }) =>
 
   return (
     <View style={[styles.container, style]}>
-      <Text style={styles.title} accessibilityRole="header">
+      <Text style={styles.title} accessibilityRole='header'>
         {title}
       </Text>
     </View>

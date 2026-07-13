@@ -2,172 +2,67 @@
 
 ## What This Is
 
-A calm, sensory-friendly mobile application designed for children with sensory sensitivities, particularly those with autism spectrum disorder (ASD). Built with accessibility and inclusion at its core — provides a distraction-free gaming environment with no paywalls, ads, or overwhelming stimuli.
+Gentle Games is a sensory-friendly Expo app for children ages 4-10, especially children with sensory sensitivities and ASD, plus the parents, caregivers, therapists, and educators who support them. It offers calm, pressure-free mini-games and creative activities with predictable navigation, adjustable sensory settings, and offline-friendly play across web and mobile surfaces.
 
 ## Core Value
 
-A safe, predictable, and stress-free digital space where children can play, create, and explore at their own pace. Every interaction is designed with sensory needs in mind.
+Children can access calm, predictable, pressure-free play that parents and caregivers can trust.
 
----
+## Current Milestone: v1.1 Resolve Identified Concerns
 
-## Current State (v1.0 MVP)
+**Goal:** Resolve the known privacy, correctness, stability, performance, and release-quality concerns in the shipped app without disrupting its sensory-safe experience.
 
-**Shipped:** 2026-03-03
+**Status:** Complete as of 2026-03-18
 
-### What's Working
+**Target features:**
 
-9 educational and sensory games available:
-- ✓ Memory Snap — card matching game
-- ✓ Bubble Pop — calming bubble popping
-- ✓ Drawing Canvas — creative drawing space
-- ✓ Glitter Globe — calming visual experience  
-- ✓ Keepy Uppy — balloon game
-- ✓ Breathing Garden — guided breathing exercise
-- ✓ Pattern Train — pattern completion game
-- ✓ Category Match — sorting/categorization game
-- ✓ NumberPicnic — number learning (1-10) with visual dots
-
-### Accessibility Features
-
-- ✓ Full light/dark mode support
-- ✓ Reduced motion preference (user toggle + system detection)
-- ✓ Sound can be disabled globally
-- ✓ Animations can be disabled globally
-- ✓ All touch targets meet 48dp minimum
-
-### Parent Features
-
-- ✓ Parent Timer for session management
-- ✓ Settings accessible via secret gesture
-
-### Technical
-
-- **Codebase:** ~12,778 lines TypeScript
-- **Test Coverage:** 165 tests passing
-- **Platforms:** iOS, Android, Web (PWA)
-
----
-
-## Known Issues (v1.0)
-
-⚠️ **LetterLantern** and **StarPath** games were completed but files were deleted post-completion. Currently inaccessible.
-
----
+- Parent-controlled telemetry consent and safer observability defaults
+- Fixes for known gameplay and release-tooling bugs
+- Runtime hardening for navigation, startup orchestration, timers, and hook-driven state flow
+- Performance and regression-test improvements for the riskiest existing surfaces
 
 ## Requirements
 
-### Validated (v1.0)
+### Validated
 
-- ✓ Memory Snap, Bubble Pop, Drawing Canvas, Glitter Globe, Keepy Uppy, Breathing Garden, Pattern Train, Category Match — v1.0
-- ✓ NumberPicnic with visual representations — v1.0
-- ✓ Settings (theme, sound, animation, reduced motion) — v1.0
-- ✓ Parent Timer — v1.0
-- ✓ i18n support (English) — v1.0
-- ✓ 48dp touch targets — v1.0
-- ✓ Light/dark mode — v1.0
-- ✓ Reduced motion support — v1.0
+- ✓ Children can launch a collection of sensory-friendly games and activities with no ads, paywalls, or time pressure — existing shipped app baseline
+- ✓ Parents and caregivers can persist sensory preferences such as sound, animations, language, color mode, and game visibility — existing shipped app baseline
+- ✓ The app supports offline-friendly play and cross-platform Expo targets including web, Android, and iOS export flows — existing shipped app baseline
+- ✓ Parent timer and lock-screen controls can gate continued play across the app — existing shipped app baseline
+- ✓ The app already ships a shared UI shell, localization layer, and reusable game architecture that future work must preserve — existing shipped app baseline
 
-### Active (Next Milestone)
+### Completed
 
-- [ ] LetterLantern restoration or removal (files deleted)
-- [ ] StarPath restoration or removal (files deleted)
-- [ ] Error logging/telemetry for production monitoring
-- [ ] Additional language support
-- [ ] [User to specify]
+- [x] Resolve the identified privacy and telemetry concerns while preserving the calm default experience
+- [x] Fix the currently known gameplay and release-tooling bugs called out in the codebase concerns audit
+- [x] Harden the runtime architecture so navigation, startup, timers, and state synchronization are safer to change
+- [x] Reduce performance hotspots and close the highest-risk regression gaps in concern-prone areas
 
 ### Out of Scope
 
-- Real-time multiplayer — high complexity, not core to value
-- User accounts/profiles — adds complexity, privacy considerations
-- Cloud sync — offline-first is a feature, not a limitation
-- Social features — not aligned with core value of calm, private play
-- ~~LetterLantern/StarPath~~ — completed then deleted (decision needed)
-
----
+- New mini-games or major content expansion — this milestone is focused on hardening the existing app
+- Backend accounts, cloud sync, or online multiplayer features — no backend architecture exists today and these do not address the current concerns inventory
+- A full visual redesign — the milestone should preserve the established sensory-friendly UX rather than rework the app's identity
 
 ## Context
 
-- **Tech Stack:** Expo (React Native), TypeScript, React Navigation, AsyncStorage
-- **Target Users:** Children ages 4-10 with sensory processing differences, parents/caregivers, therapists
-- **Platforms:** iOS, Android, Web (PWA)
-- **Architecture:** Design system with i18n, settings context, accessibility hooks
-- **Testing:** Jest with react-testing-library, good coverage on game logic
+The current app already ships a broad gentle-play experience, including multiple mini-games, a shared settings system, localization, telemetry wiring, and PWA/native export paths. The new `.planning/codebase/CONCERNS.md` map identified concrete issues across privacy controls, gameplay correctness, navigation typing, timeout cleanup, startup side effects, animation performance, and missing regression coverage; this milestone turns that audit into actionable work.
 
 ## Constraints
 
-- **Accessibility:** Must support light/dark mode, animation toggles, sound controls, large touch targets
-- **Offline-first:** All features must work without internet
-- **No monetization:** No ads, in-app purchases, or subscriptions
-- **Sensory-friendly:** Soft colors, optional audio, no jarring animations, no time pressure
+- **Tech stack**: Continue using Expo, React Native, and strict TypeScript — the existing app architecture and build scripts depend on that stack.
+- **Accessibility**: Preserve calm, predictable, sensory-friendly interactions — fixes must not introduce jarring UX, hidden flows, or time pressure.
+- **Privacy**: Treat telemetry as parent-controlled and child-sensitive — the app targets children and must minimize default data collection risk.
+- **Compatibility**: Maintain web, Android, and iOS export compatibility — release and testing changes must keep existing multi-platform validation paths working.
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| Expo/React Native | Cross-platform from single codebase | ✓ Good — works on all platforms |
-| AsyncStorage for settings | Simple, offline persistence | ✓ Good — reliable, no backend needed |
-| i18next for translations | Internationalization-ready | ✓ Good — extensible for more languages |
-| No user accounts | Simplicity, privacy, no data collection | ✓ Good — aligns with core value |
-| Games hidden behind setting | Originally "unfinished" | ✓ Lesson learned — they were already done |
-| Reduced motion system detection | Respects user system preferences | ✓ Good — accessibility best practice |
+| Decision                                                                 | Rationale                                                                                                | Outcome   |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- | --------- |
+| Start formal GSD planning at milestone `v1.1`                            | The app is already shipped, but this repository had no prior `PROJECT.md`/`ROADMAP.md` planning scaffold | — Pending |
+| Scope milestone `v1.1` to everything in `.planning/codebase/CONCERNS.md` | User explicitly chose the full concerns inventory rather than a narrower slice                           | — Pending |
+| Skip external ecosystem research for this milestone                      | The concern inventory is codebase-specific and already detailed enough to define requirements directly   | — Pending |
 
 ---
 
-## Current Milestone: v1.1 Error Logging
-
-**Goal:** Add Sentry error logging using their free tier for production monitoring
-
-**Target features:**
-- Sentry SDK integration for error tracking
-- Free tier configuration (limited events, proper sampling)
-- Official removal of LetterLantern and StarPath (files deleted, not restoring)
-
----
-
-## Requirements
-
-### Validated (v1.0)
-
-- ✓ Memory Snap, Bubble Pop, Drawing Canvas, Glitter Globe, Keepy Uppy, Breathing Garden, Pattern Train, Category Match — v1.0
-- ✓ NumberPicnic with visual representations — v1.0
-- ✓ Settings (theme, sound, animation, reduced motion) — v1.0
-- ✓ Parent Timer — v1.0
-- ✓ i18n support (English) — v1.0
-- ✓ 48dp touch targets — v1.0
-- ✓ Light/dark mode — v1.0
-- ✓ Reduced motion support — v1.0
-
-### Active (v1.1)
-
-- [ ] Sentry error logging integration
-- [ ] Free tier configuration with event limits
-- [ ] Officially remove LetterLantern and StarPath references
-
-### Out of Scope
-
-- Real-time multiplayer — high complexity, not core to value
-- User accounts/profiles — adds complexity, privacy considerations
-- Cloud sync — offline-first is a feature, not a limitation
-- Social features — not aligned with core value of calm, private play
-- ~~LetterLantern/StarPath~~ — completed then deleted, now officially removed
-- ~~Additional languages~~ — deferred to v1.2
-- ~~Polish/bug fixes~~ — deferred unless blocking Sentry
-
----
-
-## Key Decisions
-
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| Expo/React Native | Cross-platform from single codebase | ✓ Good — works on all platforms |
-| AsyncStorage for settings | Simple, offline persistence | ✓ Good — reliable, no backend needed |
-| i18next for translations | Internationalization-ready | ✓ Good — extensible for more languages |
-| No user accounts | Simplicity, privacy, no data collection | ✓ Good — aligns with core value |
-| Games hidden behind setting | Originally "unfinished" | ✓ Lesson learned — they were already done |
-| Reduced motion system detection | Respects user system preferences | ✓ Good — accessibility best practice |
-| Sentry free tier | Cost-effective error monitoring, sufficient for current scale | — Pending |
-| Remove LetterLantern/StarPath | Files deleted, not worth restoring for v1.1 scope | — Pending |
-
----
-
-*Last updated: 2026-03-03 after v1.1 milestone started*
+_Last updated: 2026-03-18 after milestone v1.1 completion_

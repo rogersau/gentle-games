@@ -24,7 +24,11 @@
     "emptyGames": "All games are hidden. Enable one in Settings.",
     "settingsButton": "⚙️  Settings",
     "settingsHint": "Opens app settings",
-    "websiteLink": "Visit gentlegames.org"
+    "websiteLink": "Visit gentlegames.org",
+    "websiteLinkFallback": {
+      "title": "Website unavailable",
+      "message": "We couldn't open the Gentle Games website right now. Please try again later."
+    }
   },
   "errorBoundary": {
     "iconAccessibilityLabel": "Gentle cloud icon",
@@ -315,6 +319,14 @@
     "language": {
       "title": "Language",
       "description": "Choose your preferred language"
+    },
+    "telemetry": {
+      "label": "Share anonymous app updates",
+      "description": "Analytics and crash reports stay off until you turn this on."
+    },
+    "showMochiInGames": {
+      "label": "Show Mochi in games",
+      "description": "Mochi appears to celebrate milestones and encourage during games. Turn off for a quieter experience."
     }
   },
   "parentTimer": {
@@ -327,5 +339,30 @@
   },
   "accessibility": {
     "gameCardHint": "Double tap to play this game"
+  },
+  "mascot": {
+    "greeting": "Hello, friend!",
+    "letsPlay": "Let's play!",
+    "letsMatch": "Let's find the matches!",
+    "letsDraw": "Let's draw something beautiful!",
+    "letsPop": "Let's pop some bubbles!",
+    "letsKeepUp": "Let's keep them aloft!",
+    "letsCategorize": "Let's sort these things!",
+    "letsBreathe": "Let's breathe together.",
+    "letsPattern": "Let's find the pattern!",
+    "letsCount": "Let's count together!",
+    "beautiful": "Beautiful!",
+    "wonderful": "Wonderful!",
+    "greatJob": "Amazing job!",
+    "amazing": "You're amazing!",
+    "takingTime": "You're doing great!",
+    "settingsHelper": "Here's where you can change things.",
+    "celebratePhrases": ["You did it!", "Amazing!", "Wonderful!", "So clever!", "Fantastic!"],
+    "bubblePhrases": ["You're on a roll!", "Pop pop pop!", "So satisfying!", "Keep going!", "Amazing!"],
+    "keepyUppyPhrases": ["Balloon friend loves you!", "Look at them fly!", "Beautiful taps!", "You're doing amazing!", "So graceful!"],
+    "numberPicnicPhrases": ["Delicious!", "What a feast!", "Picnic master!", "Yum yum yum!", "Perfect!"],
+    "patternTrainPhrases": ["All aboard!", "Pattern pro!", "Choo choo!", "You're on track!", "Brilliant!"],
+    "drawingWelcomePhrases": ["So happy to see you!", "Your drawing awaits!", "Missed you!"],
+    "glitterPhrases": ["This is beautiful!", "You're so creative!", "Sparkly!", "Magnificent!"]
   }
 }

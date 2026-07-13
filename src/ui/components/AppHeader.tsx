@@ -19,6 +19,9 @@ interface AppHeaderProps {
   style?: ViewStyle;
 }
 
+const HEADER_TOUCH_SLOP = { top: 8, bottom: 8, left: 8, right: 8 };
+const HEADER_PRESS_RETENTION = { top: 12, bottom: 12, left: 12, right: 12 };
+
 export const AppHeader: React.FC<AppHeaderProps> = ({
   title,
   onBack,
@@ -38,9 +41,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         <TouchableOpacity
           style={styles.backButton}
           onPress={onBack}
-          accessibilityLabel={t('common.back') }
-          accessibilityRole="button"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityLabel={t('common.back')}
+          accessibilityRole='button'
+          hitSlop={HEADER_TOUCH_SLOP}
+          pressRetentionOffset={HEADER_PRESS_RETENTION}
         >
           <Text style={styles.backText}>{displayedBackLabel}</Text>
         </TouchableOpacity>
@@ -48,7 +52,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         <View style={styles.placeholder} />
       )}
 
-      <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
+      <Text style={styles.title} numberOfLines={1} accessibilityRole='header'>
         {title}
       </Text>
 

@@ -2,131 +2,145 @@ import * as Sentry from '@sentry/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-// Get Sentry DSN from Expo Constants (set in app.config.js extra)
 const SENTRY_DSN = Constants.expoConfig?.extra?.sentryDsn as string | undefined;
 const SENTRY_DEBUG = Constants.expoConfig?.extra?.sentryDebug as boolean | undefined;
 const INSTALL_ID_KEY = '@gentle_games_install_id';
 
-// Enable Sentry in dev mode when SENTRY_DEBUG is true
+const ALLOWED_DIAGNOSTIC_KEYS = new Set([
+  'action',
+  'boundary',
+  'category',
+  'difficulty',
+  'duration_ms',
+  'game',
+  'score',
+  'screen',
+  'setting',
+  'status',
+  'value',
+]);
+
+const ALLOWED_TAG_KEYS = new Set(['error_boundary', 'screen']);
+
+const isPrimitiveDiagnosticValue = (value: unknown): value is string | number | boolean =>
+  ['string', 'number', 'boolean'].includes(typeof value);
+
 const isSentryEnabled = !__DEV__ || SENTRY_DEBUG === true;
 
-// Export for use in other components
 export { isSentryEnabled };
 
-/**
- * Generate a random install ID for session correlation without PII.
- * Persists in AsyncStorage to maintain ID across app restarts.
- */
+let telemetryEnabled = false;
+let sentryInitialized = false;
+
 async function getInstallId(): Promise<string | null> {
   try {
     let installId = await AsyncStorage.getItem(INSTALL_ID_KEY);
+
     if (!installId) {
-      // Generate random ID (not derived from any device info)
       installId = `install_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
       await AsyncStorage.setItem(INSTALL_ID_KEY, installId);
     }
+
     return installId;
   } catch {
-    // Fail silently - error monitoring shouldn't break the app
     return null;
   }
 }
 
-/**
- * Set the current game context for error reporting.
- * Called when user navigates to a game screen.
- */
-export function setGameContext(gameName: string, difficulty?: string): void {
-  if (!isSentryEnabled) {
-    console.log('[Sentry] Skipping setGameContext - disabled');
-    return;
+function sanitizeDiagnosticData(
+  data?: Record<string, unknown>,
+): Record<string, string | number | boolean> | undefined {
+  if (!data) {
+    return undefined;
   }
 
-  Sentry.setContext('game', {
-    name: gameName,
-    difficulty: difficulty || 'not_set',
-    timestamp: new Date().toISOString(),
-  });
+  const sanitized = Object.entries(data).reduce<Record<string, string | number | boolean>>(
+    (accumulator, [key, value]) => {
+      if (ALLOWED_DIAGNOSTIC_KEYS.has(key) && isPrimitiveDiagnosticValue(value)) {
+        accumulator[key] = value;
+      }
 
-  Sentry.addBreadcrumb({
-    category: 'navigation',
-    message: `Started game: ${gameName}`,
-    level: 'info',
-    data: {
-      game: gameName,
-      difficulty: difficulty || 'not_set',
+      return accumulator;
     },
-  });
-}
+    {},
+  );
 
-/**
- * Clear game context when leaving a game.
- */
-export function clearGameContext(): void {
-  if (!isSentryEnabled) {
-    console.log('[Sentry] Skipping clearGameContext - disabled');
-    return;
-  }
-
-  Sentry.setContext('game', null);
-}
-
-/**
- * Add an action breadcrumb for detailed debugging.
- * Tracks user actions without PII.
- */
-export function addActionBreadcrumb(
-  action: string,
-  category: string = 'user_action',
-  data?: Record<string, unknown>
-): void {
-  if (!isSentryEnabled) {
-    console.log('[Sentry] Skipping breadcrumb - disabled:', action);
-    return;
-  }
-
-  Sentry.addBreadcrumb({
-    category,
-    message: action,
-    level: 'info',
-    data: data ? sanitizeData(data) : undefined,
-  });
-}
-
-/**
- * Sanitize data to remove potential PII before sending.
- */
-function sanitizeData(data: Record<string, unknown>): Record<string, unknown> {
-  const sanitized: Record<string, unknown> = {};
-
-  for (const [key, value] of Object.entries(data)) {
-    if (typeof value === 'string') {
-      sanitized[key] = sanitizeString(value);
-    } else {
-      sanitized[key] = value;
-    }
+  if (Object.keys(sanitized).length === 0) {
+    return undefined;
   }
 
   return sanitized;
 }
 
-/**
- * Sanitize string to remove PII patterns.
- */
-function sanitizeString(str: string): string {
-  return str
-    .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '[EMAIL]')
-    .replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, '[PHONE]')
-    .replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[CARD]')
-    .replace(/\b\d{3}-\d{2}-\d{4}\b/g, '[SSN]'); // Social Security Number pattern
+function sanitizeTags(
+  tags?: Record<string, unknown>,
+): Record<string, string | number | boolean> | undefined {
+  if (!tags) {
+    return undefined;
+  }
+
+  const sanitized = Object.entries(tags).reduce<Record<string, string | number | boolean>>(
+    (accumulator, [key, value]) => {
+      if (ALLOWED_TAG_KEYS.has(key) && isPrimitiveDiagnosticValue(value)) {
+        accumulator[key] = value;
+      }
+
+      return accumulator;
+    },
+    {},
+  );
+
+  if (Object.keys(sanitized).length === 0) {
+    return undefined;
+  }
+
+  return sanitized;
 }
 
-/**
- * Initialize Sentry for production error monitoring.
- */
-export async function initSentry(): Promise<void> {
-  // Only initialize in production unless SENTRY_DEBUG is enabled
-  if (!isSentryEnabled) {
+function sanitizeBreadcrumb(breadcrumb: Sentry.Breadcrumb): Sentry.Breadcrumb | null {
+  if (!telemetryEnabled) {
+    return null;
+  }
+
+  return {
+    category: breadcrumb.category,
+    type: breadcrumb.type,
+    level: breadcrumb.level,
+    data: sanitizeDiagnosticData(breadcrumb.data as Record<string, unknown> | undefined),
+  };
+}
+
+function sanitizeEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent | null {
+  if (!telemetryEnabled) {
+    return null;
+  }
+
+  return {
+    ...event,
+    message: undefined,
+    user: event.user?.id ? { id: event.user.id } : undefined,
+    tags: sanitizeTags(event.tags as Record<string, unknown> | undefined),
+    contexts: undefined,
+    extra: undefined,
+    breadcrumbs: event.breadcrumbs
+      ?.map((breadcrumb) => sanitizeBreadcrumb(breadcrumb))
+      .filter((breadcrumb): breadcrumb is Sentry.Breadcrumb => breadcrumb !== null),
+    exception: event.exception?.values
+      ? {
+          ...event.exception,
+          values: event.exception.values.map((value) => ({
+            ...value,
+            value: undefined,
+          })),
+        }
+      : event.exception,
+  };
+}
+
+export async function reconcileSentryConsent(enabled: boolean): Promise<void> {
+  telemetryEnabled = enabled && isSentryEnabled;
+
+  if (!telemetryEnabled) {
     return;
   }
 
@@ -135,88 +149,146 @@ export async function initSentry(): Promise<void> {
     return;
   }
 
+  if (sentryInitialized) {
+    return;
+  }
+
   try {
-    // Get or create install ID for session correlation
     const installId = await getInstallId();
 
     Sentry.init({
       dsn: SENTRY_DSN,
       sampleRate: 1.0,
       environment: __DEV__ ? 'development' : 'production',
-      debug: __DEV__,
-
-      // Set privacy-safe user ID (random, not tied to identity)
+      debug: SENTRY_DEBUG === true,
       initialScope: {
         user: installId ? { id: installId } : undefined,
       },
-
       beforeSend(event) {
-        // Sanitize all string values in the event
-        if (event.message) {
-          event.message = sanitizeString(event.message);
-        }
-
-        if (event.exception?.values) {
-          event.exception.values.forEach(value => {
-            if (value.value) {
-              value.value = sanitizeString(value.value);
-            }
-          });
-        }
-
-        // Ensure no user data beyond the random ID
-        if (event.user) {
-          event.user = {
-            id: event.user.id,
-          };
-        }
-
-        return event;
+        return sanitizeEvent(event);
+      },
+      beforeBreadcrumb(breadcrumb) {
+        return sanitizeBreadcrumb(breadcrumb);
       },
     });
 
-    // Share install ID with PostHog for consistent anonymous identification
     if (installId) {
-      const { setAnalyticsUser } = await import('./analytics');
+      Sentry.setUser({ id: installId });
+      const { setAnalyticsUser } = require('./analytics') as typeof import('./analytics');
       setAnalyticsUser(installId);
     }
+
+    sentryInitialized = true;
   } catch (error) {
     console.warn('[Sentry] Initialization failed:', error);
     throw error;
   }
 }
 
-/**
- * Check if Sentry is initialized and ready.
- */
-export function isSentryInitialized(): boolean {
-  return isSentryEnabled && !!SENTRY_DSN;
+export async function initSentry(): Promise<void> {
+  await reconcileSentryConsent(true);
 }
 
-/**
- * Test Sentry by sending a test error.
- * Use this to verify Sentry is working in development.
- */
-export async function testSentry(): Promise<void> {
-  if (!isSentryEnabled || !SENTRY_DSN) {
-    console.log('[Sentry] Cannot test - Sentry is disabled or DSN not configured.');
+export function isSentryInitialized(): boolean {
+  return telemetryEnabled && sentryInitialized && !!SENTRY_DSN;
+}
+
+export function setGameContext(gameName: string, difficulty?: string): void {
+  if (!isSentryInitialized()) {
+    return;
+  }
+
+  Sentry.setContext(
+    'game',
+    sanitizeDiagnosticData({
+      game: gameName,
+      difficulty: difficulty || 'not_set',
+    }) ?? null,
+  );
+
+  addActionBreadcrumb('game_started', 'navigation', {
+    game: gameName,
+    difficulty: difficulty || 'not_set',
+  });
+}
+
+export function clearGameContext(): void {
+  if (!isSentryInitialized()) {
+    return;
+  }
+
+  Sentry.setContext('game', null);
+}
+
+export function addActionBreadcrumb(
+  action: string,
+  category: string = 'user_action',
+  data?: Record<string, unknown>,
+): void {
+  if (!isSentryInitialized()) {
     return;
   }
 
   Sentry.addBreadcrumb({
-    category: 'test',
-    message: 'Manual test triggered',
+    category,
+    message: action,
     level: 'info',
+    data: sanitizeDiagnosticData({
+      action,
+      category,
+      ...data,
+    }),
+  });
+}
+
+export function captureScreenError(
+  error: Error,
+  context: { screen: string; boundary?: string },
+): void {
+  if (!isSentryInitialized()) {
+    return;
+  }
+
+  const tags: Record<string, string> = {
+    screen: context.screen,
+  };
+
+  if (context.boundary) {
+    tags.error_boundary = context.boundary;
+  }
+
+  Sentry.captureException(error, {
+    tags,
+  });
+
+  Sentry.addBreadcrumb({
+    category: 'error',
+    level: 'error',
+    data: sanitizeDiagnosticData({
+      screen: context.screen,
+      boundary: context.boundary,
+    }),
+  });
+}
+
+export async function testSentry(): Promise<void> {
+  if (!isSentryInitialized()) {
+    console.log('[Sentry] Cannot test - Sentry is disabled or DSN not configured.');
+    return;
+  }
+
+  addActionBreadcrumb('manual_test', 'test', {
+    status: 'started',
   });
 
   Sentry.captureException(new Error('Test error from development'));
-  Sentry.captureMessage('Test message from development', 'info');
 
   try {
-    const flushResult = await (Sentry as unknown as { flush: (timeout?: number) => Promise<boolean> }).flush(2000);
+    const flushResult = await (
+      Sentry as unknown as { flush: (timeout?: number) => Promise<boolean> }
+    ).flush(2000);
     console.log('[Sentry] Test complete. Flush result:', flushResult);
   } catch (error) {
     console.warn('[Sentry] Flush failed:', error);
   }
 }
-

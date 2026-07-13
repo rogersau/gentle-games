@@ -53,7 +53,7 @@ describe('PicnicBasket', () => {
           start: (callback?: () => void) => callback?.(),
           stop: jest.fn(),
           reset: jest.fn(),
-        }) as any
+        }) as any,
     );
 
     jest.spyOn(Animated, 'parallel').mockImplementation(
@@ -64,7 +64,7 @@ describe('PicnicBasket', () => {
             callback?.();
           },
           stop: jest.fn(),
-        }) as any
+        }) as any,
     );
   });
 
@@ -83,7 +83,7 @@ describe('PicnicBasket', () => {
   it('shows overflow indicator when more than 12 items are present', () => {
     const items = Array.from({ length: 14 }, () => '🍎');
     const { getByText } = render(
-      <PicnicBasket items={items} targetCount={14} onPress={jest.fn()} />
+      <PicnicBasket items={items} targetCount={14} onPress={jest.fn()} />,
     );
 
     expect(getByText('+2 more')).toBeTruthy();
@@ -100,7 +100,7 @@ describe('PicnicBasket', () => {
         onPress={jest.fn()}
         isSuccess
         onAnimationComplete={onAnimationComplete}
-      />
+      />,
     );
 
     act(() => {
@@ -123,7 +123,7 @@ describe('PicnicBasket', () => {
         onPress={jest.fn()}
         isSuccess
         onAnimationComplete={onAnimationComplete}
-      />
+      />,
     );
 
     act(() => {

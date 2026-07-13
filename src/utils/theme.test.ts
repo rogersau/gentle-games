@@ -26,4 +26,3 @@ describe('theme utilities', () => {
     expect(getThemeColors('dark').surfaceGame).not.toBe(getThemeColors('light').surfaceGame);
   });
 });
-

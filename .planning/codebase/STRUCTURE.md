@@ -1,223 +1,225 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-03-03
+**Analysis Date:** 2026-03-17
 
 ## Directory Layout
 
-```
-gentle-match/
-├── App.tsx                    # Main app entry point
-├── package.json               # Dependencies and scripts
-├── tsconfig.json              # TypeScript configuration
-├── jest.config.js             # Test configuration
-├── staticwebapp.config.json   # Azure Static Web Apps config
-├── app.json                   # Expo configuration
-├── app.azure.json             # Azure deployment config
-├── AGENTS.md                  # Agent instructions
-├── .vscode/settings.json      # VS Code settings
+```text
+[project-root]/
+├── assets/                    # Expo app images and PWA icon source files
+├── docs/                      # Static support/privacy HTML pages
+├── public/                    # Web-export public shell assets
+├── scripts/                   # Build/deploy helper scripts
 ├── src/
-│   ├── assets/                # Static assets
-│   │   └── sounds/             # Audio files
-│   │       └── music/         # Background music tracks
-│   ├── components/            # Game-specific components
-│   │   └── train/              # Train game components
-│   ├── context/               # React contexts
-│   ├── i18n/                  # Internationalization
-│   │   ├── locales/           # Translation files
-│   │   ├── index.ts           # i18n setup
-│   │   ├── types.ts           # Translation key types
-│   │   └── i18next.d.ts       # Type declarations
-│   ├── screens/               # Screen components
-│   ├── types/                 # TypeScript types
-│   ├── ui/                    # Design system
-│   │   ├── components/        # Reusable UI components
-│   │   ├── animations.ts      # Animation definitions
-│   │   ├── fonts.ts           # Font loading
-│   │   ├── tokens.ts          # Design tokens
-│   │   └── useLayout.ts       # Layout hooks
-│   └── utils/                 # Utility functions
-└── .planning/codebase/        # Generated documentation
+│   ├── assets/                # Runtime game media such as sound files
+│   ├── components/            # Feature-scale reusable game components
+│   │   ├── numberpicnic/      # Number Picnic subcomponents + barrel export
+│   │   └── train/             # Pattern Train subcomponents + barrel export
+│   ├── context/               # Global React Context providers and hooks
+│   ├── i18n/                  # i18next bootstrap, types, and locale JSON
+│   ├── screens/               # Navigation routes and route-level orchestration
+│   ├── test-utils/            # Test-only helpers for loop/setState detection
+│   ├── types/                 # Shared app/domain types and static datasets
+│   ├── ui/                    # Shared design system, layout, fonts, motion
+│   │   └── components/        # Reusable presentational controls and shells
+│   └── utils/                 # Domain logic, runtime services, and hooks
+├── .github/workflows/         # CI/CD workflows
+├── App.tsx                    # Main app composition root and navigator
+├── index.ts                   # Expo root registration entry point
+├── app.config.js              # Expo configuration and runtime extras
+├── metro.config.js            # Metro bundler overrides
+├── jest.config.js             # Jest configuration
+├── tsconfig.json              # TypeScript configuration
+└── staticwebapp.config.json   # Azure Static Web Apps web routing config
 ```
 
 ## Directory Purposes
 
-### `src/screens/`:
-- Purpose: Full-screen page components
-- Contains: 13 screen components
-- Key files:
-  - `HomeScreen.tsx` - Main menu with game selection grid
-  - `GameScreen.tsx` - Memory Snap game
-  - `SettingsScreen.tsx` - App settings
-  - `BubbleScreen.tsx` - Bubble pop game
-  - `DrawingScreen.tsx` - Drawing canvas
-  - `GlitterScreen.tsx` - Glitter globe game
-  - `KeepyUppyScreen.tsx` - Balloon keepy-uppy game
-  - `BreathingGardenScreen.tsx` - Breathing exercise
-  - `PatternTrainScreen.tsx` - Pattern recognition
-  - `CategoryMatchScreen.tsx` - Category matching
-  - `NumberPicnicScreen.tsx` - Number learning (unfinished)
-  - `LetterLanternScreen.tsx` - Letter learning (unfinished)
-  - `StarPathScreen.tsx` - Star collection (unfinished)
+**`src/screens/`:**
 
-### `src/components/`:
-- Purpose: Game-specific interactive components
-- Contains: Game boards, tiles, game elements
-- Key files:
-  - `GameBoard.tsx` - Memory Snap board logic
-  - `Tile.tsx` - Flip card component
-  - `BubbleField.tsx` - Bubble popping area
-  - `BreathingBall.tsx` - Animated breathing circle
-  - `GlitterGlobe.tsx` - Glitter particle container
-  - `KeepyUppyBoard.tsx` - Balloon physics area
-  - `CategoryMatchBoard.tsx` - Category matching board
-  - `DrawingCanvas.tsx` - Touch drawing canvas
+- Purpose: Hold one file per navigable route plus route-scoped hooks.
+- Contains: Route components such as `src/screens/HomeScreen.tsx`, `src/screens/SettingsScreen.tsx`, `src/screens/GameScreen.tsx`, `src/screens/PatternTrainScreen.tsx`, and helper hook `src/screens/usePatternTrainGame.ts`.
+- Key files: `src/screens/HomeScreen.tsx`, `src/screens/SettingsScreen.tsx`, `src/screens/NumberPicnicScreen.tsx`, `src/screens/PatternTrainScreen.tsx`
 
-### `src/components/train/`:
-- Purpose: Pattern Train game components
-- Contains: `TrainEngine.tsx`, `TrainTrack.tsx`, `Carriage.tsx`
+**`src/components/`:**
 
-### `src/ui/components/`:
-- Purpose: Core reusable UI primitives (design system)
-- Contains: 12 UI components
-- Key files:
-  - `AppScreen.tsx` - Base screen wrapper
-  - `AppHeader.tsx` - Navigation header
-  - `AppButton.tsx` - Primary button component
-  - `AppCard.tsx` - Card container
-  - `AppModal.tsx` - Modal dialog
-  - `GameCard.tsx` - Game selection card
-  - `SettingToggle.tsx` - Toggle switch
-  - `SegmentedControl.tsx` - Segmented picker
-  - `VolumeControl.tsx` - Volume slider
-  - `SelectBox.tsx` - Dropdown selector
+- Purpose: Hold reusable feature widgets that sit below a screen and above basic UI controls.
+- Contains: Boards, canvases, error boundary, and feature folders such as `src/components/numberpicnic/` and `src/components/train/`.
+- Key files: `src/components/GameBoard.tsx`, `src/components/DrawingCanvas.tsx`, `src/components/KeepyUppyBoard.tsx`, `src/components/GentleErrorBoundary.tsx`
 
-### `src/ui/`:
-- Purpose: Design system infrastructure
-- Files:
-  - `tokens.ts` - Spacing, typography, shadows, breakpoints
-  - `fonts.ts` - Nunito font loading hook
-  - `animations.ts` - Reusable animation configs
-  - `useLayout.ts` - Responsive layout hook
+**`src/components/numberpicnic/`:**
 
-### `src/context/`:
-- Purpose: Global React contexts
-- Files:
-  - `SettingsContext.tsx` - App settings (persisted)
-  - `ParentTimerContext.tsx` - Parent timer feature
+- Purpose: Keep the Number Picnic feature internals colocated.
+- Contains: `PicnicBlanket`, `PicnicBasket`, `PicnicItem`, tests, and the barrel `src/components/numberpicnic/index.ts`.
+- Key files: `src/components/numberpicnic/PicnicBlanket.tsx`, `src/components/numberpicnic/PicnicBasket.tsx`, `src/components/numberpicnic/index.ts`
 
-### `src/utils/`:
-- Purpose: Game logic and helpers
-- Pattern: One logic file per game with matching test file
-- Key files:
-  - `gameLogic.ts` - Memory Snap logic
-  - `bubbleLogic.ts` - Bubble game logic
-  - `glitterMotion.ts` - Glitter physics
-  - `keepyUppyLogic.ts` - Balloon physics
-  - `breathingGardenLogic.ts` - Breathing exercise
-  - `patternTrainLogic.ts` - Pattern recognition
-  - `categoryMatchLogic.ts` - Category matching
-  - `theme.ts` - Theme resolution hook
-  - `sounds.ts` - Audio playback
-  - `music.ts` - Background music
-  - `pwaBackGuard.ts` - PWA navigation guard
+**`src/components/train/`:**
 
-### `src/types/`:
-- Purpose: TypeScript type definitions
-- Files:
-  - `index.ts` - Core types, interfaces, color constants
-  - `i18n.ts` - Language type definitions
+- Purpose: Keep Pattern Train visual primitives colocated.
+- Contains: `TrainEngine`, `Carriage`, `TrainTrack`, tests, and the barrel `src/components/train/index.ts`.
+- Key files: `src/components/train/TrainEngine.tsx`, `src/components/train/Carriage.tsx`, `src/components/train/index.ts`
 
-### `src/i18n/`:
-- Purpose: Internationalization setup
-- Files:
-  - `index.ts` - i18next configuration
-  - `types.ts` - Translation key types
-- Locales:
-  - `locales/en-AU.json` - Australian English
-  - `locales/en-US.json` - US English
+**`src/context/`:**
 
-### `src/assets/`:
-- Purpose: Static resources
-- Contains:
-  - `sounds/music/track1-4.mp3` - Background music
-  - `sounds/pop.mp3` - Bubble pop sound
-  - `sounds/match.mp3` - Match sound
+- Purpose: Store cross-route React Context providers and hooks.
+- Contains: `src/context/SettingsContext.tsx` for persisted preferences and `src/context/ParentTimerContext.tsx` for the app-wide lock timer overlay.
+- Key files: `src/context/SettingsContext.tsx`, `src/context/ParentTimerContext.tsx`
+
+**`src/utils/`:**
+
+- Purpose: Hold non-UI helpers, feature hooks, runtime services, and pure logic modules.
+- Contains: Gameplay logic such as `src/utils/gameLogic.ts`, `src/utils/patternTrainLogic.ts`, `src/utils/categoryMatchLogic.ts`; app services such as `src/utils/analytics.ts`, `src/utils/sentry.ts`, `src/utils/sounds.ts`; runtime hooks such as `src/utils/theme.ts`.
+- Key files: `src/utils/theme.ts`, `src/utils/gameLogic.ts`, `src/utils/numberPicnicLogic.ts`, `src/utils/analytics.ts`, `src/utils/sentry.ts`
+
+**`src/ui/`:**
+
+- Purpose: Provide the shared design system and responsive layout layer.
+- Contains: `src/ui/components/` presentational primitives, `src/ui/tokens.ts` design tokens, `src/ui/fonts.ts` font loading helpers, `src/ui/animations.ts`, and `src/ui/useLayout.ts`.
+- Key files: `src/ui/components/index.ts`, `src/ui/tokens.ts`, `src/ui/useLayout.ts`, `src/ui/fonts.ts`
+
+**`src/ui/components/`:**
+
+- Purpose: Provide generic UI building blocks reused across screens and components.
+- Contains: `AppScreen`, `AppHeader`, `AppButton`, `AppCard`, `AppModal`, settings controls, and barrel export `src/ui/components/index.ts`.
+- Key files: `src/ui/components/AppScreen.tsx`, `src/ui/components/AppHeader.tsx`, `src/ui/components/AppButton.tsx`, `src/ui/components/index.ts`
+
+**`src/types/`:**
+
+- Purpose: Centralize shared TypeScript types plus app-wide static content.
+- Contains: `src/types/index.ts` with settings, palettes, datasets, and game model types; `src/types/i18n.ts` with language metadata.
+- Key files: `src/types/index.ts`, `src/types/i18n.ts`
+
+**`src/i18n/`:**
+
+- Purpose: Centralize translation bootstrapping and locale resources.
+- Contains: i18next initialization in `src/i18n/index.ts`, locale JSON under `src/i18n/locales/`, and TypeScript support files such as `src/i18n/types.ts` and `src/i18n/i18next.d.ts`.
+- Key files: `src/i18n/index.ts`, `src/i18n/locales/en-AU.json`, `src/i18n/locales/en-US.json`
+
+**`src/test-utils/`:**
+
+- Purpose: Hold helper utilities used to detect React update issues in tests.
+- Contains: `src/test-utils/infiniteLoopDetection.ts`, `src/test-utils/setStateDetection.ts`
+- Key files: `src/test-utils/infiniteLoopDetection.ts`, `src/test-utils/setStateDetection.ts`
+
+**`scripts/`:**
+
+- Purpose: Hold Node-based build and release helpers outside the runtime app bundle.
+- Contains: `scripts/prepare-pwa.js`, `scripts/upload-sourcemaps.js`, test coverage for scripts in `scripts/prepare-pwa.test.js`
+- Key files: `scripts/prepare-pwa.js`, `scripts/upload-sourcemaps.js`
+
+**`docs/`:**
+
+- Purpose: Store static website/support documents separate from the Expo runtime.
+- Contains: `docs/index.html`, `docs/privacy-policy.html`, `docs/support.html`
+- Key files: `docs/index.html`, `docs/privacy-policy.html`, `docs/support.html`
 
 ## Key File Locations
 
 **Entry Points:**
-- `App.tsx` - Main app bootstrap, navigation setup
+
+- `index.ts`: Expo registration entry point that mounts `App.tsx`
+- `App.tsx`: Application composition root, provider wiring, service initialization, and stack navigator
+- `src/screens/HomeScreen.tsx`: Initial route and menu for all game screens
 
 **Configuration:**
-- `package.json` - Dependencies, scripts
-- `tsconfig.json` - TypeScript config
-- `jest.config.js` - Test runner config
-- `app.json` - Expo config
+
+- `app.config.js`: Expo app metadata, native/web config, and runtime `extra` values for Sentry/PostHog
+- `package.json`: Scripts, dependencies, and project metadata
+- `metro.config.js`: Metro bundler source-map behavior
+- `jest.config.js`: Test runner config
+- `tsconfig.json`: TypeScript strict mode and included paths
+- `staticwebapp.config.json`: Web hosting routing behavior for Azure Static Web Apps
 
 **Core Logic:**
-- `src/utils/gameLogic.ts` - Memory Snap tile generation, matching
-- `src/utils/theme.ts` - Theme resolution
-- `src/context/SettingsContext.tsx` - Settings management
+
+- `src/context/SettingsContext.tsx`: Persistent user preferences contract
+- `src/context/ParentTimerContext.tsx`: Cross-app parent timer/lock overlay
+- `src/utils/theme.ts`: Theme resolution from settings + system state
+- `src/utils/gameLogic.ts`: Memory Snap tile generation and matching rules
+- `src/utils/numberPicnicLogic.ts`: Number Picnic gameplay hook
+- `src/utils/patternTrainLogic.ts`: Pattern Train sequence generation and answer helpers
 
 **Testing:**
-- Test files co-located with source: `*.test.ts`, `*.test.tsx`
+
+- `App.test.tsx`: App-level behavior test
+- `src/screens/*.test.tsx`: Screen-level tests colocated with screens
+- `src/components/**/*.test.tsx`: Component-level tests colocated with components
+- `src/utils/*.test.ts`: Logic/service tests colocated with utilities
+- `src/test-utils/`: Shared testing helpers
 
 ## Naming Conventions
 
 **Files:**
-- Screens: `*Screen.tsx` (e.g., `HomeScreen.tsx`)
-- Components: PascalCase (e.g., `GameBoard.tsx`)
-- Utils: camelCase with descriptive names (e.g., `gameLogic.ts`)
-- Tests: Original name + `.test` suffix (e.g., `gameLogic.test.ts`)
-- Index files: `index.ts` for barrel exports
+
+- Route components use PascalCase + `Screen`: `src/screens/HomeScreen.tsx`, `src/screens/BubbleScreen.tsx`
+- Reusable components use PascalCase nouns: `src/components/GameBoard.tsx`, `src/ui/components/AppModal.tsx`
+- Context files use PascalCase + `Context`: `src/context/SettingsContext.tsx`
+- Logic/helpers use lower camel or descriptive nouns in `src/utils/`: `src/utils/gameLogic.ts`, `src/utils/pwaBackGuard.ts`, `src/utils/numberPicnicLogic.ts`
+- Tests are colocated and mirror the source filename with `.test.ts` or `.test.tsx`: `src/components/GameBoard.test.tsx`, `src/utils/theme.test.ts`
+- Barrel exports use `index.ts`: `src/ui/components/index.ts`, `src/components/train/index.ts`, `src/components/numberpicnic/index.ts`
 
 **Directories:**
-- PascalCase for components: `src/components/train/`
-- camelCase for utilities: `src/utils/`
-- Plural for collections: `src/screens/`, `src/components/`
 
-**Types:**
-- Interfaces: PascalCase (e.g., `Tile`, `Settings`)
-- Type aliases: PascalCase (e.g., `Difficulty`, `ColorMode`)
-- Enums: PascalCase with PascalCase values
+- Top-level runtime code is grouped by responsibility, not by route: `src/screens/`, `src/components/`, `src/context/`, `src/utils/`, `src/ui/`, `src/types/`
+- Multi-file features get their own lowercase subdirectory under `src/components/`: `src/components/numberpicnic/`, `src/components/train/`
+- Static non-runtime site content stays outside `src/` in `docs/` and `public/`
 
 ## Where to Add New Code
 
-**New Game Feature:**
-1. Screen: `src/screens/GameNameScreen.tsx`
-2. Board/Components: `src/components/GameNameBoard.tsx`
-3. Logic: `src/utils/gameNameLogic.ts`
-4. Tests: `src/screens/GameNameScreen.test.tsx`, `src/utils/gameNameLogic.test.ts`
-5. Translations: Add keys to `src/i18n/locales/en-AU.json`
+**New Feature:**
 
-**New UI Component:**
-1. Implementation: `src/ui/components/NewComponent.tsx`
-2. Export: Add to `src/ui/components/index.ts`
-3. Tests: `src/ui/components/NewComponent.test.tsx`
+- Primary code: add a route component under `src/screens/` if the feature is navigable, then register it in the stack inside `App.tsx`
+- Tests: colocate route tests beside the screen as `src/screens/NewFeatureScreen.test.tsx`; colocate logic tests beside any new helper in `src/utils/`
 
-**New Utility:**
-1. Implementation: `src/utils/utilityName.ts`
-2. Tests: `src/utils/utilityName.test.ts`
+**New Component/Module:**
 
-**New Context:**
-1. Implementation: `src/context/NewContext.tsx`
-2. Provider setup in `App.tsx`
+- Implementation: put generic reusable controls in `src/ui/components/`; put feature-specific interactive widgets in `src/components/`
+- Feature family: if the feature needs several closely related components, create a subfolder like `src/components/newfeature/` with an `index.ts` barrel
 
-**New Translation:**
-1. Add key to `src/i18n/types.ts`
-2. Add translations to `src/i18n/locales/en-AU.json`
-3. Use via `t('key.path')` hook
+**Utilities:**
+
+- Shared helpers: put gameplay rules, sensors, service clients, or non-visual hooks in `src/utils/`
+- Shared types/constants: add app-wide contracts and static datasets to `src/types/`
+- Cross-app state: only add new global providers under `src/context/` when the state truly spans many routes
 
 ## Special Directories
 
-**`.vscode/`:**
-- Purpose: Editor configuration
-- Contains: VS Code settings
+**`src/i18n/locales/`:**
+
+- Purpose: Store translation JSON files consumed by `src/i18n/index.ts`
+- Generated: No
+- Committed: Yes
+
+**`src/test-utils/`:**
+
+- Purpose: Store reusable helpers for detecting render/update issues in tests
+- Generated: No
+- Committed: Yes
+
+**`.github/workflows/`:**
+
+- Purpose: Store CI, deployment, and mobile validation workflows such as `ci.yml`, `azure-prod-deploy.yml`, and `mobile-validation.yml`
+- Generated: No
+- Committed: Yes
+
+**`public/`:**
+
+- Purpose: Store static assets and HTML shell material used by web export hosting
+- Generated: No
+- Committed: Yes
+
+**`dist/`:**
+
+- Purpose: Build output target referenced by scripts in `package.json`
+- Generated: Yes
+- Committed: No
 
 **`.planning/codebase/`:**
-- Purpose: Generated documentation
-- Contains: Architecture and structure docs
+
+- Purpose: Store generated codebase mapping documents for planning/execution tools
+- Generated: Yes
+- Committed: Yes
 
 ---
 
-*Structure analysis: 2026-03-03*
+_Structure analysis: 2026-03-17_

@@ -34,11 +34,17 @@ export const CategoryMatchScreen: React.FC = () => {
 
   const categoryExamples = useMemo(
     () => ({
-      sky: CATEGORY_MATCH_SKY.slice(0, 2).map((item) => item.emoji).join(' '),
-      land: CATEGORY_MATCH_LAND.slice(0, 2).map((item) => item.emoji).join(' '),
-      ocean: CATEGORY_MATCH_OCEAN.slice(0, 2).map((item) => item.emoji).join(' '),
+      sky: CATEGORY_MATCH_SKY.slice(0, 2)
+        .map((item) => item.emoji)
+        .join(' '),
+      land: CATEGORY_MATCH_LAND.slice(0, 2)
+        .map((item) => item.emoji)
+        .join(' '),
+      ocean: CATEGORY_MATCH_OCEAN.slice(0, 2)
+        .map((item) => item.emoji)
+        .join(' '),
     }),
-    []
+    [],
   );
 
   const handleCorrectMatch = useCallback(
@@ -46,7 +52,7 @@ export const CategoryMatchScreen: React.FC = () => {
       setCorrectCount((count) => count + 1);
       setStreakCount((current) => current + 1);
     },
-    []
+    [],
   );
 
   const handleIncorrectMatch = useCallback(() => {
@@ -58,26 +64,30 @@ export const CategoryMatchScreen: React.FC = () => {
       <AppHeader title={t('games.categoryMatch.title')} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
-        <Text style={styles.subtitle} accessibilityRole="text">
+        <Text style={styles.subtitle} accessibilityRole='text'>
           {t('games.categoryMatch.subtitle')}
         </Text>
-        <Text style={styles.counter} accessibilityLabel={`${correctCount} ${t('games.categoryMatch.correct')}`}>
+        <Text
+          style={styles.counter}
+          accessibilityLabel={`${correctCount} ${t('games.categoryMatch.correct')}`}
+        >
           {t('games.categoryMatch.correct')}: {correctCount}
         </Text>
         {streakCount >= 3 ? (
-          <Text style={styles.encouragement} accessibilityLabel={t('games.categoryMatch.greatStreak')}>
+          <Text
+            style={styles.encouragement}
+            accessibilityLabel={t('games.categoryMatch.greatStreak')}
+          >
             {t('games.categoryMatch.streakMessage')} ✨
           </Text>
         ) : null}
 
         {showPreview ? (
-          <AppCard variant="outlined" style={styles.previewCard}>
-            <Text style={styles.previewTitle} accessibilityRole="header">
+          <AppCard variant='outlined' style={styles.previewCard}>
+            <Text style={styles.previewTitle} accessibilityRole='header'>
               {t('games.categoryMatch.quickPreview')}
             </Text>
-            <Text style={styles.previewText}>
-              {t('games.categoryMatch.dragInstruction')}
-            </Text>
+            <Text style={styles.previewText}>{t('games.categoryMatch.dragInstruction')}</Text>
             {CATEGORY_MATCH_CATEGORIES.map((category) => (
               <View key={category.id} style={styles.previewRow}>
                 <Text style={styles.previewCategoryLabel}>
@@ -88,7 +98,7 @@ export const CategoryMatchScreen: React.FC = () => {
             ))}
             <AppButton
               label={t('games.categoryMatch.startSorting')}
-              variant="primary"
+              variant='primary'
               onPress={() => setShowPreview(false)}
               fullWidth
               accessibilityHint={t('games.categoryMatch.startSortingHint')}

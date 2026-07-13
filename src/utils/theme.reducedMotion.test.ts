@@ -61,7 +61,7 @@ describe('useReducedMotion', () => {
     await waitFor(() => {
       expect(warnSpy).toHaveBeenCalledWith(
         'Unable to read system reduced motion preference.',
-        expect.any(Error)
+        expect.any(Error),
       );
       expect(result.current).toBe(false);
     });

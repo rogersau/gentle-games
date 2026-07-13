@@ -14,7 +14,8 @@ export const getBreathingPhase = (elapsedMs: number): BreathingGardenPhase => {
 
 export const getBreathingPhaseProgress = (elapsedMs: number): number => {
   const cycleMs = normalizeMs(elapsedMs) % BREATHING_CYCLE_DURATION_MS;
-  const phaseMs = cycleMs < BREATHING_PHASE_DURATION_MS ? cycleMs : cycleMs - BREATHING_PHASE_DURATION_MS;
+  const phaseMs =
+    cycleMs < BREATHING_PHASE_DURATION_MS ? cycleMs : cycleMs - BREATHING_PHASE_DURATION_MS;
   return phaseMs / BREATHING_PHASE_DURATION_MS;
 };
 
@@ -28,4 +29,3 @@ export const isCalmBreathPress = (phase: BreathingGardenPhase, holdDurationMs: n
   const hold = normalizeMs(holdDurationMs);
   return hold >= 500 && hold <= 6000;
 };
-

@@ -3,11 +3,11 @@
   "compilerOptions": {
     "strict": true,
     "resolveJsonModule": true,
-    "types": ["jest"]            // ← add jest types for the language service
+    "types": ["jest"] // ← add jest types for the language service
   },
   "include": [
     "src/**/*",
-    "**/*.test.ts",              // make sure the language server loads them
+    "**/*.test.ts", // make sure the language server loads them
     "**/*.test.tsx"
   ]
 }

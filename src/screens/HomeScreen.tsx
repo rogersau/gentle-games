@@ -1,160 +1,99 @@
-import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Linking, TouchableOpacity } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { useTranslation } from "react-i18next";
-import { useSettings } from "../context/SettingsContext";
-import { Difficulty, PASTEL_COLORS, ThemeColors, UNFINISHED_GAMES } from "../types";
-import { ResolvedThemeMode, useThemeColors } from "../utils/theme";
-import { TranslationKey } from "../i18n/types";
-import {
-  AppScreen,
-  AppButton,
-  AppModal,
-  GameCard,
-  SegmentedControl,
-} from "../ui/components";
-import { Space, TypeStyle } from "../ui/tokens";
-import { useLayout } from "../ui/useLayout";
-
-interface Game {
-  id: string;
-  nameKey: TranslationKey;
-  descriptionKey: TranslationKey;
-  icon: string;
-  accentColor?: string;
-}
-
-const GAMES: Game[] = [
-  {
-    id: "memory-snap",
-    nameKey: "games.memorySnap.name",
-    descriptionKey: "games.memorySnap.description",
-    icon: "🧩",
-    accentColor: PASTEL_COLORS.primary,
-  },
-  {
-    id: "drawing",
-    nameKey: "games.drawing.name",
-    descriptionKey: "games.drawing.description",
-    icon: "🎨",
-    accentColor: PASTEL_COLORS.secondary,
-  },
-  {
-    id: "glitter-fall",
-    nameKey: "games.glitterFall.name",
-    descriptionKey: "games.glitterFall.description",
-    icon: "✨",
-    accentColor: PASTEL_COLORS.accent,
-  },
-  {
-    id: "bubble-pop",
-    nameKey: "games.bubblePop.name",
-    descriptionKey: "games.bubblePop.description",
-    icon: "🫧",
-    accentColor: PASTEL_COLORS.success,
-  },
-  {
-    id: "category-match",
-    nameKey: "games.categoryMatch.name",
-    descriptionKey: "games.categoryMatch.description",
-    icon: "🗂️",
-    accentColor: PASTEL_COLORS.cardBack,
-  },
-  {
-    id: "keepy-uppy",
-    nameKey: "games.keepyUppy.name",
-    descriptionKey: "games.keepyUppy.description",
-    icon: "🎈",
-    accentColor: PASTEL_COLORS.secondary,
-  },
-  {
-    id: "breathing-garden",
-    nameKey: "games.breathingGarden.name",
-    descriptionKey: "games.breathingGarden.description",
-    icon: "🌸",
-    accentColor: PASTEL_COLORS.accent,
-  },
-  {
-    id: "pattern-train",
-    nameKey: "games.patternTrain.name",
-    descriptionKey: "games.patternTrain.description",
-    icon: "🚂",
-    accentColor: PASTEL_COLORS.primary,
-  },
-  {
-    id: "number-picnic",
-    nameKey: "games.numberPicnic.name",
-    descriptionKey: "games.numberPicnic.description",
-    icon: "🧺",
-    accentColor: PASTEL_COLORS.success,
-  },
-];
-
-const ROUTE_MAP: Record<string, string> = {
-  "memory-snap": "Game",
-  drawing: "Drawing",
-  "glitter-fall": "Glitter",
-  "bubble-pop": "Bubble",
-  "category-match": "CategoryMatch",
-  "keepy-uppy": "KeepyUppy",
-  "breathing-garden": "BreathingGarden",
-  "pattern-train": "PatternTrain",
-  "number-picnic": "NumberPicnic",
-};
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { useTranslation } from 'react-i18next';
+import { useSettings } from '../context/SettingsContext';
+import { Difficulty, ThemeColors } from '../types';
+import { APP_ROUTES, AppStackParamList } from '../types/navigation';
+import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
+import { openExternalUrl } from '../utils/externalLinks';
+import { AppScreen, AppButton, AppModal, GameCard, MochiPresence } from '../ui/components';
+import { useMochi } from '../hooks/useMochi';
+import { GameDefinition, getGameRoute, getVisibleGames } from '../games/registry';
+import { useGameSelection } from '../hooks/useGameSelection';
+import { Space, TypeStyle } from '../ui/tokens';
+import { useLayout } from '../ui/useLayout';
 
 export const HomeScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<StackNavigationProp<AppStackParamList>>();
   const { settings, updateSettings } = useSettings();
   const { colors, resolvedMode } = useThemeColors();
-  const styles = useMemo(
-    () => createStyles(colors, resolvedMode),
-    [colors, resolvedMode],
-  );
+  const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const { gridColumns, contentWidth, isTablet } = useLayout();
   const { t } = useTranslation();
-  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-  const [showDifficultySelector, setShowDifficultySelector] = useState(false);
+  const { celebrate, showMochi } = useMochi();
+  const {
+    selectedGame,
+    showDifficultySelector,
+    handleGameSelect: onGameSelect,
+    handleDifficultySelect: onDifficultySelect,
+    handleCloseModal: onCloseModal,
+  } = useGameSelection();
+  const [showWebsiteFallback, setShowWebsiteFallback] = useState(false);
+
+  React.useEffect(() => {
+    showMochi('mascot.greeting', 'floating');
+  }, [showMochi]);
 
   const difficultyOptions: {
     value: Difficulty;
     label: string;
     description: string;
   }[] = [
-      { value: "easy", label: t("difficulty.easy.label"), description: t("difficulty.easy.description") },
-      { value: "medium", label: t("difficulty.medium.label"), description: t("difficulty.medium.description") },
-      { value: "hard", label: t("difficulty.hard.label"), description: t("difficulty.hard.description") },
-    ];
+    {
+      value: 'easy',
+      label: t('difficulty.easy.label'),
+      description: t('difficulty.easy.description'),
+    },
+    {
+      value: 'medium',
+      label: t('difficulty.medium.label'),
+      description: t('difficulty.medium.description'),
+    },
+    {
+      value: 'hard',
+      label: t('difficulty.hard.label'),
+      description: t('difficulty.hard.description'),
+    },
+  ];
 
   const visibleGames = useMemo(
-    () => GAMES.filter((game) => {
-      if (settings.hiddenGames.includes(game.id)) return false;
-      if (!settings.enableUnfinishedGames && UNFINISHED_GAMES.includes(game.id)) return false;
-      return true;
-    }),
+    () =>
+      getVisibleGames({
+        hiddenGames: settings.hiddenGames,
+        enableUnfinishedGames: settings.enableUnfinishedGames,
+      }),
     [settings.hiddenGames, settings.enableUnfinishedGames],
   );
 
-  const handleGameSelect = (game: Game) => {
-    setSelectedGame(game);
-    if (game.id === "memory-snap") {
-      setShowDifficultySelector(true);
-    } else {
-      const route = ROUTE_MAP[game.id];
-      if (route) navigation.navigate(route as never);
-      setSelectedGame(null);
+  const handleGameSelect = (game: GameDefinition) => {
+    onGameSelect(game);
+    if (game.launchMode !== 'difficulty-select') {
+      celebrate();
+      setTimeout(() => {
+        navigation.navigate(getGameRoute(game.id));
+      }, 200);
     }
   };
 
   const handleDifficultySelect = async (difficulty: Difficulty) => {
+    const selectedGameRoute = selectedGame ? getGameRoute(selectedGame.id) : APP_ROUTES.Game;
     await updateSettings({ difficulty });
-    setShowDifficultySelector(false);
-    navigation.navigate("Game" as never);
-    setSelectedGame(null);
+    await onDifficultySelect(difficulty);
+    navigation.navigate(selectedGameRoute);
   };
 
   const handleCloseModal = () => {
-    setShowDifficultySelector(false);
-    setSelectedGame(null);
+    onCloseModal();
+  };
+
+  const handleWebsitePress = async () => {
+    const result = await openExternalUrl('https://gentlegames.org');
+
+    if (result !== 'opened') {
+      setShowWebsiteFallback(true);
+    }
   };
 
   const getDifficultyLabel = (difficulty: Difficulty) => {
@@ -163,32 +102,32 @@ export const HomeScreen: React.FC = () => {
   };
 
   return (
-    <AppScreen testID="home-screen">
+    <AppScreen testID='home-screen'>
       <View
         style={[
           styles.content,
           isTablet && {
             maxWidth: contentWidth,
-            alignSelf: "center",
-            width: "100%",
+            alignSelf: 'center',
+            width: '100%',
           },
         ]}
       >
         <View style={styles.titleArea}>
-          <Text style={styles.title} accessibilityRole="header">
-            {t("home.title")}
-          </Text>
-          <Text style={styles.subtitle}>{t("home.subtitle")}</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title} accessibilityRole='header'>
+              {t('home.title')}
+            </Text>
+            <MochiPresence size='sm' style={styles.mochiInHeader} />
+          </View>
+          <Text style={styles.subtitle}>{t('home.subtitle')}</Text>
         </View>
 
-        <View style={styles.gamesContainer} testID="home-games-container">
+        <View style={styles.gamesContainer} testID='home-games-container'>
           {visibleGames.length > 0 ? (
             <ScrollView
               style={styles.gamesScroll}
-              contentContainerStyle={[
-                styles.gamesScrollContent,
-                isTablet && styles.gamesGrid,
-              ]}
+              contentContainerStyle={[styles.gamesScrollContent, isTablet && styles.gamesGrid]}
               showsVerticalScrollIndicator
               persistentScrollbar
             >
@@ -198,10 +137,10 @@ export const HomeScreen: React.FC = () => {
                   style={
                     isTablet
                       ? {
-                        width: `${Math.floor(100 / gridColumns)}%`,
-                        paddingHorizontal: Space.xs,
-                        justifyContent: "center",
-                      }
+                          width: `${Math.floor(100 / gridColumns)}%`,
+                          paddingHorizontal: Space.xs,
+                          justifyContent: 'center',
+                        }
                       : undefined
                   }
                 >
@@ -211,37 +150,31 @@ export const HomeScreen: React.FC = () => {
                     description={t(game.descriptionKey)}
                     onPress={() => handleGameSelect(game)}
                     accentColor={game.accentColor}
-                    style={
-                      gridColumns === 1
-                        ? { padding: Space.md }
-                        : undefined
-                    }
+                    style={gridColumns === 1 ? { padding: Space.md } : undefined}
                   />
                 </View>
               ))}
             </ScrollView>
           ) : (
-            <Text style={styles.emptyGamesText}>
-              {t("home.emptyGames")}
-            </Text>
+            <Text style={styles.emptyGamesText}>{t('home.emptyGames')}</Text>
           )}
         </View>
 
         <View style={styles.footer}>
           <AppButton
-            label={t("home.settingsButton")}
-            variant="secondary"
-            size="lg"
-            onPress={() => navigation.navigate("Settings" as never)}
-            accessibilityHint={t("home.settingsHint")}
+            label={t('home.settingsButton')}
+            variant='secondary'
+            size='lg'
+            onPress={() => navigation.navigate(APP_ROUTES.Settings)}
+            accessibilityHint={t('home.settingsHint')}
           />
           <TouchableOpacity
-            onPress={() => Linking.openURL('https://gentlegames.org')}
+            onPress={handleWebsitePress}
             style={styles.websiteLinkContainer}
-            accessibilityRole="link"
-            accessibilityLabel={t("home.websiteLink")}
+            accessibilityRole='link'
+            accessibilityLabel={t('home.websiteLink')}
           >
-            <Text style={styles.websiteLinkText}>{t("home.websiteLink")}</Text>
+            <Text style={styles.websiteLinkText}>{t('home.websiteLink')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -251,20 +184,20 @@ export const HomeScreen: React.FC = () => {
         onClose={handleCloseModal}
         title={selectedGame ? t(selectedGame.nameKey) : undefined}
         showClose
-        closeLabel={t("common.cancel")}
+        closeLabel={t('common.cancel')}
       >
         <Text style={styles.modalSubtitle}>
-          {t("difficulty.title")}
+          {t('difficulty.title')}
           {settings.difficulty &&
-            ` (${t("games.memorySnap.lastUsed")}: ${getDifficultyLabel(settings.difficulty)})`}
+            ` (${t('games.memorySnap.lastUsed')}: ${getDifficultyLabel(settings.difficulty)})`}
         </Text>
         <View style={styles.optionsList}>
           {difficultyOptions.map(({ value, label, description }) => (
             <AppButton
               key={value}
               label={`${label}  ·  ${description}`}
-              variant={settings.difficulty === value ? "primary" : "ghost"}
-              size="md"
+              variant={settings.difficulty === value ? 'primary' : 'ghost'}
+              size='md'
               fullWidth
               onPress={() => handleDifficultySelect(value)}
               style={{ marginBottom: Space.sm }}
@@ -273,11 +206,19 @@ export const HomeScreen: React.FC = () => {
           ))}
         </View>
       </AppModal>
+
+      <AppModal
+        visible={showWebsiteFallback}
+        onClose={() => setShowWebsiteFallback(false)}
+        title={t('home.websiteLinkFallback.title')}
+      >
+        <Text style={styles.modalSubtitle}>{t('home.websiteLinkFallback.message')}</Text>
+      </AppModal>
     </AppScreen>
   );
 };
 
-const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
+const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
     content: {
       flex: 1,
@@ -285,19 +226,30 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       paddingTop: Space.lg,
     },
     titleArea: {
-      alignItems: "center",
-      marginBottom: Space["2xl"],
+      alignItems: 'center',
+      marginBottom: Space['2xl'],
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Space.sm,
+    },
+    mochiInHeader: {
+      marginTop: -Space.xs,
+    },
+    mochiInTitle: {
+      marginBottom: Space.md,
     },
     title: {
       ...TypeStyle.h1,
       color: colors.text,
-      textAlign: "center",
+      textAlign: 'center',
       marginBottom: Space.xs,
     },
     subtitle: {
       ...TypeStyle.body,
       color: colors.textLight,
-      textAlign: "center",
+      textAlign: 'center',
     },
     gamesContainer: {
       flex: 1,
@@ -312,17 +264,17 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       paddingBottom: Space.sm,
     },
     gamesGrid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
+      flexDirection: 'row',
+      flexWrap: 'wrap',
     },
     emptyGamesText: {
       ...TypeStyle.body,
-      textAlign: "center",
+      textAlign: 'center',
       color: colors.textLight,
       marginTop: Space.lg,
     },
     footer: {
-      alignItems: "center",
+      alignItems: 'center',
       paddingBottom: Space.sm,
       gap: Space.md,
     },
@@ -332,13 +284,13 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     websiteLinkText: {
       ...TypeStyle.bodySm,
       color: colors.textLight,
-      textDecorationLine: "underline",
+      textDecorationLine: 'underline',
       opacity: 0.6,
     },
     modalSubtitle: {
       ...TypeStyle.bodySm,
       color: colors.textLight,
-      textAlign: "center",
+      textAlign: 'center',
       marginBottom: Space.base,
     },
     optionsList: {

@@ -160,9 +160,9 @@ export const Shadow = {
 
 // ─── Breakpoints ─────────────────────────────────────────────────
 export const Breakpoint = {
-  compact: 0,     // phones
-  medium: 600,    // small tablets, large phones in landscape
-  expanded: 900,  // tablets
+  compact: 0, // phones
+  medium: 600, // small tablets, large phones in landscape
+  expanded: 900, // tablets
 } as const;
 
 // ─── Touch Targets ───────────────────────────────────────────────

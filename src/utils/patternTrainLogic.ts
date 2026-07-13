@@ -1,6 +1,6 @@
 import { Difficulty, PATTERN_TRAIN_EMOJIS, PatternTrainRound } from '../types';
 
-const shuffle = <T,>(items: T[], rng: () => number): T[] => {
+const shuffle = <T>(items: T[], rng: () => number): T[] => {
   const next = [...items];
   for (let i = next.length - 1; i > 0; i -= 1) {
     const j = Math.floor(rng() * (i + 1));
@@ -51,17 +51,17 @@ export interface TrainPattern {
 
 export const generateTrainPattern = (
   difficulty: Difficulty,
-  rng: () => number = Math.random
+  rng: () => number = Math.random,
 ): TrainPattern => {
   const template = getRandomPatternTemplate(difficulty, rng);
   const tokenCount = Math.max(...template.indexes) + 1;
   const tokens = shuffle(PATTERN_TRAIN_EMOJIS, rng).slice(0, tokenCount);
   const sequence = template.indexes.map((index) => tokens[index]);
-  
+
   // Create carriages: visible carriages with emojis + missing carriage
   // Note: Engine is separate and has no emoji - only carriages have emojis
   const carriages: TrainCarriage[] = [];
-  
+
   // For easy mode, randomly decide which carriage is missing (3rd or 4th)
   let missingIndex: number;
   if (difficulty === 'easy') {
@@ -71,23 +71,26 @@ export const generateTrainPattern = (
     // For medium/hard, always make the last position missing
     missingIndex = template.displayLength - 1;
   }
-  
+
   // Build carriages array
   for (let i = 0; i < template.displayLength; i++) {
     if (i < sequence.length) {
       const isMissing = i === missingIndex;
-      carriages.push({ 
-        emoji: sequence[i], 
-        isMissing: isMissing 
+      carriages.push({
+        emoji: sequence[i],
+        isMissing: isMissing,
       });
     }
   }
-  
+
   // The answer is the item at the missing index
   const answer = sequence[missingIndex];
-  
+
   // Generate choices (answer + 3 distractors)
-  const distractors = shuffle(PATTERN_TRAIN_EMOJIS.filter((emoji) => emoji !== answer), rng).slice(0, 3);
+  const distractors = shuffle(
+    PATTERN_TRAIN_EMOJIS.filter((emoji) => emoji !== answer),
+    rng,
+  ).slice(0, 3);
   const choices = shuffle([answer, ...distractors], rng);
 
   return {
@@ -101,9 +104,14 @@ export const generateTrainPattern = (
 export const isTrainChoiceCorrect = (pattern: TrainPattern, choice: string): boolean =>
   pattern.answer === choice;
 
-export const removeWrongChoices = (choices: string[], answer: string, count: number, specificWrongChoice?: string): string[] => {
+export const removeWrongChoices = (
+  choices: string[],
+  answer: string,
+  count: number,
+  specificWrongChoice?: string,
+): string[] => {
   const wrongChoices = choices.filter((choice) => choice !== answer);
-  
+
   // If a specific wrong choice is provided, prioritize removing it first
   let choicesToRemove: string[] = [];
   if (specificWrongChoice && wrongChoices.includes(specificWrongChoice)) {
@@ -117,19 +125,19 @@ export const removeWrongChoices = (choices: string[], answer: string, count: num
     // Fall back to removing from the beginning of wrong choices
     choicesToRemove = wrongChoices.slice(0, count);
   }
-  
+
   return choices.filter((choice) => !choicesToRemove.includes(choice));
 };
 
 // Legacy exports for backwards compatibility
 export const generatePatternTrainRound = (
   difficulty: Difficulty,
-  rng: () => number = Math.random
+  rng: () => number = Math.random,
 ): PatternTrainRound => {
   const pattern = generateTrainPattern(difficulty, rng);
-  const sequence = pattern.carriages.map(c => c.emoji);
-  const display = pattern.carriages.map(c => c.isMissing ? '❔' : c.emoji);
-  
+  const sequence = pattern.carriages.map((c) => c.emoji);
+  const display = pattern.carriages.map((c) => (c.isMissing ? '❔' : c.emoji));
+
   return {
     sequence,
     display,

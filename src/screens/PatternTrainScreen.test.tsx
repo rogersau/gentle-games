@@ -1,6 +1,6 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { Animated, View } from 'react-native';
+import { render, fireEvent } from '@testing-library/react-native';
+import { Animated } from 'react-native';
 import { PatternTrainScreen } from '../screens/PatternTrainScreen';
 
 const mockGoBack = jest.fn();
@@ -15,7 +15,7 @@ jest.mock('@react-navigation/native', () => ({
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, options?: Record<string, unknown>) => {
+    t: (key: string, _options?: Record<string, unknown>) => {
       const translations: Record<string, string> = {
         'games.patternTrain.title': 'Pattern Train',
         'games.patternTrain.subtitle': 'Complete the train pattern',
@@ -103,38 +103,59 @@ jest.mock('../ui/animations', () => ({
   }),
 }));
 
+jest.mock('../context/MochiContext', () => ({
+  useMochiContext: () => ({
+    mochiProps: { variant: 'idle', visible: false, phrase: null },
+    showMochi: jest.fn(),
+    hideMochi: jest.fn(),
+    celebrate: jest.fn(),
+  }),
+}));
+
 describe('PatternTrainScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Mock Animated.timing to execute immediately
-    jest.spyOn(Animated, 'timing').mockImplementation(() => ({
-      start: (callback?: () => void) => {
-        if (callback) callback();
-      },
-      stop: jest.fn(),
-      reset: jest.fn(),
-    } as any));
-    jest.spyOn(Animated, 'spring').mockImplementation(() => ({
-      start: (callback?: () => void) => {
-        if (callback) callback();
-      },
-      stop: jest.fn(),
-      reset: jest.fn(),
-    } as any));
-    jest.spyOn(Animated, 'sequence').mockImplementation((animations: any[]) => ({
-      start: (callback?: () => void) => {
-        animations.forEach(anim => anim.start?.());
-        if (callback) callback();
-      },
-      stop: jest.fn(),
-    } as any));
-    jest.spyOn(Animated, 'parallel').mockImplementation((animations: any[]) => ({
-      start: (callback?: () => void) => {
-        animations.forEach(anim => anim.start?.());
-        if (callback) callback();
-      },
-      stop: jest.fn(),
-    } as any));
+    jest.spyOn(Animated, 'timing').mockImplementation(
+      () =>
+        ({
+          start: (callback?: () => void) => {
+            if (callback) callback();
+          },
+          stop: jest.fn(),
+          reset: jest.fn(),
+        }) as any,
+    );
+    jest.spyOn(Animated, 'spring').mockImplementation(
+      () =>
+        ({
+          start: (callback?: () => void) => {
+            if (callback) callback();
+          },
+          stop: jest.fn(),
+          reset: jest.fn(),
+        }) as any,
+    );
+    jest.spyOn(Animated, 'sequence').mockImplementation(
+      (animations: any[]) =>
+        ({
+          start: (callback?: () => void) => {
+            animations.forEach((anim) => anim.start?.());
+            if (callback) callback();
+          },
+          stop: jest.fn(),
+        }) as any,
+    );
+    jest.spyOn(Animated, 'parallel').mockImplementation(
+      (animations: any[]) =>
+        ({
+          start: (callback?: () => void) => {
+            animations.forEach((anim) => anim.start?.());
+            if (callback) callback();
+          },
+          stop: jest.fn(),
+        }) as any,
+    );
   });
 
   afterEach(() => {
@@ -143,12 +164,12 @@ describe('PatternTrainScreen', () => {
 
   it('renders difficulty selector on initial load', () => {
     const screen = render(<PatternTrainScreen />);
-    
+
     // Should show difficulty selector modal
     const easyButton = screen.queryByText('Easy');
     const mediumButton = screen.queryByText('Medium');
     const hardButton = screen.queryByText('Hard');
-    
+
     expect(easyButton).toBeTruthy();
     expect(mediumButton).toBeTruthy();
     expect(hardButton).toBeTruthy();
@@ -156,14 +177,14 @@ describe('PatternTrainScreen', () => {
 
   it('shows game title', () => {
     const screen = render(<PatternTrainScreen />);
-    
+
     const title = screen.queryByText('Pattern Train');
     expect(title).toBeTruthy();
   });
 
   it('renders with subtitle accessibility', () => {
     const screen = render(<PatternTrainScreen />);
-    
+
     // Screen should render successfully with accessibility
     const title = screen.queryByText('Pattern Train');
     expect(title).toBeTruthy();
@@ -171,7 +192,7 @@ describe('PatternTrainScreen', () => {
 
   it('navigates back when cancel is pressed', () => {
     const screen = render(<PatternTrainScreen />);
-    
+
     // Find and press cancel button
     const cancelButton = screen.queryByText('Cancel');
     if (cancelButton) {
@@ -182,7 +203,7 @@ describe('PatternTrainScreen', () => {
 
   it('renders with AppHeader for navigation', () => {
     const screen = render(<PatternTrainScreen />);
-    
+
     // AppHeader should be rendered (we can check by looking for the title)
     const title = screen.queryByText('Pattern Train');
     expect(title).toBeTruthy();

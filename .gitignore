@@ -42,3 +42,4 @@ yarn-error.*
 nul
 /coverage
 .env
+.superpowers/brainstorm/*

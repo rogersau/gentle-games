@@ -14,7 +14,7 @@ describe('infiniteLoopDetection utilities', () => {
     expect(() =>
       withInfiniteLoopDetection(() => {
         console.error('Warning: Maximum update depth exceeded in component');
-      })
+      }),
     ).toThrow('Detected "Maximum update depth exceeded" error(s).');
   });
 
@@ -24,8 +24,8 @@ describe('infiniteLoopDetection utilities', () => {
         () => {
           console.error('Maximum update depth exceeded');
         },
-        { shouldThrow: false }
-      )
+        { shouldThrow: false },
+      ),
     ).not.toThrow();
   });
 

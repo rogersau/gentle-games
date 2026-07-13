@@ -23,6 +23,30 @@ jest.mock('../utils/theme', () => ({
   }),
 }));
 
+jest.mock('react-i18next', () => ({
+  initReactI18next: {
+    type: '3rdParty',
+    init: () => {},
+  },
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        'common.back': '← Back',
+        'games.categoryMatch.title': 'Category Match',
+        'games.categoryMatch.subtitle': 'Sort each emoji into Sky, Land, or Ocean.',
+        'games.categoryMatch.correct': 'Correct',
+        'games.categoryMatch.quickPreview': 'Quick Preview',
+        'games.categoryMatch.dragInstruction': 'Drag each emoji into the matching place.',
+        'games.categoryMatch.startSorting': 'Start Sorting',
+        'games.categoryMatch.startSortingHint': 'Begin the sorting round.',
+        'games.categoryMatch.greatStreak': 'Wonderful sorting streak!',
+        'games.categoryMatch.streakMessage': 'Wonderful sorting streak!',
+      };
+      return translations[key] || key;
+    },
+  }),
+}));
+
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     goBack: mockGoBack,
@@ -30,26 +54,30 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 jest.mock('../components/CategoryMatchBoard', () => {
-  const React = require('react');
   const { Text, TouchableOpacity, View } = require('react-native');
 
   return {
     CategoryMatchBoard: ({
       onCorrectMatch,
+      onIncorrectMatch,
     }: {
-      onCorrectMatch?: (item: { emoji: string; name: string; color: string; category: 'sky' }, category: 'sky') => void;
+      onCorrectMatch?: (
+        item: { emoji: string; name: string; color: string; category: 'sky' },
+        category: 'sky',
+      ) => void;
+      onIncorrectMatch?: () => void;
     }) => (
       <View>
         <Text>Mock Category Match Board</Text>
         <TouchableOpacity
           onPress={() =>
-            onCorrectMatch?.(
-              { emoji: '☀️', name: 'sun', color: '#FFFACD', category: 'sky' },
-              'sky'
-            )
+            onCorrectMatch?.({ emoji: '☀️', name: 'sun', color: '#FFFACD', category: 'sky' }, 'sky')
           }
         >
           <Text>Match Correct Item</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => onIncorrectMatch?.()}>
+          <Text>Match Incorrect Item</Text>
         </TouchableOpacity>
       </View>
     ),
@@ -76,5 +104,24 @@ describe('CategoryMatchScreen', () => {
     expect(screen.getByText('Correct: 0')).toBeTruthy();
     fireEvent.press(screen.getByText('Match Correct Item'));
     expect(screen.getByText('Correct: 1')).toBeTruthy();
+  });
+
+  it('keeps the preview hidden, resets streaks on incorrect matches, and shows encouragement after three correct matches', () => {
+    const screen = render(<CategoryMatchScreen />);
+
+    fireEvent.press(screen.getByText('Start Sorting'));
+
+    expect(screen.queryByText('Start Sorting')).toBeNull();
+    fireEvent.press(screen.getByText('Match Correct Item'));
+    fireEvent.press(screen.getByText('Match Correct Item'));
+    fireEvent.press(screen.getByText('Match Incorrect Item'));
+    expect(screen.queryByText('Wonderful sorting streak! ✨')).toBeNull();
+
+    fireEvent.press(screen.getByText('Match Correct Item'));
+    fireEvent.press(screen.getByText('Match Correct Item'));
+    fireEvent.press(screen.getByText('Match Correct Item'));
+
+    expect(screen.getByText('Correct: 5')).toBeTruthy();
+    expect(screen.getByText('Wonderful sorting streak! ✨')).toBeTruthy();
   });
 });

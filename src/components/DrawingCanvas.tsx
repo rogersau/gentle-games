@@ -1,12 +1,12 @@
-import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle, useMemo } from 'react';
-import {
-  View,
-  StyleSheet,
-  PanResponder,
-  TouchableOpacity,
-  Text,
-  ScrollView,
-} from 'react-native';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+  useMemo,
+} from 'react';
+import { View, StyleSheet, PanResponder, TouchableOpacity, Text, ScrollView } from 'react-native';
 import { AppModal, AppButton } from '../ui/components';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path, Circle, Rect, Polygon, Line } from 'react-native-svg';
@@ -23,6 +23,7 @@ export interface Point {
 export interface Stroke {
   kind: 'stroke';
   id: string;
+  actionId?: string;
   points: Point[];
   color: string;
   width: number;
@@ -31,6 +32,7 @@ export interface Stroke {
 export interface Shape {
   kind: 'shape';
   id: string;
+  actionId?: string;
   type: 'circle' | 'square' | 'triangle';
   x: number;
   y: number;
@@ -41,6 +43,7 @@ export interface Shape {
 export interface ErasedRegion {
   kind: 'erase';
   id: string;
+  actionId?: string;
   points: Point[];
   width: number;
 }
@@ -65,17 +68,48 @@ const SYMMETRY_MODE_TRANSLATION_KEYS: Record<SymmetryMode, TranslationKey> = {
 };
 
 const COLORS = [
-  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-  '#DDA0DD', '#98D8C8', '#FFB6C1', '#5A5A5A',
+  '#FF6B6B',
+  '#4ECDC4',
+  '#45B7D1',
+  '#96CEB4',
+  '#FFEAA7',
+  '#DDA0DD',
+  '#98D8C8',
+  '#FFB6C1',
+  '#5A5A5A',
 ];
 
 const PRESET_COLORS = [
-  '#FF0000', '#FF4500', '#FF8C00', '#FFD700', '#FFFF00',
-  '#ADFF2F', '#7FFF00', '#00FF00', '#00FA9A', '#00CED1',
-  '#00BFFF', '#1E90FF', '#4169E1', '#0000FF', '#8A2BE2',
-  '#9932CC', '#FF00FF', '#FF1493', '#DC143C', '#8B0000',
-  '#A0522D', '#D2691E', '#CD853F', '#DAA520', '#B8860B',
-  '#556B2F', '#6B8E23', '#228B22', '#008B8B', '#5F9EA0',
+  '#FF0000',
+  '#FF4500',
+  '#FF8C00',
+  '#FFD700',
+  '#FFFF00',
+  '#ADFF2F',
+  '#7FFF00',
+  '#00FF00',
+  '#00FA9A',
+  '#00CED1',
+  '#00BFFF',
+  '#1E90FF',
+  '#4169E1',
+  '#0000FF',
+  '#8A2BE2',
+  '#9932CC',
+  '#FF00FF',
+  '#FF1493',
+  '#DC143C',
+  '#8B0000',
+  '#A0522D',
+  '#D2691E',
+  '#CD853F',
+  '#DAA520',
+  '#B8860B',
+  '#556B2F',
+  '#6B8E23',
+  '#228B22',
+  '#008B8B',
+  '#5F9EA0',
 ];
 
 interface DrawingCanvasProps {
@@ -122,18 +156,34 @@ const pointsToSmoothPath = (points: Point[]): string => {
  */
 const getSymmetryOffsets = (mode: SymmetryMode): Array<[number, number]> => {
   if (mode === 'none') return [[1, 1]];
-  if (mode === 'half') return [[1, 1], [-1, 1]];
-  if (mode === 'quarter') return [[1, 1], [-1, 1], [1, -1], [-1, -1]];
+  if (mode === 'half')
+    return [
+      [1, 1],
+      [-1, 1],
+    ];
+  if (mode === 'quarter')
+    return [
+      [1, 1],
+      [-1, 1],
+      [1, -1],
+      [-1, -1],
+    ];
   return [[1, 1]];
 };
 
 /**
  * Apply symmetry transform to a point
  */
-const applySymmetry = (point: Point, width: number, height: number, xMult: number, yMult: number): Point => {
+const applySymmetry = (
+  point: Point,
+  width: number,
+  height: number,
+  xMult: number,
+  yMult: number,
+): Point => {
   const centerX = width / 2;
   const centerY = height / 2;
-  
+
   return {
     x: centerX + (point.x - centerX) * xMult,
     y: centerY + (point.y - centerY) * yMult,
@@ -141,14 +191,24 @@ const applySymmetry = (point: Point, width: number, height: number, xMult: numbe
 };
 
 export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
-  ({ width, height, bottomInset = 0, initialHistory = [], onHistoryChange, canvasBackgroundColor = '#FFFFFF' }, ref) => {
+  (
+    {
+      width,
+      height,
+      bottomInset = 0,
+      initialHistory = [],
+      onHistoryChange,
+      canvasBackgroundColor = '#FFFFFF',
+    },
+    ref,
+  ) => {
     const { colors } = useThemeColors();
     const { t } = useTranslation();
     const themedStyles = useMemo(() => createThemedStyles(colors), [colors]);
     // Unified ordered history — preserves exact draw order for correct undo
     const [history, setHistory] = useState<HistoryEntry[]>(initialHistory);
     // Current strokes being drawn (one per symmetry copy)
-    const [currentStrokes, setCurrentStrokes] = useState<Omit<Stroke, 'kind' | 'id'>[]>([]);
+    const [currentStrokes, setCurrentStrokes] = useState<Array<Omit<Stroke, 'kind' | 'id'>>>([]);
 
     // Update history when initialHistory prop changes (e.g., when loading saved drawing)
     useEffect(() => {
@@ -173,13 +233,26 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     const shapeSizeRef = useRef(shapeSize);
     const symmetryModeRef = useRef(symmetryMode);
     const historyRef = useRef(history);
+    const nextActionIdRef = useRef(0);
 
-    useEffect(() => { selectedColorRef.current = selectedColor; }, [selectedColor]);
-    useEffect(() => { toolRef.current = tool; }, [tool]);
-    useEffect(() => { shapeTypeRef.current = shapeType; }, [shapeType]);
-    useEffect(() => { shapeSizeRef.current = shapeSize; }, [shapeSize]);
-    useEffect(() => { symmetryModeRef.current = symmetryMode; }, [symmetryMode]);
-    useEffect(() => { historyRef.current = history; }, [history]);
+    useEffect(() => {
+      selectedColorRef.current = selectedColor;
+    }, [selectedColor]);
+    useEffect(() => {
+      toolRef.current = tool;
+    }, [tool]);
+    useEffect(() => {
+      shapeTypeRef.current = shapeType;
+    }, [shapeType]);
+    useEffect(() => {
+      shapeSizeRef.current = shapeSize;
+    }, [shapeSize]);
+    useEffect(() => {
+      symmetryModeRef.current = symmetryMode;
+    }, [symmetryMode]);
+    useEffect(() => {
+      historyRef.current = history;
+    }, [history]);
 
     // Notify parent of history changes
     useEffect(() => {
@@ -189,6 +262,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     const clearCanvas = () => {
       setHistory([]);
       setCurrentStrokes([]);
+    };
+
+    const createActionId = () => {
+      const actionId = `action-${Date.now()}-${nextActionIdRef.current}`;
+      nextActionIdRef.current += 1;
+      return actionId;
     };
 
     // Expose imperative methods
@@ -208,11 +287,13 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           if (toolRef.current === 'shape') {
             // Create shapes with symmetry
             const offsets = getSymmetryOffsets(mode);
+            const actionId = createActionId();
             const newShapes: Shape[] = offsets.map(([xMult, yMult], idx) => {
               const pt = applySymmetry({ x: locationX, y: locationY }, width, height, xMult, yMult);
               return {
                 kind: 'shape' as const,
                 id: `shape-${Date.now()}-${idx}`,
+                actionId,
                 type: shapeTypeRef.current,
                 x: pt.x,
                 y: pt.y,
@@ -224,10 +305,18 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           } else {
             const strokeWidth = toolRef.current === 'eraser' ? 30 : 5;
             const offsets = getSymmetryOffsets(mode);
+            const actionId = createActionId();
             // Create one stroke for each symmetry copy with properly mirrored initial points
             const newStrokes = offsets.map(([xMult, yMult]) => {
-              const mirroredPt = applySymmetry({ x: locationX, y: locationY }, width, height, xMult, yMult);
+              const mirroredPt = applySymmetry(
+                { x: locationX, y: locationY },
+                width,
+                height,
+                xMult,
+                yMult,
+              );
               return {
+                actionId,
                 points: [mirroredPt],
                 color: selectedColorRef.current,
                 width: strokeWidth,
@@ -240,14 +329,20 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           if (toolRef.current === 'shape') return;
           const { locationX, locationY } = evt.nativeEvent;
           const mode = symmetryModeRef.current;
-          
+
           setCurrentStrokes((prevStrokes) => {
             if (prevStrokes.length === 0) return [];
             const offsets = getSymmetryOffsets(mode);
-            
+
             return prevStrokes.map((stroke, idx) => {
               const [xMult, yMult] = offsets[idx] || [1, 1];
-              const mirroredPt = applySymmetry({ x: locationX, y: locationY }, width, height, xMult, yMult);
+              const mirroredPt = applySymmetry(
+                { x: locationX, y: locationY },
+                width,
+                height,
+                xMult,
+                yMult,
+              );
               return {
                 ...stroke,
                 points: [...stroke.points, mirroredPt],
@@ -260,12 +355,13 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
           setCurrentStrokes((strokes) => {
             if (strokes.length === 0) return [];
-            
+
             if (toolRef.current === 'eraser') {
               // Create erase entries for each symmetry copy
               const eraseEntries: ErasedRegion[] = strokes.map((stroke, idx) => ({
                 kind: 'erase',
                 id: `erase-${Date.now()}-${idx}`,
+                actionId: stroke.actionId,
                 points: stroke.points,
                 width: stroke.width,
               }));
@@ -275,6 +371,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               const strokeEntries: Stroke[] = strokes.map((stroke, idx) => ({
                 kind: 'stroke',
                 id: `stroke-${Date.now()}-${idx}`,
+                actionId: stroke.actionId,
                 points: stroke.points,
                 color: stroke.color,
                 width: stroke.width,
@@ -284,7 +381,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             return [];
           });
         },
-      })
+      }),
     ).current;
 
     const handleClear = () => {
@@ -301,10 +398,23 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     };
 
     const handleUndo = () => {
-      // When undoing with symmetry, we need to remove all copies of the last action
-      // Each action creates N entries (where N is the symmetry count at that time)
-      // For simplicity, just remove one entry at a time
-      setHistory((prev) => prev.slice(0, -1));
+      setHistory((prev) => {
+        if (prev.length === 0) {
+          return prev;
+        }
+
+        const lastEntry = prev[prev.length - 1];
+        if (!lastEntry.actionId) {
+          return prev.slice(0, -1);
+        }
+
+        let cutoffIndex = prev.length - 1;
+        while (cutoffIndex >= 0 && prev[cutoffIndex].actionId === lastEntry.actionId) {
+          cutoffIndex -= 1;
+        }
+
+        return prev.slice(0, cutoffIndex + 1);
+      });
     };
 
     const handleColorSelect = (color: string) => {
@@ -362,9 +472,9 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             d={pointsToSmoothPath(entry.points)}
             stroke={entry.color}
             strokeWidth={entry.width}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            fill='none'
           />
         );
       }
@@ -376,9 +486,9 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             d={pointsToSmoothPath(entry.points)}
             stroke={canvasBackgroundColor}
             strokeWidth={entry.width}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            fill='none'
           />
         );
       }
@@ -388,13 +498,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
         switch (entry.type) {
           case 'circle':
             return (
-              <Circle
-                key={entry.id}
-                cx={entry.x}
-                cy={entry.y}
-                r={halfSize}
-                fill={entry.color}
-              />
+              <Circle key={entry.id} cx={entry.x} cy={entry.y} r={halfSize} fill={entry.color} />
             );
           case 'square':
             return (
@@ -409,13 +513,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             );
           case 'triangle': {
             const pts = `${entry.x},${entry.y - halfSize} ${entry.x - halfSize},${entry.y + halfSize} ${entry.x + halfSize},${entry.y + halfSize}`;
-            return (
-              <Polygon
-                key={entry.id}
-                points={pts}
-                fill={entry.color}
-              />
-            );
+            return <Polygon key={entry.id} points={pts} fill={entry.color} />;
           }
         }
       }
@@ -426,10 +524,10 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     // Render symmetry guide lines
     const renderSymmetryGuides = () => {
       if (symmetryMode === 'none') return null;
-      
+
       const centerX = width / 2;
       const centerY = height / 2;
-      
+
       if (symmetryMode === 'half') {
         return (
           <Line
@@ -437,13 +535,13 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             y1={0}
             x2={centerX}
             y2={height}
-            stroke="#A8D8EA"
+            stroke='#A8D8EA'
             strokeWidth={2}
-            strokeDasharray="8,4"
+            strokeDasharray='8,4'
           />
         );
       }
-      
+
       if (symmetryMode === 'quarter') {
         return (
           <>
@@ -452,23 +550,23 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               y1={0}
               x2={centerX}
               y2={height}
-              stroke="#A8D8EA"
+              stroke='#A8D8EA'
               strokeWidth={2}
-              strokeDasharray="8,4"
+              strokeDasharray='8,4'
             />
             <Line
               x1={0}
               y1={centerY}
               x2={width}
               y2={centerY}
-              stroke="#A8D8EA"
+              stroke='#A8D8EA'
               strokeWidth={2}
-              strokeDasharray="8,4"
+              strokeDasharray='8,4'
             />
           </>
         );
       }
-      
+
       return null;
     };
 
@@ -476,10 +574,17 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
       <View style={styles.container}>
         {/* Canvas */}
         <View
-          testID="drawing-canvas-container"
-          style={[styles.canvasContainer, { width, height, backgroundColor: canvasBackgroundColor }]}
+          testID='drawing-canvas-container'
+          style={[
+            styles.canvasContainer,
+            { width, height, backgroundColor: canvasBackgroundColor },
+          ]}
         >
-          <Svg width={width} height={height} style={[styles.canvas, { backgroundColor: canvasBackgroundColor }]}>
+          <Svg
+            width={width}
+            height={height}
+            style={[styles.canvas, { backgroundColor: canvasBackgroundColor }]}
+          >
             {/* Canvas background */}
             <Path d={`M 0 0 H ${width} V ${height} H 0 Z`} fill={canvasBackgroundColor} />
 
@@ -495,9 +600,9 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                 d={pointsToSmoothPath(stroke.points)}
                 stroke={tool === 'eraser' ? canvasBackgroundColor : stroke.color}
                 strokeWidth={stroke.width}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                fill='none'
               />
             ))}
           </Svg>
@@ -515,7 +620,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             {allColors.map((color) => (
               <TouchableOpacity
                 key={color}
-                testID="palette-color-button"
+                testID='palette-color-button'
                 style={[
                   styles.colorButton,
                   { backgroundColor: color },
@@ -526,7 +631,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             ))}
 
             <TouchableOpacity
-              testID="open-color-picker"
+              testID='open-color-picker'
               style={[styles.colorButton, styles.customColorButton]}
               onPress={handleOpenColorPicker}
             >
@@ -536,20 +641,26 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
           <View style={styles.toolButtons}>
             <TouchableOpacity
-              style={[styles.toolButton, tool === 'pen' ? themedStyles.toolButtonActive : undefined]}
+              style={[
+                styles.toolButton,
+                tool === 'pen' ? themedStyles.toolButtonActive : undefined,
+              ]}
               onPress={() => handleToolSelect('pen')}
-              accessibilityRole="button"
-              accessibilityLabel={t('games.drawing.penTool') }
+              accessibilityRole='button'
+              accessibilityLabel={t('games.drawing.penTool')}
               accessibilityState={{ selected: tool === 'pen' }}
             >
               <Text style={styles.toolButtonText}>✏️</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.toolButton, tool === 'shape' ? themedStyles.toolButtonActive : undefined]}
+              style={[
+                styles.toolButton,
+                tool === 'shape' ? themedStyles.toolButtonActive : undefined,
+              ]}
               onPress={() => handleToolSelect('shape')}
-              accessibilityRole="button"
-              accessibilityLabel={`${t('games.drawing.shapeTool')}, ${t(SHAPE_TRANSLATION_KEYS[shapeType])}` }
+              accessibilityRole='button'
+              accessibilityLabel={`${t('games.drawing.shapeTool')}, ${t(SHAPE_TRANSLATION_KEYS[shapeType])}`}
               accessibilityState={{ selected: tool === 'shape' }}
             >
               <Text style={styles.toolButtonText}>
@@ -560,11 +671,16 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.toolButton, symmetryMode !== 'none' ? themedStyles.toolButtonActive : undefined]}
+              style={[
+                styles.toolButton,
+                symmetryMode !== 'none' ? themedStyles.toolButtonActive : undefined,
+              ]}
               onPress={cycleSymmetryMode}
-              accessibilityRole="button"
-              accessibilityLabel={t('games.drawing.symmetry', { mode: t(SYMMETRY_MODE_TRANSLATION_KEYS[symmetryMode]) }) }
-              accessibilityHint={t('games.drawing.symmetryHint') }
+              accessibilityRole='button'
+              accessibilityLabel={t('games.drawing.symmetry', {
+                mode: t(SYMMETRY_MODE_TRANSLATION_KEYS[symmetryMode]),
+              })}
+              accessibilityHint={t('games.drawing.symmetryHint')}
             >
               <Text style={styles.toolButtonText}>
                 {symmetryMode === 'none' && '🦋'}
@@ -574,10 +690,13 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.toolButton, tool === 'eraser' ? themedStyles.toolButtonActive : undefined]}
+              style={[
+                styles.toolButton,
+                tool === 'eraser' ? themedStyles.toolButtonActive : undefined,
+              ]}
               onPress={() => handleToolSelect('eraser')}
-              accessibilityRole="button"
-              accessibilityLabel={t('games.drawing.eraserTool') }
+              accessibilityRole='button'
+              accessibilityLabel={t('games.drawing.eraserTool')}
               accessibilityState={{ selected: tool === 'eraser' }}
             >
               <Text style={styles.toolButtonText}>🧹</Text>
@@ -587,49 +706,49 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               style={[styles.toolButton, !canUndo ? styles.toolButtonDisabled : undefined]}
               onPress={handleUndo}
               disabled={!canUndo}
-              accessibilityRole="button"
-              accessibilityLabel={t('games.drawing.undo') }
+              accessibilityRole='button'
+              accessibilityLabel={t('games.drawing.undo')}
               accessibilityState={{ disabled: !canUndo }}
             >
-              <Text style={[styles.toolButtonText, !canUndo ? styles.disabledText : undefined]}>↩️</Text>
+              <Text style={[styles.toolButtonText, !canUndo ? styles.disabledText : undefined]}>
+                ↩️
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              testID="clear-drawing-button"
+              testID='clear-drawing-button'
               style={styles.toolButton}
               onPress={handleClear}
-              accessibilityRole="button"
-              accessibilityLabel={t('games.drawing.clearCanvas') }
-              accessibilityHint={t('games.drawing.clearHint') }
+              accessibilityRole='button'
+              accessibilityLabel={t('games.drawing.clearCanvas')}
+              accessibilityHint={t('games.drawing.clearHint')}
             >
               <Text style={styles.toolButtonText}>🗑️</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-
-
         <AppModal
           visible={showClearConfirm}
           onClose={handleCancelClear}
-          title={t('games.drawing.clearTitle') }
+          title={t('games.drawing.clearTitle')}
           showClose={false}
           dismissOnBackdropPress={false}
         >
           <Text style={styles.modalText}>{t('games.drawing.clearConfirmMessage')}</Text>
 
-          <View style={[styles.modalButtons, { gap: 12 }]}>  
+          <View style={[styles.modalButtons, { gap: 12 }]}>
             <AppButton
               label={t('common.cancel')}
-              variant="secondary"
+              variant='secondary'
               onPress={handleCancelClear}
-              testID="clear-confirm-cancel"
+              testID='clear-confirm-cancel'
             />
             <AppButton
               label={t('games.drawing.clearConfirm')}
-              variant="danger"
+              variant='danger'
               onPress={handleConfirmClear}
-              testID="clear-confirm-accept"
+              testID='clear-confirm-accept'
             />
           </View>
         </AppModal>
@@ -661,18 +780,18 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             ))}
           </View>
 
-          <View style={[styles.modalButtons]}>  
+          <View style={[styles.modalButtons]}>
             <AppButton
               label={t('common.cancel')}
-              variant="secondary"
+              variant='secondary'
               onPress={() => setShowColorPicker(false)}
               style={{ flex: 1, marginRight: Space.sm }}
             />
             <AppButton
               label={t('games.drawing.useColour')}
-              variant="primary"
+              variant='primary'
               onPress={handleCustomColorSelect}
-              testID="confirm-custom-color"
+              testID='confirm-custom-color'
               style={{ flex: 1, marginLeft: Space.sm }}
             />
           </View>
@@ -689,7 +808,10 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
         >
           <View style={styles.shapeGrid}>
             <TouchableOpacity
-              style={[styles.shapeButton, shapeType === 'circle' ? styles.shapeButtonActive : undefined]}
+              style={[
+                styles.shapeButton,
+                shapeType === 'circle' ? styles.shapeButtonActive : undefined,
+              ]}
               onPress={() => handleShapeSelect('circle')}
             >
               <Text style={styles.shapeIcon}>🔴</Text>
@@ -697,7 +819,10 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.shapeButton, shapeType === 'square' ? styles.shapeButtonActive : undefined]}
+              style={[
+                styles.shapeButton,
+                shapeType === 'square' ? styles.shapeButtonActive : undefined,
+              ]}
               onPress={() => handleShapeSelect('square')}
             >
               <Text style={styles.shapeIcon}>🟦</Text>
@@ -705,7 +830,10 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.shapeButton, shapeType === 'triangle' ? styles.shapeButtonActive : undefined]}
+              style={[
+                styles.shapeButton,
+                shapeType === 'triangle' ? styles.shapeButtonActive : undefined,
+              ]}
               onPress={() => handleShapeSelect('triangle')}
             >
               <Text style={styles.shapeIcon}>🔺</Text>
@@ -715,35 +843,26 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
           <Text style={styles.sizeLabel}>{t('games.drawing.size', { size: shapeSize })}</Text>
           <View style={styles.sizeSlider}>
-            <TouchableOpacity
-              style={styles.sizeControlButton}
-              onPress={() => setShapeSize(30)}
-            >
+            <TouchableOpacity style={styles.sizeControlButton} onPress={() => setShapeSize(30)}>
               <Text style={styles.sizeControlText}>{t('games.drawing.sizeSmall')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.sizeControlButton}
-              onPress={() => setShapeSize(60)}
-            >
+            <TouchableOpacity style={styles.sizeControlButton} onPress={() => setShapeSize(60)}>
               <Text style={styles.sizeControlText}>{t('games.drawing.sizeMedium')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.sizeControlButton}
-              onPress={() => setShapeSize(100)}
-            >
+            <TouchableOpacity style={styles.sizeControlButton} onPress={() => setShapeSize(100)}>
               <Text style={styles.sizeControlText}>{t('games.drawing.sizeLarge')}</Text>
             </TouchableOpacity>
           </View>
 
           <AppButton
             label={t('common.done')}
-            variant="primary"
+            variant='primary'
             onPress={() => setShowShapePicker(false)}
           />
         </AppModal>
       </View>
     );
-  }
+  },
 );
 
 const createThemedStyles = (colors: ThemeColors) =>

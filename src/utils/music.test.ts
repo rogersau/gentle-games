@@ -31,7 +31,7 @@ describe('useBackgroundMusic', () => {
 
   it('configures audio mode on mount', () => {
     const { setAudioModeAsync } = require('expo-audio');
-    
+
     renderHook(() => useBackgroundMusic());
 
     expect(setAudioModeAsync).toHaveBeenCalledWith({
@@ -45,16 +45,13 @@ describe('useBackgroundMusic', () => {
     setAudioModeAsync.mockRejectedValueOnce(new Error('Audio mode failed'));
 
     const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-    
+
     renderHook(() => useBackgroundMusic());
 
     // Wait for the async init to complete
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'Failed to configure audio mode:',
-      expect.any(Error)
-    );
+    expect(consoleSpy).toHaveBeenCalledWith('Failed to configure audio mode:', expect.any(Error));
 
     consoleSpy.mockRestore();
   });
@@ -190,7 +187,7 @@ describe('useBackgroundMusic', () => {
 
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining('Failed to load music track'),
-      expect.any(Error)
+      expect.any(Error),
     );
 
     consoleSpy.mockRestore();

@@ -36,7 +36,7 @@ const randomInRange = (min: number, max: number, rng: () => number): number =>
 export const createBubble = (
   width: number,
   height: number,
-  rng: () => number = Math.random
+  rng: () => number = Math.random,
 ): Bubble => {
   const targetRadius = randomInRange(18, 44, rng);
   const minX = targetRadius;
@@ -53,7 +53,7 @@ export const createBubble = (
       ? randomInRange(
           height * LOWER_SPAWN_MIN_HEIGHT_RATIO,
           height * LOWER_SPAWN_MAX_HEIGHT_RATIO,
-          rng
+          rng,
         )
       : -targetRadius - randomInRange(TOP_SPAWN_MIN_OFFSET, TOP_SPAWN_MAX_OFFSET, rng),
     radius,
@@ -70,9 +70,11 @@ export const spawnBubbles = (
   count: number,
   width: number,
   height: number,
-  rng: () => number = Math.random
+  rng: () => number = Math.random,
 ): Bubble[] => {
-  const additions = Array.from({ length: Math.max(0, count) }, () => createBubble(width, height, rng));
+  const additions = Array.from({ length: Math.max(0, count) }, () =>
+    createBubble(width, height, rng),
+  );
   return [...existing, ...additions];
 };
 
@@ -82,7 +84,7 @@ export const ensureMinimumBubbles = (
   width: number,
   height: number,
   maxBubbles: number,
-  rng: () => number = Math.random
+  rng: () => number = Math.random,
 ): Bubble[] => {
   const safeMinimum = Math.max(0, Math.min(minimum, maxBubbles));
   if (existing.length >= safeMinimum) return existing.slice(0, maxBubbles);

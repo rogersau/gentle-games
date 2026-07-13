@@ -1,4 +1,10 @@
-import { generateTrainPattern, isTrainChoiceCorrect, removeWrongChoices, generatePatternTrainRound, isPatternTrainChoiceCorrect } from './patternTrainLogic';
+import {
+  generateTrainPattern,
+  isTrainChoiceCorrect,
+  removeWrongChoices,
+  generatePatternTrainRound,
+  isPatternTrainChoiceCorrect,
+} from './patternTrainLogic';
 
 const rng = () => 0.42;
 
@@ -6,19 +12,19 @@ describe('patternTrainLogic', () => {
   describe('generateTrainPattern', () => {
     it('generates a solvable easy pattern with train structure', () => {
       const pattern = generateTrainPattern('easy', rng);
-      
+
       // Should have carriages array
       expect(pattern.carriages).toBeDefined();
       expect(pattern.carriages.length).toBeGreaterThan(1);
-      
+
       // First carriage should have an emoji (not missing)
       expect(pattern.carriages[0].isMissing).toBe(false);
       expect(pattern.carriages[0].emoji).toBeTruthy();
-      
+
       // Exactly one carriage should be missing
-      const missingCarriages = pattern.carriages.filter(c => c.isMissing);
+      const missingCarriages = pattern.carriages.filter((c) => c.isMissing);
       expect(missingCarriages.length).toBe(1);
-      
+
       // Should have 4 choices
       expect(pattern.choices).toHaveLength(4);
       expect(pattern.choices).toContain(pattern.answer);
@@ -26,20 +32,20 @@ describe('patternTrainLogic', () => {
 
     it('generates medium pattern with longer train', () => {
       const pattern = generateTrainPattern('medium', rng);
-      
+
       // Medium should have more carriages than easy
       expect(pattern.carriages.length).toBeGreaterThanOrEqual(3);
-      
+
       // Should have choices
       expect(pattern.choices).toHaveLength(4);
     });
 
     it('generates hard pattern with longest train', () => {
       const pattern = generateTrainPattern('hard', rng);
-      
+
       // Hard should have the most carriages
       expect(pattern.carriages.length).toBeGreaterThanOrEqual(4);
-      
+
       // Should have choices
       expect(pattern.choices).toHaveLength(4);
     });
@@ -47,7 +53,7 @@ describe('patternTrainLogic', () => {
     it('validates answer selection', () => {
       const pattern = generateTrainPattern('hard', rng);
       expect(isTrainChoiceCorrect(pattern, pattern.answer)).toBe(true);
-      
+
       const wrongChoice = pattern.choices.find((choice) => choice !== pattern.answer) ?? '';
       expect(isTrainChoiceCorrect(pattern, wrongChoice)).toBe(false);
     });
@@ -152,13 +158,13 @@ describe('patternTrainLogic', () => {
       const patternAtTwo = generateTrainPattern('easy', () => 0.1);
       const patternAtThree = generateTrainPattern('easy', () => 0.9);
 
-      expect(patternAtTwo.carriages.findIndex(c => c.isMissing)).toBe(2);
-      expect(patternAtThree.carriages.findIndex(c => c.isMissing)).toBe(3);
+      expect(patternAtTwo.carriages.findIndex((c) => c.isMissing)).toBe(2);
+      expect(patternAtThree.carriages.findIndex((c) => c.isMissing)).toBe(3);
     });
 
     it('has exactly one missing carriage', () => {
       const pattern = generateTrainPattern('easy', rng);
-      const missingCount = pattern.carriages.filter(c => c.isMissing).length;
+      const missingCount = pattern.carriages.filter((c) => c.isMissing).length;
       expect(missingCount).toBe(1);
     });
   });

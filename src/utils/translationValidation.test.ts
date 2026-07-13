@@ -1,6 +1,6 @@
 /**
  * Translation validation tests
- * 
+ *
  * Run these tests to ensure all translation keys return strings
  * This catches errors where object keys are used instead of leaf string keys
  */
@@ -20,7 +20,7 @@ const knownLeafKeys = [
   'games.patternTrain.difficulty.hard.description',
   'games.patternTrain.title',
   'games.patternTrain.subtitle',
-  
+
   // Add more known keys here...
 ];
 
@@ -60,19 +60,19 @@ describe('Translation Validation', () => {
 
 /**
  * Manual validation helper
- * 
+ *
  * Call this function to scan all translation keys and find issues
  * Usage: Run in browser console or add to build script
  */
 export function scanAllTranslations(): { valid: string[] } {
   const valid: string[] = [];
-  
+
   function scanObject(obj: unknown, prefix = ''): void {
     if (typeof obj === 'string') {
       valid.push(prefix);
       return;
     }
-    
+
     if (typeof obj === 'object' && obj !== null) {
       for (const [key, value] of Object.entries(obj)) {
         const newKey = prefix ? `${prefix}.${key}` : key;
@@ -80,9 +80,9 @@ export function scanAllTranslations(): { valid: string[] } {
       }
     }
   }
-  
+
   scanObject(enAU);
-  
+
   return { valid };
 }
 

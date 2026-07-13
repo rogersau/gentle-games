@@ -48,21 +48,21 @@ describe('categoryMatchLogic', () => {
     expect(counts.land).toBe(counts.ocean);
 
     const skyNames = CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'sky').map(
-      (item) => item.name
+      (item) => item.name,
     );
     expect(skyNames).toContain('sun');
     expect(skyNames).toContain('cloud');
     expect(skyNames).toContain('moon');
 
     const landNames = CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'land').map(
-      (item) => item.name
+      (item) => item.name,
     );
     expect(landNames).toContain('apple');
     expect(landNames).toContain('carrot');
     expect(landNames).toContain('broccoli');
 
     const oceanNames = CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'ocean').map(
-      (item) => item.name
+      (item) => item.name,
     );
     expect(oceanNames).toContain('fish');
     expect(oceanNames).toContain('dolphin');

@@ -1,12 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  ScrollView,
-} from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
 import { Space, Radius, TypeStyle, HitTarget, Shadow } from '../tokens';
 import { ThemeColors } from '../../types';
@@ -50,9 +43,9 @@ export const SelectBox = <T extends string | number>({
       <TouchableOpacity
         style={styles.selectBox}
         onPress={() => setIsOpen(true)}
-        accessibilityRole="button"
+        accessibilityRole='button'
         accessibilityLabel={displayValue}
-        accessibilityHint={t('common.openOptions') }
+        accessibilityHint={t('common.openOptions')}
       >
         <Text style={styles.selectText} numberOfLines={1}>
           {displayValue}
@@ -61,7 +54,7 @@ export const SelectBox = <T extends string | number>({
       </TouchableOpacity>
 
       <Modal
-        animationType="fade"
+        animationType='fade'
         transparent
         visible={isOpen}
         onRequestClose={() => setIsOpen(false)}
@@ -72,7 +65,7 @@ export const SelectBox = <T extends string | number>({
             style={StyleSheet.absoluteFill}
             onPress={() => setIsOpen(false)}
             activeOpacity={1}
-            accessibilityLabel={t('common.close') }
+            accessibilityLabel={t('common.close')}
           />
           <View style={styles.modalContent}>
             <ScrollView style={styles.optionsList}>
@@ -81,27 +74,19 @@ export const SelectBox = <T extends string | number>({
                 return (
                   <TouchableOpacity
                     key={String(option.value)}
-                    style={[
-                      styles.option,
-                      isSelected && styles.optionSelected,
-                    ]}
+                    style={[styles.option, isSelected && styles.optionSelected]}
                     onPress={() => handleSelect(option.value)}
-                    accessibilityRole="radio"
+                    accessibilityRole='radio'
                     accessibilityState={{ selected: isSelected }}
                     accessibilityLabel={option.label}
                   >
                     <Text
-                      style={[
-                        styles.optionText,
-                        isSelected && styles.optionTextSelected,
-                      ]}
+                      style={[styles.optionText, isSelected && styles.optionTextSelected]}
                       numberOfLines={1}
                     >
                       {option.label}
                     </Text>
-                    {isSelected && (
-                      <Text style={styles.checkmark}>✓</Text>
-                    )}
+                    {isSelected && <Text style={styles.checkmark}>✓</Text>}
                   </TouchableOpacity>
                 );
               })}
@@ -113,7 +98,7 @@ export const SelectBox = <T extends string | number>({
   );
 };
 
-const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
+const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
     selectBox: {
       backgroundColor: colors.surface,

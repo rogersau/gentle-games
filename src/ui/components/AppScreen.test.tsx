@@ -18,7 +18,7 @@ describe('AppScreen', () => {
     const { getByText } = render(
       <AppScreen>
         <Text>Test Content</Text>
-      </AppScreen>
+      </AppScreen>,
     );
     expect(getByText('Test Content')).toBeTruthy();
   });
@@ -27,34 +27,34 @@ describe('AppScreen', () => {
     const { getByText } = render(
       <AppScreen scroll>
         <Text>Scrollable Content</Text>
-      </AppScreen>
+      </AppScreen>,
     );
     expect(getByText('Scrollable Content')).toBeTruthy();
   });
 
   it('applies custom testID', () => {
     const { getByTestId } = render(
-      <AppScreen testID="screen-test">
+      <AppScreen testID='screen-test'>
         <Text>Content</Text>
-      </AppScreen>
+      </AppScreen>,
     );
     expect(getByTestId('screen-test')).toBeTruthy();
   });
 
   it('renders with custom edges', () => {
     const { getByText } = render(
-      <AppScreen edges={['top']} testID="screen-edges">
+      <AppScreen edges={['top']} testID='screen-edges'>
         <Text>Content with custom edges</Text>
-      </AppScreen>
+      </AppScreen>,
     );
     expect(getByText('Content with custom edges')).toBeTruthy();
   });
 
   it('applies custom style', () => {
     const { getByTestId } = render(
-      <AppScreen testID="screen-style" style={{ padding: 20 }}>
+      <AppScreen testID='screen-style' style={{ padding: 20 }}>
         <Text>Styled Content</Text>
-      </AppScreen>
+      </AppScreen>,
     );
     expect(getByTestId('screen-style')).toBeTruthy();
   });
@@ -63,7 +63,7 @@ describe('AppScreen', () => {
     const { getByText } = render(
       <AppScreen scroll contentContainerStyle={{ padding: 10 }}>
         <Text>Content with container style</Text>
-      </AppScreen>
+      </AppScreen>,
     );
     expect(getByText('Content with container style')).toBeTruthy();
   });
@@ -74,7 +74,7 @@ describe('AppScreen', () => {
         <Text>Child 1</Text>
         <Text>Child 2</Text>
         <Text>Child 3</Text>
-      </AppScreen>
+      </AppScreen>,
     );
     expect(getByText('Child 1')).toBeTruthy();
     expect(getByText('Child 2')).toBeTruthy();
@@ -88,7 +88,7 @@ describe('AppScreen', () => {
     const { getByText } = render(
       <AppScreen>
         <Text>Web Content</Text>
-      </AppScreen>
+      </AppScreen>,
     );
     expect(getByText('Web Content')).toBeTruthy();
 
@@ -102,7 +102,7 @@ describe('AppScreen', () => {
     const { getByText } = render(
       <AppScreen scroll>
         <Text>Web Scroll Content</Text>
-      </AppScreen>
+      </AppScreen>,
     );
     expect(getByText('Web Scroll Content')).toBeTruthy();
 

@@ -1,17 +1,17 @@
 import React, {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
-  useState,
 } from 'react';
-import { PanResponder, Platform, StyleSheet, View } from 'react-native';
-import { Accelerometer } from 'expo-sensors';
+import { PanResponder, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg';
-import { getMotionForce, shouldTriggerShake } from '../utils/glitterMotion';
 import { useThemeColors } from '../utils/theme';
 import { useTranslation } from 'react-i18next';
+import { useGlitterParticles } from '../hooks/useGlitterParticles';
+import { useGlitterGestures } from '../hooks/useGlitterGestures';
 
 type GlitterShape = 'circle' | 'square' | 'diamond' | 'star';
 
@@ -45,6 +45,12 @@ interface GlitterGlobeProps {
   height: number;
   initialCount?: number;
   maxParticles?: number;
+  onInteraction?: () => void;
+}
+
+interface GlitterGlobeSnapshot {
+  particles: GlitterParticle[];
+  wakeRipples: WakeRipple[];
 }
 
 const BASE_GRAVITY = 10;
@@ -57,20 +63,13 @@ const FINGER_INFLUENCE_RADIUS = 96;
 const FINGER_PUSH = 16;
 const SHAKE_IMPULSE = 45;
 const MAX_SPEED = 65;
-const LARGE_PIECE_CHANCE = 0.30;
+const LARGE_PIECE_CHANCE = 0.3;
 const WAKE_INTERVAL_MS = 45;
 const WAKE_MAX_TRAIL = 22;
 const WAKE_FADE_PER_SECOND = 2.2;
 const WAKE_EXPAND_PER_SECOND = 20;
 
-const PARTICLE_COLORS = [
-  '#FF5D8F',
-  '#6BCBFF',
-  '#FFD166',
-  '#B8F559',
-  '#C792EA',
-  '#FF9E5E',
-];
+const PARTICLE_COLORS = ['#FF5D8F', '#6BCBFF', '#FFD166', '#B8F559', '#C792EA', '#FF9E5E'];
 const PARTICLE_SHAPES: GlitterShape[] = ['circle', 'square', 'diamond', 'star'];
 
 let particleCounter = 0;
@@ -81,7 +80,7 @@ const getStarPoints = (
   centerX: number,
   centerY: number,
   outerRadius: number,
-  innerRadius: number
+  innerRadius: number,
 ): string => {
   const points: string[] = [];
   for (let i = 0; i < 10; i++) {
@@ -130,7 +129,7 @@ const clampParticleToGlobe = (
   particle: GlitterParticle,
   centerX: number,
   centerY: number,
-  globeRadius: number
+  globeRadius: number,
 ): GlitterParticle => {
   const maxDistance = globeRadius - particle.radius;
   const dx = particle.x - centerX;
@@ -164,7 +163,7 @@ const clampParticleToGlobe = (
 export const resolveParticleCollisions = (particles: GlitterParticle[]): GlitterParticle[] => {
   if (particles.length < 2) return particles;
 
-  const result: GlitterParticle[] = new Array(particles.length);
+  const result: GlitterParticle[] = Array.from({ length: particles.length });
   for (let k = 0; k < particles.length; k++) {
     result[k] = { ...particles[k] };
   }
@@ -205,7 +204,7 @@ export const resolveParticleCollisions = (particles: GlitterParticle[]): Glitter
       // Elastic impulse (equal mass) along collision normal
       const dvn = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
       if (dvn > 0) {
-        const impulse = (1 + PARTICLE_BOUNCE) * dvn / 2;
+        const impulse = ((1 + PARTICLE_BOUNCE) * dvn) / 2;
         result[i].vx -= impulse * nx;
         result[i].vy -= impulse * ny;
         result[j].vx += impulse * nx;
@@ -223,7 +222,7 @@ const stepParticles = (
   width: number,
   height: number,
   gravityX: number,
-  gravityY: number
+  gravityY: number,
 ): GlitterParticle[] => {
   const centerX = width / 2;
   const centerY = height / 2;
@@ -242,7 +241,7 @@ const stepParticles = (
 
   const collided = resolveParticleCollisions(moved);
 
-  const result: GlitterParticle[] = new Array(collided.length);
+  const result: GlitterParticle[] = Array.from({ length: collided.length });
   for (let i = 0; i < collided.length; i++) {
     const p = collided[i];
     const clampedVx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, p.vx));
@@ -251,7 +250,7 @@ const stepParticles = (
       { ...p, vx: clampedVx, vy: clampedVy },
       centerX,
       centerY,
-      globeRadius
+      globeRadius,
     );
   }
   return result;
@@ -260,7 +259,7 @@ const stepParticles = (
 const applyShakeImpulse = (
   particles: GlitterParticle[],
   width: number,
-  height: number
+  height: number,
 ): GlitterParticle[] => {
   const centerX = width / 2;
   const centerY = height / 2;
@@ -287,7 +286,7 @@ const applyFingerImpulse = (
   moveX: number,
   moveY: number,
   width: number,
-  height: number
+  height: number,
 ): GlitterParticle[] => {
   const centerX = width / 2;
   const centerY = height / 2;
@@ -324,136 +323,83 @@ const applyFingerImpulse = (
 };
 
 export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
-  ({ width, height, initialCount = 36, maxParticles = 120 }, ref) => {
+  ({ width, height, initialCount = 36, maxParticles = 120, onInteraction }, ref) => {
     const { colors } = useThemeColors();
     const { t } = useTranslation();
-    const [particles, setParticles] = useState<GlitterParticle[]>(() =>
-      createParticles(initialCount, width, height)
-    );
-    const [wakeRipples, setWakeRipples] = useState<WakeRipple[]>([]);
-    const frameRef = useRef<number | null>(null);
-    const lastTimeRef = useRef<number>(0);
     const sizeRef = useRef({ width, height });
-    const motionForceRef = useRef({ x: 0, y: 0 });
-    const lastShakeAtRef = useRef(0);
     const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
     const lastWakeAtRef = useRef(0);
+
+    const onInteractionRef = useRef(onInteraction);
+    useEffect(() => {
+      onInteractionRef.current = onInteraction;
+    }, [onInteraction]);
 
     useEffect(() => {
       sizeRef.current = { width, height };
     }, [width, height]);
 
+    const { particles, ripples, syncParticles, addParticles, clearParticles, clearRipples, syncRipples, startAnimation } = useGlitterParticles({
+      particleCount: initialCount,
+      canvasWidth: width,
+      canvasHeight: height,
+    });
+
+    const ripplesRef = useRef(ripples);
+    const syncRipplesRef = useRef(syncRipples);
     useEffect(() => {
-      setParticles((prev) => {
-        if (prev.length > 0) {
-          return prev;
-        }
-        return createParticles(initialCount, width, height);
-      });
-    }, [height, initialCount, width]);
+      ripplesRef.current = ripples;
+      syncRipplesRef.current = syncRipples;
+    });
 
     useEffect(() => {
-      let subscription: { remove: () => void } | null = null;
-      let isDisposed = false;
-
-      const startMotion = async () => {
-        if (Platform.OS === 'web') {
-          return;
-        }
-
-        try {
-          const available = await Accelerometer.isAvailableAsync();
-          if (!available || isDisposed) {
-            return;
-          }
-
-          Accelerometer.setUpdateInterval(100);
-          subscription = Accelerometer.addListener((reading) => {
-            motionForceRef.current = getMotionForce(reading);
-
-            const now = Date.now();
-            if (shouldTriggerShake(reading, lastShakeAtRef.current, now)) {
-              lastShakeAtRef.current = now;
-              setParticles((prev) =>
-                applyShakeImpulse(prev, sizeRef.current.width, sizeRef.current.height)
-              );
-            }
-          });
-        } catch {
-          motionForceRef.current = { x: 0, y: 0 };
-        }
-      };
-
-      startMotion();
-
-      return () => {
-        isDisposed = true;
-        if (subscription) {
-          subscription.remove();
-        }
-      };
+      startAnimation();
     }, []);
+
+    const handleShakeCallback = useCallback(() => {
+      onInteractionRef.current?.();
+      addParticles(
+        applyShakeImpulse(
+          particles,
+          sizeRef.current.width,
+          sizeRef.current.height,
+        ),
+      );
+    }, [particles, addParticles]);
+
+    const handleWakeCallback = useCallback(() => {
+      const now = Date.now();
+      lastWakeAtRef.current = now;
+      onInteraction?.();
+      addParticles([]);
+    }, [addParticles]);
+
+    useGlitterGestures({
+      onShake: handleShakeCallback,
+      onWake: handleWakeCallback,
+    });
 
     useImperativeHandle(
       ref,
       () => ({
         addGlitter: (count = 20) => {
-          setParticles((prev) => {
-            const nextCount = Math.max(0, Math.min(count, maxParticles - prev.length));
-            if (nextCount === 0) return prev;
-            return [...prev, ...createParticles(nextCount, sizeRef.current.width, sizeRef.current.height)];
-          });
+          const nextCount = Math.max(
+            0,
+            Math.min(count, maxParticles - particles.length),
+          );
+          if (nextCount === 0) {
+            return;
+          }
+
+          addParticles(createParticles(nextCount, sizeRef.current.width, sizeRef.current.height));
         },
         clearGlitter: () => {
-          setParticles([]);
-          setWakeRipples([]);
+          clearParticles();
+          clearRipples();
         },
       }),
-      [maxParticles]
+      [maxParticles, particles.length, addParticles, clearParticles, clearRipples],
     );
-
-    useEffect(() => {
-      const tick = (time: number) => {
-        if (!lastTimeRef.current) {
-          lastTimeRef.current = time;
-        }
-
-        const elapsedSeconds = Math.min((time - lastTimeRef.current) / 1000, MAX_FRAME_SECONDS);
-        lastTimeRef.current = time;
-
-        if (elapsedSeconds > 0) {
-          const motionForce = motionForceRef.current;
-          setParticles((prev) =>
-            stepParticles(
-              prev,
-              elapsedSeconds,
-              sizeRef.current.width,
-              sizeRef.current.height,
-              motionForce.x,
-              BASE_GRAVITY + motionForce.y
-            )
-          );
-          setWakeRipples((prev) =>
-            prev
-              .map((wake) => ({
-                ...wake,
-                radius: wake.radius + WAKE_EXPAND_PER_SECOND * elapsedSeconds,
-                opacity: wake.opacity - WAKE_FADE_PER_SECOND * elapsedSeconds,
-              }))
-              .filter((wake) => wake.opacity > 0)
-          );
-        }
-
-        frameRef.current = requestAnimationFrame(tick);
-      };
-
-      frameRef.current = requestAnimationFrame(tick);
-      return () => {
-        if (frameRef.current) {
-          cancelAnimationFrame(frameRef.current);
-        }
-      };
-    }, []);
 
     const panResponder = useMemo(
       () =>
@@ -471,23 +417,22 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
                 locationX,
                 locationY,
                 sizeRef.current.width,
-                sizeRef.current.height
+                sizeRef.current.height,
               )
             ) {
               const now = Date.now();
               lastWakeAtRef.current = now;
-              setWakeRipples((prev) =>
-                [
-                  ...prev,
-                  {
-                    id: `wake-${now}-start`,
-                    x: locationX,
-                    y: locationY,
-                    radius: 6,
-                    opacity: 0.34,
-                  },
-                ].slice(-WAKE_MAX_TRAIL)
-              );
+              onInteraction?.();
+              syncRipplesRef.current([
+                ...ripplesRef.current,
+                {
+                  id: `wake-${now}-start`,
+                  x: locationX,
+                  y: locationY,
+                  radius: 6,
+                  opacity: 0.34,
+                },
+              ].slice(-WAKE_MAX_TRAIL));
             }
           },
           onPanResponderMove: (event) => {
@@ -509,37 +454,38 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
               point.x,
               point.y,
               sizeRef.current.width,
-              sizeRef.current.height
+              sizeRef.current.height,
             );
+            let newRipples = ripplesRef.current;
             if (isInside) {
               const now = Date.now();
               if (now - lastWakeAtRef.current >= WAKE_INTERVAL_MS) {
                 lastWakeAtRef.current = now;
-                setWakeRipples((prev) =>
-                  [
-                    ...prev,
-                    {
-                      id: `wake-${now}-${Math.random().toString(36).slice(2, 6)}`,
-                      x: point.x,
-                      y: point.y,
-                      radius: 5,
-                      opacity: 0.28,
-                    },
-                  ].slice(-WAKE_MAX_TRAIL)
-                );
+                newRipples = [
+                  ...ripplesRef.current,
+                  {
+                    id: `wake-${now}-${Math.random().toString(36).slice(2, 6)}`,
+                    x: point.x,
+                    y: point.y,
+                    radius: 5,
+                    opacity: 0.28,
+                  },
+                ].slice(-WAKE_MAX_TRAIL);
+                syncRipplesRef.current(newRipples);
               }
+              onInteraction?.();
             }
 
-            setParticles((prev) =>
+            syncParticles(
               applyFingerImpulse(
-                prev,
+                particles,
                 point.x,
                 point.y,
                 moveX,
                 moveY,
                 sizeRef.current.width,
-                sizeRef.current.height
-              )
+                sizeRef.current.height,
+              ),
             );
           },
           onPanResponderRelease: () => {
@@ -551,7 +497,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
             lastWakeAtRef.current = 0;
           },
         }),
-      []
+      [],
     );
 
     const globe = useMemo(() => {
@@ -571,9 +517,9 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
       >
         <Svg width={width} height={height}>
           <Defs>
-            <RadialGradient id="globeFill" cx="50%" cy="32%" rx="65%" ry="65%">
-              <Stop offset="0%" stopColor={colors.surfaceGame} />
-              <Stop offset="100%" stopColor={colors.surfaceGame} />
+            <RadialGradient id='globeFill' cx='50%' cy='32%' rx='65%' ry='65%'>
+              <Stop offset='0%' stopColor={colors.surfaceGame} />
+              <Stop offset='100%' stopColor={colors.surfaceGame} />
             </RadialGradient>
           </Defs>
 
@@ -581,7 +527,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
             cx={globe.centerX}
             cy={globe.centerY}
             r={globe.radius}
-            fill="url(#globeFill)"
+            fill='url(#globeFill)'
             stroke={colors.primary}
             strokeWidth={3}
           />
@@ -623,7 +569,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
                     particle.x,
                     particle.y,
                     particle.radius,
-                    particle.radius * 0.45
+                    particle.radius * 0.45,
                   )}
                   fill={particle.color}
                   opacity={particle.opacity}
@@ -642,13 +588,13 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
               />
             );
           })}
-          {wakeRipples.map((wake) => (
+          {ripples.map((wake) => (
             <Circle
               key={wake.id}
               cx={wake.x}
               cy={wake.y}
               r={wake.radius}
-              fill="none"
+              fill='none'
               stroke={colors.cardFront}
               strokeWidth={1.5}
               opacity={wake.opacity}
@@ -658,7 +604,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
         <View style={styles.touchLayer} {...panResponder.panHandlers} />
       </View>
     );
-  }
+  },
 );
 
 const styles = StyleSheet.create({

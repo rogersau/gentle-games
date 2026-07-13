@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ColorMode, Settings } from '../types';
 import { SupportedLanguage, DEFAULT_LANGUAGE } from '../types/i18n';
 import { changeLanguage } from '../i18n';
+import { GameId, isGameId } from '../games/registry';
 
 interface SettingsContextType {
   settings: Settings;
@@ -24,6 +25,8 @@ const defaultSettings: Settings = {
   enableUnfinishedGames: true,
   language: DEFAULT_LANGUAGE,
   reducedMotionEnabled: false,
+  telemetryEnabled: false,
+  showMochiInGames: true,
 };
 
 const toBoolean = (value: unknown, fallback: boolean): boolean => {
@@ -58,9 +61,9 @@ const toColorMode = (value: unknown, fallback: ColorMode): ColorMode => {
   return fallback;
 };
 
-const toHiddenGames = (value: unknown): string[] => {
+const toHiddenGames = (value: unknown): GameId[] => {
   if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === 'string');
+  return value.filter((item): item is GameId => typeof item === 'string' && isGameId(item));
 };
 
 const toParentTimerMinutes = (value: unknown): number => {
@@ -92,10 +95,22 @@ const sanitizeSettings = (candidate: unknown): Settings => {
     colorMode: toColorMode(parsed.colorMode, defaultSettings.colorMode),
     hiddenGames: toHiddenGames(parsed.hiddenGames),
     parentTimerMinutes: toParentTimerMinutes(parsed.parentTimerMinutes),
-    enableUnfinishedGames: toBoolean(parsed.enableUnfinishedGames, defaultSettings.enableUnfinishedGames),
+    enableUnfinishedGames: toBoolean(
+      parsed.enableUnfinishedGames,
+      defaultSettings.enableUnfinishedGames,
+    ),
     language: toLanguage(parsed.language),
-    reducedMotionEnabled: toBoolean(parsed.reducedMotionEnabled, defaultSettings.reducedMotionEnabled),
+    reducedMotionEnabled: toBoolean(
+      parsed.reducedMotionEnabled,
+      defaultSettings.reducedMotionEnabled,
+    ),
+    telemetryEnabled: toBoolean(parsed.telemetryEnabled, defaultSettings.telemetryEnabled),
+    showMochiInGames: toBoolean(parsed.showMochiInGames, defaultSettings.showMochiInGames),
   };
+};
+
+const areSettingsEqual = (left: Settings, right: Settings): boolean => {
+  return JSON.stringify(left) === JSON.stringify(right);
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -115,6 +130,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const parsed = JSON.parse(savedSettings);
         const sanitized = sanitizeSettings(parsed);
         setSettings(sanitized);
+        if (!areSettingsEqual(sanitized, parsed as Settings)) {
+          await AsyncStorage.setItem('gentleMatchSettings', JSON.stringify(sanitized));
+        }
         // Initialize i18n with saved language
         void changeLanguage(sanitized.language);
       }
