@@ -239,12 +239,26 @@
       "title": "Number Picnic",
       "nextPicnic": "Next Picnic",
       "nextPicnicHint": "Continue to the next picnic challenge",
-      "subtitle": "Drag items from the blanket to the basket",
+      "subtitle": "Tap or drag items from the blanket to the basket",
       "place": "Place",
       "basket": "Basket",
       "remove": "Remove",
       "add": "Add",
       "completed": "Completed picnics",
+      "instruction": "Tap an item or drag it up to the basket",
+      "emptyBasket": "Add items here!",
+      "moreItems": "+{{count}} more",
+      "itemAccessibilityLabel": "{{item}} item {{index}}",
+      "itemAccessibilityHint": "Tap to add this item, or drag it to the picnic basket",
+      "basketAccessibilityLabel": "Basket with {{count}} {{item}}",
+      "basketAccessibilityHint": "Add items from the blanket to fill the basket",
+      "items": {
+        "berries": "berries",
+        "apples": "apples",
+        "carrots": "carrots",
+        "stars": "stars",
+        "flowers": "flowers"
+      },
       "feedback": {
         "complete": "Great counting!",
         "incomplete": "Keep adding items"
@@ -358,10 +372,34 @@
     "takingTime": "You're doing great!",
     "settingsHelper": "Here's where you can change things.",
     "celebratePhrases": ["You did it!", "Amazing!", "Wonderful!", "So clever!", "Fantastic!"],
-    "bubblePhrases": ["You're on a roll!", "Pop pop pop!", "So satisfying!", "Keep going!", "Amazing!"],
-    "keepyUppyPhrases": ["Balloon friend loves you!", "Look at them fly!", "Beautiful taps!", "You're doing amazing!", "So graceful!"],
-    "numberPicnicPhrases": ["Delicious!", "What a feast!", "Picnic master!", "Yum yum yum!", "Perfect!"],
-    "patternTrainPhrases": ["All aboard!", "Pattern pro!", "Choo choo!", "You're on track!", "Brilliant!"],
+    "bubblePhrases": [
+      "You're on a roll!",
+      "Pop pop pop!",
+      "So satisfying!",
+      "Keep going!",
+      "Amazing!"
+    ],
+    "keepyUppyPhrases": [
+      "Balloon friend loves you!",
+      "Look at them fly!",
+      "Beautiful taps!",
+      "You're doing amazing!",
+      "So graceful!"
+    ],
+    "numberPicnicPhrases": [
+      "Delicious!",
+      "What a feast!",
+      "Picnic master!",
+      "Yum yum yum!",
+      "Perfect!"
+    ],
+    "patternTrainPhrases": [
+      "All aboard!",
+      "Pattern pro!",
+      "Choo choo!",
+      "You're on track!",
+      "Brilliant!"
+    ],
     "drawingWelcomePhrases": ["So happy to see you!", "Your drawing awaits!", "Missed you!"],
     "glitterPhrases": ["This is beautiful!", "You're so creative!", "Sparkly!", "Magnificent!"]
   }

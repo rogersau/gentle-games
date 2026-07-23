@@ -49,6 +49,28 @@ const getCacheName = () => `gentle-games-${buildVersion}`;
 const getManifestTag = () => `./manifest.webmanifest?v=${buildVersion}`;
 const getServiceWorkerTag = () => `./sw.js?v=${buildVersion}`;
 
+const PRECACHE_EXTENSIONS = new Set([
+  '.html',
+  '.ico',
+  '.js',
+  '.json',
+  '.mp3',
+  '.png',
+  '.ttf',
+  '.webmanifest',
+]);
+
+const getPrecacheEntries = () => {
+  const generatedFiles = fs.readdirSync(distDir, { recursive: true });
+  const generatedEntries = generatedFiles
+    .filter((fileName) => typeof fileName === 'string')
+    .map((fileName) => fileName.replaceAll(path.sep, '/'))
+    .filter((fileName) => fileName !== 'sw.js' && PRECACHE_EXTENSIONS.has(path.extname(fileName)))
+    .map((fileName) => `./${fileName}`);
+
+  return [...new Set(['./index.html', './manifest.webmanifest', ...generatedEntries])].sort();
+};
+
 const writeManifest = () => {
   const manifest = {
     name: 'Gentle Games',
@@ -71,13 +93,7 @@ const writeManifest = () => {
 };
 
 const writeServiceWorker = () => {
-  const cacheEntries = [
-    './index.html',
-    './manifest.webmanifest',
-    './icons/icon-32x32.png',
-    './icons/icon-180x180.png',
-    ...manifestIcons.map((icon) => icon.src),
-  ];
+  const cacheEntries = getPrecacheEntries();
 
   const serviceWorker = `const CACHE_NAME = '${getCacheName()}';
 const NAVIGATION_FALLBACK = './index.html';
@@ -250,6 +266,7 @@ if (require.main === module) {
 module.exports = {
   getCacheName,
   getManifestTag,
+  getPrecacheEntries,
   getServiceWorkerTag,
   VIEWPORT_CONTENT,
   writeManifest,

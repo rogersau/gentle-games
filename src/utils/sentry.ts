@@ -4,6 +4,7 @@ import Constants from 'expo-constants';
 
 const SENTRY_DSN = Constants.expoConfig?.extra?.sentryDsn as string | undefined;
 const SENTRY_DEBUG = Constants.expoConfig?.extra?.sentryDebug as boolean | undefined;
+const SENTRY_RELEASE = Constants.expoConfig?.extra?.sentryRelease as string | undefined;
 const INSTALL_ID_KEY = '@gentle_games_install_id';
 
 const ALLOWED_DIAGNOSTIC_KEYS = new Set([
@@ -160,6 +161,7 @@ export async function reconcileSentryConsent(enabled: boolean): Promise<void> {
       dsn: SENTRY_DSN,
       sampleRate: 1.0,
       environment: __DEV__ ? 'development' : 'production',
+      release: SENTRY_RELEASE,
       debug: SENTRY_DEBUG === true,
       initialScope: {
         user: installId ? { id: installId } : undefined,

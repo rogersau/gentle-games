@@ -38,10 +38,20 @@ jobs:
           POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
           POSTHOG_HOST: ${{ secrets.POSTHOG_HOST }}
         run: |
-          npx expo export --platform web --output-dir dist --clear
+          npx expo export --platform web --output-dir dist --clear --source-maps
 
       - name: Build PWA assets
         run: node scripts/prepare-pwa.js
+
+      - name: Upload web source maps
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: node scripts/upload-sourcemaps.js
+
+      - name: Remove source maps from deployment artifact
+        run: find dist -type f -name '*.map' -delete
 
       - name: Copy Azure config to dist
         run: cp staticwebapp.config.json dist/staticwebapp.config.json

@@ -15,6 +15,7 @@ import {
 } from './useDebouncedDrawingSave';
 import { useMochi } from '../hooks/useMochi';
 import { useSettings } from '../context/SettingsContext';
+import { sanitizeDrawingHistory } from '../utils/drawingPersistence';
 
 const DRAWING_STORAGE_KEY = '@gentle_match_saved_drawing';
 export const DRAWING_HEADER_HEIGHT = 60;
@@ -62,14 +63,13 @@ export const DrawingScreen: React.FC = () => {
       try {
         const saved = await AsyncStorage.getItem(DRAWING_STORAGE_KEY);
         if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed && Array.isArray(parsed) && parsed.length > 0) {
+          const parsed = sanitizeDrawingHistory(JSON.parse(saved));
+          if (parsed === null) {
+            await AsyncStorage.removeItem(DRAWING_STORAGE_KEY);
+          } else if (parsed.length > 0) {
             setSavedHistory(parsed);
             setShowContinueModal(true);
-            if (
-              settings.showMochiInGames &&
-              !hasShownWelcomeMochiRef.current
-            ) {
+            if (settings.showMochiInGames && !hasShownWelcomeMochiRef.current) {
               hasShownWelcomeMochiRef.current = true;
               const phrases = t('mascot.drawingWelcomePhrases', {
                 returnObjects: true,

@@ -24,4 +24,4 @@ jobs:
         run: npm ci
 
       - name: Validate ${{ matrix.platform }} bundle
-        run: npx expo export --platform ${{ matrix.platform }} --output-dir dist/${{ matrix.platform }}
+        run: npx expo export --platform ${{ matrix.platform }} --output-dir dist/${{ matrix.platform }} --source-maps

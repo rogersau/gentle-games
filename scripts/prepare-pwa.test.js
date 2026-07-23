@@ -19,6 +19,11 @@ jest.mock('fs', () => ({
 jest.mock('path', () => ({
   join: mockJoin,
   resolve: mockResolve,
+  sep: '/',
+  extname: (fileName) => {
+    const match = /(?:^|\/)[^/]*(\.[^./]+)$/.exec(fileName);
+    return match?.[1] ?? '';
+  },
 }));
 
 describe('prepare-pwa', () => {
@@ -39,14 +44,17 @@ describe('prepare-pwa', () => {
     mockReadFileSync.mockReturnValue('<html><head></head><body></body></html>');
     mockWriteFileSync.mockImplementation(() => {});
     mockMkdirSync.mockImplementation(() => {});
-    mockReaddirSync.mockReturnValue([
-      'icon-32x32.png',
-      'icon-180x180.png',
-      'icon-192x192.png',
-      'icon-512x512.png',
-      'icon-192x192-maskable.png',
-      'icon-512x512-maskable.png',
-    ]);
+    mockReaddirSync.mockImplementation((_directory, options) => {
+      const prefix = options?.recursive ? 'icons/' : '';
+      return [
+        `${prefix}icon-32x32.png`,
+        `${prefix}icon-180x180.png`,
+        `${prefix}icon-192x192.png`,
+        `${prefix}icon-512x512.png`,
+        `${prefix}icon-192x192-maskable.png`,
+        `${prefix}icon-512x512-maskable.png`,
+      ];
+    });
     mockCopyFileSync.mockImplementation(() => {});
 
     // Require module fresh for each test
@@ -120,6 +128,22 @@ describe('prepare-pwa', () => {
   });
 
   describe('writeServiceWorker', () => {
+    it('precaches generated application code and required local assets', () => {
+      mockReaddirSync.mockReturnValue([
+        '_expo/static/js/web/index-abc.js',
+        'assets/fonts/nunito.ttf',
+        'assets/sounds/pop.mp3',
+        'index.html',
+      ]);
+
+      pwa.writeServiceWorker();
+
+      const swContent = mockWriteFileSync.mock.calls[0][1];
+      expect(swContent).toContain('./_expo/static/js/web/index-abc.js');
+      expect(swContent).toContain('./assets/fonts/nunito.ttf');
+      expect(swContent).toContain('./assets/sounds/pop.mp3');
+    });
+
     it('generates service worker with cache name', () => {
       pwa.writeServiceWorker();
 

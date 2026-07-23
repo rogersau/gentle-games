@@ -1,3 +1,6 @@
+const { version } = require('./package.json');
+const { getSentryRelease } = require('./scripts/release');
+
 /**
  * Expo configuration for Gentle Games.
  *
@@ -6,9 +9,9 @@
 module.exports = {
   name: 'Gentle Games',
   slug: 'gentle-games',
-  version: '1.1.0',
+  version,
   orientation: 'portrait',
-  icon: './assets/icon.png',
+  icon: './assets/pwa/icon-512x512.png',
   userInterfaceStyle: 'light',
   backgroundColor: '#FFFEF7',
   splash: {
@@ -23,7 +26,7 @@ module.exports = {
   },
   android: {
     adaptiveIcon: {
-      foregroundImage: './assets/adaptive-icon.png',
+      foregroundImage: './assets/pwa/icon-512x512-maskable.png',
       backgroundColor: '#FFFEF7',
     },
     edgeToEdgeEnabled: true,
@@ -68,6 +71,7 @@ module.exports = {
     baseUrl: process.env.EXPO_BASE_URL !== undefined ? process.env.EXPO_BASE_URL : '/gentle-games',
   },
   plugins: [
+    'expo-asset',
     'expo-audio',
     'expo-font',
     'expo-localization',
@@ -88,6 +92,7 @@ module.exports = {
     sentryDsn: process.env.SENTRY_DSN,
     // Enable Sentry in development mode for testing
     sentryDebug: process.env.SENTRY_DEBUG === 'true',
+    sentryRelease: getSentryRelease(version),
     // PostHog analytics
     posthogApiKey: process.env.POSTHOG_API_KEY,
     posthogHost: process.env.POSTHOG_HOST || 'https://eu.i.posthog.com',

@@ -7,12 +7,14 @@ import {
   Animated,
   PanResponder,
   Platform,
+  Pressable,
   Text,
 } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
 import { Space, Radius } from '../../ui/tokens';
 import { ThemeColors } from '../../types';
 import { useSettings } from '../../context/SettingsContext';
+import { useTranslation } from 'react-i18next';
 
 interface WindowRect {
   x: number;
@@ -94,6 +96,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
   const { colors } = useThemeColors();
   const { width: screenWidth } = useWindowDimensions();
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   // Calculate how many items to show on the blanket
@@ -203,7 +206,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
   const createPanResponder = useCallback(
     (item: DraggableItem, index: number) => {
       return PanResponder.create({
-        onStartShouldSetPanResponder: () => !isProcessing && item.isAvailable,
+        onStartShouldSetPanResponder: () => false,
         onMoveShouldSetPanResponder: () => !isProcessing && item.isAvailable,
         onPanResponderGrant: () => {
           setDraggingIndex(index);
@@ -318,7 +321,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
         <View style={styles.pattern} />
 
         {/* Instruction text */}
-        <Text style={styles.instruction}>Drag items up to the basket!</Text>
+        <Text style={styles.instruction}>{t('games.numberPicnic.instruction')}</Text>
 
         {/* Items grid */}
         <View style={styles.itemsContainer}>
@@ -351,7 +354,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
                 ]}
               >
                 {item.isAvailable ? (
-                  <Animated.View
+                  <Pressable
                     ref={(node) => {
                       itemRefs.current[index] = node as MeasurableNode | null;
                     }}
@@ -365,15 +368,26 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
                       };
                     }}
                     {...panResponder.panHandlers}
-                    style={[styles.draggableItem, animatedStyle]}
-                    accessibilityLabel={`${itemEmoji} item ${index + 1}. Drag up to basket.`}
-                    accessibilityHint='Drag this item upward to add it to the picnic basket'
+                    onPress={() => {
+                      if (!isProcessing && item.isAvailable) {
+                        onItemDrop(index);
+                      }
+                    }}
+                    disabled={isProcessing}
+                    accessibilityLabel={t('games.numberPicnic.itemAccessibilityLabel', {
+                      item: itemEmoji,
+                      index: index + 1,
+                    })}
+                    accessibilityHint={t('games.numberPicnic.itemAccessibilityHint')}
+                    accessibilityRole='button'
                     testID={`picnic-item-${index}`}
                   >
-                    <Text style={styles.emoji} selectable={false}>
-                      {item.emoji}
-                    </Text>
-                  </Animated.View>
+                    <Animated.View style={[styles.draggableItem, animatedStyle]}>
+                      <Text style={styles.emoji} selectable={false}>
+                        {item.emoji}
+                      </Text>
+                    </Animated.View>
+                  </Pressable>
                 ) : (
                   <View style={styles.placeholder}>
                     <View style={styles.placeholderInner} />

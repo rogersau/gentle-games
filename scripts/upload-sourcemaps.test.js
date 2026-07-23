@@ -180,7 +180,7 @@ describe('upload-sourcemaps', () => {
     expect(logSpy).toHaveBeenCalledWith('\n✅ Successfully uploaded 3 source map(s) to Sentry!');
   });
 
-  it('skips missing platform directories without failing the release path', () => {
+  it('fails the release path when no source maps exist', () => {
     const { uploadSourceMaps } = require('./upload-sourcemaps');
     mockExistsSync.mockImplementation((targetPath) => targetPath === distRoot);
     mockReaddirSync.mockImplementation((targetPath) => {
@@ -191,12 +191,11 @@ describe('upload-sourcemaps', () => {
       return [];
     });
 
-    uploadSourceMaps();
+    expect(() => uploadSourceMaps()).toThrow('No source maps were uploaded');
 
     expect(logSpy).toHaveBeenCalledWith('   ⏭️  Skipping android (no dist directory)');
     expect(logSpy).toHaveBeenCalledWith('   ⏭️  Skipping ios (no dist directory)');
-    expect(warnSpy).toHaveBeenCalledWith('\n⚠️  No source maps were uploaded.');
-    expect(exitSpy).toHaveBeenCalledWith(0);
+    expect(exitSpy).not.toHaveBeenCalled();
   });
 
   it('skips platforms that have no source maps in their resolved root', () => {
@@ -225,7 +224,7 @@ describe('upload-sourcemaps', () => {
       return [];
     });
 
-    uploadSourceMaps();
+    expect(() => uploadSourceMaps()).toThrow('No source maps were uploaded');
 
     expect(logSpy).toHaveBeenCalledWith('   ⏭️  Skipping web (no source maps found)');
   });

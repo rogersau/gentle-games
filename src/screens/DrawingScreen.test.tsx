@@ -198,7 +198,7 @@ describe('DrawingScreen', () => {
   });
 
   it('loads saved drawing and shows continue modal', async () => {
-    const savedDrawing = [{ paths: ['path1'], color: '#000000', width: 5 }];
+    const savedDrawing = historyA;
     (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(savedDrawing));
 
     const { getByText } = render(React.createElement(DrawingScreen));
@@ -210,7 +210,7 @@ describe('DrawingScreen', () => {
   });
 
   it('continues with saved drawing when continue button pressed', async () => {
-    const savedDrawing = [{ paths: ['path1'], color: '#000000', width: 5 }];
+    const savedDrawing = historyA;
     (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(savedDrawing));
 
     const { getByText, queryByText } = render(React.createElement(DrawingScreen));
@@ -227,7 +227,7 @@ describe('DrawingScreen', () => {
   });
 
   it('starts new drawing when new button pressed', async () => {
-    const savedDrawing = [{ paths: ['path1'], color: '#000000', width: 5 }];
+    const savedDrawing = historyA;
     (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(savedDrawing));
 
     const { getByText } = render(React.createElement(DrawingScreen));
@@ -264,6 +264,19 @@ describe('DrawingScreen', () => {
     });
   });
 
+  it('clears valid JSON that is not a drawable history', async () => {
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(
+      JSON.stringify([{ kind: 'stroke', id: 'broken-stroke' }]),
+    );
+
+    render(React.createElement(DrawingScreen));
+
+    await waitFor(() => {
+      expect(AsyncStorage.removeItem).toHaveBeenCalledWith('@gentle_match_saved_drawing');
+      expect(getLatestCanvasProps().initialHistory).toEqual([]);
+    });
+  });
+
   it('passes canvas dimensions to DrawingCanvas', async () => {
     mockInsets.top = 44;
     mockInsets.bottom = 34;
@@ -282,7 +295,7 @@ describe('DrawingScreen', () => {
   });
 
   it('passes saved history to canvas when continuing', async () => {
-    const savedDrawing = [{ paths: ['path1'], color: '#000000', width: 5 }];
+    const savedDrawing = historyA;
     (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(savedDrawing));
 
     render(React.createElement(DrawingScreen));

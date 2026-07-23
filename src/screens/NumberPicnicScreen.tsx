@@ -10,6 +10,7 @@ import { useMochi } from '../hooks/useMochi';
 import { AppScreen, AppHeader, AppCard } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { PicnicBasket, PicnicBlanket } from '../components/numberpicnic';
+import type { TranslationKey } from '../i18n/types';
 
 const { width: _SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -50,6 +51,7 @@ export const NumberPicnicScreen: React.FC = () => {
 
   const { showMochi } = useMochi();
   const lastPhraseIndexRef = useRef(-1);
+  const itemName = t(`games.numberPicnic.items.${prompt.itemName}` as TranslationKey);
 
   const pickPhrase = (phrases: string[], lastIndex: number): { phrase: string; index: number } => {
     let idx: number;
@@ -87,7 +89,7 @@ export const NumberPicnicScreen: React.FC = () => {
         <AppCard variant='elevated' style={styles.promptCard}>
           <Text style={styles.promptText}>
             {t('games.numberPicnic.place')}{' '}
-            <Text style={styles.promptStrong}>{prompt.targetCount}</Text> {prompt.itemName}
+            <Text style={styles.promptStrong}>{prompt.targetCount}</Text> {itemName}
           </Text>
           <Text style={styles.visualDots}>{prompt.visualDots.join(' ')}</Text>
         </AppCard>
@@ -104,8 +106,11 @@ export const NumberPicnicScreen: React.FC = () => {
             isSuccess={isSuccess}
             onAnimationComplete={startNewRound}
             style={styles.basket}
-            accessibilityLabel={`Basket with ${basketCount} ${prompt.itemName}`}
-            accessibilityHint='Drag items from the blanket to fill the basket'
+            accessibilityLabel={t('games.numberPicnic.basketAccessibilityLabel', {
+              count: basketCount,
+              item: itemName,
+            })}
+            accessibilityHint={t('games.numberPicnic.basketAccessibilityHint')}
             testID='picnic-basket'
           />
         </View>

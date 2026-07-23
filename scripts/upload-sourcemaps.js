@@ -19,6 +19,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { getSentryRelease } = require('./release');
 
 const REQUIRED_ENV_VARS = ['SENTRY_AUTH_TOKEN', 'SENTRY_ORG', 'SENTRY_PROJECT'];
 const PROJECT_ROOT = path.join(__dirname, '..');
@@ -93,7 +94,7 @@ function getPlatformDistDir(platform) {
 function uploadSourceMaps() {
   const { SENTRY_ORG, SENTRY_PROJECT, SENTRY_AUTH_TOKEN } = process.env;
   const version = getVersion();
-  const release = `gentle-games@${version}`;
+  const release = getSentryRelease(version);
 
   console.log('🗺️  Uploading source maps to Sentry...');
   console.log(`   Organization: ${SENTRY_ORG}`);
@@ -151,9 +152,7 @@ function uploadSourceMaps() {
   }
 
   if (uploadedCount === 0) {
-    console.warn('\n⚠️  No source maps were uploaded.');
-    console.warn('   Run a build first: npm run build:web');
-    process.exit(0);
+    throw new Error('No source maps were uploaded. Build with source maps before releasing.');
   }
 
   console.log(`\n✅ Successfully uploaded ${uploadedCount} source map(s) to Sentry!`);

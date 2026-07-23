@@ -22,7 +22,7 @@ const defaultSettings: Settings = {
   colorMode: 'system',
   hiddenGames: [],
   parentTimerMinutes: 0,
-  enableUnfinishedGames: true,
+  enableUnfinishedGames: false,
   language: DEFAULT_LANGUAGE,
   reducedMotionEnabled: false,
   telemetryEnabled: false,

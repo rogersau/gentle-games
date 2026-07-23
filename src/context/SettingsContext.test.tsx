@@ -37,6 +37,7 @@ const TestConsumer = () => {
       <Text testID='colorMode'>{settings.colorMode}</Text>
       <Text testID='hiddenGames'>{settings.hiddenGames.join(',')}</Text>
       <Text testID='telemetry'>{String(settings.telemetryEnabled)}</Text>
+      <Text testID='unfinishedGames'>{String(settings.enableUnfinishedGames)}</Text>
       <TouchableOpacity testID='set-hard' onPress={() => updateSettings({ difficulty: 'hard' })}>
         <Text>set-hard</Text>
       </TouchableOpacity>
@@ -67,6 +68,20 @@ describe('SettingsContext', () => {
     await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
 
     expect(screen.getByTestId('telemetry').props.children).toBe('false');
+  });
+
+  it('hides unfinished games on fresh installs', async () => {
+    storage.getItem.mockResolvedValueOnce(null);
+
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+
+    expect(screen.getByTestId('unfinishedGames').props.children).toBe('false');
   });
 
   it('sanitizes invalid persisted telemetryEnabled values back to false', async () => {
@@ -130,7 +145,7 @@ describe('SettingsContext', () => {
         colorMode: 'system',
         hiddenGames: ['memory-snap', 'bubble-pop'],
         parentTimerMinutes: 0,
-        enableUnfinishedGames: true,
+        enableUnfinishedGames: false,
         language: 'en-AU',
         reducedMotionEnabled: false,
         telemetryEnabled: false,

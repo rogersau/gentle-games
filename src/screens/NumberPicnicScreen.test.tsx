@@ -58,7 +58,7 @@ jest.mock('../context/MochiContext', () => ({
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => {
+    t: (key: string, options?: Record<string, unknown>) => {
       const translations: Record<string, string> = {
         'games.numberPicnic.title': 'Number Picnic',
         'games.numberPicnic.subtitle': 'Drag items from the blanket to the basket',
@@ -67,6 +67,11 @@ jest.mock('react-i18next', () => ({
         'games.numberPicnic.feedback.incomplete': 'Keep adding items',
         'games.numberPicnic.completed': 'Completed picnics',
       };
+      if (key.startsWith('games.numberPicnic.items.')) return 'translated picnic item';
+      if (key === 'games.numberPicnic.basketAccessibilityLabel') {
+        return `translated basket ${String(options?.count)} ${String(options?.item)}`;
+      }
+      if (key === 'games.numberPicnic.basketAccessibilityHint') return 'translated basket hint';
       return translations[key] || key;
     },
   }),
@@ -81,17 +86,23 @@ jest.mock('../components/numberpicnic', () => {
       items,
       targetCount,
       onAnimationComplete,
+      accessibilityLabel,
+      accessibilityHint,
       testID,
     }: {
       isDropTarget?: boolean;
       items: string[];
       targetCount: number;
       onAnimationComplete?: () => void;
+      accessibilityLabel?: string;
+      accessibilityHint?: string;
       testID?: string;
     }) => (
       <View testID={testID}>
         <Text>{`drop-target:${isDropTarget ? 'yes' : 'no'}`}</Text>
         <Text>{`basket-items:${items.length}/${targetCount}`}</Text>
+        <Text>{accessibilityLabel}</Text>
+        <Text>{accessibilityHint}</Text>
         <Pressable testID='basket-next-round' onPress={() => onAnimationComplete?.()} />
       </View>
     ),
@@ -147,10 +158,13 @@ describe('NumberPicnicScreen', () => {
   });
 
   it('shows correct prompt with item name and count', () => {
-    const { getByText } = render(<NumberPicnicScreen />);
+    const { getAllByText, getByText } = render(<NumberPicnicScreen />);
 
     // Should show prompt with target count and item name
     expect(getByText(/Place/)).toBeTruthy();
+    expect(getAllByText(/translated picnic item/).length).toBeGreaterThan(0);
+    expect(getByText(/translated basket 0 translated picnic item/)).toBeTruthy();
+    expect(getByText('translated basket hint')).toBeTruthy();
   });
 
   it('shows visual dots representing the target count', () => {

@@ -32,10 +32,12 @@ jest.mock('react-i18next', () => ({
     init: () => {},
   },
   useTranslation: () => ({
-    t: (key: string) => {
+    t: (key: string, options?: Record<string, unknown>) => {
       const translations: Record<string, string> = {
         'common.back': '← Back',
         'games.memorySnap.title': 'Memory Snap',
+        'games.memorySnap.timeLabel': `Elapsed ${String(options?.time)}`,
+        'games.memorySnap.moves': `Turns ${String(options?.count)}`,
       };
       return translations[key] ?? key;
     },
@@ -86,6 +88,7 @@ describe('GameScreen', () => {
     const { getByText, root } = render(<GameScreen />);
 
     expect(getByText('Memory Snap')).toBeTruthy();
+    expect(getByText('Elapsed 0:42 · Turns 7')).toBeTruthy();
 
     const boardBackText = root.findByProps({ testID: 'board-back' });
     fireEvent.press(boardBackText);

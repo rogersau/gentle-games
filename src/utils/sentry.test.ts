@@ -21,6 +21,7 @@ describe('sentry consent-aware wrappers', () => {
           extra: {
             sentryDsn: 'https://dsn.example/1',
             sentryDebug: true,
+            sentryRelease: 'gentle-games@1.1.0',
           },
         },
       },
@@ -28,6 +29,7 @@ describe('sentry consent-aware wrappers', () => {
         extra: {
           sentryDsn: 'https://dsn.example/1',
           sentryDebug: true,
+          sentryRelease: 'gentle-games@1.1.0',
         },
       },
     }));
@@ -81,6 +83,7 @@ describe('sentry consent-aware wrappers', () => {
     expect(mockInit).toHaveBeenCalledTimes(1);
 
     const options = mockInit.mock.calls[0][0];
+    expect(options.release).toBe('gentle-games@1.1.0');
     const filteredEvent = options.beforeSend({
       message: 'raw error text',
       user: {

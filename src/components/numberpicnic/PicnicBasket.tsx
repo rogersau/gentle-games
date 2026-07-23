@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -14,7 +14,7 @@ import { useThemeColors } from '../../utils/theme';
 import { Space, TypeStyle, Radius } from '../../ui/tokens';
 import { ThemeColors } from '../../types';
 import { useSettings } from '../../context/SettingsContext';
-import { usePicnicDrag } from '../../hooks/usePicnicDrag';
+import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -44,26 +44,21 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
   items,
   targetCount,
   onDropZoneLayout,
-  onDrop,
   isDropTarget = false,
   isSuccess = false,
   onAnimationComplete,
   style,
+  accessibilityLabel,
+  accessibilityHint,
   testID,
 }) => {
   const { colors } = useThemeColors();
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const basketRef = useRef<View>(null);
 
-  const [dropZoneBounds, setDropZoneBounds] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
-
-  const { isOverBasket, panResponder } = usePicnicDrag({
-    onDrop: onDrop ?? (() => {}),
-    dropZoneBounds,
-  });
-
-  const effectiveIsDropTarget = isOverBasket || isDropTarget;
+  const effectiveIsDropTarget = isDropTarget;
 
   // Animation state
   const [basketPhase, setBasketPhase] = useState<'entering' | 'waiting' | 'exiting' | 'offscreen'>(
@@ -91,7 +86,6 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
 
     basketRef.current.measureInWindow?.((x, y, width, height) => {
       const bounds = { x, y, width, height };
-      setDropZoneBounds(bounds);
       onDropZoneLayout?.(bounds);
     });
   }, [onDropZoneLayout]);
@@ -278,7 +272,12 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
   };
 
   return (
-    <Animated.View style={[styles.container, animatedBasketStyle, style]}>
+    <Animated.View
+      style={[styles.container, animatedBasketStyle, style]}
+      accessible
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
+    >
       <View style={styles.basketContainer}>
         {/* Basket Handle */}
         <View style={styles.handle} />
@@ -312,11 +311,13 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
                   ))}
                 </View>
                 {remainingCount > 0 && (
-                  <Text style={styles.moreIndicator}>+{remainingCount} more</Text>
+                  <Text style={styles.moreIndicator}>
+                    {t('games.numberPicnic.moreItems', { count: remainingCount })}
+                  </Text>
                 )}
               </>
             ) : (
-              <Text style={styles.emptyText}>Drag items here!</Text>
+              <Text style={styles.emptyText}>{t('games.numberPicnic.emptyBasket')}</Text>
             )}
           </View>
 

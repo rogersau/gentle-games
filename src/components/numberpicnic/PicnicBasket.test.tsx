@@ -38,6 +38,13 @@ jest.mock('../../utils/theme', () => ({
   }),
 }));
 
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: Record<string, unknown>) =>
+      options ? `translated:${key}:${String(options.count ?? '')}` : `translated:${key}`,
+  }),
+}));
+
 describe('PicnicBasket', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -76,7 +83,7 @@ describe('PicnicBasket', () => {
   it('shows empty state text and current count', () => {
     const { getByText } = render(<PicnicBasket items={[]} targetCount={3} onPress={jest.fn()} />);
 
-    expect(getByText('Drag items here!')).toBeTruthy();
+    expect(getByText('translated:games.numberPicnic.emptyBasket')).toBeTruthy();
     expect(getByText('0/3')).toBeTruthy();
   });
 
@@ -86,7 +93,7 @@ describe('PicnicBasket', () => {
       <PicnicBasket items={items} targetCount={14} onPress={jest.fn()} />,
     );
 
-    expect(getByText('+2 more')).toBeTruthy();
+    expect(getByText('translated:games.numberPicnic.moreItems:2')).toBeTruthy();
     expect(getByText('14/14')).toBeTruthy();
   });
 

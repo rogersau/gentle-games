@@ -1,6 +1,6 @@
 import React from 'react';
 import { PanResponder } from 'react-native';
-import { act, render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import { PicnicBlanket } from './PicnicBlanket';
 
 type NodeMockElement = React.ReactElement<unknown>;
@@ -47,6 +47,15 @@ jest.mock('../../utils/theme', () => ({
   }),
 }));
 
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: Record<string, unknown>) =>
+      options
+        ? `${String(options.item ?? '')} translated:${key}:${String(options.index ?? '')}`
+        : `translated:${key}`,
+  }),
+}));
+
 describe('PicnicBlanket', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -80,6 +89,14 @@ describe('PicnicBlanket', () => {
     expect(queryAllByTestId(/picnic-item-/)).toHaveLength(2);
   });
 
+  it('renders instructions through the translation interface', () => {
+    const { getByText } = render(
+      <PicnicBlanket itemEmoji='🍎' itemCount={1} targetCount={3} onItemDrop={jest.fn()} />,
+    );
+
+    expect(getByText('translated:games.numberPicnic.instruction')).toBeTruthy();
+  });
+
   it('rebuilds item labels when emoji changes between rounds', () => {
     const { getByTestId, rerender } = render(
       <PicnicBlanket itemEmoji='🍓' itemCount={1} targetCount={3} onItemDrop={jest.fn()} />,
@@ -90,6 +107,17 @@ describe('PicnicBlanket', () => {
     rerender(<PicnicBlanket itemEmoji='🥕' itemCount={1} targetCount={3} onItemDrop={jest.fn()} />);
 
     expect(getByTestId('picnic-item-0').props.accessibilityLabel).toContain('🥕');
+  });
+
+  it('adds an available item with a simple press', () => {
+    const onItemDrop = jest.fn();
+    const { getByTestId } = render(
+      <PicnicBlanket itemEmoji='🍎' itemCount={1} targetCount={3} onItemDrop={onItemDrop} />,
+    );
+
+    fireEvent.press(getByTestId('picnic-item-0'));
+
+    expect(onItemDrop).toHaveBeenCalledWith(0);
   });
 
   it('drops item when dragged into the measured basket overlap area', () => {
@@ -132,7 +160,7 @@ describe('PicnicBlanket', () => {
     const onMove = item.props.onPanResponderMove;
     const onRelease = item.props.onPanResponderRelease;
 
-    expect(startShouldSet()).toBe(true);
+    expect(startShouldSet()).toBe(false);
     expect(moveShouldSet()).toBe(true);
 
     act(() => {
