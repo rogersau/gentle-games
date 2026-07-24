@@ -226,6 +226,30 @@ describe('DrawingScreen', () => {
     });
   });
 
+  it('does not reopen the continue modal when the screen rerenders after continuing', async () => {
+    const savedDrawing = historyA;
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(savedDrawing));
+
+    const { getByText, queryByText, rerender } = render(React.createElement(DrawingScreen));
+
+    await waitFor(() => {
+      expect(getByText('Continue')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Continue'));
+
+    await waitFor(() => {
+      expect(queryByText('Welcome Back')).toBeNull();
+    });
+
+    await act(async () => {
+      rerender(React.createElement(DrawingScreen));
+      await Promise.resolve();
+    });
+
+    expect(queryByText('Welcome Back')).toBeNull();
+  });
+
   it('starts new drawing when new button pressed', async () => {
     const savedDrawing = historyA;
     (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(savedDrawing));

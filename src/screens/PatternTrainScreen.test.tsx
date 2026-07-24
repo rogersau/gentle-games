@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Animated } from 'react-native';
 import { PatternTrainScreen } from '../screens/PatternTrainScreen';
 
@@ -207,5 +207,33 @@ describe('PatternTrainScreen', () => {
     // AppHeader should be rendered (we can check by looking for the title)
     const title = screen.queryByText('Pattern Train');
     expect(title).toBeTruthy();
+  });
+
+  it('leaves carriage taps available while reserving drags for movement', async () => {
+    const screen = render(<PatternTrainScreen />);
+
+    fireEvent.press(screen.getByText('Easy'));
+
+    await waitFor(() => {
+      expect(
+        screen.UNSAFE_root.findAll(
+          (node: any) =>
+            typeof node.props.onStartShouldSetResponder === 'function' &&
+            typeof node.props.onMoveShouldSetResponder === 'function',
+        ),
+      ).not.toHaveLength(0);
+    });
+
+    const draggable = screen.UNSAFE_root.findAll(
+      (node: any) =>
+        typeof node.props.onStartShouldSetResponder === 'function' &&
+        typeof node.props.onMoveShouldSetResponder === 'function',
+    )[0];
+
+    expect(draggable.props.onStartShouldSetResponder()).toBe(false);
+    expect(draggable.props.onMoveShouldSetResponder({}, { dx: 0, dy: 0 })).toBe(false);
+    expect(
+      screen.getAllByLabelText('games.patternTrain.carriage.accessibilityLabel')[0].props.hitSlop,
+    ).toBe(8);
   });
 });

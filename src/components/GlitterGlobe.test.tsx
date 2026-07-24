@@ -120,6 +120,17 @@ describe('GlitterGlobe', () => {
     expect(removeListener).toHaveBeenCalledTimes(1);
   });
 
+  it('skips accelerometer setup when the sensor is unavailable', async () => {
+    const screen = render(<GlitterGlobe width={220} height={220} initialCount={0} />);
+
+    await waitFor(() => {
+      expect(mockIsAvailableAsync).toHaveBeenCalledTimes(1);
+    });
+
+    expect(mockAddListener).not.toHaveBeenCalled();
+    screen.unmount();
+  });
+
   it('keeps imperative add/clear controls and wake ripples working after updates publish together', async () => {
     const ref = createRef<GlitterGlobeRef>();
     const nowSpy = jest.spyOn(Date, 'now');

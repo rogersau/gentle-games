@@ -61,6 +61,7 @@ const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
       onPress={onPress}
       disabled={tile.isFlipped || tile.isMatched}
       style={[styles.container, { width: size, height: size }]}
+      hitSlop={4}
       activeOpacity={0.8}
       accessibilityRole='button'
       accessibilityLabel={accessibilityLabel}

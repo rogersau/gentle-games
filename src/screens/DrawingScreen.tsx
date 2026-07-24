@@ -33,6 +33,7 @@ export const DrawingScreen: React.FC = () => {
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const allowNextBeforeRemoveRef = useRef(false);
   const hasShownWelcomeMochiRef = useRef(false);
+  const hasStartedSavedCheckRef = useRef(false);
 
   const { settings } = useSettings();
   const { showMochi } = useMochi();
@@ -59,6 +60,12 @@ export const DrawingScreen: React.FC = () => {
   }, [screenWidth, screenHeight, insets.top, insets.bottom]);
 
   useEffect(() => {
+    if (hasStartedSavedCheckRef.current) {
+      return;
+    }
+
+    hasStartedSavedCheckRef.current = true;
+
     const checkSavedDrawing = async () => {
       try {
         const saved = await AsyncStorage.getItem(DRAWING_STORAGE_KEY);

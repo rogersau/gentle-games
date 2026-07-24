@@ -9,46 +9,66 @@ interface UseGlitterGesturesOptions {
   enabled?: boolean;
 }
 
-export function useGlitterGestures({
-  onShake,
-  onWake,
-  enabled = true,
-}: UseGlitterGesturesOptions) {
+export function useGlitterGestures({ onShake, onWake, enabled = true }: UseGlitterGesturesOptions) {
   const lastShakeTime = useRef(0);
   const subscriptionRef = useRef<EventSubscription | null>(null);
+  const onShakeRef = useRef(onShake);
+  const onWakeRef = useRef(onWake);
+
+  useEffect(() => {
+    onShakeRef.current = onShake;
+    onWakeRef.current = onWake;
+  }, [onShake, onWake]);
 
   const handleShake = useCallback(() => {
     const now = Date.now();
     if (now - lastShakeTime.current > 500) {
       lastShakeTime.current = now;
-      onShake();
+      onShakeRef.current();
     }
-  }, [onShake]);
+  }, []);
 
   const handleWake = useCallback(() => {
-    onWake();
-  }, [onWake]);
+    onWakeRef.current();
+  }, []);
 
   useEffect(() => {
-    if (subscriptionRef.current) {
+    if (!enabled || subscriptionRef.current) {
       return;
     }
 
-    if (!enabled) {
-      return;
-    }
+    let cancelled = false;
 
-    const subscription = Accelerometer.addListener((reading: MotionReading) => {
-      getMotionForce(reading);
-      if (shouldTriggerShake(reading, lastShakeTime.current, Date.now())) {
-        handleShake();
+    const subscribeToAccelerometer = async () => {
+      try {
+        if (!(await Accelerometer.isAvailableAsync()) || cancelled) {
+          return;
+        }
+
+        const subscription = Accelerometer.addListener((reading: MotionReading) => {
+          getMotionForce(reading);
+          if (shouldTriggerShake(reading, lastShakeTime.current, Date.now())) {
+            handleShake();
+          }
+        });
+
+        if (cancelled) {
+          subscription.remove();
+          return;
+        }
+
+        subscriptionRef.current = subscription;
+      } catch {
+        // Sensors are optional; touch interaction remains available without them.
       }
-    });
+    };
 
-    subscriptionRef.current = subscription;
+    void subscribeToAccelerometer();
 
     return () => {
+      cancelled = true;
       subscriptionRef.current?.remove();
+      subscriptionRef.current = null;
     };
   }, [enabled, handleShake]);
 

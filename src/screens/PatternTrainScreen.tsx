@@ -431,8 +431,12 @@ export const PatternTrainScreen: React.FC = () => {
   const createPanResponder = useCallback(
     (carriage: DraggableCarriage) => {
       return PanResponder.create({
-        onStartShouldSetPanResponder: () => !isProcessing && carriage.isAvailable,
-        onMoveShouldSetPanResponder: () => !isProcessing && carriage.isAvailable,
+        // Let the nested button receive taps; claim the responder only after movement starts.
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_, gestureState) =>
+          !isProcessing &&
+          carriage.isAvailable &&
+          (Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4),
         onPanResponderGrant: () => {
           Animated.spring(carriage.scale, {
             toValue: 1.1,
@@ -624,6 +628,7 @@ export const PatternTrainScreen: React.FC = () => {
                       emoji: carriage.emoji,
                     })}
                     accessibilityHint={t('games.patternTrain.carriage.accessibilityHint')}
+                    hitSlop={8}
                     style={styles.carriageButton}
                   >
                     <Carriage content={carriage.emoji} size={64} isHighlighted={isSelected} />
