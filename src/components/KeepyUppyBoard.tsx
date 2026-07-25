@@ -33,6 +33,7 @@ interface KeepyUppyBoardProps {
   onBalloonCountChange?: (count: number) => void;
   onPoppedChange?: (popped: number) => void;
   easyMode?: boolean;
+  motionEnabled?: boolean;
 }
 
 const STEP_MS = 1000 / 30;
@@ -44,7 +45,7 @@ const MIN_FLICK_DISTANCE = 8;
 const MAX_FLICK_DURATION_MS = 500;
 
 export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>(
-  ({ bounds, onScoreChange, onBalloonCountChange, onPoppedChange, easyMode = false }, ref) => {
+  ({ bounds, onScoreChange, onBalloonCountChange, onPoppedChange, easyMode = false, motionEnabled = true }, ref) => {
     const { colors, resolvedMode } = useThemeColors();
     const { t } = useTranslation();
     const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
@@ -86,6 +87,7 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
     }, [popped]);
 
     useEffect(() => {
+      if (!motionEnabled) return;
       const timer = setInterval(() => {
         const now = Date.now();
         setBalloons((previous) => {
@@ -98,7 +100,7 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
       }, STEP_MS);
 
       return () => clearInterval(timer);
-    }, [bounds]);
+    }, [bounds, motionEnabled]);
 
     const resetBoard = useCallback(() => {
       setBalloons([createBoardBalloon()]);

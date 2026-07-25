@@ -10,12 +10,14 @@ import { playBubblePopSound } from '../utils/sounds';
 import { useThemeColors } from '../utils/theme';
 import { AppScreen, AppHeader } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
+import { useAnimationEnabled } from '../ui/animations';
 
 export const BubbleScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings } = useSettings();
   const { colors } = useThemeColors();
   const { t } = useTranslation();
+  const motionEnabled = useAnimationEnabled();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [poppedCount, setPoppedCount] = useState(0);
   const popCountRef = useRef(0);
@@ -75,6 +77,7 @@ export const BubbleScreen: React.FC = () => {
             minActiveBubbles={2}
             maxActiveBubbles={12}
             onBubblePop={handleBubblePop}
+            motionEnabled={motionEnabled}
           />
         </View>
       </View>

@@ -4,6 +4,7 @@ import { CategoryMatchCategory, CategoryMatchItem, ThemeColors } from '../types'
 import { createCategoryMatchRound, isCategoryMatchCorrect } from '../utils/categoryMatchLogic';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { useSettings } from '../context/SettingsContext';
+import { useAnimationEnabled } from '../ui/animations';
 import { playFlipSound, playMatchSound } from '../utils/sounds';
 import { Radius, Space, TypeStyle } from '../ui/tokens';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +37,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   onIncorrectMatch,
 }) => {
   const { settings } = useSettings();
+  const animationsEnabled = useAnimationEnabled();
   const { t } = useTranslation();
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
@@ -88,7 +90,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   };
 
   const springTokenBack = () => {
-    if (settings.animationsEnabled) {
+    if (animationsEnabled) {
       Animated.spring(dragPosition, {
         toValue: { x: 0, y: 0 },
         friction: 7,
@@ -112,7 +114,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   };
 
   const playCorrectPulse = () => {
-    if (settings.animationsEnabled) {
+    if (animationsEnabled) {
       Animated.sequence([
         Animated.timing(tokenScale, {
           toValue: 1.08,

@@ -10,11 +10,13 @@ import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
 import { AppScreen, AppHeader, AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
+import { useAnimationEnabled } from '../ui/animations';
 
 export const KeepyUppyScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings } = useSettings();
   const { colors } = useThemeColors();
+  const motionEnabled = useAnimationEnabled();
   const { t } = useTranslation();
   const { showMochi } = useMochi();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -107,6 +109,7 @@ export const KeepyUppyScreen: React.FC = () => {
           onBalloonCountChange={setBalloonCount}
           onPoppedChange={setPopped}
           easyMode={settings.keepyUppyEasyMode}
+          motionEnabled={motionEnabled}
         />
       </View>
     </AppScreen>

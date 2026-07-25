@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { ThemeColors } from '../types';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
+import { useAnimationEnabled } from '../ui/animations';
 import { useSettings } from './SettingsContext';
 
 interface ParentTimerContextType {
@@ -63,6 +64,7 @@ const generateMathQuestion = (): { question: string; answer: number } => {
 
 export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { settings } = useSettings();
+  const animationsEnabled = typeof useAnimationEnabled === 'function' ? useAnimationEnabled() : settings.animationsEnabled;
   const { colors, resolvedMode } = useThemeColors();
   const initialDurationMinutes = settings.parentTimerMinutes;
   const [secondsRemaining, setSecondsRemaining] = useState(initialDurationMinutes * 60);
@@ -258,7 +260,7 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     } else {
       setShowError(true);
       setUserAnswer('');
-      if (settings.animationsEnabled) {
+      if (animationsEnabled) {
         Animated.sequence([
           Animated.timing(shakeAnim, {
             toValue: 10,
@@ -293,7 +295,7 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setMathChallenge(generateMathQuestion());
       }
     }
-  }, [mathChallenge.answer, settings.animationsEnabled, shakeAnim, startFreshSession, userAnswer]);
+  }, [mathChallenge.answer, animationsEnabled, shakeAnim, startFreshSession, userAnswer]);
 
   const { t } = useTranslation();
   const styles = React.useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);

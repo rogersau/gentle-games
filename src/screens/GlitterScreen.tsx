@@ -7,6 +7,7 @@ import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
 import { AppScreen, AppHeader, AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
+import { useAnimationEnabled } from '../ui/animations';
 import { useMochi } from '../hooks/useMochi';
 import { useSettings } from '../context/SettingsContext';
 
@@ -19,6 +20,7 @@ export const GlitterScreen: React.FC = () => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const { settings } = useSettings();
+  const motionEnabled = useAnimationEnabled();
   const { showMochi } = useMochi();
 
   const lastInteractionRef = useRef(Date.now());
@@ -76,7 +78,7 @@ export const GlitterScreen: React.FC = () => {
         </Text>
 
         <View style={styles.globeWrap}>
-          <GlitterGlobe ref={globeRef} width={globeSize} height={globeSize} onInteraction={handleInteraction} />
+          <GlitterGlobe ref={globeRef} width={globeSize} height={globeSize} onInteraction={handleInteraction} motionEnabled={motionEnabled} />
         </View>
 
         <View style={styles.controls} testID='glitter-controls'>

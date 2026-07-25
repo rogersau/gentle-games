@@ -46,6 +46,7 @@ interface GlitterGlobeProps {
   initialCount?: number;
   maxParticles?: number;
   onInteraction?: () => void;
+  motionEnabled?: boolean;
 }
 
 interface GlitterGlobeSnapshot {
@@ -323,7 +324,7 @@ const applyFingerImpulse = (
 };
 
 export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
-  ({ width, height, initialCount = 36, maxParticles = 120, onInteraction }, ref) => {
+  ({ width, height, initialCount = 36, maxParticles = 120, onInteraction, motionEnabled = true }, ref) => {
     const { colors } = useThemeColors();
     const { t } = useTranslation();
     const sizeRef = useRef({ width, height });
@@ -339,7 +340,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
       sizeRef.current = { width, height };
     }, [width, height]);
 
-    const { particles, ripples, syncParticles, addParticles, clearParticles, clearRipples, syncRipples, startAnimation } = useGlitterParticles({
+    const { particles, ripples, syncParticles, addParticles, clearParticles, clearRipples, syncRipples, startAnimation, stopAnimation } = useGlitterParticles({
       particleCount: initialCount,
       canvasWidth: width,
       canvasHeight: height,
@@ -353,8 +354,10 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
     });
 
     useEffect(() => {
-      startAnimation();
-    }, []);
+      if (motionEnabled) startAnimation();
+      else stopAnimation();
+      return stopAnimation;
+    }, [motionEnabled, startAnimation, stopAnimation]);
 
     const handleShakeCallback = useCallback(() => {
       onInteractionRef.current?.();
@@ -413,6 +416,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
               y: locationY,
             };
             if (
+              motionEnabled &&
               isPointInsideGlobe(
                 locationX,
                 locationY,
@@ -457,7 +461,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
               sizeRef.current.height,
             );
             let newRipples = ripplesRef.current;
-            if (isInside) {
+            if (motionEnabled && isInside) {
               const now = Date.now();
               if (now - lastWakeAtRef.current >= WAKE_INTERVAL_MS) {
                 lastWakeAtRef.current = now;
@@ -497,7 +501,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
             lastWakeAtRef.current = 0;
           },
         }),
-      [],
+      [motionEnabled, particles, syncParticles],
     );
 
     const globe = useMemo(() => {

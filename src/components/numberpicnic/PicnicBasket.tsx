@@ -12,8 +12,8 @@ import {
 } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
 import { Space, TypeStyle, Radius } from '../../ui/tokens';
+import { useAnimationEnabled } from '../../ui/animations';
 import { ThemeColors } from '../../types';
-import { useSettings } from '../../context/SettingsContext';
 import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -53,7 +53,7 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
   testID,
 }) => {
   const { colors } = useThemeColors();
-  const { settings } = useSettings();
+  const animationsEnabled = useAnimationEnabled();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const basketRef = useRef<View>(null);
@@ -118,7 +118,7 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
     basketPosition.setValue(SCREEN_WIDTH);
     basketOpacity.setValue(0);
 
-    if (settings.animationsEnabled && !settings.reducedMotionEnabled) {
+    if (animationsEnabled) {
       Animated.parallel([
         Animated.timing(basketPosition, {
           toValue: 0,
@@ -144,7 +144,7 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
   const startBasketExit = () => {
     setBasketPhase('exiting');
 
-    if (settings.animationsEnabled && !settings.reducedMotionEnabled) {
+    if (animationsEnabled) {
       Animated.parallel([
         Animated.timing(basketPosition, {
           toValue: -SCREEN_WIDTH,
@@ -214,7 +214,7 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
         }
       }
 
-      const duration = settings.animationsEnabled && !settings.reducedMotionEnabled ? 400 : 50;
+      const duration = animationsEnabled ? 400 : 50;
 
       newItemIndices.forEach((index) => {
         const animValue = itemAnimationsRef.current.get(index);
@@ -231,7 +231,7 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
     }
 
     prevCountRef.current = currentCount;
-  }, [items.length, settings.animationsEnabled, settings.reducedMotionEnabled]);
+  }, [items.length, animationsEnabled]);
 
   const getItemAnimatedStyle = (index: number) => {
     const animValue = itemAnimationsRef.current.get(index);

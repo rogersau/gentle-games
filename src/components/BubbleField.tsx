@@ -22,6 +22,7 @@ interface BubbleFieldProps {
   maxActiveBubbles?: number;
   spawnIntervalMs?: number;
   onBubblePop?: () => void;
+  motionEnabled?: boolean;
 }
 
 const POP_INDICATOR_DECAY_PER_SECOND = 3;
@@ -39,6 +40,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   maxActiveBubbles = 12,
   spawnIntervalMs = 800,
   onBubblePop,
+  motionEnabled = true,
 }) => {
   const { colors } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -84,6 +86,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   }, [height, maxActiveBubbles, minActiveBubbles, width]);
 
   useEffect(() => {
+    if (!motionEnabled) return;
     const tick = (now: number) => {
       if (!lastFrameTimeRef.current) {
         lastFrameTimeRef.current = now;
@@ -135,7 +138,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
         cancelAnimationFrame(frameRef.current);
       }
     };
-  }, [maxActiveBubbles, minActiveBubbles, spawnIntervalMs]);
+  }, [maxActiveBubbles, minActiveBubbles, spawnIntervalMs, motionEnabled]);
 
   const panResponder = useMemo(
     () =>
@@ -161,7 +164,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
             heightRef.current,
             maxActiveBubbles,
           );
-          const nextPopIndicators = [
+          const nextPopIndicators = motionEnabled ? [
             ...popIndicatorsRef.current,
             {
               id: `pop-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -169,13 +172,13 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
               y: locationY,
               life: 1,
             },
-          ];
+          ] : [];
 
           publishSnapshot(nextBubbles, nextPopIndicators);
           onBubblePop?.();
         },
       }),
-    [maxActiveBubbles, minActiveBubbles, onBubblePop],
+    [maxActiveBubbles, minActiveBubbles, onBubblePop, motionEnabled],
   );
 
   return (

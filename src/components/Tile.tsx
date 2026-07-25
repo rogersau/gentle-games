@@ -1,7 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, Animated, View, Platform } from 'react-native';
 import { ThemeColors, Tile as TileType } from '../types';
-import { useSettings } from '../context/SettingsContext';
+import { useAnimationEnabled } from '../ui/animations';
 import { useThemeColors } from '../utils/theme';
 import { Radius } from '../ui/tokens';
 
@@ -12,7 +12,7 @@ interface TileProps {
 }
 
 const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
-  const { settings } = useSettings();
+  const animationsEnabled = useAnimationEnabled();
   const { colors } = useThemeColors();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
@@ -25,7 +25,7 @@ const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
   const [showFront, setShowFront] = React.useState(!tile.isFlipped);
 
   React.useEffect(() => {
-    if (settings.animationsEnabled) {
+    if (animationsEnabled) {
       Animated.timing(scaleAnim, {
         toValue: 0,
         duration: 120,
@@ -42,7 +42,7 @@ const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
       setShowFront(!tile.isFlipped);
       scaleAnim.setValue(1);
     }
-  }, [tile.isFlipped, settings.animationsEnabled]);
+  }, [tile.isFlipped, animationsEnabled]);
 
   const tileStyle = tile.isMatched
     ? styles.tileMatched

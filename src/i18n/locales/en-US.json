@@ -300,11 +300,11 @@
     },
     "animations": {
       "label": "Animations",
-      "description": "Enable card flip and UI animations"
+      "description": "Allow decorative card flips and UI animations"
     },
     "reducedMotion": {
       "label": "Reduced Motion",
-      "description": "Use simpler, faster animations"
+      "description": "Reduce decorative motion; device accessibility settings also apply"
     },
     "keepyUppyEasyMode": {
       "label": "Keepy Uppy Easy Mode",
