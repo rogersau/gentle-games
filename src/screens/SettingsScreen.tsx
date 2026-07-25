@@ -22,7 +22,7 @@ import { useLayout } from '../ui/useLayout';
 
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { settings, updateSettings } = useSettings();
+  const { settings, updateSettings, persistenceError } = useSettings();
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const { contentWidth, isTablet } = useLayout();
@@ -66,6 +66,12 @@ export const SettingsScreen: React.FC = () => {
           isTablet && { maxWidth: contentWidth, alignSelf: 'center', width: '100%' },
         ]}
       >
+        {persistenceError ? (
+          <Text accessibilityRole='alert' style={styles.errorMessage}>
+            {t('settings.persistenceError')}
+          </Text>
+        ) : null}
+
         {/* Language */}
         <View style={styles.section}>
           <SectionHeader title={t('settings.language.title')} />
@@ -245,6 +251,11 @@ const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
       ...TypeStyle.bodySm,
       color: colors.textLight,
       marginTop: Space.xs,
+    },
+    errorMessage: {
+      ...TypeStyle.bodySm,
+      color: colors.danger,
+      marginBottom: Space.base,
     },
     bottomAction: {
       alignItems: 'center',

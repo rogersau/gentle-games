@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ColorMode, Settings } from '../types';
 import { SupportedLanguage, DEFAULT_LANGUAGE } from '../types/i18n';
@@ -9,6 +9,8 @@ interface SettingsContextType {
   settings: Settings;
   updateSettings: (newSettings: Partial<Settings>) => Promise<void>;
   isLoading: boolean;
+  isSaving: boolean;
+  persistenceError: string | null;
 }
 
 const defaultSettings: Settings = {
@@ -114,54 +116,145 @@ const areSettingsEqual = (left: Settings, right: Settings): boolean => {
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+const SETTINGS_STORAGE_KEY = 'gentleMatchSettings';
+
+const errorMessage = (error: unknown): string => {
+  if (error instanceof Error && error.message) return error.message;
+  return 'Unable to save settings';
+};
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [persistenceError, setPersistenceError] = useState<string | null>(null);
+  const settingsRef = useRef(defaultSettings);
+  const mountedRef = useRef(true);
+  const storageQueueRef = useRef(Promise.resolve());
+  const pendingWritesRef = useRef(0);
+  const writeVersionRef = useRef(0);
+  const hydrationResolveRef = useRef<() => void>(() => undefined);
+  const hydrationPromiseRef = useRef(
+    new Promise<void>((resolve) => {
+      hydrationResolveRef.current = resolve;
+    }),
+  );
 
-  useEffect(() => {
-    loadSettings();
+  const enqueueStorageOperation = useCallback((operation: () => Promise<void>): Promise<void> => {
+    // Recover the chain after a failed operation so later changes still save.
+    const operationPromise = storageQueueRef.current.catch(() => undefined).then(operation);
+    storageQueueRef.current = operationPromise.catch(() => undefined);
+    return operationPromise;
   }, []);
 
-  const loadSettings = async () => {
-    try {
-      const savedSettings = await AsyncStorage.getItem('gentleMatchSettings');
-      if (savedSettings) {
-        const parsed = JSON.parse(savedSettings);
-        const sanitized = sanitizeSettings(parsed);
-        setSettings(sanitized);
-        if (!areSettingsEqual(sanitized, parsed as Settings)) {
-          await AsyncStorage.setItem('gentleMatchSettings', JSON.stringify(sanitized));
-        }
-        // Initialize i18n with saved language
-        void changeLanguage(sanitized.language);
-      }
-    } catch (error) {
-      console.warn('Failed to load settings:', error);
-      // Clear corrupted settings
-      await AsyncStorage.removeItem('gentleMatchSettings');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const persistSettings = useCallback(
+    (snapshot: Settings): Promise<void> => {
+      const version = ++writeVersionRef.current;
+      pendingWritesRef.current += 1;
+      if (mountedRef.current) setIsSaving(true);
 
-  const updateSettings = async (newSettings: Partial<Settings>) => {
-    try {
-      const normalized = sanitizeSettings({ ...settings, ...newSettings });
-      const updated = { ...settings, ...normalized };
-      setSettings(updated);
-      await AsyncStorage.setItem('gentleMatchSettings', JSON.stringify(updated));
-      // Update i18n language if it changed
-      if (newSettings.language && newSettings.language !== settings.language) {
-        void changeLanguage(newSettings.language);
+      const writePromise = enqueueStorageOperation(async () => {
+        await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(snapshot));
+      });
+
+      void writePromise
+        .then(() => {
+          if (mountedRef.current && version === writeVersionRef.current) {
+            setPersistenceError(null);
+          }
+        })
+        .catch((error: unknown) => {
+          console.warn('Failed to save settings:', error);
+          if (mountedRef.current && version === writeVersionRef.current) {
+            setPersistenceError(errorMessage(error));
+          }
+        })
+        .finally(() => {
+          pendingWritesRef.current -= 1;
+          if (mountedRef.current && pendingWritesRef.current === 0) setIsSaving(false);
+        });
+
+      return writePromise;
+    },
+    [enqueueStorageOperation],
+  );
+
+  useEffect(() => {
+    mountedRef.current = true;
+    let cancelled = false;
+    const loadSettings = async () => {
+      let sanitized = defaultSettings;
+      let shouldPersistSanitized = false;
+
+      try {
+        const savedSettings = await AsyncStorage.getItem(SETTINGS_STORAGE_KEY);
+        if (savedSettings) {
+          const parsed = JSON.parse(savedSettings);
+          sanitized = sanitizeSettings(parsed);
+          shouldPersistSanitized = !areSettingsEqual(sanitized, parsed as Settings);
+        }
+      } catch (error) {
+        console.warn('Failed to load settings:', error);
+        try {
+          await enqueueStorageOperation(async () => {
+            await AsyncStorage.removeItem(SETTINGS_STORAGE_KEY);
+          });
+        } catch (removeError) {
+          console.warn('Failed to clear settings:', removeError);
+          if (mountedRef.current) setPersistenceError(errorMessage(removeError));
+        }
       }
-    } catch (error) {
-      console.warn('Failed to save settings:', error);
-    }
-  };
+
+      if (cancelled) return;
+
+      settingsRef.current = sanitized;
+      setSettings(sanitized);
+
+      if (shouldPersistSanitized) {
+        try {
+          await persistSettings(sanitized);
+        } catch {
+          // persistSettings records the error for the UI; hydration can finish.
+        }
+      }
+
+      if (mountedRef.current) setIsLoading(false);
+      hydrationResolveRef.current();
+    };
+
+    void loadSettings();
+    return () => {
+      cancelled = true;
+      mountedRef.current = false;
+    };
+  }, [enqueueStorageOperation, persistSettings]);
+
+  useEffect(() => {
+    if (!isLoading) void changeLanguage(settings.language);
+  }, [isLoading, settings.language]);
+
+  const updateSettings = useCallback(
+    async (newSettings: Partial<Settings>) => {
+      await hydrationPromiseRef.current;
+      if (!mountedRef.current) return;
+
+      // Keep a canonical latest snapshot so rapid updates merge with one another.
+      const updated = sanitizeSettings({ ...settingsRef.current, ...newSettings });
+      settingsRef.current = updated;
+      setSettings(updated);
+      try {
+        await persistSettings(updated);
+      } catch {
+        // Persistence failures are exposed through persistenceError without interrupting the UI.
+      }
+    },
+    [persistSettings],
+  );
 
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings, isLoading }}>
+    <SettingsContext.Provider
+      value={{ settings, updateSettings, isLoading, isSaving, persistenceError }}
+    >
       {children}
     </SettingsContext.Provider>
   );

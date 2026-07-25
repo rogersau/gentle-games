@@ -20,7 +20,7 @@ const storage = AsyncStorage as unknown as {
 };
 
 const TestConsumer = () => {
-  const { settings, isLoading, updateSettings } = useSettings();
+  const { settings, isLoading, updateSettings, isSaving, persistenceError } = useSettings();
 
   if (isLoading) {
     return <Text testID='loading'>loading</Text>;
@@ -38,6 +38,23 @@ const TestConsumer = () => {
       <Text testID='hiddenGames'>{settings.hiddenGames.join(',')}</Text>
       <Text testID='telemetry'>{String(settings.telemetryEnabled)}</Text>
       <Text testID='unfinishedGames'>{String(settings.enableUnfinishedGames)}</Text>
+      <Text testID='saving'>{String(!!isSaving)}</Text>
+      <Text testID='persistence-error'>{persistenceError ?? ''}</Text>
+      <TouchableOpacity testID='set-volume' onPress={() => updateSettings({ soundVolume: 0.9 })}>
+        <Text>set-volume</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID='set-sound-off'
+        onPress={() => updateSettings({ soundEnabled: false })}
+      >
+        <Text>set-sound-off</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID='set-language-us'
+        onPress={() => updateSettings({ language: 'en-US' })}
+      >
+        <Text>set-language-us</Text>
+      </TouchableOpacity>
       <TouchableOpacity testID='set-hard' onPress={() => updateSettings({ difficulty: 'hard' })}>
         <Text>set-hard</Text>
       </TouchableOpacity>
@@ -209,5 +226,67 @@ describe('SettingsContext', () => {
 
     const saved = storage.setItem.mock.calls[0][1];
     expect(JSON.parse(saved).telemetryEnabled).toBe(true);
+  });
+
+  it('merges rapid updates and serialises delayed writes', async () => {
+    storage.getItem.mockResolvedValueOnce(null);
+    const pending: Array<{ value: string; resolve: () => void }> = [];
+    storage.setItem.mockImplementation((_key: string, value: string) => {
+      return new Promise<void>((resolve) => pending.push({ value, resolve }));
+    });
+
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+    fireEvent.press(screen.getByTestId('set-volume'));
+    fireEvent.press(screen.getByTestId('set-sound-off'));
+
+    await waitFor(() => expect(storage.setItem).toHaveBeenCalledTimes(1));
+    expect(screen.getByTestId('volume').props.children).toBe('0.9');
+    expect(screen.getByTestId('sound').props.children).toBe('false');
+    expect(pending).toHaveLength(1);
+
+    pending[0].resolve();
+    await waitFor(() => expect(storage.setItem).toHaveBeenCalledTimes(2));
+    expect(JSON.parse(pending[0].value).soundVolume).toBe(0.9);
+    expect(JSON.parse(pending[0].value).soundEnabled).toBe(true);
+    pending[1].resolve();
+
+    await waitFor(() => expect(screen.getByTestId('saving').props.children).toBe('false'));
+    const finalSnapshot = JSON.parse(storage.setItem.mock.calls[1][1]);
+    expect(finalSnapshot.soundVolume).toBe(0.9);
+    expect(finalSnapshot.soundEnabled).toBe(false);
+  });
+
+  it('recovers after a persistence failure and exposes the error', async () => {
+    storage.getItem.mockResolvedValueOnce(null);
+    const failure = new Error('disk full');
+    storage.setItem.mockRejectedValueOnce(failure).mockResolvedValue(undefined);
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+    fireEvent.press(screen.getByTestId('set-volume'));
+    await waitFor(() =>
+      expect(screen.getByTestId('persistence-error').props.children).toBe('disk full'),
+    );
+
+    fireEvent.press(screen.getByTestId('set-sound-off'));
+    await waitFor(() => expect(storage.setItem).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByTestId('persistence-error').props.children).toBe(''));
+
+    const finalSnapshot = JSON.parse(storage.setItem.mock.calls[1][1]);
+    expect(finalSnapshot.soundVolume).toBe(0.9);
+    expect(finalSnapshot.soundEnabled).toBe(false);
+    warnSpy.mockRestore();
   });
 });
