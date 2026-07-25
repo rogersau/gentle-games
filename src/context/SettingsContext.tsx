@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useReducer,
+} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ColorMode, Settings } from '../types';
 import { SupportedLanguage, DEFAULT_LANGUAGE } from '../types/i18n';
@@ -115,6 +123,15 @@ const areSettingsEqual = (left: Settings, right: Settings): boolean => {
   return JSON.stringify(left) === JSON.stringify(right);
 };
 
+type SettingsAction =
+  | { type: 'replace'; settings: Settings }
+  | { type: 'merge'; values: Partial<Settings> };
+
+const settingsReducer = (state: Settings, action: SettingsAction): Settings => {
+  if (action.type === 'replace') return action.settings;
+  return sanitizeSettings({ ...state, ...action.values });
+};
+
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 const SETTINGS_STORAGE_KEY = 'gentleMatchSettings';
 
@@ -124,7 +141,7 @@ const errorMessage = (error: unknown): string => {
 };
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const [settings, dispatchSettings] = useReducer(settingsReducer, defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [persistenceError, setPersistenceError] = useState<string | null>(null);
@@ -208,7 +225,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (cancelled) return;
 
       settingsRef.current = sanitized;
-      setSettings(sanitized);
+      dispatchSettings({ type: 'replace', settings: sanitized });
 
       if (shouldPersistSanitized) {
         try {
@@ -241,7 +258,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Keep a canonical latest snapshot so rapid updates merge with one another.
       const updated = sanitizeSettings({ ...settingsRef.current, ...newSettings });
       settingsRef.current = updated;
-      setSettings(updated);
+      dispatchSettings({ type: 'merge', values: newSettings });
       try {
         await persistSettings(updated);
       } catch {
