@@ -1,6 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  AppState,
   Animated,
   Modal,
   Platform,
@@ -26,6 +28,27 @@ const ParentTimerContext = createContext<ParentTimerContextType>({
   isLocked: false,
 });
 
+const PARENT_TIMER_STORAGE_KEY = 'gentleGames.parentTimerSession';
+
+// Persisted session schema kept explicit for validation.
+interface PersistedTimerSession {
+  expiresAt: number;
+  durationMinutes: number;
+}
+
+const parsePersistedSession = (value: string | null): PersistedTimerSession | null => {
+  if (!value) return null;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+    const candidate = parsed as Record<string, unknown>;
+    if (typeof candidate.expiresAt !== 'number' || !Number.isFinite(candidate.expiresAt) || typeof candidate.durationMinutes !== 'number' || !Number.isFinite(candidate.durationMinutes) || candidate.durationMinutes <= 0) return null;
+    return { expiresAt: candidate.expiresAt, durationMinutes: candidate.durationMinutes };
+  } catch {
+    return null;
+  }
+};
+
 const generateMathQuestion = (): { question: string; answer: number } => {
   const a = Math.floor(Math.random() * 40) + 12;
   const b = Math.floor(Math.random() * 30) + 11;
@@ -41,28 +64,143 @@ const generateMathQuestion = (): { question: string; answer: number } => {
 export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { settings } = useSettings();
   const { colors, resolvedMode } = useThemeColors();
-  const [secondsRemaining, setSecondsRemaining] = useState(0);
+  const initialDurationMinutes = settings.parentTimerMinutes;
+  const [secondsRemaining, setSecondsRemaining] = useState(initialDurationMinutes * 60);
   const [isLocked, setIsLocked] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [mathChallenge, setMathChallenge] = useState(generateMathQuestion);
   const [userAnswer, setUserAnswer] = useState('');
   const [shakeAnim] = useState(() => new Animated.Value(0));
   const [showError, setShowError] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const expiryRef = useRef<number | null>(null);
+  const durationRef = useRef(initialDurationMinutes);
+  const hydratedRef = useRef(false);
+  const mountedRef = useRef(true);
+  const storageQueueRef = useRef(Promise.resolve());
 
-  // Reset timer when setting changes
-  useEffect(() => {
-    if (settings.parentTimerMinutes > 0) {
-      setSecondsRemaining(settings.parentTimerMinutes * 60);
-      setIsLocked(false);
-    } else {
-      setSecondsRemaining(0);
-      setIsLocked(false);
+  const enqueueStorageOperation = useCallback((operation: () => Promise<void>) => {
+    storageQueueRef.current = storageQueueRef.current
+      .catch(() => undefined)
+      .then(operation)
+      .catch(() => undefined);
+  }, []);
+
+  const removePersistedSession = useCallback(() => {
+    enqueueStorageOperation(async () => {
+      await AsyncStorage.removeItem(PARENT_TIMER_STORAGE_KEY);
+    });
+  }, [enqueueStorageOperation]);
+
+  const startFreshSession = useCallback(
+    (durationMinutes: number) => {
+      expiryRef.current = null;
+      if (durationMinutes <= 0) {
+        if (mountedRef.current) {
+          setSecondsRemaining(0);
+          setIsLocked(false);
+        }
+        removePersistedSession();
+        return;
+      }
+
+      const expiresAt = Date.now() + durationMinutes * 60 * 1000;
+      expiryRef.current = expiresAt;
+      if (mountedRef.current) {
+        setSecondsRemaining(durationMinutes * 60);
+        setIsLocked(false);
+      }
+      enqueueStorageOperation(async () => {
+        await AsyncStorage.setItem(
+          PARENT_TIMER_STORAGE_KEY,
+          JSON.stringify({ expiresAt, durationMinutes }),
+        );
+      });
+    },
+    [enqueueStorageOperation, removePersistedSession],
+  );
+
+  const reconcileTimer = useCallback(() => {
+    if (!hydratedRef.current || !mountedRef.current) return;
+    const durationMinutes = durationRef.current;
+    const expiresAt = expiryRef.current;
+    if (durationMinutes <= 0 || expiresAt === null) return;
+
+    const seconds = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+    setSecondsRemaining(seconds);
+    if (seconds === 0) {
+      expiryRef.current = null;
+      setIsLocked(true);
+      setMathChallenge(generateMathQuestion());
+      setUserAnswer('');
+      setShowError(false);
+      removePersistedSession();
     }
-  }, [settings.parentTimerMinutes]);
+  }, [removePersistedSession]);
 
-  // Countdown
+  // Load the deadline before starting a new session. This prevents a relaunch
+  // from overwriting an existing allowance before AsyncStorage has hydrated.
   useEffect(() => {
-    if (settings.parentTimerMinutes <= 0 || isLocked) {
+    let cancelled = false;
+    const hydrate = async () => {
+      let raw: string | null = null;
+      try {
+        raw = await AsyncStorage.getItem(PARENT_TIMER_STORAGE_KEY);
+      } catch {
+        // A storage read failure should not prevent the timer from starting.
+      }
+      if (cancelled || !mountedRef.current) return;
+
+      const durationMinutes = durationRef.current;
+      hydratedRef.current = true;
+      setIsHydrated(true);
+      if (durationMinutes <= 0) {
+        expiryRef.current = null;
+        setSecondsRemaining(0);
+        setIsLocked(false);
+        removePersistedSession();
+        return;
+      }
+
+      const persisted = parsePersistedSession(raw);
+      if (persisted && persisted.durationMinutes === durationMinutes && persisted.expiresAt > Date.now()) {
+        expiryRef.current = persisted.expiresAt;
+        setSecondsRemaining(Math.max(0, Math.ceil((persisted.expiresAt - Date.now()) / 1000)));
+        setIsLocked(false);
+        return;
+      }
+
+      if (raw) removePersistedSession();
+      if (persisted && persisted.durationMinutes === durationMinutes && persisted.expiresAt <= Date.now()) {
+        expiryRef.current = null;
+        setSecondsRemaining(0);
+        setIsLocked(true);
+        setMathChallenge(generateMathQuestion());
+        setUserAnswer('');
+        setShowError(false);
+        return;
+      }
+      startFreshSession(durationMinutes);
+    };
+
+    void hydrate();
+    return () => {
+      cancelled = true;
+    };
+  }, [removePersistedSession, startFreshSession]);
+
+  useEffect(() => {
+    const durationMinutes = settings.parentTimerMinutes;
+    const previousDuration = durationRef.current;
+    durationRef.current = durationMinutes;
+    if (hydratedRef.current && previousDuration !== durationMinutes) {
+      // Changing the configured duration intentionally starts a new allowance.
+      startFreshSession(durationMinutes);
+    }
+  }, [settings.parentTimerMinutes, startFreshSession]);
+
+  useEffect(() => {
+    if (!isHydrated || settings.parentTimerMinutes <= 0 || isLocked) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -70,32 +208,51 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return;
     }
 
-    intervalRef.current = setInterval(() => {
-      setSecondsRemaining((prev) => {
-        if (prev <= 1) {
-          setIsLocked(true);
-          setMathChallenge(generateMathQuestion());
-          setUserAnswer('');
-          setShowError(false);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
+    reconcileTimer();
+    intervalRef.current = setInterval(reconcileTimer, 1000);
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
     };
-  }, [settings.parentTimerMinutes, isLocked]);
+  }, [isHydrated, isLocked, reconcileTimer, settings.parentTimerMinutes]);
+
+  useEffect(() => {
+    const handleAppStateChange = (nextState: string) => {
+      if (nextState === 'active') reconcileTimer();
+    };
+    const appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
+    const removeAppStateSubscription = () => appStateSubscription?.remove?.();
+
+    if (Platform.OS !== 'web' || typeof document === 'undefined') {
+      return removeAppStateSubscription;
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') reconcileTimer();
+    };
+    const handleWindowFocus = () => reconcileTimer();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleWindowFocus);
+    return () => {
+      removeAppStateSubscription();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [reconcileTimer]);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
 
   const handleUnlock = useCallback(() => {
     const parsed = parseInt(userAnswer.trim(), 10);
     if (parsed === mathChallenge.answer) {
-      setIsLocked(false);
-      setSecondsRemaining(settings.parentTimerMinutes * 60);
+      startFreshSession(durationRef.current);
       setUserAnswer('');
       setShowError(false);
     } else {
@@ -136,13 +293,7 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setMathChallenge(generateMathQuestion());
       }
     }
-  }, [
-    userAnswer,
-    mathChallenge.answer,
-    settings.parentTimerMinutes,
-    shakeAnim,
-    settings.animationsEnabled,
-  ]);
+  }, [mathChallenge.answer, settings.animationsEnabled, shakeAnim, startFreshSession, userAnswer]);
 
   const { t } = useTranslation();
   const styles = React.useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
