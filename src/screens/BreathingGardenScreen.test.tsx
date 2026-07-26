@@ -7,6 +7,7 @@ import { assertNoInfiniteLoops, createInfiniteLoopSpy } from '../test-utils/infi
 const mockGoBack = jest.fn();
 const mockToggleMusic = jest.fn();
 const mockStopMusic = jest.fn();
+let mockIsPlaying = false;
 
 const mockSettings = {
   animationsEnabled: true,
@@ -44,8 +45,8 @@ jest.mock('@react-navigation/native', () => ({
     goBack: mockGoBack,
   }),
   useFocusEffect: (callback: () => void | (() => void)) => {
-    const cleanup = callback();
-    return cleanup;
+    const { useEffect } = require('react');
+    useEffect(callback, []);
   },
 }));
 
@@ -57,7 +58,7 @@ jest.mock('../context/SettingsContext', () => ({
 
 jest.mock('../utils/music', () => ({
   useBackgroundMusic: () => ({
-    isPlaying: false,
+    isPlaying: mockIsPlaying,
     toggleMusic: mockToggleMusic,
     stopMusic: mockStopMusic,
   }),
@@ -96,6 +97,7 @@ describe('BreathingGardenScreen', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockIsPlaying = false;
     mockSettings.animationsEnabled = true;
     queuedAnimations.length = 0;
     consoleErrorSpy = createInfiniteLoopSpy();
@@ -181,6 +183,18 @@ describe('BreathingGardenScreen', () => {
     expect(screen.getByText('1')).toBeTruthy();
     expect(screen.getByText('Breathe out')).toBeTruthy();
     expect(animatedTimingSpy).not.toHaveBeenCalled();
+  });
+
+  it('keeps the music button label in sync with the player state and stops on unmount', () => {
+    const screen = render(React.createElement(BreathingGardenScreen));
+    expect(screen.getByText('Music on')).toBeTruthy();
+
+    mockIsPlaying = true;
+    screen.rerender(React.createElement(BreathingGardenScreen));
+    expect(screen.getByText('Music off')).toBeTruthy();
+
+    screen.unmount();
+    expect(mockStopMusic).toHaveBeenCalled();
   });
 
   it('cycles colors, toggles music, updates breath count, and goes back', () => {
