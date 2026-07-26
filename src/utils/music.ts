@@ -31,6 +31,9 @@ const getRandomTrack = (): TrackName | null => {
   return tracks[Math.floor(Math.random() * tracks.length)];
 };
 
+const isExplicitlyInactive = (state: AppStateStatus): boolean =>
+  state === 'background' || state === 'inactive';
+
 const removePlayer = (player: AudioPlayer | null): void => {
   if (!player) return;
   try {
@@ -44,7 +47,7 @@ export const useBackgroundMusic = () => {
   const { settings } = useSettings();
   const playerRef = useRef<AudioPlayer | null>(null);
   const settingsRef = useRef(settings);
-  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState ?? 'active');
   const playRequestRef = useRef(0);
   const [musicState, setMusicState] = useState<MusicState>({
     isPlaying: false,
@@ -124,7 +127,7 @@ export const useBackgroundMusic = () => {
   }, []);
 
   const loadAndPlayTrack = useCallback(async (trackName: TrackName) => {
-    if (!settingsRef.current.soundEnabled || appStateRef.current !== 'active') return;
+    if (!settingsRef.current.soundEnabled || isExplicitlyInactive(appStateRef.current)) return;
 
     const playRequest = playRequestRef.current + 1;
     playRequestRef.current = playRequest;
@@ -142,7 +145,7 @@ export const useBackgroundMusic = () => {
 
       // Awaiting also catches a rejected play promise in test/native adapters.
       await player.play();
-      if (playRequest !== playRequestRef.current || !settingsRef.current.soundEnabled || appStateRef.current !== 'active') {
+      if (playRequest !== playRequestRef.current || !settingsRef.current.soundEnabled || isExplicitlyInactive(appStateRef.current)) {
         removePlayer(playerRef.current);
         playerRef.current = null;
         setIsLoaded(false);
@@ -166,7 +169,7 @@ export const useBackgroundMusic = () => {
       return;
     }
 
-    if (!settingsRef.current.soundEnabled || appStateRef.current !== 'active') return;
+    if (!settingsRef.current.soundEnabled || isExplicitlyInactive(appStateRef.current)) return;
 
     if (Object.keys(musicTracks).length === 0) {
       console.log('Music: No tracks available to play.');
