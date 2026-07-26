@@ -18,6 +18,8 @@ jest.mock('../games/registry', () => {
 
 const mockGoBack = jest.fn();
 const mockUpdateSettings = jest.fn();
+let mockIsSaving = false;
+let mockPersistenceError: string | null = null;
 let mockSettings = {
   animationsEnabled: true,
   soundEnabled: true,
@@ -50,12 +52,16 @@ jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: mockSettings,
     updateSettings: mockUpdateSettings,
+    isSaving: mockIsSaving,
+    persistenceError: mockPersistenceError,
   }),
 }));
 
 describe('SettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockIsSaving = false;
+    mockPersistenceError = null;
     mockSettings = {
       animationsEnabled: true,
       soundEnabled: true,
@@ -112,11 +118,35 @@ describe('SettingsScreen', () => {
     expect(mockUpdateSettings).toHaveBeenCalledWith({ keepyUppyEasyMode: false });
   });
 
-  it('goes back to home when save button is pressed', () => {
+  it('autosaves changes without a Save action and has one clear back path', () => {
     const screen = render(React.createElement(SettingsScreen));
-    fireEvent.press(screen.getByText('Save'));
 
+    expect(screen.queryByText('Save')).toBeNull();
+    expect(screen.getAllByText('← Back')).toHaveLength(1);
+
+    fireEvent.press(screen.getByText('← Back'));
     expect(mockGoBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows accessible autosave status without announcing every update', () => {
+    const screen = render(React.createElement(SettingsScreen));
+
+    expect(screen.getByTestId('settings-persistence-status').props.children).toBe('Saved');
+    expect(screen.getByTestId('settings-persistence-status').props.accessibilityLiveRegion).toBe(
+      'none',
+    );
+
+    mockIsSaving = true;
+    screen.rerender(React.createElement(SettingsScreen));
+    expect(screen.getByTestId('settings-persistence-status').props.children).toBe('Saving…');
+
+    mockIsSaving = false;
+    mockPersistenceError = 'storage failed';
+    screen.rerender(React.createElement(SettingsScreen));
+    expect(screen.getByTestId('settings-persistence-status').props.children).toContain(
+      'Settings could not be saved',
+    );
+    expect(screen.getByTestId('settings-persistence-status').props.accessibilityRole).toBe('alert');
   });
 
   it('toggles game visibility via switch', () => {

@@ -497,8 +497,8 @@
   },
   "settings": {
     "title": "Settings",
-    "saveHint": "Save settings and return home",
-    "backHint": "Return to the home screen",
+    "saving": "Saving…",
+    "saved": "Saved",
     "persistenceError": "Settings could not be saved. Your changes are still shown, but may be lost if you close the app.",
     "appearance": {
       "title": "Appearance",

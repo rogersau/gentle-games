@@ -10,7 +10,6 @@ import { LANGUAGE_OPTIONS } from '../types/i18n';
 import {
   AppScreen,
   AppHeader,
-  AppButton,
   SettingToggle,
   SegmentedControl,
   SelectBox,
@@ -22,7 +21,7 @@ import { useLayout } from '../ui/useLayout';
 
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { settings, updateSettings, persistenceError } = useSettings();
+  const { settings, updateSettings, isSaving, persistenceError } = useSettings();
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const { contentWidth, isTablet } = useLayout();
@@ -48,15 +47,6 @@ export const SettingsScreen: React.FC = () => {
       <AppHeader
         title={t('settings.title')}
         onBack={() => navigation.goBack()}
-        rightAction={
-          <AppButton
-            label={t('common.save')}
-            variant='primary'
-            size='sm'
-            onPress={() => navigation.goBack()}
-            accessibilityHint={t('settings.saveHint')}
-          />
-        }
       />
 
       <ScrollView
@@ -66,11 +56,18 @@ export const SettingsScreen: React.FC = () => {
           isTablet && { maxWidth: contentWidth, alignSelf: 'center', width: '100%' },
         ]}
       >
-        {persistenceError ? (
-          <Text accessibilityRole='alert' style={styles.errorMessage}>
-            {t('settings.persistenceError')}
-          </Text>
-        ) : null}
+        <Text
+          testID='settings-persistence-status'
+          accessibilityRole={persistenceError ? 'alert' : 'text'}
+          accessibilityLiveRegion={persistenceError ? 'polite' : 'none'}
+          style={persistenceError ? styles.errorMessage : styles.persistenceStatus}
+        >
+          {persistenceError
+            ? t('settings.persistenceError')
+            : isSaving
+              ? t('settings.saving')
+              : t('settings.saved')}
+        </Text>
 
         {/* Language */}
         <View style={styles.section}>
@@ -222,14 +219,6 @@ export const SettingsScreen: React.FC = () => {
           />
         </View>
 
-        <View style={styles.bottomAction}>
-          <AppButton
-            label={t('common.back')}
-            variant='secondary'
-            onPress={() => navigation.goBack()}
-            accessibilityHint={t('settings.backHint')}
-          />
-        </View>
       </ScrollView>
     </AppScreen>
   );
@@ -257,9 +246,9 @@ const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
       color: colors.danger,
       marginBottom: Space.base,
     },
-    bottomAction: {
-      alignItems: 'center',
-      marginTop: Space.base,
-      marginBottom: Space.xl,
+    persistenceStatus: {
+      ...TypeStyle.bodySm,
+      color: colors.textLight,
+      marginBottom: Space.base,
     },
   });
