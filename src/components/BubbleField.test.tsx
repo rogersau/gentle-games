@@ -1,6 +1,6 @@
 import React from 'react';
-import { act, render } from '@testing-library/react-native';
-import { PanResponder, View } from 'react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
+import { AccessibilityInfo, PanResponder, View } from 'react-native';
 import { Circle, Text as SvgText } from 'react-native-svg';
 import { BubbleField } from './BubbleField';
 
@@ -176,6 +176,60 @@ describe('BubbleField', () => {
     screen.unmount();
 
     expect(globalThis.cancelAnimationFrame).toHaveBeenCalledWith(0);
+  });
+
+  it('activates accessible buttons when a screen reader is enabled', async () => {
+    jest.spyOn(AccessibilityInfo, 'isScreenReaderEnabled').mockResolvedValue(true);
+    jest.spyOn(AccessibilityInfo, 'addEventListener').mockReturnValue({ remove: jest.fn() } as any);
+
+    const screen = render(
+      <BubbleField width={240} height={220} minActiveBubbles={2} maxActiveBubbles={3} />,
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const buttons = screen.getAllByRole('button');
+    expect(buttons).toHaveLength(2);
+    expect(buttons[0].props.accessibilityLabel).toBe('games.bubblePop.bubbleAccessibilityLabel');
+    expect(buttons[0].props.accessibilityHint).toBe('games.bubblePop.bubbleAccessibilityHint');
+    expect(screen.UNSAFE_root.findAll((node: any) => typeof node.props.onPanResponderRelease === 'function')).toHaveLength(0);
+  });
+
+  it('uses accessible buttons when reduced-motion disables bubble movement', () => {
+    const screen = render(
+      <BubbleField width={240} height={220} minActiveBubbles={2} maxActiveBubbles={3} motionEnabled={false} />,
+    );
+
+    expect(screen.getAllByRole('button')).toHaveLength(2);
+  });
+
+  it('exposes stationary large buttons and shared pop behavior in accessible mode', () => {
+    const onBubblePop = jest.fn();
+    const screen = render(
+      <BubbleField
+        width={240}
+        height={220}
+        minActiveBubbles={2}
+        maxActiveBubbles={3}
+        motionEnabled={false}
+        accessibleMode
+        onBubblePop={onBubblePop}
+      />,
+    );
+
+    const buttons = screen.getAllByRole('button');
+    expect(buttons).toHaveLength(2);
+    expect(buttons[0].props.accessibilityRole).toBe('button');
+    expect(buttons[0].props.accessibilityHint).toBe('games.bubblePop.bubbleAccessibilityHint');
+    expect(buttons[0].props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ width: 64, height: 64 })]),
+    );
+
+    fireEvent.press(buttons[0]);
+    expect(onBubblePop).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByRole('button')).toHaveLength(2);
+    expect(screen.getByLabelText('games.bubblePop.newBubbleAnnouncement')).toBeTruthy();
   });
 
   it('removes the tapped bubble, creates an indicator, and calls onBubblePop', () => {

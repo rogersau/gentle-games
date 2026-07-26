@@ -110,7 +110,10 @@
       "subtitle": "Tap the falling bubbles to pop them.",
       "popped": "Popped: {{count}}",
       "pop": "Pop!",
-      "accessibility": "Bubble field, tap bubbles to pop them"
+      "accessibility": "Bubble field, tap bubbles to pop them",
+      "bubbleAccessibilityLabel": "Bubble {{number}}, ready to pop",
+      "bubbleAccessibilityHint": "Double tap to pop this bubble",
+      "newBubbleAnnouncement": "A new bubble is ready"
     },
     "categoryMatch": {
       "name": "Category Match",

@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { PanResponder, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AccessibilityInfo, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { ThemeColors } from '../types';
 import { Bubble, ensureMinimumBubbles, spawnBubbles, stepBubbles } from '../utils/bubbleLogic';
@@ -23,6 +23,8 @@ interface BubbleFieldProps {
   spawnIntervalMs?: number;
   onBubblePop?: () => void;
   motionEnabled?: boolean;
+  /** Force the stationary, keyboard/switch-friendly interaction mode. */
+  accessibleMode?: boolean;
 }
 
 const POP_INDICATOR_DECAY_PER_SECOND = 3;
@@ -41,6 +43,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   spawnIntervalMs = 800,
   onBubblePop,
   motionEnabled = true,
+  accessibleMode,
 }) => {
   const { colors } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -66,6 +69,31 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   const heightRef = useRef<number>(height);
   const bubblesRef = useRef<Bubble[]>(snapshot.bubbles);
   const popIndicatorsRef = useRef<PopIndicator[]>(snapshot.popIndicators);
+  const bubbleLabelNumbersRef = useRef(new Map<string, number>());
+  const nextBubbleLabelNumberRef = useRef(1);
+  const [screenReaderEnabled, setScreenReaderEnabled] = useState(false);
+  const [accessibilityAnnouncement, setAccessibilityAnnouncement] = useState('');
+  const isAccessibleMode = accessibleMode ?? (screenReaderEnabled || !motionEnabled);
+
+  useEffect(() => {
+    let mounted = true;
+    void AccessibilityInfo.isScreenReaderEnabled()
+      .then((enabled) => {
+        if (mounted) setScreenReaderEnabled(enabled);
+      })
+      .catch(() => {
+        // Some web/test environments do not expose a screen-reader preference.
+      });
+
+    const subscription = AccessibilityInfo.addEventListener('screenReaderChanged', (enabled) => {
+      setScreenReaderEnabled(enabled);
+    });
+
+    return () => {
+      mounted = false;
+      subscription?.remove();
+    };
+  }, []);
 
   const publishSnapshot = (nextBubbles: Bubble[], nextPopIndicators: PopIndicator[]) => {
     bubblesRef.current = nextBubbles;
@@ -86,7 +114,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   }, [height, maxActiveBubbles, minActiveBubbles, width]);
 
   useEffect(() => {
-    if (!motionEnabled) return;
+    if (!motionEnabled || isAccessibleMode) return;
     const tick = (now: number) => {
       if (!lastFrameTimeRef.current) {
         lastFrameTimeRef.current = now;
@@ -138,7 +166,48 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
         cancelAnimationFrame(frameRef.current);
       }
     };
-  }, [maxActiveBubbles, minActiveBubbles, spawnIntervalMs, motionEnabled]);
+  }, [isAccessibleMode, maxActiveBubbles, minActiveBubbles, spawnIntervalMs, motionEnabled]);
+
+  const getBubbleLabelNumber = (bubbleId: string): number => {
+    const existingNumber = bubbleLabelNumbersRef.current.get(bubbleId);
+    if (existingNumber !== undefined) return existingNumber;
+    const nextNumber = nextBubbleLabelNumberRef.current++;
+    bubbleLabelNumbersRef.current.set(bubbleId, nextNumber);
+    return nextNumber;
+  };
+
+  const popBubble = useCallback(
+    (bubbleId: string, locationX?: number, locationY?: number) => {
+      const poppedBubble = bubblesRef.current.find((bubble) => bubble.id === bubbleId);
+      if (!poppedBubble) return;
+
+      const nextBubbles = ensureMinimumBubbles(
+        bubblesRef.current.filter((bubble) => bubble.id !== poppedBubble.id),
+        minActiveBubbles,
+        widthRef.current,
+        heightRef.current,
+        maxActiveBubbles,
+      );
+      const nextPopIndicators = motionEnabled && !isAccessibleMode
+        ? [
+            ...popIndicatorsRef.current,
+            {
+              id: 'pop-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+              x: locationX ?? poppedBubble.x,
+              y: locationY ?? poppedBubble.y,
+              life: 1,
+            },
+          ]
+        : [];
+
+      publishSnapshot(nextBubbles, nextPopIndicators);
+      if (isAccessibleMode) {
+        setAccessibilityAnnouncement(t('games.bubblePop.newBubbleAnnouncement'));
+      }
+      onBubblePop?.();
+    },
+    [isAccessibleMode, maxActiveBubbles, minActiveBubbles, motionEnabled, onBubblePop, t],
+  );
 
   const panResponder = useMemo(
     () =>
@@ -157,35 +226,17 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
             return;
           }
 
-          const nextBubbles = ensureMinimumBubbles(
-            bubblesRef.current.filter((bubble) => bubble.id !== poppedBubble.id),
-            minActiveBubbles,
-            widthRef.current,
-            heightRef.current,
-            maxActiveBubbles,
-          );
-          const nextPopIndicators = motionEnabled ? [
-            ...popIndicatorsRef.current,
-            {
-              id: `pop-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-              x: locationX,
-              y: locationY,
-              life: 1,
-            },
-          ] : [];
-
-          publishSnapshot(nextBubbles, nextPopIndicators);
-          onBubblePop?.();
+          popBubble(poppedBubble.id, locationX, locationY);
         },
       }),
-    [maxActiveBubbles, minActiveBubbles, onBubblePop, motionEnabled],
+    [popBubble],
   );
 
   return (
     <View
       style={[styles.container, { width, height }]}
-      accessible={true}
-      accessibilityLabel={t('games.bubblePop.accessibility')}
+      accessible={!isAccessibleMode}
+      accessibilityLabel={isAccessibleMode ? undefined : t('games.bubblePop.accessibility')}
     >
       <Svg width={width} height={height}>
         {snapshot.bubbles.map((bubble) => (
@@ -234,7 +285,45 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
           </React.Fragment>
         ))}
       </Svg>
-      <View style={styles.touchLayer} {...panResponder.panHandlers} />
+      {isAccessibleMode ? (
+        <View style={styles.accessibleLayer} accessibilityLabel={t('games.bubblePop.accessibility')}>
+          {snapshot.bubbles.map((bubble) => {
+            const targetSize = Math.max(64, bubble.radius * 2 + 16);
+            return (
+              <Pressable
+                key={bubble.id}
+                testID={'bubble-button-' + bubble.id}
+                style={[
+                  styles.bubbleButton,
+                  {
+                    width: targetSize,
+                    height: targetSize,
+                    left: bubble.x - targetSize / 2,
+                    top: bubble.y - targetSize / 2,
+                    borderRadius: targetSize / 2,
+                  },
+                ]}
+                accessibilityRole='button'
+                accessibilityLabel={t('games.bubblePop.bubbleAccessibilityLabel', {
+                  number: getBubbleLabelNumber(bubble.id),
+                })}
+                accessibilityHint={t('games.bubblePop.bubbleAccessibilityHint')}
+                onPress={() => popBubble(bubble.id)}
+              />
+            );
+          })}
+          <View
+            style={styles.announcement}
+            accessibilityRole='text'
+            accessibilityLiveRegion='polite'
+            accessibilityLabel={accessibilityAnnouncement}
+          >
+            <Text>{accessibilityAnnouncement}</Text>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.touchLayer} {...panResponder.panHandlers} />
+      )}
     </View>
   );
 };
@@ -253,5 +342,22 @@ const createStyles = (colors: ThemeColors) =>
       right: 0,
       bottom: 0,
       left: 0,
+    },
+    accessibleLayer: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+    },
+    bubbleButton: {
+      position: 'absolute',
+      backgroundColor: 'transparent',
+    },
+    announcement: {
+      position: 'absolute',
+      width: 1,
+      height: 1,
+      opacity: 0,
     },
   });
