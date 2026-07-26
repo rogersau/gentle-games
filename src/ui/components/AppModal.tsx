@@ -1,5 +1,13 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, View, Text, Modal, TouchableOpacity, ViewStyle } from 'react-native';
+import {
+  AccessibilityState,
+  StyleSheet,
+  View,
+  Text,
+  Modal,
+  TouchableOpacity,
+  ViewStyle,
+} from 'react-native';
 import { useThemeColors } from '../../utils/theme';
 import { Space, Radius, Shadow, TypeStyle, HitTarget } from '../tokens';
 import { ThemeColors } from '../../types';
@@ -17,6 +25,9 @@ interface AppModalProps {
   closeLabel?: string;
   /** Whether tapping backdrop should dismiss modal */
   dismissOnBackdropPress?: boolean;
+  /** Disable modal controls while an action is being completed */
+  disabled?: boolean;
+  accessibilityState?: AccessibilityState;
 }
 
 export const AppModal: React.FC<AppModalProps> = ({
@@ -28,6 +39,8 @@ export const AppModal: React.FC<AppModalProps> = ({
   showClose = true,
   closeLabel,
   dismissOnBackdropPress = true,
+  disabled = false,
+  accessibilityState,
 }) => {
   const { colors } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -40,7 +53,7 @@ export const AppModal: React.FC<AppModalProps> = ({
       animationType='fade'
       transparent
       visible={visible}
-      onRequestClose={onClose}
+      onRequestClose={disabled ? () => undefined : onClose}
       accessibilityViewIsModal
     >
       <View style={styles.overlay}>
@@ -48,9 +61,11 @@ export const AppModal: React.FC<AppModalProps> = ({
           <TouchableOpacity
             style={StyleSheet.absoluteFill}
             onPress={onClose}
+            disabled={disabled}
             activeOpacity={1}
             accessibilityLabel={t('common.close')}
             accessibilityRole='button'
+            accessibilityState={{ ...accessibilityState, disabled }}
           />
         )}
         <View style={[styles.content, contentStyle]}>
@@ -62,10 +77,12 @@ export const AppModal: React.FC<AppModalProps> = ({
           {children}
           {showClose && (
             <TouchableOpacity
-              style={styles.closeButton}
+              style={[styles.closeButton, disabled && styles.disabled]}
               onPress={onClose}
+              disabled={disabled}
               accessibilityLabel={displayedCloseLabel}
               accessibilityRole='button'
+              accessibilityState={{ ...accessibilityState, disabled }}
             >
               <Text style={styles.closeText}>{displayedCloseLabel}</Text>
             </TouchableOpacity>
@@ -108,6 +125,9 @@ const createStyles = (colors: ThemeColors) =>
       marginTop: Space.base,
       minHeight: HitTarget.min,
       justifyContent: 'center',
+    },
+    disabled: {
+      opacity: 0.5,
     },
     closeText: {
       ...TypeStyle.button,

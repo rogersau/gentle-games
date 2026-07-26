@@ -1,5 +1,13 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, Text, TouchableOpacity, Animated, ViewStyle, TextStyle } from 'react-native';
+import {
+  AccessibilityState,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Animated,
+  ViewStyle,
+  TextStyle,
+} from 'react-native';
 import { useThemeColors } from '../../utils/theme';
 import { useScalePress } from '../animations';
 import { Space, Radius, TypeStyle, HitTarget } from '../tokens';
@@ -22,6 +30,7 @@ interface AppButtonProps {
   textStyle?: TextStyle;
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  accessibilityState?: AccessibilityState;
   testID?: string;
 }
 
@@ -36,6 +45,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
   textStyle,
   accessibilityLabel,
   accessibilityHint,
+  accessibilityState,
   testID,
 }) => {
   const { colors, resolvedMode } = useThemeColors();
@@ -59,7 +69,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityRole='button'
         accessibilityHint={accessibilityHint}
-        accessibilityState={{ disabled }}
+        accessibilityState={{ ...accessibilityState, disabled }}
         testID={testID}
       >
         <Text style={[styles.label, textStyle]}>{label}</Text>

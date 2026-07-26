@@ -147,7 +147,7 @@ export const serializeDrawingHistory = (history: HistoryEntry[], requestedBudget
   if (serializedDrawingHistoryBytes(compacted) > budget.maxSerializedBytes) throw new DrawingPersistenceError();
   return serialized;
 };
-export const sanitizeDrawingHistory = (value: unknown): HistoryEntry[] | null => {
+export const sanitizeDrawingHistory = (value: unknown, budget: DrawingHistoryBudget = DRAWING_HISTORY_BUDGET): HistoryEntry[] | null => {
   if (!Array.isArray(value) || !value.every(isHistoryEntry)) return null;
-  return compactDrawingHistory(value);
+  return compactDrawingHistory(value, budget);
 };

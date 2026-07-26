@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, View, TouchableOpacity, ViewStyle } from 'react-native';
+import { AccessibilityState, StyleSheet, View, TouchableOpacity, ViewStyle } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
 import { Space, Radius, Shadow } from '../tokens';
 import { ThemeColors } from '../../types';
@@ -16,6 +16,8 @@ interface AppCardProps {
   accentColor?: string;
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  accessibilityState?: AccessibilityState;
+  disabled?: boolean;
   testID?: string;
 }
 
@@ -27,6 +29,8 @@ export const AppCard: React.FC<AppCardProps> = ({
   accentColor,
   accessibilityLabel,
   accessibilityHint,
+  accessibilityState,
+  disabled = false,
   testID,
 }) => {
   const { colors } = useThemeColors();
@@ -37,7 +41,7 @@ export const AppCard: React.FC<AppCardProps> = ({
     : undefined;
 
   const content = (
-    <View style={[styles.card, accentBorder, style]} testID={testID}>
+    <View style={[styles.card, accentBorder, disabled && styles.disabled, style]} testID={testID}>
       {children}
     </View>
   );
@@ -46,10 +50,12 @@ export const AppCard: React.FC<AppCardProps> = ({
     return (
       <TouchableOpacity
         onPress={onPress}
+        disabled={disabled}
         activeOpacity={0.85}
         accessibilityLabel={accessibilityLabel}
         accessibilityRole='button'
         accessibilityHint={accessibilityHint}
+        accessibilityState={{ ...accessibilityState, disabled }}
       >
         {content}
       </TouchableOpacity>
@@ -69,4 +75,5 @@ const createStyles = (colors: ThemeColors, variant: 'default' | 'elevated' | 'ou
       borderColor: variant === 'outlined' ? colors.border : 'transparent',
       ...(variant === 'elevated' ? Shadow.md : Shadow.sm),
     },
+    disabled: { opacity: 0.5 },
   });

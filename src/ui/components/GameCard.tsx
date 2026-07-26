@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, View, Text, ViewStyle } from 'react-native';
+import { AccessibilityState, StyleSheet, View, Text, ViewStyle } from 'react-native';
 import { useThemeColors, ResolvedThemeMode } from '../../utils/theme';
 import { Space, TypeStyle } from '../tokens';
 import { ThemeColors } from '../../types';
@@ -15,6 +15,8 @@ interface GameCardProps {
   /** Accent color for the card border */
   accentColor?: string;
   style?: ViewStyle;
+  accessibilityState?: AccessibilityState;
+  disabled?: boolean;
   testID?: string;
 }
 
@@ -25,6 +27,8 @@ export const GameCard: React.FC<GameCardProps> = ({
   onPress,
   accentColor,
   style,
+  accessibilityState,
+  disabled = false,
   testID,
 }) => {
   const { colors, resolvedMode } = useThemeColors();
@@ -39,6 +43,8 @@ export const GameCard: React.FC<GameCardProps> = ({
       style={StyleSheet.flatten([styles.card, style])}
       accessibilityLabel={`${title}. ${description}`}
       accessibilityHint={t('accessibility.gameCardHint')}
+      accessibilityState={accessibilityState}
+      disabled={disabled}
       testID={testID}
     >
       <View style={styles.row}>
