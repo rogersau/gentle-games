@@ -1,6 +1,6 @@
 import React, { Profiler } from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { AccessibilityInfo, PanResponder, View } from 'react-native';
+import { AccessibilityInfo, PanResponder, Platform, View } from 'react-native';
 import { Circle, Text as SvgText } from 'react-native-svg';
 import { BubbleField } from './BubbleField';
 
@@ -267,6 +267,34 @@ describe('BubbleField', () => {
 
     expect(commits.length).toBeLessThanOrEqual(3);
     screen.unmount();
+  });
+
+  it('uses declarative frame updates on web', () => {
+    const originalOS = Platform.OS;
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
+    try {
+      const commits: Array<string> = [];
+      const screen = render(
+        <Profiler id='bubble-field-web' onRender={() => commits.push('commit')}>
+          <BubbleField
+            width={240}
+            height={220}
+            minActiveBubbles={2}
+            maxActiveBubbles={4}
+            spawnIntervalMs={10_000}
+          />
+        </Profiler>,
+      );
+
+      for (let frame = 0; frame < 5; frame += 1) {
+        advanceFrame(frame * 16);
+      }
+
+      expect(commits.length).toBeGreaterThan(3);
+      screen.unmount();
+    } finally {
+      Object.defineProperty(Platform, 'OS', { configurable: true, value: originalOS });
+    }
   });
 
   it('removes the tapped bubble, creates an indicator, and calls onBubblePop', () => {
