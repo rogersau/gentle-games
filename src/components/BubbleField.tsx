@@ -99,8 +99,10 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   const appStateRef = useRef(AppState.currentState);
   const [appState, setAppState] = useState(AppState.currentState);
   const [screenReaderEnabled, setScreenReaderEnabled] = useState(false);
+  const [manualAccessibleMode, setManualAccessibleMode] = useState(false);
   const [accessibilityAnnouncement, setAccessibilityAnnouncement] = useState('');
-  const isAccessibleMode = accessibleMode ?? (screenReaderEnabled || !motionEnabled);
+  const isAccessibleMode =
+    accessibleMode === true || manualAccessibleMode || screenReaderEnabled || !motionEnabled;
 
   useEffect(() => {
     let mounted = true;
@@ -452,6 +454,29 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
       ) : (
         <View style={styles.touchLayer} {...panResponder.panHandlers} />
       )}
+      {motionEnabled && !screenReaderEnabled && accessibleMode !== true ? (
+        <Pressable
+          testID='bubble-accessible-mode-toggle'
+          style={styles.modeToggle}
+          accessibilityRole='button'
+          accessibilityState={{ selected: manualAccessibleMode }}
+          accessibilityLabel={t(
+            manualAccessibleMode
+              ? 'games.bubblePop.useMovingMode'
+              : 'games.bubblePop.useAccessibleMode',
+          )}
+          accessibilityHint={t('games.bubblePop.modeToggleHint')}
+          onPress={() => setManualAccessibleMode((enabled) => !enabled)}
+        >
+          <Text style={styles.modeToggleText}>
+            {t(
+              manualAccessibleMode
+                ? 'games.bubblePop.movingMode'
+                : 'games.bubblePop.accessibleMode',
+            )}
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 };
@@ -487,5 +512,22 @@ const createStyles = (colors: ThemeColors) =>
       width: 1,
       height: 1,
       opacity: 0,
+    },
+    modeToggle: {
+      position: 'absolute',
+      top: 8,
+      right: 8,
+      minHeight: 44,
+      minWidth: 44,
+      paddingHorizontal: 12,
+      justifyContent: 'center',
+      borderRadius: Radius.md,
+      backgroundColor: colors.surface,
+      zIndex: 2,
+    },
+    modeToggleText: {
+      color: colors.text,
+      fontFamily: FontFamily.bold,
+      fontSize: 14,
     },
   });

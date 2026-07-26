@@ -100,7 +100,32 @@ describe('ParentTimerContext', () => {
 
     expect(getByTestId('seconds').props.children).toBe(0);
     expect(getByTestId('locked').props.children).toBe('locked');
-    expect(storage.removeItem).toHaveBeenCalledWith('gentleGames.parentTimerSession');
+    expect(storage.setItem).toHaveBeenCalledWith(
+      'gentleGames.parentTimerSession',
+      expect.stringContaining('"locked":true'),
+    );
+  });
+
+  it('remains locked after expiring and relaunching', async () => {
+    const first = await renderTimer();
+    jest.setSystemTime(Date.now() + 61_000);
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(first.getByTestId('locked').props.children).toBe('locked');
+
+    await waitFor(() =>
+      expect(storage.setItem).toHaveBeenCalledWith(
+        'gentleGames.parentTimerSession',
+        expect.stringContaining('"locked":true'),
+      ),
+    );
+    const lockedSession = storage.setItem.mock.calls.at(-1)?.[1];
+    first.unmount();
+    storage.getItem.mockResolvedValueOnce(lockedSession);
+
+    const second = await renderTimer();
+    expect(second.getByTestId('locked').props.children).toBe('locked');
   });
 
   it('reconciles elapsed wall-clock time when returning to the foreground', async () => {

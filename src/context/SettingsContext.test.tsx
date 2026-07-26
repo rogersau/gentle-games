@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Override the global mock — this test exercises the real SettingsContext
@@ -175,6 +175,34 @@ describe('SettingsContext', () => {
         pressureFreeMode: false,
       }),
     );
+  });
+
+  it('completes legacy migration before allowing later settings updates', async () => {
+    let resolveMigration: () => void = () => {};
+    storage.getItem.mockResolvedValueOnce(JSON.stringify({ soundEnabled: false }));
+    storage.setItem.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveMigration = resolve;
+        }),
+    );
+
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+
+    await waitFor(() => expect(storage.setItem).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      resolveMigration();
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+
+    fireEvent.press(screen.getByTestId('set-hard'));
+    await waitFor(() => expect(storage.setItem).toHaveBeenCalledTimes(2));
+    expect(JSON.parse(storage.setItem.mock.calls[1][1]).difficulty).toBe('hard');
   });
 
   it('removes corrupted persisted settings', async () => {

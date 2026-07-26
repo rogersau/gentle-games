@@ -8,6 +8,7 @@ import { APP_ROUTES } from '../types/navigation';
 import { openExternalUrl } from '../utils/externalLinks';
 
 const mockNavigate = jest.fn();
+let mockFocusCallback: (() => void) | undefined;
 const mockUpdateSettings = jest.fn().mockResolvedValue(undefined);
 const mockOpenExternalUrl = openExternalUrl as jest.MockedFunction<typeof openExternalUrl>;
 let mockSettings = {
@@ -28,6 +29,9 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     navigate: mockNavigate,
   }),
+  useFocusEffect: (callback: () => void) => {
+    mockFocusCallback = callback;
+  },
 }));
 
 jest.mock('../context/SettingsContext', () => ({
@@ -117,6 +121,19 @@ describe('HomeScreen', () => {
     expect(mockNavigate).toHaveBeenCalledTimes(1);
     expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Drawing);
     jest.useRealTimers();
+  });
+
+  it('allows another launch after Home regains focus', () => {
+    const screen = render(<HomeScreen />);
+
+    fireEvent.press(screen.getByText('Drawing Pad'));
+    expect(mockNavigate).toHaveBeenLastCalledWith(APP_ROUTES.Drawing);
+
+    act(() => mockFocusCallback?.());
+    fireEvent.press(screen.getByText('Bubble Pop'));
+
+    expect(mockNavigate).toHaveBeenCalledTimes(2);
+    expect(mockNavigate).toHaveBeenLastCalledWith(APP_ROUTES.Bubble);
   });
 
   it('navigates directly to Glitter screen when Glitter Fall is selected', () => {

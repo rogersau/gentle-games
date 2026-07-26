@@ -35,6 +35,7 @@ const PARENT_TIMER_STORAGE_KEY = 'gentleGames.parentTimerSession';
 interface PersistedTimerSession {
   expiresAt: number;
   durationMinutes: number;
+  locked: boolean;
 }
 
 const parsePersistedSession = (value: string | null): PersistedTimerSession | null => {
@@ -44,7 +45,11 @@ const parsePersistedSession = (value: string | null): PersistedTimerSession | nu
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
     const candidate = parsed as Record<string, unknown>;
     if (typeof candidate.expiresAt !== 'number' || !Number.isFinite(candidate.expiresAt) || typeof candidate.durationMinutes !== 'number' || !Number.isFinite(candidate.durationMinutes) || candidate.durationMinutes <= 0) return null;
-    return { expiresAt: candidate.expiresAt, durationMinutes: candidate.durationMinutes };
+    return {
+      expiresAt: candidate.expiresAt,
+      durationMinutes: candidate.durationMinutes,
+      locked: candidate.locked === true,
+    };
   } catch {
     return null;
   }
@@ -115,7 +120,7 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       enqueueStorageOperation(async () => {
         await AsyncStorage.setItem(
           PARENT_TIMER_STORAGE_KEY,
-          JSON.stringify({ expiresAt, durationMinutes }),
+          JSON.stringify({ expiresAt, durationMinutes, locked: false }),
         );
       });
     },
@@ -131,14 +136,18 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const seconds = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
     setSecondsRemaining(seconds);
     if (seconds === 0) {
-      expiryRef.current = null;
       setIsLocked(true);
       setMathChallenge(generateMathQuestion());
       setUserAnswer('');
       setShowError(false);
-      removePersistedSession();
+      enqueueStorageOperation(async () => {
+        await AsyncStorage.setItem(
+          PARENT_TIMER_STORAGE_KEY,
+          JSON.stringify({ expiresAt, durationMinutes, locked: true }),
+        );
+      });
     }
-  }, [removePersistedSession]);
+  }, [enqueueStorageOperation]);
 
   // Load the deadline before starting a new session. This prevents a relaunch
   // from overwriting an existing allowance before AsyncStorage has hydrated.
@@ -165,16 +174,8 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
 
       const persisted = parsePersistedSession(raw);
-      if (persisted && persisted.durationMinutes === durationMinutes && persisted.expiresAt > Date.now()) {
+      if (persisted && persisted.durationMinutes === durationMinutes && persisted.locked) {
         expiryRef.current = persisted.expiresAt;
-        setSecondsRemaining(Math.max(0, Math.ceil((persisted.expiresAt - Date.now()) / 1000)));
-        setIsLocked(false);
-        return;
-      }
-
-      if (raw) removePersistedSession();
-      if (persisted && persisted.durationMinutes === durationMinutes && persisted.expiresAt <= Date.now()) {
-        expiryRef.current = null;
         setSecondsRemaining(0);
         setIsLocked(true);
         setMathChallenge(generateMathQuestion());
@@ -182,6 +183,29 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setShowError(false);
         return;
       }
+      if (persisted && persisted.durationMinutes === durationMinutes && persisted.expiresAt > Date.now()) {
+        expiryRef.current = persisted.expiresAt;
+        setSecondsRemaining(Math.max(0, Math.ceil((persisted.expiresAt - Date.now()) / 1000)));
+        setIsLocked(false);
+        return;
+      }
+
+      if (persisted && persisted.durationMinutes === durationMinutes && persisted.expiresAt <= Date.now()) {
+        expiryRef.current = persisted.expiresAt;
+        setSecondsRemaining(0);
+        setIsLocked(true);
+        setMathChallenge(generateMathQuestion());
+        setUserAnswer('');
+        setShowError(false);
+        enqueueStorageOperation(async () => {
+          await AsyncStorage.setItem(
+            PARENT_TIMER_STORAGE_KEY,
+            JSON.stringify({ ...persisted, locked: true }),
+          );
+        });
+        return;
+      }
+      if (raw) removePersistedSession();
       startFreshSession(durationMinutes);
     };
 

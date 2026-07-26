@@ -204,6 +204,21 @@ describe('BubbleField', () => {
     expect(screen.getAllByRole('button')).toHaveLength(2);
   });
 
+  it('lets keyboard and switch users explicitly enable stationary buttons', () => {
+    const screen = render(
+      <BubbleField width={240} height={220} minActiveBubbles={2} maxActiveBubbles={3} />,
+    );
+
+    const toggle = screen.getByTestId('bubble-accessible-mode-toggle');
+    expect(toggle.props.accessibilityState).toEqual({ selected: false });
+    fireEvent.press(toggle);
+
+    expect(screen.getAllByTestId(/^bubble-button-/)).toHaveLength(2);
+    expect(screen.getByTestId('bubble-accessible-mode-toggle').props.accessibilityState).toEqual({
+      selected: true,
+    });
+  });
+
   it('exposes stationary large buttons and shared pop behavior in accessible mode', () => {
     const onBubblePop = jest.fn();
     const screen = render(

@@ -104,10 +104,15 @@ export const DrawingScreen: React.FC = () => {
     setShowSaveNotice(true);
   }, []);
 
+  const handleSaveSuccess = useCallback(() => {
+    setShowSaveNotice(false);
+  }, []);
+
   const { scheduleSave, flushPendingSave } = useDebouncedDrawingSave({
     storageKey: DRAWING_STORAGE_KEY,
     debounceMs: DRAWING_SAVE_DEBOUNCE_MS,
     onError: handleSaveError,
+    onSuccess: handleSaveSuccess,
   });
 
   const flushLatestHistory = useCallback(async () => {

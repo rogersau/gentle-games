@@ -98,11 +98,11 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
     [],
   );
 
-  const snapTokenBack = () => {
+  const snapTokenBack = useCallback(() => {
     dragPosition.setValue({ x: 0, y: 0 });
-  };
+  }, [dragPosition]);
 
-  const springTokenBack = () => {
+  const springTokenBack = useCallback(() => {
     if (animationsEnabled) {
       Animated.spring(dragPosition, {
         toValue: { x: 0, y: 0 },
@@ -113,9 +113,9 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
     } else {
       dragPosition.setValue({ x: 0, y: 0 });
     }
-  };
+  }, [animationsEnabled, dragPosition]);
 
-  const showFeedback = (message: string, isSuccess: boolean) => {
+  const showFeedback = useCallback((message: string, isSuccess: boolean) => {
     setFeedback({ message, isSuccess });
     try {
       void AccessibilityInfo.announceForAccessibility(message);
@@ -129,9 +129,9 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
       setFeedback(null);
       feedbackTimerRef.current = null;
     }, FEEDBACK_DURATION_MS);
-  };
+  }, []);
 
-  const playCorrectPulse = () => {
+  const playCorrectPulse = useCallback(() => {
     if (animationsEnabled) {
       Animated.sequence([
         Animated.timing(tokenScale, {
@@ -148,7 +148,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
     } else {
       tokenScale.setValue(1);
     }
-  };
+  }, [animationsEnabled, tokenScale]);
 
   const getDropTarget = useCallback(
     (x: number, y: number): DropZone | undefined =>
@@ -181,7 +181,17 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
         springTokenBack();
       }
     },
-    [onCorrectMatch, onIncorrectMatch, round.item, settings, t],
+    [
+      onCorrectMatch,
+      onIncorrectMatch,
+      playCorrectPulse,
+      round.item,
+      settings,
+      showFeedback,
+      snapTokenBack,
+      springTokenBack,
+      t,
+    ],
   );
 
   const handleTokenPress = useCallback(() => {

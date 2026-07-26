@@ -1,5 +1,5 @@
 import { AppState, AppStateStatus } from 'react-native';
-import { AudioPlayer, AudioSource, createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import { AudioPlayer, AudioSource, createAudioPlayer } from 'expo-audio';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSettings } from '../context/SettingsContext';
 
@@ -78,22 +78,6 @@ export const useBackgroundMusic = () => {
 
   const stopMusicRef = useRef(stopMusic);
   stopMusicRef.current = stopMusic;
-
-  // Background music is an optional game sound. Do not keep it alive after the
-  // child leaves the app or force it through silent mode.
-  useEffect(() => {
-    const initAudio = async () => {
-      try {
-        await setAudioModeAsync({
-          playsInSilentMode: false,
-          shouldPlayInBackground: false,
-        });
-      } catch (error) {
-        console.warn('Failed to configure audio mode:', error);
-      }
-    };
-    void initAudio();
-  }, []);
 
   // Stop as soon as the app loses focus.
   useEffect(() => {

@@ -152,12 +152,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const storageQueueRef = useRef(Promise.resolve());
   const pendingWritesRef = useRef(0);
   const writeVersionRef = useRef(0);
-  const hydrationResolveRef = useRef<() => void>(() => undefined);
-  const hydrationPromiseRef = useRef(
-    new Promise<void>((resolve) => {
-      hydrationResolveRef.current = resolve;
-    }),
-  );
+  const [hydrationGate] = useState(() => {
+    let resolve: () => void = () => {};
+    const promise = new Promise<void>((resolvePromise) => {
+      resolve = resolvePromise;
+    });
+    return { promise, resolve };
+  });
 
   const enqueueStorageOperation = useCallback((operation: () => Promise<void>): Promise<void> => {
     // Recover the chain after a failed operation so later changes still save.
@@ -238,7 +239,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
 
       if (mountedRef.current) setIsLoading(false);
-      hydrationResolveRef.current();
+      hydrationGate.resolve();
     };
 
     void loadSettings();
@@ -246,7 +247,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       cancelled = true;
       mountedRef.current = false;
     };
-  }, [enqueueStorageOperation, persistSettings]);
+  }, [enqueueStorageOperation, hydrationGate, persistSettings]);
 
   useEffect(() => {
     if (!isLoading) void changeLanguage(settings.language);
@@ -254,7 +255,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const updateSettings = useCallback(
     async (newSettings: Partial<Settings>) => {
-      await hydrationPromiseRef.current;
+      await hydrationGate.promise;
       if (!mountedRef.current) return;
 
       // Keep a canonical latest snapshot so rapid updates merge with one another.
@@ -267,7 +268,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Persistence failures are exposed through persistenceError without interrupting the UI.
       }
     },
-    [persistSettings],
+    [hydrationGate, persistSettings],
   );
 
   return (

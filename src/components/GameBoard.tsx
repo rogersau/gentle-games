@@ -257,7 +257,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           dismissOnBackdropPress={false}
         >
           <Text style={styles.completeText} accessibilityRole='text'>
-            {t('games.memorySnap.completedIn', { time: formatTime(elapsed) })}
+            {settings.pressureFreeMode
+              ? t('games.memorySnap.completed')
+              : t('games.memorySnap.completedIn', { time: formatTime(elapsed) })}
           </Text>
           <View style={styles.buttonRow}>
             <AppButton

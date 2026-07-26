@@ -484,6 +484,16 @@ describe('DrawingScreen', () => {
     await act(async () => { await Promise.resolve(); });
     expect(mockClearCanvas).not.toHaveBeenCalled();
     expect(screen.getByTestId('drawing-save-notice')).toBeTruthy();
+
+    (AsyncStorage.setItem as jest.Mock).mockResolvedValueOnce(undefined);
+    act(() => {
+      latestProps.onHistoryChange(historyB);
+      jest.advanceTimersByTime(DRAWING_SAVE_DEBOUNCE_MS);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByTestId('drawing-save-notice')).toBeNull();
   });
 
 });

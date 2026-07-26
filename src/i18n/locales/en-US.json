@@ -44,6 +44,7 @@
       "description": "A calm memory matching game",
       "title": "Memory Snap",
       "wellDone": "Well Done! 🎉",
+      "completed": "You finished the game!",
       "completedIn": "You finished in {{time}}!",
       "tileMatched": "{{value}}, matched",
       "tileFaceUp": "{{value}}, face up",
@@ -268,7 +269,12 @@
       "accessibility": "Bubble field, tap bubbles to pop them",
       "bubbleAccessibilityLabel": "Bubble {{number}}, ready to pop",
       "bubbleAccessibilityHint": "Double tap to pop this bubble",
-      "newBubbleAnnouncement": "A new bubble is ready"
+      "newBubbleAnnouncement": "A new bubble is ready",
+      "accessibleMode": "Button mode",
+      "movingMode": "Moving mode",
+      "useAccessibleMode": "Use stationary bubble buttons",
+      "useMovingMode": "Use moving bubbles",
+      "modeToggleHint": "Switch between moving bubbles and stationary buttons"
     },
     "categoryMatch": {
       "name": "Category Match",

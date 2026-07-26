@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
@@ -41,6 +41,13 @@ export const HomeScreen: React.FC = () => {
       isLaunchingRef.current = false;
     };
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      isLaunchingRef.current = false;
+      setIsLaunching(false);
+    }, []),
+  );
 
   React.useEffect(() => {
     showMochi('mascot.greeting', 'floating');

@@ -12,6 +12,7 @@ const mockSettings = {
   theme: 'animals' as const,
   showCardPreview: false,
   colorMode: 'system' as const,
+  pressureFreeMode: false,
 };
 
 const mockPlayFlipSound = jest.fn();
@@ -167,6 +168,31 @@ describe('GameBoard', () => {
 
     const boardStyle = StyleSheet.flatten(screen.getByTestId('memory-board').props.style);
     expect(boardStyle.height).toBeGreaterThanOrEqual(renderedTileSize * 4);
+  });
+
+  it('uses neutral completion copy in pressure-free mode', async () => {
+    mockSettings.pressureFreeMode = true;
+    mockedGenerateTiles.mockReturnValue(singlePairTiles);
+    jest.useFakeTimers();
+    const screen = render(<GameBoard onGameComplete={jest.fn()} />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('tile-1a'));
+    });
+    await waitFor(() => expect(screen.queryAllByText('🐰').length).toBeGreaterThan(0));
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('tile-1b'));
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(650);
+    });
+
+    expect(screen.getByText('games.memorySnap.completed')).toBeTruthy();
+    expect(screen.queryByText(/games\.memorySnap\.completedIn/)).toBeNull();
+    screen.unmount();
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
+    mockSettings.pressureFreeMode = false;
   });
 
   it('never shows negative timer when first card is selected after delay', async () => {

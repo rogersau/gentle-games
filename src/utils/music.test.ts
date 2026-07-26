@@ -20,7 +20,6 @@ const mockPlayer = {
 };
 
 jest.mock('expo-audio', () => ({
-  setAudioModeAsync: jest.fn(() => Promise.resolve()),
   createAudioPlayer: jest.fn(() => mockPlayer),
 }));
 
@@ -55,33 +54,6 @@ describe('useBackgroundMusic', () => {
     expect(result.current.isPlaying).toBe(false);
     expect(result.current.isLoaded).toBe(false);
     expect(result.current.currentTrack).toBeNull();
-  });
-
-  it('configures audio mode on mount', () => {
-    const { setAudioModeAsync } = require('expo-audio');
-
-    renderHook(() => useBackgroundMusic());
-
-    expect(setAudioModeAsync).toHaveBeenCalledWith({
-      playsInSilentMode: false,
-      shouldPlayInBackground: false,
-    });
-  });
-
-  it('handles audio mode configuration errors gracefully', async () => {
-    const { setAudioModeAsync } = require('expo-audio');
-    setAudioModeAsync.mockRejectedValueOnce(new Error('Audio mode failed'));
-
-    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-
-    renderHook(() => useBackgroundMusic());
-
-    // Wait for the async init to complete
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    expect(consoleSpy).toHaveBeenCalledWith('Failed to configure audio mode:', expect.any(Error));
-
-    consoleSpy.mockRestore();
   });
 
   it('toggles music on when starting from stopped state', async () => {
