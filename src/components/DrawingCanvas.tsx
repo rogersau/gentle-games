@@ -14,6 +14,7 @@ import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
 import { Space, Radius } from '../ui/tokens';
 import type { TranslationKey } from '../i18n/types';
+import { compactDrawingHistory, decimateDrawingPoints, DRAWING_HISTORY_MAX_POINTS_PER_ENTRY } from '../utils/drawingPersistence';
 
 export interface Point {
   x: number;
@@ -206,13 +207,13 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     const { t } = useTranslation();
     const themedStyles = useMemo(() => createThemedStyles(colors), [colors]);
     // Unified ordered history — preserves exact draw order for correct undo
-    const [history, setHistory] = useState<HistoryEntry[]>(initialHistory);
+    const [history, setHistory] = useState<HistoryEntry[]>(() => compactDrawingHistory(initialHistory));
     // Current strokes being drawn (one per symmetry copy)
     const [currentStrokes, setCurrentStrokes] = useState<Array<Omit<Stroke, 'kind' | 'id'>>>([]);
 
     // Update history when initialHistory prop changes (e.g., when loading saved drawing)
     useEffect(() => {
-      setHistory(initialHistory);
+      setHistory(compactDrawingHistory(initialHistory));
     }, [initialHistory]);
 
     const [selectedColor, setSelectedColor] = useState('#FF6B6B');
@@ -302,7 +303,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                 color: selectedColorRef.current,
               };
             });
-            setHistory((prev) => [...prev, ...newShapes]);
+            setHistory((prev) => compactDrawingHistory([...prev, ...newShapes]));
           } else {
             const strokeWidth = toolRef.current === 'eraser' ? 30 : 5;
             const offsets = getSymmetryOffsets(mode);
@@ -335,7 +336,8 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             if (prevStrokes.length === 0) return [];
             const offsets = getSymmetryOffsets(mode);
 
-            return prevStrokes.map((stroke, idx) => {
+            let changed = false;
+            const next = prevStrokes.map((stroke, idx) => {
               const [xMult, yMult] = offsets[idx] || [1, 1];
               const mirroredPt = applySymmetry(
                 { x: locationX, y: locationY },
@@ -344,11 +346,21 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                 xMult,
                 yMult,
               );
+              const previous = stroke.points[stroke.points.length - 1];
+              const dx = mirroredPt.x - previous.x;
+              const dy = mirroredPt.y - previous.y;
+              // Pointer events can repeat the same coordinate many times.
+              if (dx * dx + dy * dy < 4) return stroke;
+              changed = true;
               return {
                 ...stroke,
-                points: [...stroke.points, mirroredPt],
+                points: decimateDrawingPoints(
+                  [...stroke.points, mirroredPt],
+                  DRAWING_HISTORY_MAX_POINTS_PER_ENTRY,
+                ),
               };
             });
+            return changed ? next : prevStrokes;
           });
         },
         onPanResponderRelease: () => {
@@ -366,7 +378,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                 points: stroke.points,
                 width: stroke.width,
               }));
-              setHistory((h) => [...h, ...eraseEntries]);
+              setHistory((h) => compactDrawingHistory([...h, ...eraseEntries]));
             } else {
               // Create stroke entries for each symmetry copy
               const strokeEntries: Stroke[] = strokes.map((stroke, idx) => ({
@@ -377,7 +389,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                 color: stroke.color,
                 width: stroke.width,
               }));
-              setHistory((h) => [...h, ...strokeEntries]);
+              setHistory((h) => compactDrawingHistory([...h, ...strokeEntries]));
             }
             return [];
           });
@@ -540,6 +552,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
     const canUndo = history.length > 0;
 
+    // Path construction is memoized so pointer movement only renders the live preview.
+    const renderedHistory = useMemo(
+      () => history.map((entry) => renderHistoryEntry(entry)),
+      [history, canvasBackgroundColor],
+    );
+
     // Render symmetry guide lines
     const renderSymmetryGuides = () => {
       if (symmetryMode === 'none') return null;
@@ -607,7 +625,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             {/* Canvas background */}
             <Path d={`M 0 0 H ${width} V ${height} H 0 Z`} fill={canvasBackgroundColor} />
 
-            {history.map((entry) => renderHistoryEntry(entry))}
+            {renderedHistory}
 
             {/* Symmetry guide lines */}
             {renderSymmetryGuides()}

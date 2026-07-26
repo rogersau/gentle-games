@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { HistoryEntry } from '../components/DrawingCanvas';
+import { serializeDrawingHistory } from '../utils/drawingPersistence';
 
 interface UseDebouncedDrawingSaveOptions {
   storageKey: string;
@@ -38,7 +39,7 @@ export const useDebouncedDrawingSave = ({
         .then(async () => {
           try {
             if (history.length > 0) {
-              await AsyncStorage.setItem(storageKey, JSON.stringify(history));
+              await AsyncStorage.setItem(storageKey, serializeDrawingHistory(history));
               return;
             }
 

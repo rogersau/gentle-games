@@ -187,6 +187,20 @@ describe('DrawingCanvas', () => {
     expect(ref.current?.getHistory()).toHaveLength(0);
   });
 
+  it('skips duplicate pointer samples and bounds long live strokes', () => {
+    const ref = React.createRef<DrawingCanvasRef>();
+    const screen = render(<DrawingCanvas ref={ref} width={320} height={280} initialHistory={[]} />);
+    const moves = Array.from({ length: 2_000 }, (_, index) => ({ x: (index % 300) + 1, y: (index % 200) + 1 }));
+    drawGesture(screen, { x: 1, y: 1 }, [{ x: 1, y: 1 }, ...moves]);
+    const history = ref.current?.getHistory() ?? [];
+    expect(history).toHaveLength(1);
+    expect(history[0].kind).toBe('stroke');
+    expect((history[0] as any).points.length).toBeLessThanOrEqual(1_200);
+    expect((history[0] as any).points[0]).toEqual({ x: 1, y: 1 });
+    expect((history[0] as any).points.at(-1).x).toBeGreaterThan(150);
+    expect((history[0] as any).points.at(-1).y).toBeGreaterThan(150);
+  });
+
   it('keeps batch-aware undo semantics for shapes and eraser actions', () => {
     const shapeRef = React.createRef<DrawingCanvasRef>();
     const shapeScreen = render(

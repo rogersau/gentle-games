@@ -244,7 +244,8 @@
         "forestGreen": "Forest green",
         "darkCyan": "Dark cyan",
         "cadetBlue": "Cadet blue"
-      }
+      },
+      "saveError": "Your drawing is still here, but could not be saved. Please try again later."
     },
     "glitterFall": {
       "name": "Glitter Fall",
