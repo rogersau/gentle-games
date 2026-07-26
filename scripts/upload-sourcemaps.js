@@ -16,7 +16,7 @@
  * but available as fallback for custom build pipelines.
  */
 
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { getSentryRelease } = require('./release');
@@ -92,7 +92,7 @@ function getPlatformDistDir(platform) {
 }
 
 function uploadSourceMaps() {
-  const { SENTRY_ORG, SENTRY_PROJECT, SENTRY_AUTH_TOKEN } = process.env;
+  const { SENTRY_ORG, SENTRY_PROJECT } = process.env;
   const version = getVersion();
   const release = getSentryRelease(version);
 
@@ -127,21 +127,26 @@ function uploadSourceMaps() {
 
     try {
       // Upload source maps using sentry-cli
-      const cmd = [
-        'npx sentry-cli',
-        `--auth-token ${SENTRY_AUTH_TOKEN}`,
-        `--org ${SENTRY_ORG}`,
-        `--project ${SENTRY_PROJECT}`,
+      const args = [
+        'sentry-cli',
         'releases',
-        `files ${release}`,
+        '--org',
+        SENTRY_ORG,
+        '--project',
+        SENTRY_PROJECT,
+        'files',
+        release,
         'upload-sourcemaps',
         distDir,
         '--url-prefix',
         platformConfig.urlPrefix,
         '--rewrite',
-      ].join(' ');
+      ];
 
-      execSync(cmd, { stdio: 'inherit' });
+      // sentry-cli reads SENTRY_AUTH_TOKEN from the environment. Passing
+      // arguments separately avoids shell quoting issues and keeps the token
+      // out of the displayed command.
+      execFileSync('npx', args, { stdio: 'inherit' });
       uploadedCount += sourceMaps.length;
       console.log(`   ✅ Uploaded source maps for ${platform}`);
     } catch (error) {

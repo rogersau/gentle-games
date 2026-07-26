@@ -16,6 +16,15 @@ describe('native app configuration', () => {
 });
 
 describe('release builds', () => {
+  it('keeps the Sentry auth token out of public Expo plugin configuration', () => {
+    const sentryPlugin = appConfig.plugins.find(
+      (plugin) => Array.isArray(plugin) && plugin[0] === '@sentry/react-native/expo',
+    );
+
+    expect(sentryPlugin).toBeDefined();
+    expect(sentryPlugin[1]).not.toHaveProperty('authToken');
+  });
+
   it.each(['build:web', 'build:android', 'build:ios'])(
     'emits source maps from %s',
     (scriptName) => {

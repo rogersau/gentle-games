@@ -82,8 +82,6 @@ module.exports = {
         organization: process.env.SENTRY_ORG || 'your-org',
         // Sentry project slug
         project: process.env.SENTRY_PROJECT || 'gentle-games',
-        // Auth token for source map upload (set in CI or locally)
-        authToken: process.env.SENTRY_AUTH_TOKEN,
       },
     ],
   ],
