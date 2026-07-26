@@ -127,7 +127,17 @@
       "correct": "Correct",
       "streakMessage": "You're on a roll!",
       "quickPreview": "Quick Preview",
-      "dragInstruction": "Drag each item to the correct category box"
+      "dragInstruction": "Drag each item to the correct category box",
+      "interactionInstruction": "Drag the item, or tap it to select it and choose a category",
+      "itemAccessibilityLabel": "{{item}} item",
+      "selectItemHint": "Tap to select this item, then choose a category",
+      "itemSelected": "{{item}} selected. Choose a category",
+      "selectItemFirst": "Select the item before choosing a category",
+      "categoryAccessibilityLabel": "{{category}} category",
+      "categoryActivationHint": "Activate to place the selected item here",
+      "selectedItemHint": "Item selected. Choose a category",
+      "categorySelectFirstHint": "Select the item first, then activate this category",
+      "selectionInstruction": "Item selected. Activate a category to place it"
     },
     "keepyUppy": {
       "name": "Keepy Uppy",

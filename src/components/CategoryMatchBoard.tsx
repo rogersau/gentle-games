@@ -1,5 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, PanResponder, Platform, StyleSheet, Text, View } from 'react-native';
+import {
+  AccessibilityInfo,
+  Animated,
+  PanResponder,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { CategoryMatchCategory, CategoryMatchItem, ThemeColors } from '../types';
 import { createCategoryMatchRound, isCategoryMatchCorrect } from '../utils/categoryMatchLogic';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
@@ -44,6 +53,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   const [round, setRound] = useState(() => createCategoryMatchRound(undefined, 0));
   const [, setRoundsCompleted] = useState(0);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const [isTokenSelected, setIsTokenSelected] = useState(false);
   const [activeDropCategory, setActiveDropCategory] = useState<CategoryMatchCategory | null>(null);
   const activeDropCategoryRef = useRef<CategoryMatchCategory | null>(null);
   const dragPosition = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -104,6 +114,11 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
 
   const showFeedback = (message: string, isSuccess: boolean) => {
     setFeedback({ message, isSuccess });
+    try {
+      void AccessibilityInfo.announceForAccessibility(message);
+    } catch {
+      // Some hosts do not provide native accessibility announcements.
+    }
     if (feedbackTimerRef.current) {
       clearTimeout(feedbackTimerRef.current);
     }
@@ -141,11 +156,53 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
     [zones],
   );
 
+  const handleCategoryAnswer = useCallback(
+    (category: CategoryMatchCategory) => {
+      if (isCategoryMatchCorrect(round.item, category)) {
+        const matchedItem = round.item;
+        snapTokenBack();
+        setIsTokenSelected(false);
+        showFeedback(t('games.categoryMatch.greatMatch'), true);
+        void playMatchSound(settings);
+        playCorrectPulse();
+        setRoundsCompleted((previousCount) => {
+          const nextCount = previousCount + 1;
+          setRound((previousRound) => createCategoryMatchRound(previousRound.item, nextCount));
+          return nextCount;
+        });
+        onCorrectMatch?.(matchedItem, category);
+      } else {
+        showFeedback(t('games.categoryMatch.tryDifferent'), false);
+        void playFlipSound(settings);
+        onIncorrectMatch?.();
+        springTokenBack();
+      }
+    },
+    [onCorrectMatch, onIncorrectMatch, round.item, settings, t],
+  );
+
+  const handleTokenPress = useCallback(() => {
+    setIsTokenSelected(true);
+    showFeedback(t('games.categoryMatch.itemSelected', { item: round.item.name }), true);
+  }, [round.item.name, t]);
+
+  const handleCategoryPress = useCallback(
+    (category: CategoryMatchCategory) => {
+      if (!isTokenSelected) {
+        showFeedback(t('games.categoryMatch.selectItemFirst'), false);
+        return;
+      }
+      handleCategoryAnswer(category);
+    },
+    [handleCategoryAnswer, isTokenSelected, t],
+  );
+
   const panResponder = useMemo(
     () =>
       PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_, gestureState) =>
+          Math.abs(gestureState.dx) > 8 || Math.abs(gestureState.dy) > 8,
         onPanResponderMove: (_, gestureState) => {
           dragPosition.setValue({ x: gestureState.dx, y: gestureState.dy });
           const hoverX = tokenCenterX + gestureState.dx;
@@ -168,25 +225,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
             springTokenBack();
             return;
           }
-
-          if (isCategoryMatchCorrect(round.item, droppedZone.category)) {
-            const matchedItem = round.item;
-            snapTokenBack();
-            showFeedback(t('games.categoryMatch.greatMatch'), true);
-            void playMatchSound(settings);
-            playCorrectPulse();
-            setRoundsCompleted((previousCount) => {
-              const nextCount = previousCount + 1;
-              setRound((previousRound) => createCategoryMatchRound(previousRound.item, nextCount));
-              return nextCount;
-            });
-            onCorrectMatch?.(matchedItem, droppedZone.category);
-          } else {
-            showFeedback(t('games.categoryMatch.tryDifferent'), false);
-            void playFlipSound(settings);
-            onIncorrectMatch?.();
-            springTokenBack();
-          }
+          handleCategoryAnswer(droppedZone.category);
         },
         onPanResponderTerminate: () => {
           activeDropCategoryRef.current = null;
@@ -194,18 +233,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
           springTokenBack();
         },
       }),
-    [
-      dragPosition,
-      getDropTarget,
-      onCorrectMatch,
-      onIncorrectMatch,
-      round.item,
-      settings,
-      tokenCenterX,
-      tokenCenterY,
-      tokenScale,
-      zones,
-    ],
+    [dragPosition, getDropTarget, handleCategoryAnswer, tokenCenterX, tokenCenterY],
   );
 
   return (
@@ -214,33 +242,57 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
       accessibilityLabel={t('games.categoryMatch.accessibilityLabel')}
     >
       <Text style={styles.promptText} accessibilityRole='text'>
-        {t('games.categoryMatch.dragToMatchingCategory')}
+        {isTokenSelected
+          ? t('games.categoryMatch.selectionInstruction')
+          : t('games.categoryMatch.interactionInstruction')}
       </Text>
 
-      <Animated.View
+      <Pressable
         testID='category-draggable-token'
         accessibilityRole='button'
-        accessibilityLabel={`${round.item.emoji}, ${t('games.categoryMatch.dragToMatchingCategory')}`}
-        accessibilityHint={t('games.categoryMatch.dragInstruction')}
-        style={[
-          styles.draggableToken,
-          {
-            left: tokenStartX,
-            top: tokenStartY,
-            width: tokenSize,
-            height: tokenSize,
-            transform: [...dragPosition.getTranslateTransform(), { scale: tokenScale }],
-          },
-        ]}
+        accessibilityLabel={t('games.categoryMatch.itemAccessibilityLabel', {
+          item: round.item.name,
+        })}
+        accessibilityHint={
+          isTokenSelected
+            ? t('games.categoryMatch.selectedItemHint')
+            : t('games.categoryMatch.selectItemHint')
+        }
+        accessibilityState={{ selected: isTokenSelected }}
+        onPress={handleTokenPress}
+        style={{
+          position: 'absolute',
+          left: tokenStartX,
+          top: tokenStartY,
+          width: tokenSize,
+          height: tokenSize,
+        }}
         {...panResponder.panHandlers}
       >
-        <Text style={[styles.emojiText, { fontSize: Math.floor(tokenSize * 0.5) }]}>
-          {round.item.emoji}
-        </Text>
-      </Animated.View>
+        <Animated.View
+          style={[
+            styles.draggableToken,
+            {
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: '100%',
+              height: '100%',
+              transform: [...dragPosition.getTranslateTransform(), { scale: tokenScale }],
+            },
+          ]}
+        >
+          <Text style={[styles.emojiText, { fontSize: Math.floor(tokenSize * 0.5) }]}>
+            {round.item.emoji}
+          </Text>
+        </Animated.View>
+      </Pressable>
 
       {feedback && (
         <Text
+          accessibilityRole='text'
+          accessibilityLiveRegion='polite'
+          importantForAccessibility='yes'
           style={[
             feedback.isSuccess ? styles.successText : styles.errorText,
             { marginTop: tokenStartY + tokenSize - 12 },
@@ -252,10 +304,18 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
 
       <View style={[styles.zoneRow, { top: zoneTop, left: boardPadding, right: boardPadding }]}>
         {zones.map((zone) => (
-          <View
+          <Pressable
             key={zone.category}
+            onPress={() => handleCategoryPress(zone.category)}
             accessibilityRole='button'
-            accessibilityLabel={`${zone.label} category`}
+            accessibilityLabel={t('games.categoryMatch.categoryAccessibilityLabel', {
+              category: zone.label,
+            })}
+            accessibilityHint={
+              isTokenSelected
+                ? t('games.categoryMatch.categoryActivationHint')
+                : t('games.categoryMatch.categorySelectFirstHint')
+            }
             testID={`category-zone-${zone.category}`}
             style={[
               styles.zoneCard,
@@ -265,7 +325,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
           >
             <Text style={styles.zoneIcon}>{zone.icon}</Text>
             <Text style={styles.zoneLabel}>{zone.label}</Text>
-          </View>
+          </Pressable>
         ))}
       </View>
     </View>

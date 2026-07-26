@@ -1,6 +1,6 @@
 import React from 'react';
 import { PanResponder } from 'react-native';
-import { act, render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import { CategoryMatchBoard } from './CategoryMatchBoard';
 import { CATEGORY_MATCH_CATEGORIES } from '../types';
 
@@ -51,6 +51,19 @@ jest.mock('react-i18next', () => ({
       const translations: Record<string, string> = {
         'games.categoryMatch.accessibilityLabel': 'Sort each emoji into Sky, Land, or Ocean.',
         'games.categoryMatch.dragToMatchingCategory': 'Drag to the matching category.',
+        'games.categoryMatch.interactionInstruction':
+          'Drag the item, or tap it to select it and choose a category.',
+        'games.categoryMatch.itemAccessibilityLabel': '{{item}} item',
+        'games.categoryMatch.selectItemHint': 'Tap to select this item, then choose a category.',
+        'games.categoryMatch.itemSelected': '{{item}} selected. Choose a category.',
+        'games.categoryMatch.selectItemFirst': 'Select the item before choosing a category.',
+        'games.categoryMatch.categoryAccessibilityLabel': '{{category}} category',
+        'games.categoryMatch.categoryActivationHint': 'Activate to place the selected item here.',
+        'games.categoryMatch.selectedItemHint': 'Item selected. Choose a category.',
+        'games.categoryMatch.categorySelectFirstHint':
+          'Select the item first, then activate this category.',
+        'games.categoryMatch.selectionInstruction':
+          'Item selected. Activate a category to place it.',
         'games.categoryMatch.dragInstruction': 'Move the token to the matching category.',
         'games.categoryMatch.greatMatch': 'Great match!',
         'games.categoryMatch.tryDifferent': 'Try a different category.',
@@ -148,6 +161,58 @@ describe('CategoryMatchBoard', () => {
     expect(screen.getByTestId('category-zone-land').props.style).not.toEqual(
       expect.arrayContaining([expect.objectContaining({ borderColor: '#A8D8EA' })]),
     );
+  });
+
+  it('supports tap-to-select followed by category activation with the same scoring path', () => {
+    const onCorrectMatch = jest.fn();
+    const screen = render(
+      <CategoryMatchBoard width={360} height={480} onCorrectMatch={onCorrectMatch} />,
+    );
+    const token = screen.getByTestId('category-draggable-token');
+    const sky = screen.getByTestId('category-zone-sky');
+
+    expect(token.props.accessibilityRole).toBe('button');
+    expect(token.props.accessibilityState).toEqual({ selected: false });
+    expect(sky.props.accessibilityRole).toBe('button');
+    expect(sky.props.accessibilityHint).toBe('Select the item first, then activate this category.');
+
+    act(() => {
+      fireEvent.press(token);
+    });
+    expect(screen.getByTestId('category-draggable-token').props.accessibilityState).toEqual({
+      selected: true,
+    });
+
+    act(() => {
+      // Pressable's onPress is also the keyboard/switch activation path.
+      fireEvent.press(sky);
+    });
+
+    expect(onCorrectMatch).toHaveBeenCalledWith(
+      expect.objectContaining({ emoji: '☀️', category: 'sky' }),
+      'sky',
+    );
+    expect(mockPlayMatchSound).toHaveBeenCalled();
+    expect(screen.getByText('Great match!')).toBeTruthy();
+  });
+
+  it('reports a wrong activated category and exposes polite live feedback', () => {
+    const onIncorrectMatch = jest.fn();
+    const screen = render(
+      <CategoryMatchBoard width={360} height={480} onIncorrectMatch={onIncorrectMatch} />,
+    );
+
+    act(() => {
+      fireEvent.press(screen.getByTestId('category-draggable-token'));
+    });
+    act(() => {
+      fireEvent.press(screen.getByTestId('category-zone-land'));
+    });
+
+    expect(onIncorrectMatch).toHaveBeenCalledTimes(1);
+    const feedback = screen.getByText('Try a different category.');
+    expect(feedback.props.accessibilityLiveRegion).toBe('polite');
+    expect(feedback.props.accessibilityRole).toBe('text');
   });
 
   it('clears feedback timers on unmount before delayed feedback completes', () => {
