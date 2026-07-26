@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,15 @@ import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayou
 
 export const BubbleScreen: React.FC = () => {
   const navigation = useNavigation();
+  const [isFocused, setIsFocused] = useState(() => navigation.isFocused?.() ?? true);
+  useEffect(() => {
+    const focusSubscription = navigation.addListener?.('focus', () => setIsFocused(true));
+    const blurSubscription = navigation.addListener?.('blur', () => setIsFocused(false));
+    return () => {
+      focusSubscription?.();
+      blurSubscription?.();
+    };
+  }, [navigation]);
   const { settings } = useSettings();
   const { colors } = useThemeColors();
   const { t } = useTranslation();
@@ -82,6 +91,7 @@ export const BubbleScreen: React.FC = () => {
             maxActiveBubbles={12}
             onBubblePop={handleBubblePop}
             motionEnabled={motionEnabled}
+            isFocused={isFocused}
           />
         </View>
       </View>

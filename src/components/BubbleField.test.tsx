@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Profiler } from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { AccessibilityInfo, PanResponder, View } from 'react-native';
 import { Circle, Text as SvgText } from 'react-native-svg';
@@ -230,6 +230,28 @@ describe('BubbleField', () => {
     expect(onBubblePop).toHaveBeenCalledTimes(1);
     expect(screen.getAllByRole('button')).toHaveLength(2);
     expect(screen.getByLabelText('games.bubblePop.newBubbleAnnouncement')).toBeTruthy();
+  });
+
+  it('does not commit a React render for every animation frame', () => {
+    const commits: Array<string> = [];
+    const screen = render(
+      <Profiler id='bubble-field' onRender={() => commits.push('commit')}>
+        <BubbleField
+          width={240}
+          height={220}
+          minActiveBubbles={2}
+          maxActiveBubbles={4}
+          spawnIntervalMs={10_000}
+        />
+      </Profiler>,
+    );
+
+    for (let frame = 0; frame < 20; frame += 1) {
+      advanceFrame(frame * 16);
+    }
+
+    expect(commits.length).toBeLessThanOrEqual(3);
+    screen.unmount();
   });
 
   it('removes the tapped bubble, creates an indicator, and calls onBubblePop', () => {
