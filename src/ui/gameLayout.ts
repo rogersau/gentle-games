@@ -60,4 +60,3 @@ export const calculateGameBoardSize = (
 
   return { width, height };
 };
-
