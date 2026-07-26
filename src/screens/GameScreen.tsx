@@ -8,6 +8,8 @@ import { AppScreen, AppHeader } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useThemeColors } from '../utils/theme';
 import { useMochi } from '../hooks/useMochi';
+import { useSettings } from '../context/SettingsContext';
+import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 
 export const GameScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -15,6 +17,8 @@ export const GameScreen: React.FC = () => {
   const { colors } = useThemeColors();
   const { t } = useTranslation();
   const { celebrate } = useMochi();
+  const { settings } = useSettings();
+  const { showPressureMetrics } = getGamePresentationPolicy(settings);
 
   const handleGameComplete = (_time: number) => {
     celebrate();
@@ -33,7 +37,7 @@ export const GameScreen: React.FC = () => {
           onBackPress={handleBackPress}
           bottomInset={insets.bottom}
           onPositiveEvent={celebrate}
-          renderStats={({ time, moves }) => (
+          renderStats={showPressureMetrics ? ({ time, moves }) => (
             <Text
               style={[styles.stats, { color: colors.text }]}
               accessibilityLabel={`${t('games.memorySnap.timeLabel', { time })}, ${t(
@@ -45,7 +49,7 @@ export const GameScreen: React.FC = () => {
               {t('games.memorySnap.timeLabel', { time })} ·{' '}
               {t('games.memorySnap.moves', { count: moves })}
             </Text>
-          )}
+          ) : () => null}
         />
       </View>
     </AppScreen>

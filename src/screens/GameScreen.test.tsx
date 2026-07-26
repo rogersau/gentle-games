@@ -26,6 +26,11 @@ jest.mock('../context/MochiContext', () => ({
   }),
 }));
 
+const memorySettings = { pressureFreeMode: false };
+jest.mock('../context/SettingsContext', () => ({
+  useSettings: () => ({ settings: memorySettings }),
+}));
+
 jest.mock('react-i18next', () => ({
   initReactI18next: {
     type: '3rdParty',
@@ -93,5 +98,12 @@ describe('GameScreen', () => {
     const boardBackText = root.findByProps({ testID: 'board-back' });
     fireEvent.press(boardBackText);
     expect(mockGoBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides Memory Snap timer and moves from the accessibility tree in pressure-free mode', () => {
+    memorySettings.pressureFreeMode = true;
+    const screen = render(<GameScreen />);
+    expect(screen.queryByText('Elapsed 0:42 · Turns 7')).toBeNull();
+    expect(screen.queryByTestId('memory-snap-stats')).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import {
@@ -13,24 +13,33 @@ import {
 } from '../types';
 import { CategoryMatchBoard } from '../components/CategoryMatchBoard';
 import { useThemeColors } from '../utils/theme';
+import { useSettings } from '../context/SettingsContext';
+import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 import { AppScreen, AppHeader, AppButton, AppCard } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
+import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
 
 export const CategoryMatchScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useThemeColors();
+  const { settings } = useSettings();
+  const { showPressureMetrics } = getGamePresentationPolicy(settings);
   const { t } = useTranslation();
+  const translate = t as unknown as (key: string, options?: Record<string, unknown>) => string;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [correctCount, setCorrectCount] = useState(0);
   const [streakCount, setStreakCount] = useState(0);
   const [showPreview, setShowPreview] = useState(true);
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const { viewport, onLayout } = useMeasuredGameViewport();
 
   const boardSize = useMemo(() => {
-    const width = Math.max(280, screenWidth - 24);
-    const height = Math.max(360, Math.min(screenHeight * 0.7, screenHeight - 220));
-    return { width, height };
-  }, [screenHeight, screenWidth]);
+    return calculateGameBoardSize(viewport, {
+      horizontalPadding: Space.md * 2,
+      verticalReserve: 214,
+      compactMinHeight: 240,
+      maxHeightRatio: 0.7,
+    });
+  }, [viewport]);
 
   const categoryExamples = useMemo(
     () => ({
@@ -60,20 +69,22 @@ export const CategoryMatchScreen: React.FC = () => {
   }, []);
 
   return (
-    <AppScreen>
+    <AppScreen scroll onLayout={onLayout} testID='category-match-screen'>
       <AppHeader title={t('games.categoryMatch.title')} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
         <Text style={styles.subtitle} accessibilityRole='text'>
           {t('games.categoryMatch.subtitle')}
         </Text>
-        <Text
+        {showPressureMetrics ? (
+          <Text
           style={styles.counter}
           accessibilityLabel={`${correctCount} ${t('games.categoryMatch.correct')}`}
         >
           {t('games.categoryMatch.correct')}: {correctCount}
-        </Text>
-        {streakCount >= 3 ? (
+          </Text>
+        ) : null}
+        {showPressureMetrics && streakCount >= 3 ? (
           <Text
             style={styles.encouragement}
             accessibilityLabel={t('games.categoryMatch.greatStreak')}
@@ -91,7 +102,7 @@ export const CategoryMatchScreen: React.FC = () => {
             {CATEGORY_MATCH_CATEGORIES.map((category) => (
               <View key={category.id} style={styles.previewRow}>
                 <Text style={styles.previewCategoryLabel}>
-                  {category.icon} {category.label}
+                  {category.icon} {translate('games.categoryMatch.categories.' + category.id)}
                 </Text>
                 <Text style={styles.previewExamples}>{categoryExamples[category.id]}</Text>
               </View>

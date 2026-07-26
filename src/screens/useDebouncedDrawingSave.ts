@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { HistoryEntry } from '../components/DrawingCanvas';
+import { serializeDrawingHistory } from '../utils/drawingPersistence';
 
 interface UseDebouncedDrawingSaveOptions {
   storageKey: string;
   debounceMs?: number;
   onError?: (error: unknown) => void;
+  onSuccess?: () => void;
 }
 
 interface UseDebouncedDrawingSaveResult {
@@ -19,6 +21,7 @@ export const useDebouncedDrawingSave = ({
   storageKey,
   debounceMs = DEFAULT_DRAWING_SAVE_DEBOUNCE_MS,
   onError,
+  onSuccess,
 }: UseDebouncedDrawingSaveOptions): UseDebouncedDrawingSaveResult => {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingHistoryRef = useRef<HistoryEntry[] | null>(null);
@@ -38,11 +41,13 @@ export const useDebouncedDrawingSave = ({
         .then(async () => {
           try {
             if (history.length > 0) {
-              await AsyncStorage.setItem(storageKey, JSON.stringify(history));
+              await AsyncStorage.setItem(storageKey, serializeDrawingHistory(history));
+              onSuccess?.();
               return;
             }
 
             await AsyncStorage.removeItem(storageKey);
+            onSuccess?.();
           } catch (error) {
             onError?.(error);
           }
@@ -50,7 +55,7 @@ export const useDebouncedDrawingSave = ({
 
       await writeQueueRef.current;
     },
-    [onError, storageKey],
+    [onError, onSuccess, storageKey],
   );
 
   const flushPendingSave = useCallback(async () => {

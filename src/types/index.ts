@@ -3,6 +3,7 @@ export type TileType = 'animal' | 'shape';
 export interface Tile {
   id: string;
   value: string;
+  name?: string;
   type: TileType;
   isFlipped: boolean;
   isMatched: boolean;
@@ -48,6 +49,8 @@ export interface Settings {
   reducedMotionEnabled: boolean;
   telemetryEnabled: boolean;
   showMochiInGames: boolean;
+  /** When enabled, hide non-essential scores, counters, and milestone celebrations in games. */
+  pressureFreeMode?: boolean;
 }
 
 export type BreathingGardenPhase = 'inhale' | 'exhale';

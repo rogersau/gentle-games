@@ -8,8 +8,8 @@ import {
   ViewStyle,
   Easing,
 } from 'react-native';
-import { useSettings } from '../../context/SettingsContext';
 import { Space } from '../../ui/tokens';
+import { useAnimationEnabled } from '../../ui/animations';
 
 interface PicnicItemProps {
   emoji: string;
@@ -34,7 +34,7 @@ export const PicnicItem: React.FC<PicnicItemProps> = ({
   accessibilityHint,
   testID,
 }) => {
-  const { settings } = useSettings();
+  const animationsEnabled = useAnimationEnabled();
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const translateY = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(1)).current;
@@ -46,7 +46,7 @@ export const PicnicItem: React.FC<PicnicItemProps> = ({
 
   useEffect(() => {
     if (isAnimating) {
-      const duration = settings.animationsEnabled && !settings.reducedMotionEnabled ? 300 : 50;
+      const duration = animationsEnabled ? 300 : 50;
 
       Animated.parallel([
         Animated.timing(scaleAnim, {
@@ -74,7 +74,7 @@ export const PicnicItem: React.FC<PicnicItemProps> = ({
         onAnimationComplete?.();
       });
     }
-  }, [isAnimating, settings.animationsEnabled, settings.reducedMotionEnabled, onAnimationComplete]);
+  }, [isAnimating, animationsEnabled, onAnimationComplete]);
 
   const animatedStyle = useMemo(
     () => ({

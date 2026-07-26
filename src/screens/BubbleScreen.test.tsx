@@ -12,6 +12,7 @@ const mockSettings = {
   theme: 'mixed' as const,
   showCardPreview: true,
   colorMode: 'system' as const,
+  pressureFreeMode: false,
 };
 
 jest.mock('../utils/theme', () => ({
@@ -93,6 +94,15 @@ describe('BubbleScreen', () => {
     fireEvent.press(screen.getByText('Pop Mock Bubble'));
     expect(screen.getByText('Popped: 1')).toBeTruthy();
     expect(screen.getByLabelText('Popped: 1')).toBeTruthy();
+    expect(mockPlayBubblePopSound).toHaveBeenCalledWith(mockSettings);
+  });
+
+  it('hides the popped counter in pressure-free mode while the board still works', () => {
+    mockSettings.pressureFreeMode = true;
+    const screen = render(<BubbleScreen />);
+    expect(screen.queryByText('Popped: 0')).toBeNull();
+    fireEvent.press(screen.getByText('Pop Mock Bubble'));
+    expect(screen.queryByText('Popped: 1')).toBeNull();
     expect(mockPlayBubblePopSound).toHaveBeenCalledWith(mockSettings);
   });
 });

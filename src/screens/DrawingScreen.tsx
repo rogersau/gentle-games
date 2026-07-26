@@ -42,6 +42,7 @@ export const DrawingScreen: React.FC = () => {
   const [showContinueModal, setShowContinueModal] = useState(false);
   const [hasCheckedSaved, setHasCheckedSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSaveNotice, setShowSaveNotice] = useState(false);
 
   const canvasDimensions = useMemo(() => {
     const availableWidth = screenWidth - DRAWING_LAYOUT_PADDING;
@@ -100,12 +101,18 @@ export const DrawingScreen: React.FC = () => {
 
   const handleSaveError = useCallback((error: unknown) => {
     console.warn('Error saving drawing:', error);
+    setShowSaveNotice(true);
+  }, []);
+
+  const handleSaveSuccess = useCallback(() => {
+    setShowSaveNotice(false);
   }, []);
 
   const { scheduleSave, flushPendingSave } = useDebouncedDrawingSave({
     storageKey: DRAWING_STORAGE_KEY,
     debounceMs: DRAWING_SAVE_DEBOUNCE_MS,
     onError: handleSaveError,
+    onSuccess: handleSaveSuccess,
   });
 
   const flushLatestHistory = useCallback(async () => {
@@ -174,6 +181,11 @@ export const DrawingScreen: React.FC = () => {
       <AppHeader title={t('games.drawing.title')} onBack={handleBackPress} />
 
       <View style={styles.content}>
+        {showSaveNotice && (
+          <Text testID='drawing-save-notice' accessibilityRole='alert' accessibilityLiveRegion='polite' style={styles.saveNotice}>
+            {t('games.drawing.saveError')}
+          </Text>
+        )}
         {hasCheckedSaved && (
           <DrawingCanvas
             key={`canvas-${savedHistory.length}`}
@@ -239,6 +251,12 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.text,
       textAlign: 'center',
       marginBottom: Space.lg,
+    },
+    saveNotice: {
+      ...TypeStyle.body,
+      color: colors.textLight,
+      textAlign: 'center',
+      marginBottom: Space.sm,
     },
     modalButtons: {
       flexDirection: 'row',

@@ -69,6 +69,7 @@ export interface UsePatternTrainGameReturn {
 interface UsePatternTrainGameOptions {
   difficulty: Difficulty;
   t: (key: string, options?: Record<string, unknown>) => string;
+  showMilestones?: boolean;
 }
 
 const MILESTONE_INTERVAL = 5;
@@ -76,7 +77,7 @@ const MILESTONE_INTERVAL = 5;
 export function usePatternTrainGame(
   options: UsePatternTrainGameOptions,
 ): UsePatternTrainGameReturn {
-  const { difficulty: initialDifficulty, t } = options;
+  const { difficulty: initialDifficulty, t, showMilestones = true } = options;
 
   // Game state
   const [pattern, setPattern] = useState<TrainPattern | null>(null);
@@ -159,10 +160,10 @@ export function usePatternTrainGame(
     setCompletedRounds(newCount);
 
     // Check for milestone
-    if (newCount > 0 && newCount % MILESTONE_INTERVAL === 0) {
+    if (showMilestones && newCount > 0 && newCount % MILESTONE_INTERVAL === 0) {
       setShowMilestoneModal(true);
     }
-  }, [completedRounds]);
+  }, [completedRounds, showMilestones]);
 
   const handleIncorrectAnswer = useCallback(
     (carriageEmoji: string) => {

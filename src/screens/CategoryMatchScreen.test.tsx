@@ -53,6 +53,11 @@ jest.mock('@react-navigation/native', () => ({
   }),
 }));
 
+const categorySettings = { pressureFreeMode: false };
+jest.mock('../context/SettingsContext', () => ({
+  useSettings: () => ({ settings: categorySettings }),
+}));
+
 jest.mock('../components/CategoryMatchBoard', () => {
   const { Text, TouchableOpacity, View } = require('react-native');
 
@@ -123,5 +128,15 @@ describe('CategoryMatchScreen', () => {
 
     expect(screen.getByText('Correct: 5')).toBeTruthy();
     expect(screen.getByText('Wonderful sorting streak! ✨')).toBeTruthy();
+  });
+
+  it('hides counters and streak celebrations in pressure-free mode', () => {
+    categorySettings.pressureFreeMode = true;
+    const screen = render(<CategoryMatchScreen />);
+    fireEvent.press(screen.getByText('Start Sorting'));
+    expect(screen.queryByText('Correct: 0')).toBeNull();
+    fireEvent.press(screen.getByText('Match Correct Item'));
+    expect(screen.queryByText('Correct: 1')).toBeNull();
+    expect(screen.queryByText('Wonderful sorting streak! ✨')).toBeNull();
   });
 });

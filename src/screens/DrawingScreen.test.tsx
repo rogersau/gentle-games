@@ -470,4 +470,30 @@ describe('DrawingScreen', () => {
 
     consoleSpy.mockRestore();
   });
+
+  it('shows a localized save notice while retaining the current canvas after quota failure', async () => {
+    jest.useFakeTimers();
+    (AsyncStorage.setItem as jest.Mock).mockRejectedValueOnce(new Error('quota'));
+    const screen = render(React.createElement(DrawingScreen));
+    await waitFor(() => expect(mockDrawingCanvas).toHaveBeenCalled());
+    const latestProps = getLatestCanvasProps();
+    act(() => {
+      latestProps.onHistoryChange(historyA);
+      jest.advanceTimersByTime(DRAWING_SAVE_DEBOUNCE_MS);
+    });
+    await act(async () => { await Promise.resolve(); });
+    expect(mockClearCanvas).not.toHaveBeenCalled();
+    expect(screen.getByTestId('drawing-save-notice')).toBeTruthy();
+
+    (AsyncStorage.setItem as jest.Mock).mockResolvedValueOnce(undefined);
+    act(() => {
+      latestProps.onHistoryChange(historyB);
+      jest.advanceTimersByTime(DRAWING_SAVE_DEBOUNCE_MS);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByTestId('drawing-save-notice')).toBeNull();
+  });
+
 });

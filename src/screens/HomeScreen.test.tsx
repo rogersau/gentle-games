@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Linking, StyleSheet } from 'react-native';
 import { HomeScreen } from './HomeScreen';
 import type { GameDefinition } from '../games/registry';
@@ -8,6 +8,7 @@ import { APP_ROUTES } from '../types/navigation';
 import { openExternalUrl } from '../utils/externalLinks';
 
 const mockNavigate = jest.fn();
+let mockFocusCallback: (() => void) | undefined;
 const mockUpdateSettings = jest.fn().mockResolvedValue(undefined);
 const mockOpenExternalUrl = openExternalUrl as jest.MockedFunction<typeof openExternalUrl>;
 let mockSettings = {
@@ -28,6 +29,9 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     navigate: mockNavigate,
   }),
+  useFocusEffect: (callback: () => void) => {
+    mockFocusCallback = callback;
+  },
 }));
 
 jest.mock('../context/SettingsContext', () => ({
@@ -68,7 +72,9 @@ jest.mock('../context/MochiContext', () => ({
   }),
 }));
 
-const actualRegistry = jest.requireActual('../games/registry') as typeof import('../games/registry');
+const actualRegistry = jest.requireActual(
+  '../games/registry',
+) as typeof import('../games/registry');
 const mockGetVisibleGames = jest.mocked(registry.getVisibleGames);
 const mockGetGameRoute = jest.mocked(registry.getGameRoute);
 
@@ -76,6 +82,7 @@ describe('HomeScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockOpenExternalUrl.mockResolvedValue('opened');
+    mockUpdateSettings.mockResolvedValue(undefined);
     mockGetVisibleGames.mockImplementation(actualRegistry.getVisibleGames);
     mockGetGameRoute.mockImplementation(actualRegistry.getGameRoute);
     jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
@@ -101,6 +108,32 @@ describe('HomeScreen', () => {
     jest.advanceTimersByTime(300);
     expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Drawing);
     jest.useRealTimers();
+  });
+
+  it('ignores rapid repeated direct-launch presses', () => {
+    jest.useFakeTimers();
+    const screen = render(<HomeScreen />);
+    const drawingCard = screen.getByText('Drawing Pad');
+
+    fireEvent.press(drawingCard);
+    fireEvent.press(drawingCard);
+
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Drawing);
+    jest.useRealTimers();
+  });
+
+  it('allows another launch after Home regains focus', () => {
+    const screen = render(<HomeScreen />);
+
+    fireEvent.press(screen.getByText('Drawing Pad'));
+    expect(mockNavigate).toHaveBeenLastCalledWith(APP_ROUTES.Drawing);
+
+    act(() => mockFocusCallback?.());
+    fireEvent.press(screen.getByText('Bubble Pop'));
+
+    expect(mockNavigate).toHaveBeenCalledTimes(2);
+    expect(mockNavigate).toHaveBeenLastCalledWith(APP_ROUTES.Bubble);
   });
 
   it('navigates directly to Glitter screen when Glitter Fall is selected', () => {
@@ -170,6 +203,86 @@ describe('HomeScreen', () => {
       expect(mockUpdateSettings).toHaveBeenCalledWith({ difficulty: 'hard' });
       expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Game);
     });
+  });
+
+  it('ignores repeated difficulty presses while settings are pending', async () => {
+    let resolveSettings!: () => void;
+    mockUpdateSettings.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSettings = resolve;
+        }),
+    );
+    const screen = render(<HomeScreen />);
+    fireEvent.press(screen.getByText('Memory Snap'));
+
+    const hardButton = screen
+      .getAllByRole('button')
+      .find((el: any) => el.props.accessibilityLabel?.includes('Hard'));
+    expect(hardButton).toBeTruthy();
+    fireEvent.press(hardButton!);
+    fireEvent.press(hardButton!);
+
+    expect(mockUpdateSettings).toHaveBeenCalledTimes(1);
+    expect(hardButton!.props.accessibilityState).toMatchObject({ disabled: true, busy: true });
+    expect(mockNavigate).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveSettings();
+      await Promise.resolve();
+    });
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Game);
+  });
+
+  it('resets the launch guard when saving difficulty fails', async () => {
+    mockUpdateSettings.mockRejectedValueOnce(new Error('save failed'));
+    const screen = render(<HomeScreen />);
+    fireEvent.press(screen.getByText('Memory Snap'));
+    const hardButton = screen
+      .getAllByRole('button')
+      .find((el: any) => el.props.accessibilityLabel?.includes('Hard'));
+    fireEvent.press(hardButton!);
+
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledTimes(1));
+    await waitFor(() => {
+      const retryButton = screen
+        .getAllByRole('button')
+        .find((el: any) => el.props.accessibilityLabel?.includes('Hard'));
+      expect(retryButton!.props.accessibilityState.disabled).toBe(false);
+    });
+
+    const retryButton = screen
+      .getAllByRole('button')
+      .find((el: any) => el.props.accessibilityLabel?.includes('Hard'));
+    fireEvent.press(retryButton!);
+    await waitFor(() => {
+      expect(mockUpdateSettings).toHaveBeenCalledTimes(2);
+      expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Game);
+    });
+  });
+
+  it('does not navigate when a pending difficulty launch resolves after unmount', async () => {
+    let resolveSettings!: () => void;
+    mockUpdateSettings.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSettings = resolve;
+        }),
+    );
+    const screen = render(<HomeScreen />);
+    fireEvent.press(screen.getByText('Memory Snap'));
+    const hardButton = screen
+      .getAllByRole('button')
+      .find((el: any) => el.props.accessibilityLabel?.includes('Hard'));
+    fireEvent.press(hardButton!);
+    screen.unmount();
+
+    await act(async () => {
+      resolveSettings();
+      await Promise.resolve();
+    });
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it('routes difficulty-select games to their own route after picking a difficulty', async () => {
@@ -264,5 +377,4 @@ describe('HomeScreen', () => {
       expect(Linking.openURL).not.toHaveBeenCalled();
     },
   );
-
 });

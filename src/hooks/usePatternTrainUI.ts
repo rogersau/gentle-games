@@ -10,10 +10,11 @@ const CELEBRATION_PHRASES = [
 
 interface UsePatternTrainUIOptions {
   milestoneInterval?: number;
+  celebrationsEnabled?: boolean;
 }
 
 export function usePatternTrainUI(options: UsePatternTrainUIOptions = {}) {
-  const { milestoneInterval = 5 } = options;
+  const { milestoneInterval = 5, celebrationsEnabled = true } = options;
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationPhrase, setCelebrationPhrase] = useState('');
   const [milestoneCount, setMilestoneCount] = useState(0);
@@ -33,12 +34,12 @@ export function usePatternTrainUI(options: UsePatternTrainUIOptions = {}) {
   const onPatternComplete = useCallback(() => {
     setMilestoneCount((prev) => {
       const next = prev + 1;
-      if (next % milestoneInterval === 0) {
+      if (celebrationsEnabled && next % milestoneInterval === 0) {
         triggerCelebration();
       }
       return next;
     });
-  }, [milestoneInterval, triggerCelebration]);
+  }, [celebrationsEnabled, milestoneInterval, triggerCelebration]);
 
   return {
     showCelebration,

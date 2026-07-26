@@ -12,8 +12,8 @@ import {
 } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
 import { Space, Radius } from '../../ui/tokens';
+import { useAnimationEnabled } from '../../ui/animations';
 import { ThemeColors } from '../../types';
-import { useSettings } from '../../context/SettingsContext';
 import { useTranslation } from 'react-i18next';
 
 interface WindowRect {
@@ -95,7 +95,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
 }) => {
   const { colors } = useThemeColors();
   const { width: screenWidth } = useWindowDimensions();
-  const { settings } = useSettings();
+  const animationsEnabled = useAnimationEnabled();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -136,7 +136,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
       item.isAvailable = shouldBeAvailable;
 
       // Animate opacity change
-      if (settings.animationsEnabled && !settings.reducedMotionEnabled) {
+      if (animationsEnabled) {
         Animated.timing(item.opacity, {
           toValue: shouldBeAvailable ? 1 : 0.3,
           duration: 200,
@@ -146,7 +146,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
         item.opacity.setValue(shouldBeAvailable ? 1 : 0.3);
       }
     });
-  }, [visibleItems, settings.animationsEnabled, settings.reducedMotionEnabled]);
+  }, [visibleItems, animationsEnabled]);
 
   const setDragOverlap = useCallback(
     (isOver: boolean) => {
@@ -215,7 +215,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
           measureItemLayout(index, () => undefined);
 
           // Scale up when dragging starts
-          if (settings.animationsEnabled && !settings.reducedMotionEnabled) {
+          if (animationsEnabled) {
             Animated.timing(item.scale, {
               toValue: 1.3,
               duration: 200,
@@ -246,7 +246,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
           onDropEnd?.();
 
           // Scale back down
-          if (settings.animationsEnabled && !settings.reducedMotionEnabled) {
+          if (animationsEnabled) {
             Animated.timing(item.scale, {
               toValue: 1,
               duration: 200,
@@ -258,7 +258,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
             onItemDrop(index);
 
             // Fade out the item
-            if (settings.animationsEnabled && !settings.reducedMotionEnabled) {
+            if (animationsEnabled) {
               Animated.timing(item.opacity, {
                 toValue: 0,
                 duration: 200,
@@ -272,7 +272,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
             }
           } else {
             // Reset position (not dropped to basket)
-            if (settings.animationsEnabled && !settings.reducedMotionEnabled) {
+            if (animationsEnabled) {
               Animated.spring(item.position, {
                 toValue: { x: 0, y: 0 },
                 useNativeDriver: Platform.OS !== 'web',
@@ -292,8 +292,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
     },
     [
       isProcessing,
-      settings.animationsEnabled,
-      settings.reducedMotionEnabled,
+      animationsEnabled,
       onDropStart,
       onDropEnd,
       onItemDrop,

@@ -56,7 +56,67 @@ describe('DrawingCanvas', () => {
 
     expect(getAllByTestId('palette-color-button')).toHaveLength(initialPaletteCount);
   });
+  it('exposes built-in palette colours as labeled buttons with selected state', () => {
+    const screen = render(<DrawingCanvas width={320} height={280} initialHistory={[]} />);
+    const paletteButtons = screen.getAllByTestId('palette-color-button');
 
+    expect(paletteButtons[0].props.accessibilityRole).toBe('button');
+    expect(paletteButtons[0].props.accessibilityLabel).toBe('Coral');
+    expect(paletteButtons[0].props.accessibilityHint).toBe('Choose this colour for drawing');
+    expect(paletteButtons[0].props.accessibilityState).toEqual({ selected: true });
+    expect(paletteButtons[0].props.hitSlop).toBe(4);
+
+    const addColourButton = screen.getByTestId('open-color-picker');
+    expect(addColourButton.props.accessibilityRole).toBe('button');
+    expect(addColourButton.props.accessibilityLabel).toBe('Add a custom colour');
+    expect(addColourButton.props.accessibilityHint).toBe('Open colour choices');
+  });
+
+  it('keeps custom colours identifiable with their hex value', () => {
+    const screen = render(<DrawingCanvas width={320} height={280} initialHistory={[]} />);
+
+    fireEvent.press(screen.getByTestId('open-color-picker'));
+    fireEvent.press(screen.getAllByTestId('color-picker-preset-button')[1]);
+    fireEvent.press(screen.getByTestId('confirm-custom-color'));
+
+    const customButton = screen.getAllByTestId('palette-color-button').at(-1);
+    expect(customButton?.props.accessibilityRole).toBe('button');
+    expect(customButton?.props.accessibilityLabel).toBe('Custom colour #FF4500');
+    expect(customButton?.props.accessibilityState).toEqual({ selected: true });
+  });
+  it('switches to the pen and exposes the change when a colour is activated from eraser mode', () => {
+    const screen = render(<DrawingCanvas width={320} height={280} initialHistory={[]} />);
+    const paletteButton = screen.getAllByTestId('palette-color-button')[0];
+
+    fireEvent.press(screen.getByLabelText('games.drawing.eraserTool'));
+    expect(paletteButton.props.accessibilityState).toEqual({ selected: false });
+    expect(paletteButton.props.accessibilityHint).toBe(
+      'Choose this colour and switch back to the pen',
+    );
+
+    fireEvent.press(paletteButton);
+
+    expect(screen.getByLabelText('games.drawing.penTool').props.accessibilityState).toEqual({
+      selected: true,
+    });
+    expect(paletteButton.props.accessibilityState).toEqual({ selected: true });
+    expect(screen.getByText('Pen tool is now active')).toBeTruthy();
+  });
+  it('exposes color-picker presets as labeled, selectable buttons', () => {
+    const screen = render(<DrawingCanvas width={320} height={280} initialHistory={[]} />);
+
+    fireEvent.press(screen.getByTestId('open-color-picker'));
+    const presetButtons = screen.getAllByTestId('color-picker-preset-button');
+
+    expect(presetButtons).toHaveLength(30);
+    expect(presetButtons[0].props.accessibilityRole).toBe('button');
+    expect(presetButtons[0].props.accessibilityLabel).toBe('Red');
+    expect(presetButtons[0].props.accessibilityHint).toBe('Choose this colour');
+    expect(presetButtons[0].props.accessibilityState.selected).toBe(false);
+    fireEvent.press(presetButtons[0]);
+    expect(presetButtons[0].props.accessibilityState.selected).toBe(true);
+    expect(presetButtons[0].props.hitSlop).toBe(4);
+  });
   it('applies a custom canvas background color', () => {
     const initialHistory: HistoryEntry[] = [];
     const { getByTestId } = render(
@@ -125,6 +185,20 @@ describe('DrawingCanvas', () => {
     fireEvent.press(screen.getByLabelText('games.drawing.undo'));
 
     expect(ref.current?.getHistory()).toHaveLength(0);
+  });
+
+  it('skips duplicate pointer samples and bounds long live strokes', () => {
+    const ref = React.createRef<DrawingCanvasRef>();
+    const screen = render(<DrawingCanvas ref={ref} width={320} height={280} initialHistory={[]} />);
+    const moves = Array.from({ length: 2_000 }, (_, index) => ({ x: (index % 300) + 1, y: (index % 200) + 1 }));
+    drawGesture(screen, { x: 1, y: 1 }, [{ x: 1, y: 1 }, ...moves]);
+    const history = ref.current?.getHistory() ?? [];
+    expect(history).toHaveLength(1);
+    expect(history[0].kind).toBe('stroke');
+    expect((history[0] as any).points.length).toBeLessThanOrEqual(1_200);
+    expect((history[0] as any).points[0]).toEqual({ x: 1, y: 1 });
+    expect((history[0] as any).points.at(-1).x).toBeGreaterThan(150);
+    expect((history[0] as any).points.at(-1).y).toBeGreaterThan(150);
   });
 
   it('keeps batch-aware undo semantics for shapes and eraser actions', () => {

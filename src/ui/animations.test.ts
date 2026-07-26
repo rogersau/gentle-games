@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react-native';
-import { Animated } from 'react-native';
+import { AccessibilityInfo, Animated } from 'react-native';
 import { useAnimationEnabled, useFadeIn, useGentleBounce, useScalePress } from './animations';
 
 let mockSettings = {
@@ -44,6 +44,27 @@ describe('ui animations hooks', () => {
     mockSettings.animationsEnabled = false;
     const { result } = renderHook(() => useAnimationEnabled());
     expect(result.current).toBe(false);
+  });
+
+  it('updates effective animation policy when the OS preference changes at runtime', async () => {
+    let onChange: ((enabled: boolean) => void) | undefined;
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(false);
+    jest.spyOn(AccessibilityInfo, 'addEventListener').mockImplementation((_, callback) => {
+      onChange = callback as unknown as (enabled: boolean) => void;
+      return { remove: jest.fn() } as any;
+    });
+
+    const { result } = renderHook(() => useAnimationEnabled());
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current).toBe(true);
+
+    act(() => onChange?.(true));
+    expect(result.current).toBe(false);
+
+    act(() => onChange?.(false));
+    expect(result.current).toBe(true);
   });
 
   it('fadeIn sets opacity immediately when animations are disabled', () => {

@@ -200,6 +200,8 @@ const createSettingsValue = (overrides?: {
     settings,
     updateSettings: jest.fn(),
     isLoading: overrides?.isLoading ?? false,
+    isSaving: false,
+    persistenceError: null,
   };
 };
 

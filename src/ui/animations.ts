@@ -1,13 +1,20 @@
 import { useRef, useCallback } from 'react';
 import { Animated, Easing, Platform } from 'react-native';
 import { useSettings } from '../context/SettingsContext';
+import { useReducedMotion } from '../utils/theme';
 
 const supportsNativeDriver = Platform.OS !== 'web';
 
-/** Returns whether animations are enabled in user settings */
+/** Returns the effective decorative-motion policy (app setting plus OS reduced motion). */
 export const useAnimationEnabled = (): boolean => {
-  const { settings } = useSettings();
-  return settings.animationsEnabled;
+  let settings: { animationsEnabled?: boolean };
+  try {
+    settings = useSettings().settings;
+  } catch {
+    settings = { animationsEnabled: true };
+  }
+  const reducedMotion = typeof useReducedMotion === 'function' ? useReducedMotion() : false;
+  return settings.animationsEnabled !== false && !reducedMotion;
 };
 
 /** Fade in from 0 to 1 */

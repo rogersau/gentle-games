@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
@@ -31,6 +31,23 @@ export const HomeScreen: React.FC = () => {
     handleCloseModal: onCloseModal,
   } = useGameSelection();
   const [showWebsiteFallback, setShowWebsiteFallback] = useState(false);
+  const [isLaunching, setIsLaunching] = useState(false);
+  const isLaunchingRef = useRef(false);
+  const isMountedRef = useRef(true);
+
+  React.useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      isLaunchingRef.current = false;
+    };
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      isLaunchingRef.current = false;
+      setIsLaunching(false);
+    }, []),
+  );
 
   React.useEffect(() => {
     showMochi('mascot.greeting', 'floating');
@@ -68,24 +85,65 @@ export const HomeScreen: React.FC = () => {
   );
 
   const handleGameSelect = (game: GameDefinition) => {
-    onGameSelect(game);
-    if (game.launchMode !== 'difficulty-select') {
+    if (!isMountedRef.current || isLaunchingRef.current) {
+      return;
+    }
+
+    if (game.launchMode === 'difficulty-select') {
+      onGameSelect(game);
+      return;
+    }
+
+    isLaunchingRef.current = true;
+    setIsLaunching(true);
+
+    try {
+      onGameSelect(game);
       celebrate();
-      setTimeout(() => {
+      if (isMountedRef.current) {
         navigation.navigate(getGameRoute(game.id));
-      }, 200);
+      }
+    } catch {
+      if (isMountedRef.current) {
+        isLaunchingRef.current = false;
+        setIsLaunching(false);
+      }
     }
   };
 
   const handleDifficultySelect = async (difficulty: Difficulty) => {
+    if (!isMountedRef.current || isLaunchingRef.current) {
+      return;
+    }
+
     const selectedGameRoute = selectedGame ? getGameRoute(selectedGame.id) : APP_ROUTES.Game;
-    await updateSettings({ difficulty });
-    await onDifficultySelect(difficulty);
-    navigation.navigate(selectedGameRoute);
+    isLaunchingRef.current = true;
+    setIsLaunching(true);
+
+    try {
+      await updateSettings({ difficulty });
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      await onDifficultySelect(difficulty);
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      navigation.navigate(selectedGameRoute);
+    } catch {
+      if (isMountedRef.current) {
+        isLaunchingRef.current = false;
+        setIsLaunching(false);
+      }
+    }
   };
 
   const handleCloseModal = () => {
-    onCloseModal();
+    if (!isLaunchingRef.current) {
+      onCloseModal();
+    }
   };
 
   const handleWebsitePress = async () => {
@@ -150,6 +208,8 @@ export const HomeScreen: React.FC = () => {
                     description={t(game.descriptionKey)}
                     onPress={() => handleGameSelect(game)}
                     accentColor={game.accentColor}
+                    disabled={isLaunching}
+                    accessibilityState={{ busy: isLaunching }}
                     style={gridColumns === 1 ? { padding: Space.md } : undefined}
                   />
                 </View>
@@ -182,6 +242,8 @@ export const HomeScreen: React.FC = () => {
       <AppModal
         visible={showDifficultySelector}
         onClose={handleCloseModal}
+        disabled={isLaunching}
+        accessibilityState={{ busy: isLaunching }}
         title={selectedGame ? t(selectedGame.nameKey) : undefined}
         showClose
         closeLabel={t('common.cancel')}
@@ -195,13 +257,15 @@ export const HomeScreen: React.FC = () => {
           {difficultyOptions.map(({ value, label, description }) => (
             <AppButton
               key={value}
-              label={`${label}  ·  ${description}`}
+              label={t('difficulty.optionLabel', { label, description })}
               variant={settings.difficulty === value ? 'primary' : 'ghost'}
               size='md'
               fullWidth
               onPress={() => handleDifficultySelect(value)}
+              disabled={isLaunching}
+              accessibilityState={{ busy: isLaunching }}
               style={{ marginBottom: Space.sm }}
-              accessibilityLabel={`${label} difficulty, ${description}`}
+              accessibilityLabel={t('difficulty.accessibilityLabel', { label })}
             />
           ))}
         </View>

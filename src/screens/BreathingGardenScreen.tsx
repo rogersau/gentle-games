@@ -10,6 +10,8 @@ import { useBackgroundMusic } from '../utils/music';
 import { useSettings } from '../context/SettingsContext';
 import { AppScreen, AppHeader, AppButton, AppCard } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
+import { useAnimationEnabled } from '../ui/animations';
+import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 
 const { width: screenWidth } = Dimensions.get('window');
 const BALL_SIZE = Math.min(250, screenWidth * 0.5);
@@ -27,6 +29,8 @@ export const BreathingGardenScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useThemeColors();
   const { settings } = useSettings();
+  const { showPressureMetrics } = getGamePresentationPolicy(settings);
+  const motionEnabled = useAnimationEnabled();
   const { t } = useTranslation();
   const colorSchemes = useMemo(() => getColorSchemes(), []);
   const [colorIndex, setColorIndex] = useState(0);
@@ -56,7 +60,7 @@ export const BreathingGardenScreen: React.FC = () => {
       return;
     }
 
-    if (!settings.animationsEnabled) {
+    if (!motionEnabled) {
       setDisplayedPhase(phase);
       phaseOpacity.setValue(1);
       return;
@@ -95,14 +99,14 @@ export const BreathingGardenScreen: React.FC = () => {
     return () => {
       fadeOut.stop();
     };
-  }, [phase, displayedPhase, settings.animationsEnabled]);
+  }, [phase, displayedPhase, motionEnabled]);
 
   useEffect(() => {
     const countOpacity = countOpacityRef.current;
 
     countAnimationRef.current?.stop();
 
-    if (!settings.animationsEnabled) {
+    if (!motionEnabled) {
       countOpacity.setValue(1);
       return;
     }
@@ -118,7 +122,7 @@ export const BreathingGardenScreen: React.FC = () => {
     return () => {
       fadeCountIn.stop();
     };
-  }, [currentCount, settings.animationsEnabled]);
+  }, [currentCount, motionEnabled]);
 
   useEffect(
     () => () => {
@@ -163,9 +167,11 @@ export const BreathingGardenScreen: React.FC = () => {
                 size={BALL_SIZE}
                 colorScheme={ballColors}
                 autoStart={true}
+                reducedMotion={!motionEnabled}
                 onPhaseChange={setPhase}
                 onCycleComplete={setBreaths}
                 onProgress={setProgress}
+                showCycleCount={showPressureMetrics}
               />
             </View>
             {settings.showMochiInGames ? (
@@ -173,6 +179,7 @@ export const BreathingGardenScreen: React.FC = () => {
                 size='lg'
                 breathingPhase={phase}
                 breathingProgress={progress}
+                animate={motionEnabled}
                 color={ballColors.primary}
                 highlightColor={ballColors.accent}
                 shadowColor={ballColors.accent}
@@ -184,11 +191,13 @@ export const BreathingGardenScreen: React.FC = () => {
           </View>
         </AppCard>
 
+        {showPressureMetrics ? (
         <View style={styles.statsRow}>
           <Text style={styles.statText}>
             {t('games.breathingGarden.breaths', { count: breaths })}
           </Text>
         </View>
+        ) : null}
 
         <View style={styles.actionsRow}>
           <AppButton

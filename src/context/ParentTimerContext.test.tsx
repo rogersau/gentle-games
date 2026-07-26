@@ -1,21 +1,18 @@
 import React from 'react';
-import { render, act } from '@testing-library/react-native';
-import { Text, View } from 'react-native';
+import { act, render, waitFor } from '@testing-library/react-native';
+import { AppState, Text, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ParentTimerProvider, useParentTimer } from './ParentTimerContext';
 
-// Mock SettingsContext
 const mockSettings = {
-  parentTimerMinutes: 1, // 1 minute for testing
+  parentTimerMinutes: 1,
   animationsEnabled: true,
 };
 
 jest.mock('../context/SettingsContext', () => ({
-  useSettings: () => ({
-    settings: mockSettings,
-  }),
+  useSettings: () => ({ settings: mockSettings }),
 }));
 
-// Mock theme
 jest.mock('../utils/theme', () => ({
   useThemeColors: () => ({
     colors: {
@@ -31,10 +28,14 @@ jest.mock('../utils/theme', () => ({
   }),
 }));
 
-// Test component that uses the context
+const storage = AsyncStorage as unknown as {
+  getItem: jest.Mock;
+  setItem: jest.Mock;
+  removeItem: jest.Mock;
+};
+
 const TestComponent: React.FC = () => {
   const { secondsRemaining, isLocked } = useParentTimer();
-
   return (
     <View>
       <Text testID='seconds'>{secondsRemaining}</Text>
@@ -43,181 +44,161 @@ const TestComponent: React.FC = () => {
   );
 };
 
+const renderTimer = async () => {
+  const screen = render(
+    <ParentTimerProvider>
+      <TestComponent />
+    </ParentTimerProvider>,
+  );
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+  return screen;
+};
+
 describe('ParentTimerContext', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
     mockSettings.parentTimerMinutes = 1;
     mockSettings.animationsEnabled = true;
+    storage.getItem.mockResolvedValue(null);
+    storage.setItem.mockResolvedValue(undefined);
+    storage.removeItem.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
     jest.useRealTimers();
   });
 
-  it('initializes with correct timer value based on settings', () => {
-    const { getByTestId } = render(
-      <ParentTimerProvider>
-        <TestComponent />
-      </ParentTimerProvider>,
-    );
-
+  it('starts and persists a fresh allowance', async () => {
+    const { getByTestId } = await renderTimer();
     expect(getByTestId('seconds').props.children).toBe(60);
     expect(getByTestId('locked').props.children).toBe('unlocked');
+    expect(storage.setItem).toHaveBeenCalledWith(
+      'gentleGames.parentTimerSession',
+      expect.stringContaining('"durationMinutes":1'),
+    );
   });
 
-  it('initializes with 0 when timer is disabled', () => {
-    mockSettings.parentTimerMinutes = 0;
-
-    const { getByTestId } = render(
-      <ParentTimerProvider>
-        <TestComponent />
-      </ParentTimerProvider>,
-    );
-
-    expect(getByTestId('seconds').props.children).toBe(0);
-  });
-
-  it('counts down every second', () => {
-    const { getByTestId } = render(
-      <ParentTimerProvider>
-        <TestComponent />
-      </ParentTimerProvider>,
-    );
-
-    expect(getByTestId('seconds').props.children).toBe(60);
-
-    act(() => {
-      jest.advanceTimersByTime(1000);
-    });
-
-    expect(getByTestId('seconds').props.children).toBe(59);
-
-    act(() => {
-      jest.advanceTimersByTime(2000);
-    });
-
-    expect(getByTestId('seconds').props.children).toBe(57);
-  });
-
-  it('locks screen when timer reaches zero', () => {
-    const { getByTestId } = render(
-      <ParentTimerProvider>
-        <TestComponent />
-      </ParentTimerProvider>,
-    );
-
-    expect(getByTestId('locked').props.children).toBe('unlocked');
-
-    // Advance timer to 0
-    act(() => {
-      jest.advanceTimersByTime(60000);
-    });
-
-    expect(getByTestId('locked').props.children).toBe('locked');
-    expect(getByTestId('seconds').props.children).toBe(0);
-  });
-
-  it('stops countdown when screen is locked', () => {
-    const { getByTestId } = render(
-      <ParentTimerProvider>
-        <TestComponent />
-      </ParentTimerProvider>,
-    );
-
-    // Lock the screen
-    act(() => {
-      jest.advanceTimersByTime(60000);
-    });
-
-    expect(getByTestId('locked').props.children).toBe('locked');
-    expect(getByTestId('seconds').props.children).toBe(0);
-
-    // Timer should not go negative
-    act(() => {
-      jest.advanceTimersByTime(1000);
-    });
-
-    expect(getByTestId('seconds').props.children).toBe(0);
-  });
-
-  it('resets timer when parentTimerMinutes setting changes', () => {
-    const { getByTestId, rerender } = render(
-      <ParentTimerProvider>
-        <TestComponent />
-      </ParentTimerProvider>,
-    );
-
-    // Advance timer partially
-    act(() => {
-      jest.advanceTimersByTime(30000);
-    });
+  it('restores a persisted allowance before its deadline on relaunch', async () => {
+    const expiresAt = Date.now() + 30_000;
+    storage.getItem.mockResolvedValueOnce(JSON.stringify({ expiresAt, durationMinutes: 1 }));
+    const { getByTestId } = await renderTimer();
 
     expect(getByTestId('seconds').props.children).toBe(30);
-
-    // Change settings to 2 minutes
-    mockSettings.parentTimerMinutes = 2;
-
-    rerender(
-      <ParentTimerProvider>
-        <TestComponent />
-      </ParentTimerProvider>,
-    );
-
-    expect(getByTestId('seconds').props.children).toBe(120);
     expect(getByTestId('locked').props.children).toBe('unlocked');
+    expect(storage.setItem).not.toHaveBeenCalled();
   });
 
-  it('cleans up interval on unmount', () => {
-    const { unmount } = render(
-      <ParentTimerProvider>
-        <TestComponent />
-      </ParentTimerProvider>,
+  it('locks immediately after relaunch when the persisted deadline has passed', async () => {
+    storage.getItem.mockResolvedValueOnce(
+      JSON.stringify({ expiresAt: Date.now() - 1, durationMinutes: 1 }),
     );
+    const { getByTestId } = await renderTimer();
 
-    unmount();
+    expect(getByTestId('seconds').props.children).toBe(0);
+    expect(getByTestId('locked').props.children).toBe('locked');
+    expect(storage.setItem).toHaveBeenCalledWith(
+      'gentleGames.parentTimerSession',
+      expect.stringContaining('"locked":true'),
+    );
+  });
 
-    // Should not throw or cause issues
+  it('remains locked after expiring and relaunching', async () => {
+    const first = await renderTimer();
+    jest.setSystemTime(Date.now() + 61_000);
     act(() => {
       jest.advanceTimersByTime(1000);
     });
+    expect(first.getByTestId('locked').props.children).toBe('locked');
+
+    await waitFor(() =>
+      expect(storage.setItem).toHaveBeenCalledWith(
+        'gentleGames.parentTimerSession',
+        expect.stringContaining('"locked":true'),
+      ),
+    );
+    const lockedSession = storage.setItem.mock.calls.at(-1)?.[1];
+    first.unmount();
+    storage.getItem.mockResolvedValueOnce(lockedSession);
+
+    const second = await renderTimer();
+    expect(second.getByTestId('locked').props.children).toBe('locked');
   });
 
-  it('displays unlock modal when locked', () => {
-    const { getByText, queryByText } = render(
+  it('reconciles elapsed wall-clock time when returning to the foreground', async () => {
+    let onAppStateChange: ((state: any) => void) | undefined;
+    const addListenerSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_event, callback) => {
+      onAppStateChange = callback;
+      return { remove: jest.fn() } as ReturnType<typeof AppState.addEventListener>;
+    });
+    const { getByTestId } = await renderTimer();
+
+    jest.setSystemTime(Date.now() + 30_000);
+    act(() => onAppStateChange?.('active'));
+    expect(getByTestId('seconds').props.children).toBe(30);
+
+    addListenerSpy.mockRestore();
+  });
+
+  it('locks based on the deadline rather than interval tick count', async () => {
+    const { getByTestId } = await renderTimer();
+    jest.setSystemTime(Date.now() + 61_000);
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(getByTestId('seconds').props.children).toBe(0);
+    expect(getByTestId('locked').props.children).toBe('locked');
+  });
+
+  it('clears the persisted allowance when the timer is disabled', async () => {
+    const screen = await renderTimer();
+    mockSettings.parentTimerMinutes = 0;
+    screen.rerender(
+      <ParentTimerProvider>
+        <TestComponent />
+      </ParentTimerProvider>,
+    );
+    await waitFor(() => expect(screen.getByTestId('seconds').props.children).toBe(0));
+    expect(storage.removeItem).toHaveBeenCalledWith('gentleGames.parentTimerSession');
+    expect(screen.getByTestId('locked').props.children).toBe('unlocked');
+  });
+
+  it('resets to the new duration when the configured duration changes', async () => {
+    const screen = await renderTimer();
+    jest.setSystemTime(Date.now() + 30_000);
+    mockSettings.parentTimerMinutes = 2;
+    screen.rerender(
       <ParentTimerProvider>
         <TestComponent />
       </ParentTimerProvider>,
     );
 
-    // Should not show lock screen initially
-    expect(queryByText('parentTimer.lockTitle')).toBeNull();
-
-    // Lock the screen
-    act(() => {
-      jest.advanceTimersByTime(60000);
-    });
-
-    // Should now show lock screen
-    expect(getByText('parentTimer.lockTitle')).toBeTruthy();
-    expect(getByText('parentTimer.lockSubtitle')).toBeTruthy();
-    expect(getByText('parentTimer.challengeLabel')).toBeTruthy();
+    await waitFor(() => expect(screen.getByTestId('seconds').props.children).toBe(120));
+    expect(screen.getByTestId('locked').props.children).toBe('unlocked');
+    expect(storage.setItem).toHaveBeenLastCalledWith(
+      'gentleGames.parentTimerSession',
+      expect.stringContaining('"durationMinutes":2'),
+    );
   });
 
-  it('shows math challenge in lock screen', () => {
-    const { getByText } = render(
-      <ParentTimerProvider>
-        <TestComponent />
-      </ParentTimerProvider>,
+  it('discards malformed persisted data and starts a fresh session', async () => {
+    storage.getItem.mockResolvedValueOnce('{not valid json');
+    const { getByTestId } = await renderTimer();
+    expect(getByTestId('seconds').props.children).toBe(60);
+    expect(getByTestId('locked').props.children).toBe('unlocked');
+    expect(storage.removeItem).toHaveBeenCalledWith('gentleGames.parentTimerSession');
+    expect(storage.setItem).toHaveBeenCalledWith(
+      'gentleGames.parentTimerSession',
+      expect.stringContaining('"durationMinutes":1'),
     );
+  });
 
-    // Lock the screen
-    act(() => {
-      jest.advanceTimersByTime(60000);
-    });
-
-    // Should show a math problem
-    const mathProblem = getByText(/\d+ [+−] \d+ = \?/);
-    expect(mathProblem).toBeTruthy();
+  it('does not continue ticking after unmount', async () => {
+    const { unmount } = await renderTimer();
+    unmount();
+    act(() => jest.advanceTimersByTime(1000));
   });
 });

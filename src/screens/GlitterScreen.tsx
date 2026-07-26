@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useEffect } from 'react';
-import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { GlitterGlobe, GlitterGlobeRef } from '../components/GlitterGlobe';
@@ -7,8 +7,10 @@ import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
 import { AppScreen, AppHeader, AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
+import { useAnimationEnabled } from '../ui/animations';
 import { useMochi } from '../hooks/useMochi';
 import { useSettings } from '../context/SettingsContext';
+import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
 
 export const GlitterScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -16,9 +18,10 @@ export const GlitterScreen: React.FC = () => {
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const globeRef = useRef<GlitterGlobeRef>(null);
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const { viewport, onLayout } = useMeasuredGameViewport();
 
   const { settings } = useSettings();
+  const motionEnabled = useAnimationEnabled();
   const { showMochi } = useMochi();
 
   const lastInteractionRef = useRef(Date.now());
@@ -61,13 +64,17 @@ export const GlitterScreen: React.FC = () => {
   }, [settings.showMochiInGames]);
 
   const globeSize = useMemo(() => {
-    const maxWidth = screenWidth - 32;
-    const maxHeight = screenHeight * 0.58;
-    return Math.max(240, Math.min(maxWidth, maxHeight));
-  }, [screenHeight, screenWidth]);
+    const { width, height } = calculateGameBoardSize(viewport, {
+      horizontalPadding: Space.base * 2,
+      verticalReserve: 192,
+      compactMinHeight: 180,
+      maxHeightRatio: 0.58,
+    });
+    return Math.min(width, height);
+  }, [viewport]);
 
   return (
-    <AppScreen>
+    <AppScreen scroll onLayout={onLayout} testID='glitter-screen'>
       <AppHeader title={t('games.glitterFall.title')} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
@@ -76,7 +83,7 @@ export const GlitterScreen: React.FC = () => {
         </Text>
 
         <View style={styles.globeWrap}>
-          <GlitterGlobe ref={globeRef} width={globeSize} height={globeSize} onInteraction={handleInteraction} />
+          <GlitterGlobe ref={globeRef} width={globeSize} height={globeSize} onInteraction={handleInteraction} motionEnabled={motionEnabled} />
         </View>
 
         <View style={styles.controls} testID='glitter-controls'>

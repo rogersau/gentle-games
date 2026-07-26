@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { BubbleField } from '../components/BubbleField';
@@ -10,24 +10,41 @@ import { playBubblePopSound } from '../utils/sounds';
 import { useThemeColors } from '../utils/theme';
 import { AppScreen, AppHeader } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
+import { useAnimationEnabled } from '../ui/animations';
+import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
+import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 
 export const BubbleScreen: React.FC = () => {
   const navigation = useNavigation();
+  const [isFocused, setIsFocused] = useState(() => navigation.isFocused?.() ?? true);
+  useEffect(() => {
+    const focusSubscription = navigation.addListener?.('focus', () => setIsFocused(true));
+    const blurSubscription = navigation.addListener?.('blur', () => setIsFocused(false));
+    return () => {
+      focusSubscription?.();
+      blurSubscription?.();
+    };
+  }, [navigation]);
   const { settings } = useSettings();
   const { colors } = useThemeColors();
+  const { showPressureMetrics, showMilestoneCelebrations } = getGamePresentationPolicy(settings);
   const { t } = useTranslation();
+  const motionEnabled = useAnimationEnabled();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [poppedCount, setPoppedCount] = useState(0);
   const popCountRef = useRef(0);
   const lastPhraseIndexRef = useRef(-1);
   const { showMochi } = useMochi();
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const { viewport, onLayout } = useMeasuredGameViewport();
 
   const boardSize = useMemo(() => {
-    const width = Math.max(260, screenWidth - 24);
-    const height = Math.max(320, Math.min(screenHeight * 0.72, screenHeight - 220));
-    return { width, height };
-  }, [screenHeight, screenWidth]);
+    return calculateGameBoardSize(viewport, {
+      horizontalPadding: Space.md * 2,
+      verticalReserve: 148,
+      compactMinHeight: 220,
+      maxHeightRatio: 0.72,
+    });
+  }, [viewport]);
 
   const pickPhrase = (phrases: string[], lastIndex: number): { phrase: string; index: number } => {
     let idx: number;
@@ -42,7 +59,7 @@ export const BubbleScreen: React.FC = () => {
   const handleBubblePop = useCallback(() => {
     setPoppedCount((count) => count + 1);
     popCountRef.current += 1;
-    if (MILESTONES.includes(popCountRef.current) && settings.showMochiInGames) {
+    if (MILESTONES.includes(popCountRef.current) && settings.showMochiInGames && showMilestoneCelebrations) {
       const { phrase, index } = pickPhrase(
         t('mascot.bubblePhrases', { returnObjects: true }) as string[],
         lastPhraseIndexRef.current,
@@ -51,22 +68,24 @@ export const BubbleScreen: React.FC = () => {
       showMochi(phrase, 'happy');
     }
     void playBubblePopSound(settings);
-  }, [settings, showMochi, t]);
+  }, [settings, showMilestoneCelebrations, showMochi, t]);
 
   return (
-    <AppScreen>
+    <AppScreen scroll onLayout={onLayout} testID='bubble-screen'>
       <AppHeader title={t('games.bubblePop.title')} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
         <Text style={styles.subtitle} accessibilityRole='text'>
           {t('games.bubblePop.subtitle')}
         </Text>
-        <Text
-          style={styles.counter}
-          accessibilityLabel={t('games.bubblePop.popped', { count: poppedCount })}
+        {showPressureMetrics ? (
+          <Text
+            style={styles.counter}
+            accessibilityLabel={t('games.bubblePop.popped', { count: poppedCount })}
         >
-          {t('games.bubblePop.popped', { count: poppedCount })}
-        </Text>
+            {t('games.bubblePop.popped', { count: poppedCount })}
+          </Text>
+        ) : null}
 
         <View style={styles.boardWrap}>
           <BubbleField
@@ -75,6 +94,8 @@ export const BubbleScreen: React.FC = () => {
             minActiveBubbles={2}
             maxActiveBubbles={12}
             onBubblePop={handleBubblePop}
+            motionEnabled={motionEnabled}
+            isFocused={isFocused}
           />
         </View>
       </View>

@@ -14,6 +14,7 @@ import {
   getBreathingPhaseProgress,
   type BreathingGardenPhase,
 } from '../utils/breathingGardenLogic';
+import { useTranslation } from 'react-i18next';
 
 export interface BreathingBallRef {
   getPhase: () => BreathingGardenPhase;
@@ -44,9 +45,11 @@ interface BreathingBallProps {
   expandSize?: number;
   colorScheme?: BallColorScheme;
   autoStart?: boolean;
+  reducedMotion?: boolean;
   onPhaseChange?: (phase: BreathingGardenPhase) => void;
   onCycleComplete?: (cycleCount: number) => void;
   onProgress?: (progress: number) => void;
+  showCycleCount?: boolean;
 }
 
 export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
@@ -57,16 +60,21 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
       expandSize = 210,
       colorScheme = defaultColorSchemes[0],
       autoStart = true,
+      reducedMotion = false,
       onPhaseChange,
       onCycleComplete,
       onProgress,
+      showCycleCount = true,
     },
     ref,
   ) => {
+    const { t } = useTranslation();
+    const translate = t as unknown as (key: string, options?: Record<string, unknown>) => string;
     const [isRunning, setIsRunning] = useState(autoStart);
     const [elapsedMs, setElapsedMs] = useState(0);
     const lastTimeRef = useRef<number>(0);
     const frameRef = useRef<number | null>(null);
+    const stepIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const previousPhaseRef = useRef<BreathingGardenPhase | null>(null);
     const previousCycleRef = useRef<number>(0);
 
@@ -83,9 +91,10 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
     }, [elapsedMs]);
 
     const ballSize = useMemo(() => {
+      if (reducedMotion) return phase === 'inhale' ? expandSize : baseSize;
       const sizeMultiplier = phase === 'inhale' ? phaseProgress : 1 - phaseProgress;
       return baseSize + sizeMultiplier * (expandSize - baseSize);
-    }, [phase, phaseProgress, baseSize, expandSize]);
+    }, [phase, phaseProgress, baseSize, expandSize, reducedMotion]);
 
     // Handle phase changes
     useEffect(() => {
@@ -129,12 +138,30 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
 
     useEffect(() => {
       if (!isRunning) {
-        if (frameRef.current) {
+        if (frameRef.current !== null) {
           cancelAnimationFrame(frameRef.current);
           frameRef.current = null;
         }
+        if (stepIntervalRef.current !== null) {
+          clearInterval(stepIntervalRef.current);
+          stepIntervalRef.current = null;
+        }
         lastTimeRef.current = 0;
         return;
+      }
+
+      if (reducedMotion) {
+        lastTimeRef.current = Date.now();
+        stepIntervalRef.current = setInterval(() => {
+          const now = Date.now();
+          const deltaMs = Math.max(0, now - lastTimeRef.current);
+          lastTimeRef.current = now;
+          setElapsedMs((prev) => prev + deltaMs);
+        }, 250);
+        return () => {
+          if (stepIntervalRef.current !== null) clearInterval(stepIntervalRef.current);
+          stepIntervalRef.current = null;
+        };
       }
 
       const tick = (time: number) => {
@@ -152,11 +179,11 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
       frameRef.current = requestAnimationFrame(tick);
 
       return () => {
-        if (frameRef.current) {
+        if (frameRef.current !== null) {
           cancelAnimationFrame(frameRef.current);
         }
       };
-    }, [isRunning]);
+    }, [isRunning, reducedMotion]);
 
     const center = size / 2;
     const ballRadius = ballSize / 2;
@@ -166,6 +193,7 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
     // Generate breathing rings that expand outward
     const ringCount = 5;
     const rings = useMemo(() => {
+      if (reducedMotion) return [];
       return Array.from({ length: ringCount }, (_, index) => {
         // Each ring is offset in the breathing cycle
         const ringOffset = (index / ringCount) * 0.9; // 0 to 0.9 offset
@@ -190,14 +218,21 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
           strokeWidth: Math.max(0.5, ringStrokeWidth),
         };
       });
-    }, [phase, phaseProgress, ballRadius, maxRingRadius]);
+    }, [phase, phaseProgress, ballRadius, maxRingRadius, reducedMotion]);
 
     return (
       <View
         style={[styles.container, { width: size, height: size }]}
         accessible={true}
         accessibilityRole='progressbar'
-        accessibilityLabel={`Breathing ball. Current phase: ${phase}. ${cycleCount} cycles completed.`}
+        accessibilityLabel={showCycleCount
+          ? translate('games.breathingGarden.progressLabel', {
+              phase: translate('games.breathingGarden.' + phase),
+              count: cycleCount,
+            })
+          : translate('games.breathingGarden.phaseProgressLabel', {
+              phase: translate('games.breathingGarden.' + phase),
+            })}
         accessibilityValue={{ min: 0, max: 100, now: Math.round(phaseProgress * 100) }}
       >
         <Svg width={size} height={size}>

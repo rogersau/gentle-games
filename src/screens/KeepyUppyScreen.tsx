@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
@@ -10,16 +10,21 @@ import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
 import { AppScreen, AppHeader, AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
+import { useAnimationEnabled } from '../ui/animations';
+import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
+import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 
 export const KeepyUppyScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings } = useSettings();
+  const { showPressureMetrics, showMilestoneCelebrations } = getGamePresentationPolicy(settings);
   const { colors } = useThemeColors();
+  const motionEnabled = useAnimationEnabled();
   const { t } = useTranslation();
   const { showMochi } = useMochi();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const boardRef = useRef<KeepyUppyBoardRef>(null);
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const { viewport, onLayout } = useMeasuredGameViewport();
   const [score, setScore] = useState(0);
   const [balloonCount, setBalloonCount] = useState(1);
   const [popped, setPopped] = useState(0);
@@ -40,7 +45,7 @@ export const KeepyUppyScreen: React.FC = () => {
     (newScore: number) => {
       setScore(newScore);
       tapCountRef.current = newScore;
-      if (MILESTONES.includes(newScore) && settings.showMochiInGames) {
+      if (MILESTONES.includes(newScore) && settings.showMochiInGames && showMilestoneCelebrations) {
         const { phrase, index } = pickPhrase(
           t('mascot.keepyUppyPhrases', { returnObjects: true }) as string[],
           lastPhraseIndexRef.current,
@@ -49,27 +54,31 @@ export const KeepyUppyScreen: React.FC = () => {
         showMochi(phrase, 'happy');
       }
     },
-    [settings.showMochiInGames, showMochi, t],
+    [settings.showMochiInGames, showMilestoneCelebrations, showMochi, t],
   );
 
   const bounds = useMemo<KeepyUppyBounds>(() => {
-    const width = Math.max(260, screenWidth - 24);
-    const height = Math.max(320, Math.min(screenHeight * 0.68, screenHeight - 220));
-    return { width, height };
-  }, [screenHeight, screenWidth]);
+    return calculateGameBoardSize(viewport, {
+      horizontalPadding: Space.md * 2,
+      verticalReserve: 208,
+      compactMinHeight: 220,
+      maxHeightRatio: 0.68,
+    });
+  }, [viewport]);
 
   const handleAddBalloon = () => {
     boardRef.current?.addBalloon();
   };
 
   return (
-    <AppScreen>
+    <AppScreen scroll onLayout={onLayout} testID='keepy-uppy-screen'>
       <AppHeader title={t('games.keepyUppy.title')} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
         <Text style={styles.subtitle} accessibilityRole='text'>
           {t('games.keepyUppy.subtitle')}
         </Text>
+        {showPressureMetrics ? (
         <View style={styles.statsRow}>
           <Text
             style={styles.statText}
@@ -90,6 +99,7 @@ export const KeepyUppyScreen: React.FC = () => {
             {t('games.keepyUppy.popped', { count: popped })}
           </Text>
         </View>
+        ) : null}
         <AppButton
           label={t('games.keepyUppy.addBalloon')}
           variant='secondary'
@@ -107,6 +117,7 @@ export const KeepyUppyScreen: React.FC = () => {
           onBalloonCountChange={setBalloonCount}
           onPoppedChange={setPopped}
           easyMode={settings.keepyUppyEasyMode}
+          motionEnabled={motionEnabled}
         />
       </View>
     </AppScreen>

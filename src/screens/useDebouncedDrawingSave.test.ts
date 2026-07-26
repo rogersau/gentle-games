@@ -88,6 +88,35 @@ describe('useDebouncedDrawingSave', () => {
     expect(AsyncStorage.setItem).toHaveBeenCalledTimes(1);
   });
 
+  it('reports storage failures without clearing the pending drawing', async () => {
+    const onError = jest.fn();
+    (AsyncStorage.setItem as jest.Mock).mockRejectedValueOnce(new Error('quota'));
+    const { result } = renderHook(() => useDebouncedDrawingSave({ storageKey: '@drawing-test', onError }));
+    act(() => result.current.scheduleSave(historyA));
+    await act(async () => result.current.flushPendingSave());
+    expect(onError).toHaveBeenCalled();
+    expect(AsyncStorage.removeItem).not.toHaveBeenCalled();
+  });
+
+  it('reports a later successful persistence after a transient failure', async () => {
+    const onError = jest.fn();
+    const onSuccess = jest.fn();
+    (AsyncStorage.setItem as jest.Mock)
+      .mockRejectedValueOnce(new Error('quota'))
+      .mockResolvedValueOnce(undefined);
+    const { result } = renderHook(() =>
+      useDebouncedDrawingSave({ storageKey: '@drawing-test', onError, onSuccess }),
+    );
+
+    act(() => result.current.scheduleSave(historyA));
+    await act(async () => result.current.flushPendingSave());
+    act(() => result.current.scheduleSave(historyB));
+    await act(async () => result.current.flushPendingSave());
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+  });
+
   it('removes the saved drawing when the latest queued history is empty', async () => {
     const { result } = renderHook(() =>
       useDebouncedDrawingSave({
