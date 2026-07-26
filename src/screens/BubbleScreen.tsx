@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { BubbleField } from '../components/BubbleField';
@@ -11,6 +11,7 @@ import { useThemeColors } from '../utils/theme';
 import { AppScreen, AppHeader } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useAnimationEnabled } from '../ui/animations';
+import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
 
 export const BubbleScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -23,13 +24,16 @@ export const BubbleScreen: React.FC = () => {
   const popCountRef = useRef(0);
   const lastPhraseIndexRef = useRef(-1);
   const { showMochi } = useMochi();
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const { viewport, onLayout } = useMeasuredGameViewport();
 
   const boardSize = useMemo(() => {
-    const width = Math.max(260, screenWidth - 24);
-    const height = Math.max(320, Math.min(screenHeight * 0.72, screenHeight - 220));
-    return { width, height };
-  }, [screenHeight, screenWidth]);
+    return calculateGameBoardSize(viewport, {
+      horizontalPadding: Space.md * 2,
+      verticalReserve: 148,
+      compactMinHeight: 220,
+      maxHeightRatio: 0.72,
+    });
+  }, [viewport]);
 
   const pickPhrase = (phrases: string[], lastIndex: number): { phrase: string; index: number } => {
     let idx: number;
@@ -56,7 +60,7 @@ export const BubbleScreen: React.FC = () => {
   }, [settings, showMochi, t]);
 
   return (
-    <AppScreen>
+    <AppScreen scroll onLayout={onLayout} testID='bubble-screen'>
       <AppHeader title={t('games.bubblePop.title')} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>

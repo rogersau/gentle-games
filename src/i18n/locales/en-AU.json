@@ -544,6 +544,9 @@
     "parentTimer": {
       "title": "Parent Timer",
       "off": "Off",
+      "duration": "{{count}} min",
+      "duration_one": "{{count}} min",
+      "duration_other": "{{count}} min",
       "description": "After the set time, a maths question pauses play until a grown-up answers"
     },
     "language": {

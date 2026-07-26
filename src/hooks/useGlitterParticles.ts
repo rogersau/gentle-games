@@ -40,6 +40,8 @@ export function useGlitterParticles({
   const [ripples, setRipples] = useState<WakeRipple[]>([]);
   const rafRef = useRef<number | null>(null);
   const particlesRef = useRef<GlitterParticle[]>([]);
+  const initializedRef = useRef(false);
+  const stepParticlesRef = useRef<(currentParticles: GlitterParticle[], dt: number) => GlitterParticle[]>(() => []);
 
   const centerX = canvasWidth / 2;
   const centerY = canvasHeight / 2;
@@ -79,7 +81,23 @@ export function useGlitterParticles({
     });
   }, [centerX, centerY, globeRadius]);
 
+  stepParticlesRef.current = stepParticles;
+
   const startAnimation = useCallback(() => {
+    if (rafRef.current !== null) return;
+    if (initializedRef.current) {
+      const animate = () => {
+        setParticles((prev) => {
+          const updated = stepParticlesRef.current(prev, 1 / 60);
+          particlesRef.current = updated;
+          return updated;
+        });
+        rafRef.current = requestAnimationFrame(animate);
+      };
+      rafRef.current = requestAnimationFrame(animate);
+      return;
+    }
+    initializedRef.current = true;
     particlesRef.current = Array.from({ length: particleCount }, (_, i) => ({
       id: i,
       x: centerX + Math.random() * 50 - 25,
@@ -95,7 +113,7 @@ export function useGlitterParticles({
 
     const animate = () => {
       setParticles((prev) => {
-        const updated = stepParticles(prev, 1 / 60);
+        const updated = stepParticlesRef.current(prev, 1 / 60);
         particlesRef.current = updated;
         return updated;
       });

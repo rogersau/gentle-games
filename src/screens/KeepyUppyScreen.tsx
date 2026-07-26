@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
@@ -11,6 +11,7 @@ import { useThemeColors } from '../utils/theme';
 import { AppScreen, AppHeader, AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useAnimationEnabled } from '../ui/animations';
+import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
 
 export const KeepyUppyScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -21,7 +22,7 @@ export const KeepyUppyScreen: React.FC = () => {
   const { showMochi } = useMochi();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const boardRef = useRef<KeepyUppyBoardRef>(null);
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const { viewport, onLayout } = useMeasuredGameViewport();
   const [score, setScore] = useState(0);
   const [balloonCount, setBalloonCount] = useState(1);
   const [popped, setPopped] = useState(0);
@@ -55,17 +56,20 @@ export const KeepyUppyScreen: React.FC = () => {
   );
 
   const bounds = useMemo<KeepyUppyBounds>(() => {
-    const width = Math.max(260, screenWidth - 24);
-    const height = Math.max(320, Math.min(screenHeight * 0.68, screenHeight - 220));
-    return { width, height };
-  }, [screenHeight, screenWidth]);
+    return calculateGameBoardSize(viewport, {
+      horizontalPadding: Space.md * 2,
+      verticalReserve: 208,
+      compactMinHeight: 220,
+      maxHeightRatio: 0.68,
+    });
+  }, [viewport]);
 
   const handleAddBalloon = () => {
     boardRef.current?.addBalloon();
   };
 
   return (
-    <AppScreen>
+    <AppScreen scroll onLayout={onLayout} testID='keepy-uppy-screen'>
       <AppHeader title={t('games.keepyUppy.title')} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>

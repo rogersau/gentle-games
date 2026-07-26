@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, ScrollView, ViewStyle, Platform } from 'react-native';
+import { StyleSheet, View, ScrollView, ViewStyle, Platform, LayoutChangeEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../../utils/theme';
 
@@ -14,6 +14,8 @@ interface AppScreenProps {
   /** Additional style for scroll content */
   contentContainerStyle?: ViewStyle;
   testID?: string;
+  /* Layout callback for measuring the available viewport. */
+  onLayout?: (event: LayoutChangeEvent) => void;
 }
 
 export const AppScreen: React.FC<AppScreenProps> = ({
@@ -23,6 +25,7 @@ export const AppScreen: React.FC<AppScreenProps> = ({
   style,
   contentContainerStyle,
   testID,
+  onLayout,
 }) => {
   const { colors } = useThemeColors();
   const isWeb = Platform.OS === 'web';
@@ -36,6 +39,7 @@ export const AppScreen: React.FC<AppScreenProps> = ({
         contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
         showsVerticalScrollIndicator
         keyboardShouldPersistTaps='handled'
+        onLayout={onLayout}
       >
         {children}
       </ScrollView>
@@ -59,14 +63,14 @@ export const AppScreen: React.FC<AppScreenProps> = ({
   if (isWeb) {
     return (
       <View style={containerStyle} testID={testID}>
-        <View style={styles.inner}>{children}</View>
+        <View style={styles.inner} onLayout={onLayout}>{children}</View>
       </View>
     );
   }
 
   return (
     <SafeAreaView style={containerStyle} edges={edges} testID={testID}>
-      <View style={styles.inner}>{children}</View>
+      <View style={styles.inner} onLayout={onLayout}>{children}</View>
     </SafeAreaView>
   );
 };
