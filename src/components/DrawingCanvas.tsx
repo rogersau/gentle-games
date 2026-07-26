@@ -225,6 +225,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     const [showShapePicker, setShowShapePicker] = useState(false);
     const [customColors, setCustomColors] = useState<string[]>([]);
     const [pickerColor, setPickerColor] = useState('#FF6B6B');
+    const [accessibilityAnnouncement, setAccessibilityAnnouncement] = useState('');
 
     // Refs for PanResponder closures
     const selectedColorRef = useRef(selectedColor);
@@ -418,8 +419,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     };
 
     const handleColorSelect = (color: string) => {
+      const wasEraserActive = tool === 'eraser';
       setSelectedColor(color);
-      if (tool === 'eraser') setTool('pen');
+      if (wasEraserActive) {
+        setTool('pen');
+        setAccessibilityAnnouncement(t('games.drawing.penActivatedAnnouncement'));
+      }
     };
 
     const handleToolSelect = (selectedTool: Tool) => {
@@ -462,6 +467,20 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     };
 
     const allColors = [...COLORS, ...customColors];
+
+    const getColorLabel = (color: string, isCustom: boolean) => {
+      if (isCustom) {
+        return t('games.drawing.customColour', { hex: color });
+      }
+
+      const translationKey = COLOR_TRANSLATION_KEYS[color.toUpperCase()];
+      return translationKey ? t(translationKey) : t('games.drawing.customColour', { hex: color });
+    };
+
+    const colorButtonHint =
+      tool === 'eraser'
+        ? t('games.drawing.colourButtonEraserHint')
+        : t('games.drawing.colourButtonHint');
 
     // Build SVG content from unified history.
     const renderHistoryEntry = (entry: HistoryEntry) => {
@@ -617,23 +636,36 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.colorPalette}
           >
-            {allColors.map((color) => (
-              <TouchableOpacity
-                key={color}
-                testID='palette-color-button'
-                style={[
-                  styles.colorButton,
-                  { backgroundColor: color },
-                  selectedColor === color && tool !== 'eraser' ? styles.selectedColor : undefined,
-                ]}
-                onPress={() => handleColorSelect(color)}
-              />
-            ))}
+            {allColors.map((color) => {
+              const isCustomColor = customColors.includes(color);
+              const isSelected = selectedColor === color && tool !== 'eraser';
+              return (
+                <TouchableOpacity
+                  key={color}
+                  testID='palette-color-button'
+                  style={[
+                    styles.colorButton,
+                    { backgroundColor: color },
+                    isSelected ? styles.selectedColor : undefined,
+                  ]}
+                  onPress={() => handleColorSelect(color)}
+                  hitSlop={COLOR_BUTTON_HIT_SLOP}
+                  accessibilityRole='button'
+                  accessibilityLabel={getColorLabel(color, isCustomColor)}
+                  accessibilityHint={colorButtonHint}
+                  accessibilityState={{ selected: isSelected }}
+                />
+              );
+            })}
 
             <TouchableOpacity
               testID='open-color-picker'
               style={[styles.colorButton, styles.customColorButton]}
               onPress={handleOpenColorPicker}
+              hitSlop={COLOR_BUTTON_HIT_SLOP}
+              accessibilityRole='button'
+              accessibilityLabel={t('games.drawing.addColour')}
+              accessibilityHint={t('games.drawing.addColourHint')}
             >
               <Text style={styles.plusText}>+</Text>
             </TouchableOpacity>
@@ -727,6 +759,13 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             </TouchableOpacity>
           </View>
         </View>
+        <Text
+          accessibilityRole='alert'
+          accessibilityLiveRegion='polite'
+          style={styles.accessibilityAnnouncement}
+        >
+          {accessibilityAnnouncement}
+        </Text>
 
         <AppModal
           visible={showClearConfirm}
@@ -767,17 +806,26 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           </View>
 
           <View style={styles.colorGrid}>
-            {PRESET_COLORS.map((color) => (
-              <TouchableOpacity
-                key={color}
-                style={[
-                  styles.gridColorButton,
-                  { backgroundColor: color },
-                  pickerColor === color ? styles.gridColorSelected : undefined,
-                ]}
-                onPress={() => setPickerColor(color)}
-              />
-            ))}
+            {PRESET_COLORS.map((color) => {
+              const isSelected = pickerColor === color;
+              return (
+                <TouchableOpacity
+                  key={color}
+                  testID='color-picker-preset-button'
+                  style={[
+                    styles.gridColorButton,
+                    { backgroundColor: color },
+                    isSelected ? styles.gridColorSelected : undefined,
+                  ]}
+                  onPress={() => setPickerColor(color)}
+                  hitSlop={COLOR_BUTTON_HIT_SLOP}
+                  accessibilityRole='button'
+                  accessibilityLabel={getColorLabel(color, false)}
+                  accessibilityHint={t('games.drawing.colourPickerPresetHint')}
+                  accessibilityState={{ selected: isSelected }}
+                />
+              );
+            })}
           </View>
 
           <View style={[styles.modalButtons]}>
@@ -1128,9 +1176,59 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#E8E4E1',
   },
+  accessibilityAnnouncement: {
+    position: 'absolute',
+    left: -1000,
+    width: 1,
+    height: 1,
+  },
   sizeControlText: {
     fontSize: 14,
     color: '#5A5A5A',
     fontWeight: '500',
   },
 });
+
+/** Friendly, localisable names for every built-in palette and picker colour. */
+const COLOR_TRANSLATION_KEYS: Record<string, TranslationKey> = {
+  '#FF6B6B': 'games.drawing.colors.coral',
+  '#4ECDC4': 'games.drawing.colors.turquoise',
+  '#45B7D1': 'games.drawing.colors.skyBlue',
+  '#96CEB4': 'games.drawing.colors.mint',
+  '#FFEAA7': 'games.drawing.colors.butterYellow',
+  '#DDA0DD': 'games.drawing.colors.lavender',
+  '#98D8C8': 'games.drawing.colors.seafoam',
+  '#FFB6C1': 'games.drawing.colors.softPink',
+  '#5A5A5A': 'games.drawing.colors.charcoal',
+  '#FF0000': 'games.drawing.colors.red',
+  '#FF4500': 'games.drawing.colors.orangeRed',
+  '#FF8C00': 'games.drawing.colors.orange',
+  '#FFD700': 'games.drawing.colors.gold',
+  '#FFFF00': 'games.drawing.colors.yellow',
+  '#ADFF2F': 'games.drawing.colors.lime',
+  '#7FFF00': 'games.drawing.colors.chartreuse',
+  '#00FF00': 'games.drawing.colors.green',
+  '#00FA9A': 'games.drawing.colors.springGreen',
+  '#00CED1': 'games.drawing.colors.darkTurquoise',
+  '#00BFFF': 'games.drawing.colors.deepSkyBlue',
+  '#1E90FF': 'games.drawing.colors.dodgerBlue',
+  '#4169E1': 'games.drawing.colors.royalBlue',
+  '#0000FF': 'games.drawing.colors.blue',
+  '#8A2BE2': 'games.drawing.colors.blueViolet',
+  '#9932CC': 'games.drawing.colors.darkOrchid',
+  '#FF00FF': 'games.drawing.colors.magenta',
+  '#FF1493': 'games.drawing.colors.deepPink',
+  '#DC143C': 'games.drawing.colors.crimson',
+  '#8B0000': 'games.drawing.colors.darkRed',
+  '#A0522D': 'games.drawing.colors.sienna',
+  '#D2691E': 'games.drawing.colors.chocolate',
+  '#CD853F': 'games.drawing.colors.peru',
+  '#DAA520': 'games.drawing.colors.goldenrod',
+  '#B8860B': 'games.drawing.colors.darkGoldenrod',
+  '#556B2F': 'games.drawing.colors.darkOlive',
+  '#6B8E23': 'games.drawing.colors.olive',
+  '#228B22': 'games.drawing.colors.forestGreen',
+  '#008B8B': 'games.drawing.colors.darkCyan',
+  '#5F9EA0': 'games.drawing.colors.cadetBlue',
+};
+const COLOR_BUTTON_HIT_SLOP = 4;
