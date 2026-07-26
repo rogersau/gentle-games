@@ -35,6 +35,8 @@ let mockSettings = {
   language: 'en-AU' as const,
   reducedMotionEnabled: false,
   telemetryEnabled: false,
+  showMochiInGames: true,
+  pressureFreeMode: false,
 };
 
 const TranslationProbe = ({ translationKey }: { translationKey: TranslationKey }) => {
@@ -77,6 +79,8 @@ describe('SettingsScreen', () => {
       language: 'en-AU',
       reducedMotionEnabled: false,
       telemetryEnabled: false,
+      showMochiInGames: true,
+      pressureFreeMode: false,
     };
   });
 
@@ -253,5 +257,12 @@ describe('SettingsScreen', () => {
         "We couldn't open the Gentle Games website right now. Please try again later.",
       ),
     ).toBeTruthy();
+  });
+
+  it('toggles pressure-free play mode', () => {
+    const screen = render(React.createElement(SettingsScreen));
+    const pressureSwitch = screen.getByRole('switch', { name: /pressureFreeMode.label/i });
+    fireEvent(pressureSwitch, 'valueChange', true);
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ pressureFreeMode: true });
   });
 });

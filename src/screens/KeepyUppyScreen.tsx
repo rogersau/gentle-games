@@ -12,10 +12,12 @@ import { AppScreen, AppHeader, AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useAnimationEnabled } from '../ui/animations';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
+import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 
 export const KeepyUppyScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings } = useSettings();
+  const { showPressureMetrics, showMilestoneCelebrations } = getGamePresentationPolicy(settings);
   const { colors } = useThemeColors();
   const motionEnabled = useAnimationEnabled();
   const { t } = useTranslation();
@@ -43,7 +45,7 @@ export const KeepyUppyScreen: React.FC = () => {
     (newScore: number) => {
       setScore(newScore);
       tapCountRef.current = newScore;
-      if (MILESTONES.includes(newScore) && settings.showMochiInGames) {
+      if (MILESTONES.includes(newScore) && settings.showMochiInGames && showMilestoneCelebrations) {
         const { phrase, index } = pickPhrase(
           t('mascot.keepyUppyPhrases', { returnObjects: true }) as string[],
           lastPhraseIndexRef.current,
@@ -52,7 +54,7 @@ export const KeepyUppyScreen: React.FC = () => {
         showMochi(phrase, 'happy');
       }
     },
-    [settings.showMochiInGames, showMochi, t],
+    [settings.showMochiInGames, showMilestoneCelebrations, showMochi, t],
   );
 
   const bounds = useMemo<KeepyUppyBounds>(() => {
@@ -76,6 +78,7 @@ export const KeepyUppyScreen: React.FC = () => {
         <Text style={styles.subtitle} accessibilityRole='text'>
           {t('games.keepyUppy.subtitle')}
         </Text>
+        {showPressureMetrics ? (
         <View style={styles.statsRow}>
           <Text
             style={styles.statText}
@@ -96,6 +99,7 @@ export const KeepyUppyScreen: React.FC = () => {
             {t('games.keepyUppy.popped', { count: popped })}
           </Text>
         </View>
+        ) : null}
         <AppButton
           label={t('games.keepyUppy.addBalloon')}
           variant='secondary'

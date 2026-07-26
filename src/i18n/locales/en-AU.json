@@ -353,6 +353,7 @@
       "description": "Follow calm breathing rhythms",
       "title": "Breathing Garden",
       "progressLabel": "Breathing ball. Current phase: {{phase}}. {{count}} cycles completed.",
+    "phaseProgressLabel": "Breathing ball. Current phase: {{phase}}.",
       "resetSession": "Reset Session",
       "inhale": "Breathe In",
       "exhale": "Breathe Out",
@@ -561,6 +562,10 @@
     "showMochiInGames": {
       "label": "Show Mochi in games",
       "description": "Mochi appears to celebrate milestones and encourage during games. Turn off for a quieter experience."
+    },
+    "pressureFreeMode": {
+      "label": "Pressure-free play",
+      "description": "Hide scores, timers, counters, streaks, and milestone celebrations while keeping essential game guidance."
     }
   },
   "parentTimer": {

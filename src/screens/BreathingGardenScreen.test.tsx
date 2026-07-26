@@ -17,6 +17,7 @@ const mockSettings = {
   theme: 'mixed' as const,
   showCardPreview: true,
   colorMode: 'system' as const,
+  pressureFreeMode: false,
 };
 
 const queuedAnimations: Array<{ toValue: number; run: () => void }> = [];
@@ -99,6 +100,7 @@ describe('BreathingGardenScreen', () => {
     jest.clearAllMocks();
     mockIsPlaying = false;
     mockSettings.animationsEnabled = true;
+    mockSettings.pressureFreeMode = false;
     queuedAnimations.length = 0;
     consoleErrorSpy = createInfiniteLoopSpy();
     animatedTimingSpy = jest.spyOn(Animated, 'timing').mockImplementation(
@@ -212,5 +214,13 @@ describe('BreathingGardenScreen', () => {
 
     fireEvent.press(screen.getByLabelText('← Back'));
     expect(mockGoBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides completed breaths in pressure-free mode but keeps current phase feedback', () => {
+    mockSettings.pressureFreeMode = true;
+    const screen = render(React.createElement(BreathingGardenScreen));
+    expect(screen.queryByText(/Breaths/)).toBeNull();
+    expect(screen.getByText('1')).toBeTruthy();
+    expect(screen.getByText('Breathe in')).toBeTruthy();
   });
 });

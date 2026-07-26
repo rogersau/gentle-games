@@ -49,6 +49,7 @@ interface BreathingBallProps {
   onPhaseChange?: (phase: BreathingGardenPhase) => void;
   onCycleComplete?: (cycleCount: number) => void;
   onProgress?: (progress: number) => void;
+  showCycleCount?: boolean;
 }
 
 export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
@@ -63,6 +64,7 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
       onPhaseChange,
       onCycleComplete,
       onProgress,
+      showCycleCount = true,
     },
     ref,
   ) => {
@@ -223,10 +225,14 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
         style={[styles.container, { width: size, height: size }]}
         accessible={true}
         accessibilityRole='progressbar'
-        accessibilityLabel={translate('games.breathingGarden.progressLabel', {
-          phase: translate('games.breathingGarden.' + phase),
-          count: cycleCount,
-        })}
+        accessibilityLabel={showCycleCount
+          ? translate('games.breathingGarden.progressLabel', {
+              phase: translate('games.breathingGarden.' + phase),
+              count: cycleCount,
+            })
+          : translate('games.breathingGarden.phaseProgressLabel', {
+              phase: translate('games.breathingGarden.' + phase),
+            })}
         accessibilityValue={{ min: 0, max: 100, now: Math.round(phaseProgress * 100) }}
       >
         <Svg width={size} height={size}>

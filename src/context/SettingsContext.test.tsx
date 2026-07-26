@@ -37,6 +37,7 @@ const TestConsumer = () => {
       <Text testID='colorMode'>{settings.colorMode}</Text>
       <Text testID='hiddenGames'>{settings.hiddenGames.join(',')}</Text>
       <Text testID='telemetry'>{String(settings.telemetryEnabled)}</Text>
+      <Text testID='pressure-free'>{String(settings.pressureFreeMode)}</Text>
       <Text testID='unfinishedGames'>{String(settings.enableUnfinishedGames)}</Text>
       <Text testID='saving'>{String(!!isSaving)}</Text>
       <Text testID='persistence-error'>{persistenceError ?? ''}</Text>
@@ -57,6 +58,9 @@ const TestConsumer = () => {
       </TouchableOpacity>
       <TouchableOpacity testID='set-hard' onPress={() => updateSettings({ difficulty: 'hard' })}>
         <Text>set-hard</Text>
+      </TouchableOpacity>
+      <TouchableOpacity testID='set-pressure-free' onPress={() => updateSettings({ pressureFreeMode: true })}>
+        <Text>set-pressure-free</Text>
       </TouchableOpacity>
       <TouchableOpacity
         testID='set-telemetry'
@@ -85,6 +89,7 @@ describe('SettingsContext', () => {
     await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
 
     expect(screen.getByTestId('telemetry').props.children).toBe('false');
+    expect(screen.getByTestId('pressure-free').props.children).toBe('false');
   });
 
   it('hides unfinished games on fresh installs', async () => {
@@ -167,6 +172,7 @@ describe('SettingsContext', () => {
         reducedMotionEnabled: false,
         telemetryEnabled: false,
         showMochiInGames: true,
+        pressureFreeMode: false,
       }),
     );
   });
@@ -226,6 +232,19 @@ describe('SettingsContext', () => {
 
     const saved = storage.setItem.mock.calls[0][1];
     expect(JSON.parse(saved).telemetryEnabled).toBe(true);
+  });
+
+  it('persists pressureFreeMode updates to storage', async () => {
+    storage.getItem.mockResolvedValueOnce(null);
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+    fireEvent.press(screen.getByTestId('set-pressure-free'));
+    await waitFor(() => expect(storage.setItem).toHaveBeenCalledWith('gentleMatchSettings', expect.any(String)));
+    expect(JSON.parse(storage.setItem.mock.calls[0][1]).pressureFreeMode).toBe(true);
   });
 
   it('merges rapid updates and serialises delayed writes', async () => {

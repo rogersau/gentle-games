@@ -13,6 +13,8 @@ import {
 } from '../types';
 import { CategoryMatchBoard } from '../components/CategoryMatchBoard';
 import { useThemeColors } from '../utils/theme';
+import { useSettings } from '../context/SettingsContext';
+import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 import { AppScreen, AppHeader, AppButton, AppCard } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
@@ -20,6 +22,8 @@ import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayou
 export const CategoryMatchScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useThemeColors();
+  const { settings } = useSettings();
+  const { showPressureMetrics } = getGamePresentationPolicy(settings);
   const { t } = useTranslation();
   const translate = t as unknown as (key: string, options?: Record<string, unknown>) => string;
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -72,13 +76,15 @@ export const CategoryMatchScreen: React.FC = () => {
         <Text style={styles.subtitle} accessibilityRole='text'>
           {t('games.categoryMatch.subtitle')}
         </Text>
-        <Text
+        {showPressureMetrics ? (
+          <Text
           style={styles.counter}
           accessibilityLabel={`${correctCount} ${t('games.categoryMatch.correct')}`}
         >
           {t('games.categoryMatch.correct')}: {correctCount}
-        </Text>
-        {streakCount >= 3 ? (
+          </Text>
+        ) : null}
+        {showPressureMetrics && streakCount >= 3 ? (
           <Text
             style={styles.encouragement}
             accessibilityLabel={t('games.categoryMatch.greatStreak')}

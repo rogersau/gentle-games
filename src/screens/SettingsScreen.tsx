@@ -58,14 +58,14 @@ export const SettingsScreen: React.FC = () => {
       >
         <Text
           testID='settings-persistence-status'
-          accessibilityRole={persistenceError ? 'alert' : 'text'}
-          accessibilityLiveRegion={persistenceError ? 'polite' : 'none'}
-          style={persistenceError ? styles.errorMessage : styles.persistenceStatus}
+          accessibilityRole={persistenceError && !isSaving ? 'alert' : 'text'}
+          accessibilityLiveRegion={persistenceError && !isSaving ? 'polite' : 'none'}
+          style={persistenceError && !isSaving ? styles.errorMessage : styles.persistenceStatus}
         >
-          {persistenceError
-            ? t('settings.persistenceError')
-            : isSaving
-              ? t('settings.saving')
+          {isSaving
+            ? t('settings.saving')
+            : persistenceError
+              ? t('settings.persistenceError')
               : t('settings.saved')}
         </Text>
 
@@ -108,6 +108,16 @@ export const SettingsScreen: React.FC = () => {
             description={t('settings.showMochiInGames.description')}
             value={!!settings.showMochiInGames}
             onValueChange={(value) => updateSettings({ showMochiInGames: value })}
+          />
+        </View>
+
+        {/* Pressure-free Play */}
+        <View style={styles.section}>
+          <SettingToggle
+            label={t('settings.pressureFreeMode.label')}
+            description={t('settings.pressureFreeMode.description')}
+            value={!!settings.pressureFreeMode}
+            onValueChange={(value) => updateSettings({ pressureFreeMode: value })}
           />
         </View>
 

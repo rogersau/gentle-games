@@ -33,15 +33,12 @@ jest.mock('../utils/theme', () => ({
   }),
 }));
 
+const keepySettings = { keepyUppyEasyMode: true, showMochiInGames: true, pressureFreeMode: false };
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
-    settings: {
-      keepyUppyEasyMode: true,
-      showMochiInGames: true,
-    },
+    settings: keepySettings,
   }),
 }));
-
 jest.mock('../context/MochiContext', () => ({
   useMochiContext: () => ({
     mochiProps: { variant: 'idle', visible: false, phrase: null },
@@ -125,5 +122,14 @@ describe('KeepyUppyScreen', () => {
     }
 
     assertNoSetStateDuringRender(consoleErrorSpy);
+  });
+
+  it('hides score, balloon, and popped counters in pressure-free mode', () => {
+    const settingsModule = jest.requireMock('../context/SettingsContext') as { useSettings: () => { settings: { pressureFreeMode: boolean } } };
+    settingsModule.useSettings().settings.pressureFreeMode = true;
+    const screen = render(<KeepyUppyScreen />);
+    expect(screen.queryByText('Taps: 0')).toBeNull();
+    expect(screen.queryByText('Balloons: 1')).toBeNull();
+    expect(screen.queryByText('Popped: 0')).toBeNull();
   });
 });

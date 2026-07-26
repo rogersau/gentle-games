@@ -12,6 +12,7 @@ import { AppScreen, AppHeader } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useAnimationEnabled } from '../ui/animations';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
+import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 
 export const BubbleScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -26,6 +27,7 @@ export const BubbleScreen: React.FC = () => {
   }, [navigation]);
   const { settings } = useSettings();
   const { colors } = useThemeColors();
+  const { showPressureMetrics, showMilestoneCelebrations } = getGamePresentationPolicy(settings);
   const { t } = useTranslation();
   const motionEnabled = useAnimationEnabled();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -57,7 +59,7 @@ export const BubbleScreen: React.FC = () => {
   const handleBubblePop = useCallback(() => {
     setPoppedCount((count) => count + 1);
     popCountRef.current += 1;
-    if (MILESTONES.includes(popCountRef.current) && settings.showMochiInGames) {
+    if (MILESTONES.includes(popCountRef.current) && settings.showMochiInGames && showMilestoneCelebrations) {
       const { phrase, index } = pickPhrase(
         t('mascot.bubblePhrases', { returnObjects: true }) as string[],
         lastPhraseIndexRef.current,
@@ -66,7 +68,7 @@ export const BubbleScreen: React.FC = () => {
       showMochi(phrase, 'happy');
     }
     void playBubblePopSound(settings);
-  }, [settings, showMochi, t]);
+  }, [settings, showMilestoneCelebrations, showMochi, t]);
 
   return (
     <AppScreen scroll onLayout={onLayout} testID='bubble-screen'>
@@ -76,12 +78,14 @@ export const BubbleScreen: React.FC = () => {
         <Text style={styles.subtitle} accessibilityRole='text'>
           {t('games.bubblePop.subtitle')}
         </Text>
-        <Text
-          style={styles.counter}
-          accessibilityLabel={t('games.bubblePop.popped', { count: poppedCount })}
+        {showPressureMetrics ? (
+          <Text
+            style={styles.counter}
+            accessibilityLabel={t('games.bubblePop.popped', { count: poppedCount })}
         >
-          {t('games.bubblePop.popped', { count: poppedCount })}
-        </Text>
+            {t('games.bubblePop.popped', { count: poppedCount })}
+          </Text>
+        ) : null}
 
         <View style={styles.boardWrap}>
           <BubbleField

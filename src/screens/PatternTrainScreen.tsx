@@ -28,6 +28,7 @@ import { Space, TypeStyle } from '../ui/tokens';
 import { useGentleBounce, useAnimationEnabled } from '../ui/animations';
 import { TrainEngine, Carriage } from '../components/train';
 import { useMochi } from '../hooks/useMochi';
+import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 import { usePatternTrainUI } from '../hooks/usePatternTrainUI';
 import { usePatternTrainGame, DraggableCarriage } from './usePatternTrainGame';
 
@@ -52,6 +53,7 @@ const pickPhrase = (phrases: string[], lastIndex: number): { phrase: string; ind
 export const PatternTrainScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings, updateSettings } = useSettings();
+  const { showPressureMetrics, showMilestoneCelebrations } = getGamePresentationPolicy(settings);
   const animationsEnabled =
     typeof useAnimationEnabled === 'function' ? useAnimationEnabled() : settings.animationsEnabled;
   const { colors } = useThemeColors();
@@ -59,10 +61,11 @@ export const PatternTrainScreen: React.FC = () => {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const { showCelebration, celebrationPhrase, milestoneCount, onPatternComplete } =
-    usePatternTrainUI();
+    usePatternTrainUI({ celebrationsEnabled: showMilestoneCelebrations });
   const { state, actions } = usePatternTrainGame({
     difficulty: settings.difficulty,
     t: t as (key: string, options?: Record<string, unknown>) => string,
+    showMilestones: showMilestoneCelebrations,
   });
 
   const {
@@ -689,14 +692,16 @@ export const PatternTrainScreen: React.FC = () => {
         </AppCard>
 
         {/* Stats */}
-        <Text
-          style={styles.meta}
-          accessibilityLabel={t('games.patternTrain.roundsAccessibilityLabel', {
-            count: completedRounds,
-          })}
-        >
-          {t('games.patternTrain.completedRounds')}: {completedRounds}
-        </Text>
+        {showPressureMetrics ? (
+          <Text
+            style={styles.meta}
+            accessibilityLabel={t('games.patternTrain.roundsAccessibilityLabel', {
+              count: completedRounds,
+            })}
+          >
+            {t('games.patternTrain.completedRounds')}: {completedRounds}
+          </Text>
+        ) : null}
       </View>
 
       {/* Difficulty Selector Modal */}
@@ -730,7 +735,7 @@ export const PatternTrainScreen: React.FC = () => {
 
       {/* Milestone Modal */}
       <AppModal
-        visible={showMilestoneModal}
+        visible={showMilestoneCelebrations && showMilestoneModal}
         title={t('games.patternTrain.milestone.title', { count: completedRounds })}
         onClose={() => undefined}
         showClose={false}

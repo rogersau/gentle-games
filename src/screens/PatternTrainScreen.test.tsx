@@ -70,17 +70,10 @@ jest.mock('../utils/theme', () => ({
   }),
 }));
 
+const patternSettings = { pressureFreeMode: false, difficulty: 'easy' as const };
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
-    settings: {
-      difficulty: 'easy',
-      theme: 'system',
-      soundEnabled: true,
-      soundVolume: 0.5,
-      animationsEnabled: true,
-      cardPreview: true,
-      showUnfinishedGames: false,
-    },
+    settings: patternSettings,
     updateSettings: jest.fn(),
   }),
 }));
@@ -235,5 +228,12 @@ describe('PatternTrainScreen', () => {
     expect(
       screen.getAllByLabelText('games.patternTrain.carriage.accessibilityLabel')[0].props.hitSlop,
     ).toBe(8);
+  });
+
+  it('hides completed-round stats in pressure-free mode', async () => {
+    patternSettings.pressureFreeMode = true;
+    const screen = render(<PatternTrainScreen />);
+    fireEvent.press(screen.getByText('Easy'));
+    await waitFor(() => expect(screen.queryByText(/Completed:/)).toBeNull());
   });
 });

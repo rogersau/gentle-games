@@ -37,6 +37,7 @@ const defaultSettings: Settings = {
   reducedMotionEnabled: false,
   telemetryEnabled: false,
   showMochiInGames: true,
+  pressureFreeMode: false,
 };
 
 const toBoolean = (value: unknown, fallback: boolean): boolean => {
@@ -116,6 +117,7 @@ const sanitizeSettings = (candidate: unknown): Settings => {
     ),
     telemetryEnabled: toBoolean(parsed.telemetryEnabled, defaultSettings.telemetryEnabled),
     showMochiInGames: toBoolean(parsed.showMochiInGames, defaultSettings.showMochiInGames),
+    pressureFreeMode: toBoolean(parsed.pressureFreeMode, defaultSettings.pressureFreeMode ?? false),
   };
 };
 
