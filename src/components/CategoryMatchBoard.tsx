@@ -28,6 +28,7 @@ interface CategoryMatchBoardProps {
 interface DropZone {
   category: CategoryMatchCategory;
   label: string;
+  labelKey?: CategoryMatchCategory;
   icon: string;
   x: number;
   y: number;
@@ -48,6 +49,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   const { settings } = useSettings();
   const animationsEnabled = useAnimationEnabled();
   const { t } = useTranslation();
+  const translate = t as unknown as (key: string, options?: Record<string, unknown>) => string;
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const [round, setRound] = useState(() => createCategoryMatchRound(undefined, 0));
@@ -76,14 +78,15 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
     () =>
       round.categories.map((category, index) => ({
         category: category.id,
-        label: category.label,
+        label: translate('games.categoryMatch.categories.' + category.id),
+        labelKey: category.id,
         icon: category.icon,
         x: boardPadding + index * (zoneWidth + zoneGap),
         y: zoneTop,
         width: zoneWidth,
         height: zoneHeight,
       })),
-    [boardPadding, round.categories, zoneHeight, zoneTop, zoneWidth, zoneGap],
+    [boardPadding, round.categories, translate, zoneHeight, zoneTop, zoneWidth, zoneGap],
   );
 
   useEffect(
@@ -183,8 +186,15 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
 
   const handleTokenPress = useCallback(() => {
     setIsTokenSelected(true);
-    showFeedback(t('games.categoryMatch.itemSelected', { item: round.item.name }), true);
-  }, [round.item.name, t]);
+    showFeedback(
+      t('games.categoryMatch.itemSelected', {
+        item: translate('games.categoryMatch.items.' + round.item.name, {
+          defaultValue: round.item.name,
+        }),
+      }),
+      true,
+    );
+  }, [round.item.name, t, translate]);
 
   const handleCategoryPress = useCallback(
     (category: CategoryMatchCategory) => {
@@ -251,7 +261,9 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
         testID='category-draggable-token'
         accessibilityRole='button'
         accessibilityLabel={t('games.categoryMatch.itemAccessibilityLabel', {
-          item: round.item.name,
+          item: translate('games.categoryMatch.items.' + round.item.name, {
+            defaultValue: round.item.name,
+          }),
         })}
         accessibilityHint={
           isTokenSelected

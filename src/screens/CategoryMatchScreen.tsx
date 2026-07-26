@@ -20,6 +20,7 @@ export const CategoryMatchScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useThemeColors();
   const { t } = useTranslation();
+  const translate = t as unknown as (key: string, options?: Record<string, unknown>) => string;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [correctCount, setCorrectCount] = useState(0);
   const [streakCount, setStreakCount] = useState(0);
@@ -91,7 +92,7 @@ export const CategoryMatchScreen: React.FC = () => {
             {CATEGORY_MATCH_CATEGORIES.map((category) => (
               <View key={category.id} style={styles.previewRow}>
                 <Text style={styles.previewCategoryLabel}>
-                  {category.icon} {category.label}
+                  {category.icon} {translate('games.categoryMatch.categories.' + category.id)}
                 </Text>
                 <Text style={styles.previewExamples}>{categoryExamples[category.id]}</Text>
               </View>

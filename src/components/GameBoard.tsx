@@ -251,13 +251,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
         <AppModal
           visible={isGameComplete}
-          title='Well Done! 🎉'
+          title={t('games.memorySnap.wellDone')}
           onClose={() => undefined}
           showClose={false}
           dismissOnBackdropPress={false}
         >
           <Text style={styles.completeText} accessibilityRole='text'>
-            You finished in {formatTime(elapsed)}!
+            {t('games.memorySnap.completedIn', { time: formatTime(elapsed) })}
           </Text>
           <View style={styles.buttonRow}>
             <AppButton

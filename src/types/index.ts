@@ -3,6 +3,7 @@ export type TileType = 'animal' | 'shape';
 export interface Tile {
   id: string;
   value: string;
+  name?: string;
   type: TileType;
   isFlipped: boolean;
   isMatched: boolean;

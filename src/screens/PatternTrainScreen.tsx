@@ -52,13 +52,18 @@ const pickPhrase = (phrases: string[], lastIndex: number): { phrase: string; ind
 export const PatternTrainScreen: React.FC = () => {
   const navigation = useNavigation();
   const { settings, updateSettings } = useSettings();
-  const animationsEnabled = typeof useAnimationEnabled === 'function' ? useAnimationEnabled() : settings.animationsEnabled;
+  const animationsEnabled =
+    typeof useAnimationEnabled === 'function' ? useAnimationEnabled() : settings.animationsEnabled;
   const { colors } = useThemeColors();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const { showCelebration, celebrationPhrase, milestoneCount, onPatternComplete } = usePatternTrainUI();
-  const { state, actions } = usePatternTrainGame({ difficulty: settings.difficulty, t: t as (key: string, options?: Record<string, unknown>) => string });
+  const { showCelebration, celebrationPhrase, milestoneCount, onPatternComplete } =
+    usePatternTrainUI();
+  const { state, actions } = usePatternTrainGame({
+    difficulty: settings.difficulty,
+    t: t as (key: string, options?: Record<string, unknown>) => string,
+  });
 
   const {
     pattern,
@@ -186,7 +191,7 @@ export const PatternTrainScreen: React.FC = () => {
             AccessibilityInfo.announceForAccessibility(
               t('games.patternTrain.train.arrived', {
                 pattern: entryPattern.carriages
-                  .map((c) => (c.isMissing ? 'missing' : c.emoji))
+                  .map((c) => (c.isMissing ? t('games.patternTrain.missingCarriage') : c.emoji))
                   .join(', '),
               }),
             );
@@ -200,7 +205,7 @@ export const PatternTrainScreen: React.FC = () => {
           AccessibilityInfo.announceForAccessibility(
             t('games.patternTrain.train.arrived', {
               pattern: entryPattern.carriages
-                .map((c) => (c.isMissing ? 'missing' : c.emoji))
+                .map((c) => (c.isMissing ? t('games.patternTrain.missingCarriage') : c.emoji))
                 .join(', '),
             }),
           );
@@ -329,15 +334,21 @@ export const PatternTrainScreen: React.FC = () => {
           const successMessage = getRandomFeedback('correct');
           setFeedback(successMessage);
           setFeedbackType('correct');
-          AccessibilityInfo.announceForAccessibility(`${successMessage}. Train complete!`);
+          AccessibilityInfo.announceForAccessibility(
+            t('games.patternTrain.feedback.correctAnnouncement', { message: successMessage }),
+          );
 
           if (animationsEnabled) {
             Animated.sequence([
               Animated.timing(feedbackOpacity, {
-                toValue: 0, duration: 150, useNativeDriver: Platform.OS !== 'web',
+                toValue: 0,
+                duration: 150,
+                useNativeDriver: Platform.OS !== 'web',
               }),
               Animated.timing(feedbackOpacity, {
-                toValue: 1, duration: 150, useNativeDriver: Platform.OS !== 'web',
+                toValue: 1,
+                duration: 150,
+                useNativeDriver: Platform.OS !== 'web',
               }),
             ]).start();
           } else {
@@ -387,7 +398,8 @@ export const PatternTrainScreen: React.FC = () => {
                 };
                 if (animationsEnabled) {
                   Animated.timing(c.opacity, {
-                    toValue: 0, duration: TRAIN_ANIMATION.CHOICE_FADE_DURATION,
+                    toValue: 0,
+                    duration: TRAIN_ANIMATION.CHOICE_FADE_DURATION,
                     useNativeDriver: Platform.OS !== 'web',
                   }).start(markUnavailable);
                 } else {
@@ -400,7 +412,9 @@ export const PatternTrainScreen: React.FC = () => {
             const errorMessage = getRandomFeedback('incorrect');
             setFeedback(errorMessage);
             setFeedbackType('incorrect');
-            AccessibilityInfo.announceForAccessibility(`${errorMessage}. Try again!`);
+            AccessibilityInfo.announceForAccessibility(
+              t('games.patternTrain.feedback.incorrectAnnouncement', { message: errorMessage }),
+            );
 
             setIsProcessing(false);
           } else {
@@ -410,7 +424,9 @@ export const PatternTrainScreen: React.FC = () => {
             });
             setFeedback(revealMessage);
             setFeedbackType('reveal');
-            AccessibilityInfo.announceForAccessibility(`${revealMessage}. Train leaving.`);
+            AccessibilityInfo.announceForAccessibility(
+              t('games.patternTrain.feedback.revealAnnouncement', { message: revealMessage }),
+            );
 
             queueTimeout(() => {
               startTrainExit();
@@ -459,7 +475,8 @@ export const PatternTrainScreen: React.FC = () => {
         onPanResponderGrant: () => {
           if (animationsEnabled) {
             Animated.spring(carriage.scale, {
-              toValue: 1.1, useNativeDriver: Platform.OS !== 'web',
+              toValue: 1.1,
+              useNativeDriver: Platform.OS !== 'web',
             }).start();
           } else {
             carriage.scale.setValue(1.1);
@@ -474,7 +491,8 @@ export const PatternTrainScreen: React.FC = () => {
         onPanResponderRelease: (_, gestureState) => {
           if (animationsEnabled) {
             Animated.spring(carriage.scale, {
-              toValue: 1, useNativeDriver: Platform.OS !== 'web',
+              toValue: 1,
+              useNativeDriver: Platform.OS !== 'web',
             }).start();
           } else {
             carriage.scale.setValue(1);
@@ -508,8 +526,15 @@ export const PatternTrainScreen: React.FC = () => {
         setSelectedChoice(carriage.emoji);
         if (animationsEnabled) {
           Animated.sequence([
-            Animated.timing(carriage.scale, { toValue: 1.15, duration: 100, useNativeDriver: Platform.OS !== 'web' }),
-            Animated.spring(carriage.scale, { toValue: 1.1, useNativeDriver: Platform.OS !== 'web' }),
+            Animated.timing(carriage.scale, {
+              toValue: 1.15,
+              duration: 100,
+              useNativeDriver: Platform.OS !== 'web',
+            }),
+            Animated.spring(carriage.scale, {
+              toValue: 1.1,
+              useNativeDriver: Platform.OS !== 'web',
+            }),
           ]).start();
         } else {
           carriage.scale.setValue(1.1);
@@ -697,7 +722,7 @@ export const PatternTrainScreen: React.FC = () => {
               fullWidth
               onPress={() => handleDifficultySelect(value)}
               style={{ marginBottom: Space.sm }}
-              accessibilityLabel={`${label} difficulty`}
+              accessibilityLabel={t('games.patternTrain.difficultyAccessibilityLabel', { label })}
             />
           ))}
         </View>

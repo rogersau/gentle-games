@@ -65,11 +65,12 @@ describe('DrawingCanvas', () => {
     expect(paletteButtons[0].props.accessibilityHint).toBe('Choose this colour for drawing');
     expect(paletteButtons[0].props.accessibilityState).toEqual({ selected: true });
     expect(paletteButtons[0].props.hitSlop).toBe(4);
-  });
+
     const addColourButton = screen.getByTestId('open-color-picker');
     expect(addColourButton.props.accessibilityRole).toBe('button');
     expect(addColourButton.props.accessibilityLabel).toBe('Add a custom colour');
     expect(addColourButton.props.accessibilityHint).toBe('Open colour choices');
+  });
 
   it('keeps custom colours identifiable with their hex value', () => {
     const screen = render(<DrawingCanvas width={320} height={280} initialHistory={[]} />);

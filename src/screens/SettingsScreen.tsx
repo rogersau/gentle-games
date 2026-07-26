@@ -36,11 +36,11 @@ export const SettingsScreen: React.FC = () => {
 
   const timerOptions: { value: number; label: string }[] = [
     { value: 0, label: t('settings.parentTimer.off') },
-    { value: 5, label: '5 min' },
-    { value: 10, label: '10 min' },
-    { value: 15, label: '15 min' },
-    { value: 20, label: '20 min' },
-    { value: 30, label: '30 min' },
+    { value: 5, label: t('settings.parentTimer.duration', { count: 5 } as any) },
+    { value: 10, label: t('settings.parentTimer.duration', { count: 10 } as any) },
+    { value: 15, label: t('settings.parentTimer.duration', { count: 15 } as any) },
+    { value: 20, label: t('settings.parentTimer.duration', { count: 20 } as any) },
+    { value: 30, label: t('settings.parentTimer.duration', { count: 30 } as any) },
   ];
 
   return (
@@ -179,24 +179,24 @@ export const SettingsScreen: React.FC = () => {
         {/* Games on Home Screen */}
         <View style={styles.section}>
           <SectionHeader title={t('settings.gamesOnHomeScreen.title')} />
-          {GAME_REGISTRY.filter(
-            (game) => settings.enableUnfinishedGames || !game.isUnfinished,
-          ).map((game) => {
-            const isVisible = !settings.hiddenGames.includes(game.id);
-            return (
-              <SettingToggle
-                key={game.id}
-                label={`${game.icon}  ${t(game.nameKey)}`}
-                value={isVisible}
-                onValueChange={(value) => {
-                  const updated = value
-                    ? settings.hiddenGames.filter((id) => id !== game.id)
-                    : [...settings.hiddenGames, game.id];
-                  updateSettings({ hiddenGames: updated });
-                }}
-              />
-            );
-          })}
+          {GAME_REGISTRY.filter((game) => settings.enableUnfinishedGames || !game.isUnfinished).map(
+            (game) => {
+              const isVisible = !settings.hiddenGames.includes(game.id);
+              return (
+                <SettingToggle
+                  key={game.id}
+                  label={`${game.icon}  ${t(game.nameKey)}`}
+                  value={isVisible}
+                  onValueChange={(value) => {
+                    const updated = value
+                      ? settings.hiddenGames.filter((id) => id !== game.id)
+                      : [...settings.hiddenGames, game.id];
+                    updateSettings({ hiddenGames: updated });
+                  }}
+                />
+              );
+            },
+          )}
           <Text style={styles.description}>{t('settings.gamesOnHomeScreen.description')}</Text>
         </View>
 

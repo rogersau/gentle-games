@@ -195,13 +195,13 @@ export const HomeScreen: React.FC = () => {
           {difficultyOptions.map(({ value, label, description }) => (
             <AppButton
               key={value}
-              label={`${label}  ·  ${description}`}
+              label={t('difficulty.optionLabel', { label, description })}
               variant={settings.difficulty === value ? 'primary' : 'ghost'}
               size='md'
               fullWidth
               onPress={() => handleDifficultySelect(value)}
               style={{ marginBottom: Space.sm }}
-              accessibilityLabel={`${label} difficulty, ${description}`}
+              accessibilityLabel={t('difficulty.accessibilityLabel', { label })}
             />
           ))}
         </View>

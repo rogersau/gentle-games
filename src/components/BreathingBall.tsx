@@ -14,6 +14,7 @@ import {
   getBreathingPhaseProgress,
   type BreathingGardenPhase,
 } from '../utils/breathingGardenLogic';
+import { useTranslation } from 'react-i18next';
 
 export interface BreathingBallRef {
   getPhase: () => BreathingGardenPhase;
@@ -65,6 +66,8 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
     },
     ref,
   ) => {
+    const { t } = useTranslation();
+    const translate = t as unknown as (key: string, options?: Record<string, unknown>) => string;
     const [isRunning, setIsRunning] = useState(autoStart);
     const [elapsedMs, setElapsedMs] = useState(0);
     const lastTimeRef = useRef<number>(0);
@@ -220,7 +223,10 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
         style={[styles.container, { width: size, height: size }]}
         accessible={true}
         accessibilityRole='progressbar'
-        accessibilityLabel={`Breathing ball. Current phase: ${phase}. ${cycleCount} cycles completed.`}
+        accessibilityLabel={translate('games.breathingGarden.progressLabel', {
+          phase: translate('games.breathingGarden.' + phase),
+          count: cycleCount,
+        })}
         accessibilityValue={{ min: 0, max: 100, now: Math.round(phaseProgress * 100) }}
       >
         <Svg width={size} height={size}>

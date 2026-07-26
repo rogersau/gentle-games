@@ -62,6 +62,7 @@ export const generateTiles = (
     tiles.push({
       id: `${index}-a`,
       value: item.emoji,
+      name: item.name,
       type,
       isFlipped: false,
       isMatched: false,
@@ -70,6 +71,7 @@ export const generateTiles = (
     tiles.push({
       id: `${index}-b`,
       value: item.emoji,
+      name: item.name,
       type,
       isFlipped: false,
       isMatched: false,

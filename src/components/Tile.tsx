@@ -4,6 +4,7 @@ import { ThemeColors, Tile as TileType } from '../types';
 import { useAnimationEnabled } from '../ui/animations';
 import { useThemeColors } from '../utils/theme';
 import { Radius } from '../ui/tokens';
+import { useTranslation } from 'react-i18next';
 
 interface TileProps {
   tile: TileType;
@@ -14,6 +15,8 @@ interface TileProps {
 const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
   const animationsEnabled = useAnimationEnabled();
   const { colors } = useThemeColors();
+  const { t } = useTranslation();
+  const translate = t as unknown as (key: string, options?: Record<string, unknown>) => string;
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
 
@@ -50,11 +53,14 @@ const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
       ? styles.tileFront
       : styles.tileBack;
 
+  const value = tile.name
+    ? translate('games.memorySnap.cardValues.' + tile.name, { defaultValue: tile.name })
+    : tile.value;
   const accessibilityLabel = tile.isMatched
-    ? `${tile.value}, matched`
+    ? t('games.memorySnap.tileMatched', { value })
     : tile.isFlipped
-      ? `${tile.value}, face up`
-      : 'Card, face down';
+      ? t('games.memorySnap.tileFaceUp', { value })
+      : t('games.memorySnap.tileFaceDown');
 
   return (
     <TouchableOpacity
@@ -66,7 +72,7 @@ const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
       accessibilityRole='button'
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={
-        !tile.isFlipped && !tile.isMatched ? 'Double tap to flip this card' : undefined
+        !tile.isFlipped && !tile.isMatched ? t('games.memorySnap.tileFlipHint') : undefined
       }
     >
       <Animated.View style={[styles.tile, tileStyle, { transform: [{ scaleX: scaleAnim }] }]}>
