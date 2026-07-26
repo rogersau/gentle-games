@@ -1,11 +1,11 @@
-const mockExecSync = jest.fn();
+const mockExecFileSync = jest.fn();
 const mockExistsSync = jest.fn();
 const mockReadFileSync = jest.fn();
 const mockReaddirSync = jest.fn();
 const mockJoin = jest.fn((...parts) => parts.join('/'));
 
 jest.mock('child_process', () => ({
-  execSync: mockExecSync,
+  execFileSync: mockExecFileSync,
 }));
 
 jest.mock('fs', () => ({
@@ -153,7 +153,7 @@ describe('upload-sourcemaps', () => {
   it('imports without running uploads and exposes platform helpers', () => {
     const uploadScript = require('./upload-sourcemaps');
 
-    expect(mockExecSync).not.toHaveBeenCalled();
+    expect(mockExecFileSync).not.toHaveBeenCalled();
     expect(uploadScript.uploadSourceMaps).toEqual(expect.any(Function));
     expect(uploadScript.findSourceMaps).toEqual(expect.any(Function));
     expect(uploadScript.getPlatformDistDir).toEqual(expect.any(Function));
@@ -172,9 +172,24 @@ describe('upload-sourcemaps', () => {
 
     uploadSourceMaps();
 
-    expect(mockExecSync).toHaveBeenCalledTimes(3);
-    expect(mockExecSync).toHaveBeenCalledWith(
-      expect.stringContaining(`upload-sourcemaps ${distRoot} --url-prefix ~/web --rewrite`),
+    expect(mockExecFileSync).toHaveBeenCalledTimes(3);
+    expect(mockExecFileSync).toHaveBeenCalledWith(
+      'npx',
+      [
+        'sentry-cli',
+        'releases',
+        '--org',
+        'org',
+        '--project',
+        'project',
+        'files',
+        'gentle-games@1.1.0',
+        'upload-sourcemaps',
+        distRoot,
+        '--url-prefix',
+        '~/web',
+        '--rewrite',
+      ],
       { stdio: 'inherit' },
     );
     expect(logSpy).toHaveBeenCalledWith('\n✅ Successfully uploaded 3 source map(s) to Sentry!');
