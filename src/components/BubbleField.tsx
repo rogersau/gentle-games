@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, AppState, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, AppState, PanResponder, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { ThemeColors } from '../types';
 import { Bubble, ensureMinimumBubbles, spawnBubbles, stepBubbles } from '../utils/bubbleLogic';
@@ -31,6 +31,8 @@ interface BubbleFieldProps {
 
 const POP_INDICATOR_DECAY_PER_SECOND = 3;
 const POP_INDICATOR_FLOAT_PER_SECOND = 28;
+
+const shouldUseDeclarativeFrameUpdates = (): boolean => Platform.OS === 'web';
 
 interface BubbleFieldSnapshot {
   bubbles: Bubble[];
@@ -171,7 +173,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
       renderedPopIndicatorIdsRef.current.map((id) => ({ id })),
       nextPopIndicators,
     );
-    if (forceRender || bubblesChanged || indicatorsChanged) {
+    if (forceRender || bubblesChanged || indicatorsChanged || shouldUseDeclarativeFrameUpdates()) {
       renderedBubbleIdsRef.current = nextBubbles.map((bubble) => bubble.id);
       renderedPopIndicatorIdsRef.current = nextPopIndicators.map((indicator) => indicator.id);
       setSnapshot({ bubbles: nextBubbles, popIndicators: nextPopIndicators });
