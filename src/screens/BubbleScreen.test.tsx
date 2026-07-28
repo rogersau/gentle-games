@@ -4,6 +4,8 @@ import { BubbleScreen } from './BubbleScreen';
 
 const mockGoBack = jest.fn();
 const mockPlayBubblePopSound = jest.fn();
+let mockReducedMotion = false;
+let mockBubbleProps: Record<string, unknown> = {};
 const mockSettings = {
   animationsEnabled: true,
   soundEnabled: true,
@@ -16,6 +18,7 @@ const mockSettings = {
 };
 
 jest.mock('../utils/theme', () => ({
+  useReducedMotion: () => mockReducedMotion,
   useThemeColors: () => ({
     colors: {
       background: '#FFFEF7',
@@ -63,20 +66,42 @@ jest.mock('../components/BubbleField', () => {
   const { Text, TouchableOpacity, View } = require('react-native');
 
   return {
-    BubbleField: ({ onBubblePop }: { onBubblePop?: () => void }) => (
-      <View>
-        <Text>Mock Bubble Field</Text>
-        <TouchableOpacity onPress={onBubblePop}>
-          <Text>Pop Mock Bubble</Text>
-        </TouchableOpacity>
-      </View>
-    ),
+    BubbleField: (props: Record<string, unknown>) => {
+      mockBubbleProps = props;
+      const { onBubblePop } = props as { onBubblePop?: () => void };
+      return (
+        <View>
+          <Text>Mock Bubble Field</Text>
+          <TouchableOpacity onPress={onBubblePop}>
+            <Text>Pop Mock Bubble</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    },
   };
 });
 
 describe('BubbleScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockReducedMotion = false;
+    mockBubbleProps = {};
+    mockSettings.animationsEnabled = true;
+    mockSettings.pressureFreeMode = false;
+  });
+
+  it('keeps gameplay motion enabled when only decorative animations are disabled', () => {
+    mockSettings.animationsEnabled = false;
+    render(<BubbleScreen />);
+
+    expect(mockBubbleProps.motionEnabled).toBe(true);
+  });
+
+  it('uses stationary bubbles when reduced motion is enabled', () => {
+    mockReducedMotion = true;
+    render(<BubbleScreen />);
+
+    expect(mockBubbleProps.motionEnabled).toBe(false);
   });
 
   it('goes back when the back button is pressed', () => {

@@ -1,5 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, AppState, PanResponder, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  AccessibilityInfo,
+  AppState,
+  PanResponder,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { ThemeColors } from '../types';
 import { Bubble, ensureMinimumBubbles, spawnBubbles, stepBubbles } from '../utils/bubbleLogic';
@@ -31,26 +39,11 @@ interface BubbleFieldProps {
 
 const POP_INDICATOR_DECAY_PER_SECOND = 3;
 const POP_INDICATOR_FLOAT_PER_SECOND = 28;
-
-const shouldUseDeclarativeFrameUpdates = (): boolean => Platform.OS === 'web';
+const SNAPSHOT_INTERVAL_MS = 1000 / 30;
 
 interface BubbleFieldSnapshot {
   bubbles: Bubble[];
   popIndicators: PopIndicator[];
-}
-
-type SvgNode = {
-  setNativeProps?: (props: Record<string, unknown>) => void;
-};
-
-interface BubbleVisualNodes {
-  bubble?: SvgNode;
-  highlight?: SvgNode;
-}
-
-interface PopIndicatorVisualNodes {
-  circle?: SvgNode;
-  label?: SvgNode;
 }
 
 const haveSameIds = <T extends { id: string }>(left: T[], right: T[]): boolean =>
@@ -113,10 +106,9 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   const bubbleLabelNumbersRef = useRef(new Map<string, number>());
   const nextBubbleLabelNumberRef = useRef(1);
   const nextPopIndicatorIdRef = useRef(1);
-  const bubbleVisualNodesRef = useRef(new Map<string, BubbleVisualNodes>());
-  const popIndicatorVisualNodesRef = useRef(new Map<string, PopIndicatorVisualNodes>());
   const renderedBubbleIdsRef = useRef(snapshot.bubbles.map((bubble) => bubble.id));
   const renderedPopIndicatorIdsRef = useRef<string[]>([]);
+  const lastSnapshotTimeRef = useRef<number>(0);
   const appStateRef = useRef(AppState.currentState);
   const [appState, setAppState] = useState(AppState.currentState);
   const [screenReaderEnabled, setScreenReaderEnabled] = useState(false);
@@ -145,59 +137,36 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
     };
   }, []);
 
-  const updateVisualNodes = useCallback((nextBubbles: Bubble[], nextPopIndicators: PopIndicator[]) => {
-    nextBubbles.forEach((bubble) => {
-      const nodes = bubbleVisualNodesRef.current.get(bubble.id);
-      nodes?.bubble?.setNativeProps?.({
-        cx: bubble.x,
-        cy: bubble.y,
-        r: bubble.radius,
-        opacity: bubble.opacity,
-      });
-      nodes?.highlight?.setNativeProps?.({
-        cx: bubble.x - bubble.radius * 0.25,
-        cy: bubble.y - bubble.radius * 0.3,
-        r: Math.max(3, bubble.radius * 0.25),
-      });
-    });
-    nextPopIndicators.forEach((indicator) => {
-      const nodes = popIndicatorVisualNodesRef.current.get(indicator.id);
-      nodes?.circle?.setNativeProps?.({
-        cx: indicator.x,
-        cy: indicator.y,
-        r: 10 + (1 - indicator.life) * 14,
-        opacity: indicator.life * 0.8,
-      });
-      nodes?.label?.setNativeProps?.({
-        x: indicator.x,
-        y: indicator.y - 2,
-        opacity: indicator.life,
-      });
-    });
-  }, []);
-
-  const publishSnapshot = useCallback((
-    nextBubbles: Bubble[],
-    nextPopIndicators: PopIndicator[],
-    forceRender = false,
-  ) => {
-    bubblesRef.current = nextBubbles;
-    popIndicatorsRef.current = nextPopIndicators;
-    updateVisualNodes(nextBubbles, nextPopIndicators);
-    const bubblesChanged = !haveSameIds(
-      renderedBubbleIdsRef.current.map((id) => ({ id })),
-      nextBubbles,
-    );
-    const indicatorsChanged = !haveSameIds(
-      renderedPopIndicatorIdsRef.current.map((id) => ({ id })),
-      nextPopIndicators,
-    );
-    if (forceRender || bubblesChanged || indicatorsChanged || shouldUseDeclarativeFrameUpdates()) {
-      renderedBubbleIdsRef.current = nextBubbles.map((bubble) => bubble.id);
-      renderedPopIndicatorIdsRef.current = nextPopIndicators.map((indicator) => indicator.id);
-      setSnapshot({ bubbles: nextBubbles, popIndicators: nextPopIndicators });
-    }
-  }, [updateVisualNodes]);
+  const publishSnapshot = useCallback(
+    (
+      nextBubbles: Bubble[],
+      nextPopIndicators: PopIndicator[],
+      forceRender = false,
+      frameTime?: number,
+    ) => {
+      bubblesRef.current = nextBubbles;
+      popIndicatorsRef.current = nextPopIndicators;
+      const bubblesChanged = !haveSameIds(
+        renderedBubbleIdsRef.current.map((id) => ({ id })),
+        nextBubbles,
+      );
+      const indicatorsChanged = !haveSameIds(
+        renderedPopIndicatorIdsRef.current.map((id) => ({ id })),
+        nextPopIndicators,
+      );
+      const snapshotDue =
+        frameTime !== undefined && frameTime - lastSnapshotTimeRef.current >= SNAPSHOT_INTERVAL_MS;
+      if (forceRender || bubblesChanged || indicatorsChanged || snapshotDue) {
+        renderedBubbleIdsRef.current = nextBubbles.map((bubble) => bubble.id);
+        renderedPopIndicatorIdsRef.current = nextPopIndicators.map((indicator) => indicator.id);
+        if (frameTime !== undefined) {
+          lastSnapshotTimeRef.current = frameTime;
+        }
+        setSnapshot({ bubbles: nextBubbles, popIndicators: nextPopIndicators });
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     widthRef.current = width;
@@ -212,11 +181,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
     if (isAccessibleMode) {
       nextBubbles = keepBubblesVisible(nextBubbles, width, height);
     }
-    publishSnapshot(
-      nextBubbles,
-      popIndicatorsRef.current,
-      true,
-    );
+    publishSnapshot(nextBubbles, popIndicatorsRef.current, true);
   }, [height, isAccessibleMode, maxActiveBubbles, minActiveBubbles, publishSnapshot, width]);
 
   useEffect(() => {
@@ -229,10 +194,18 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!motionEnabled || isAccessibleMode || !isFocused || appState === 'background' || appState === 'inactive') return;
+    if (
+      !motionEnabled ||
+      isAccessibleMode ||
+      !isFocused ||
+      appState === 'background' ||
+      appState === 'inactive'
+    )
+      return;
     let cancelled = false;
     const tick = (now: number) => {
-      if (cancelled || appStateRef.current === 'background' || appStateRef.current === 'inactive') return;
+      if (cancelled || appStateRef.current === 'background' || appStateRef.current === 'inactive')
+        return;
       if (!lastFrameTimeRef.current) lastFrameTimeRef.current = now;
       const elapsedMs = Math.min(now - lastFrameTimeRef.current, 50);
       lastFrameTimeRef.current = now;
@@ -262,7 +235,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
           life: indicator.life - (elapsedMs / 1000) * POP_INDICATOR_DECAY_PER_SECOND,
         }))
         .filter((indicator) => indicator.life > 0);
-      publishSnapshot(nextBubbles, nextPopIndicators);
+      publishSnapshot(nextBubbles, nextPopIndicators, false, now);
       frameRef.current = requestAnimationFrame(tick);
     };
     lastFrameTimeRef.current = 0;
@@ -274,6 +247,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
         frameRef.current = null;
       }
       lastFrameTimeRef.current = 0;
+      lastSnapshotTimeRef.current = 0;
     };
   }, [
     appState,
@@ -285,13 +259,6 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
     spawnIntervalMs,
     motionEnabled,
   ]);
-
-  useEffect(() => {
-    return () => {
-      bubbleVisualNodesRef.current.clear();
-      popIndicatorVisualNodesRef.current.clear();
-    };
-  }, []);
 
   const getBubbleLabelNumber = (bubbleId: string): number => {
     const existingNumber = bubbleLabelNumbersRef.current.get(bubbleId);
@@ -316,17 +283,18 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
       if (isAccessibleMode) {
         nextBubbles = keepBubblesVisible(nextBubbles, widthRef.current, heightRef.current);
       }
-      const nextPopIndicators = motionEnabled && !isAccessibleMode
-        ? [
-            ...popIndicatorsRef.current,
-            {
-              id: 'pop-' + nextPopIndicatorIdRef.current++,
-              x: locationX ?? poppedBubble.x,
-              y: locationY ?? poppedBubble.y,
-              life: 1,
-            },
-          ]
-        : [];
+      const nextPopIndicators =
+        motionEnabled && !isAccessibleMode
+          ? [
+              ...popIndicatorsRef.current,
+              {
+                id: 'pop-' + nextPopIndicatorIdRef.current++,
+                x: locationX ?? poppedBubble.x,
+                y: locationY ?? poppedBubble.y,
+                life: 1,
+              },
+            ]
+          : [];
 
       publishSnapshot(nextBubbles, nextPopIndicators, true);
       if (isAccessibleMode) {
@@ -334,40 +302,16 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
       }
       onBubblePop?.();
     },
-    [isAccessibleMode, maxActiveBubbles, minActiveBubbles, motionEnabled, onBubblePop, publishSnapshot, t],
+    [
+      isAccessibleMode,
+      maxActiveBubbles,
+      minActiveBubbles,
+      motionEnabled,
+      onBubblePop,
+      publishSnapshot,
+      t,
+    ],
   );
-
-  const setBubbleVisualNode = useCallback(
-    (bubbleId: string, part: keyof BubbleVisualNodes, node: SvgNode | null) => {
-      const nodes = bubbleVisualNodesRef.current.get(bubbleId) ?? {};
-      if (node) {
-        nodes[part] = node;
-        bubbleVisualNodesRef.current.set(bubbleId, nodes);
-      } else {
-        delete nodes[part];
-        if (!nodes.bubble && !nodes.highlight) bubbleVisualNodesRef.current.delete(bubbleId);
-      }
-    },
-    [],
-  );
-
-  const setPopIndicatorVisualNode = useCallback(
-    (indicatorId: string, part: keyof PopIndicatorVisualNodes, node: SvgNode | null) => {
-      const nodes = popIndicatorVisualNodesRef.current.get(indicatorId) ?? {};
-      if (node) {
-        nodes[part] = node;
-        popIndicatorVisualNodesRef.current.set(indicatorId, nodes);
-      } else {
-        delete nodes[part];
-        if (!nodes.circle && !nodes.label) popIndicatorVisualNodesRef.current.delete(indicatorId);
-      }
-    },
-    [],
-  );
-
-  useEffect(() => {
-    updateVisualNodes(snapshot.bubbles, snapshot.popIndicators);
-  }, [snapshot, updateVisualNodes]);
 
   const panResponder = useMemo(
     () =>
@@ -402,7 +346,6 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
         {snapshot.bubbles.map((bubble) => (
           <React.Fragment key={bubble.id}>
             <Circle
-              ref={(node) => setBubbleVisualNode(bubble.id, 'bubble', node)}
               cx={bubble.x}
               cy={bubble.y}
               r={bubble.radius}
@@ -412,7 +355,6 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
               strokeWidth={2}
             />
             <Circle
-              ref={(node) => setBubbleVisualNode(bubble.id, 'highlight', node)}
               cx={bubble.x - bubble.radius * 0.25}
               cy={bubble.y - bubble.radius * 0.3}
               r={Math.max(3, bubble.radius * 0.25)}
@@ -424,7 +366,6 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
         {snapshot.popIndicators.map((indicator) => (
           <React.Fragment key={indicator.id}>
             <Circle
-              ref={(node) => setPopIndicatorVisualNode(indicator.id, 'circle', node)}
               cx={indicator.x}
               cy={indicator.y}
               r={10 + (1 - indicator.life) * 14}
@@ -434,7 +375,6 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
               opacity={indicator.life * 0.8}
             />
             <SvgText
-              ref={(node) => setPopIndicatorVisualNode(indicator.id, 'label', node)}
               x={indicator.x}
               y={indicator.y - 2}
               fill={colors.secondary}
@@ -450,7 +390,10 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
         ))}
       </Svg>
       {isAccessibleMode ? (
-        <View style={styles.accessibleLayer} accessibilityLabel={t('games.bubblePop.accessibility')}>
+        <View
+          style={styles.accessibleLayer}
+          accessibilityLabel={t('games.bubblePop.accessibility')}
+        >
           {snapshot.bubbles.map((bubble) => {
             const targetSize = Math.max(64, bubble.radius * 2 + 16);
             return (

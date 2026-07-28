@@ -1,6 +1,6 @@
 import React, { Profiler } from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { AccessibilityInfo, PanResponder, Platform, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, PanResponder, StyleSheet, View } from 'react-native';
 import { Circle, Text as SvgText } from 'react-native-svg';
 import { BubbleField } from './BubbleField';
 
@@ -200,7 +200,11 @@ describe('BubbleField', () => {
     expect(buttons).toHaveLength(2);
     expect(buttons[0].props.accessibilityLabel).toBe('games.bubblePop.bubbleAccessibilityLabel');
     expect(buttons[0].props.accessibilityHint).toBe('games.bubblePop.bubbleAccessibilityHint');
-    expect(screen.UNSAFE_root.findAll((node: any) => typeof node.props.onPanResponderRelease === 'function')).toHaveLength(0);
+    expect(
+      screen.UNSAFE_root.findAll(
+        (node: any) => typeof node.props.onPanResponderRelease === 'function',
+      ),
+    ).toHaveLength(0);
   });
 
   it('keeps reduced-motion bubbles visible, stationary, and replenished', () => {
@@ -302,36 +306,29 @@ describe('BubbleField', () => {
       advanceFrame(frame * 16);
     }
 
-    expect(commits.length).toBeLessThanOrEqual(3);
+    expect(commits.length).toBeGreaterThan(3);
+    expect(commits.length).toBeLessThan(20);
     screen.unmount();
   });
 
-  it('uses declarative frame updates on web', () => {
-    const originalOS = Platform.OS;
-    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
-    try {
-      const commits: Array<string> = [];
-      const screen = render(
-        <Profiler id='bubble-field-web' onRender={() => commits.push('commit')}>
-          <BubbleField
-            width={240}
-            height={220}
-            minActiveBubbles={2}
-            maxActiveBubbles={4}
-            spawnIntervalMs={10_000}
-          />
-        </Profiler>,
-      );
+  it('publishes falling positions declaratively', () => {
+    const screen = render(
+      <BubbleField
+        width={240}
+        height={220}
+        minActiveBubbles={1}
+        maxActiveBubbles={1}
+        spawnIntervalMs={10_000}
+      />,
+    );
+    const initialY = getBubbleCircles(screen)[0].props.cy;
 
-      for (let frame = 0; frame < 5; frame += 1) {
-        advanceFrame(frame * 16);
-      }
+    advanceFrame(0);
+    advanceFrame(16);
+    advanceFrame(32);
+    advanceFrame(48);
 
-      expect(commits.length).toBeGreaterThan(3);
-      screen.unmount();
-    } finally {
-      Object.defineProperty(Platform, 'OS', { configurable: true, value: originalOS });
-    }
+    expect(getBubbleCircles(screen)[0].props.cy).toBeGreaterThan(initialY);
   });
 
   it('removes the tapped bubble, creates an indicator, and calls onBubblePop', () => {

@@ -11,11 +11,11 @@ interface GameArtworkProps {
 }
 
 const GAME_ARTWORK = {
-  'memory-snap': require('../../assets/game-icons/memory-snap.png'),
+  'memory-snap': require('../../assets/game-icons/category-match.png'),
   drawing: require('../../assets/game-icons/drawing.png'),
   'glitter-fall': require('../../assets/game-icons/glitter-fall.png'),
   'bubble-pop': require('../../assets/game-icons/bubble-pop.png'),
-  'category-match': require('../../assets/game-icons/category-match.png'),
+  'category-match': require('../../assets/game-icons/memory-snap.png'),
   'keepy-uppy': require('../../assets/game-icons/keepy-uppy.png'),
   'breathing-garden': require('../../assets/game-icons/breathing-garden.png'),
   'pattern-train': require('../../assets/game-icons/pattern-train.png'),

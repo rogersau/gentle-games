@@ -7,10 +7,9 @@ import { ThemeColors } from '../types';
 import { useSettings } from '../context/SettingsContext';
 import { useMochi } from '../hooks/useMochi';
 import { playBubblePopSound } from '../utils/sounds';
-import { useThemeColors } from '../utils/theme';
+import { useReducedMotion, useThemeColors } from '../utils/theme';
 import { AppScreen, AppHeader } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
-import { useAnimationEnabled } from '../ui/animations';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
 import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 
@@ -29,7 +28,7 @@ export const BubbleScreen: React.FC = () => {
   const { colors } = useThemeColors();
   const { showPressureMetrics, showMilestoneCelebrations } = getGamePresentationPolicy(settings);
   const { t } = useTranslation();
-  const motionEnabled = useAnimationEnabled();
+  const motionEnabled = !useReducedMotion();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [poppedCount, setPoppedCount] = useState(0);
   const popCountRef = useRef(0);
@@ -59,7 +58,11 @@ export const BubbleScreen: React.FC = () => {
   const handleBubblePop = useCallback(() => {
     setPoppedCount((count) => count + 1);
     popCountRef.current += 1;
-    if (MILESTONES.includes(popCountRef.current) && settings.showMochiInGames && showMilestoneCelebrations) {
+    if (
+      MILESTONES.includes(popCountRef.current) &&
+      settings.showMochiInGames &&
+      showMilestoneCelebrations
+    ) {
       const { phrase, index } = pickPhrase(
         t('mascot.bubblePhrases', { returnObjects: true }) as string[],
         lastPhraseIndexRef.current,
@@ -81,8 +84,10 @@ export const BubbleScreen: React.FC = () => {
         {showPressureMetrics ? (
           <Text
             style={styles.counter}
-            accessibilityLabel={t('games.bubblePop.popped', { count: poppedCount })}
-        >
+            accessibilityLabel={t('games.bubblePop.popped', {
+              count: poppedCount,
+            })}
+          >
             {t('games.bubblePop.popped', { count: poppedCount })}
           </Text>
         ) : null}
