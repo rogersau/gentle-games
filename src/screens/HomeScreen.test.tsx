@@ -101,6 +101,19 @@ describe('HomeScreen', () => {
     };
   });
 
+  it('presents the calm single-column home introduction', () => {
+    const screen = render(<HomeScreen />);
+
+    expect(screen.getByRole('header', { name: 'Gentle Games' })).toBeTruthy();
+    expect(screen.getByText('Choose something gentle')).toBeTruthy();
+
+    const drawingCard = screen.getByTestId('home-game-drawing');
+    expect(StyleSheet.flatten(drawingCard.props.style)).toMatchObject({
+      minHeight: 100,
+      borderWidth: 1,
+    });
+  });
+
   it('navigates directly to Drawing screen when Drawing Pad is selected', () => {
     jest.useFakeTimers();
     const screen = render(<HomeScreen />);
@@ -334,6 +347,17 @@ describe('HomeScreen', () => {
     expect(screen.getByText('Glitter Fall')).toBeTruthy();
     expect(screen.getByText('Category Match')).toBeTruthy();
     expect(screen.getByText('Keepy Uppy')).toBeTruthy();
+  });
+
+  it('shows a calm empty state when every game is hidden', () => {
+    mockSettings = {
+      ...mockSettings,
+      hiddenGames: actualRegistry.GAME_REGISTRY.map((game) => game.id),
+    };
+    const screen = render(<HomeScreen />);
+
+    expect(screen.getByText('All games are hidden. Enable one in Settings.')).toBeTruthy();
+    expect(screen.queryByTestId('home-game-memory-snap')).toBeNull();
   });
 
   it('game list container uses flex to fill available space', () => {

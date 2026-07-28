@@ -8,12 +8,14 @@ import { Space, TypeStyle } from '../ui/tokens';
 
 interface MochiPresenceProps {
   size?: MochiSize;
+  showPhrase?: boolean;
   style?: object;
   testID?: string;
 }
 
 export const MochiPresence: React.FC<MochiPresenceProps> = ({
   size = 'md',
+  showPhrase = true,
   style,
   testID = 'mochi-presence',
 }) => {
@@ -33,7 +35,7 @@ export const MochiPresence: React.FC<MochiPresenceProps> = ({
 
   return (
     <View style={[styles.container, style]} testID={testID}>
-      {phrase && (
+      {showPhrase && phrase && (
         <View style={styles.phraseContainer}>
           <Text style={styles.phraseText}>{t(phrase as any)}</Text>
         </View>
