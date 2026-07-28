@@ -5,6 +5,7 @@ import { AppButton } from './AppButton';
 import { AppCard } from './AppCard';
 import { AppHeader } from './AppHeader';
 import { AppModal } from './AppModal';
+import { GameArtwork } from './GameArtwork';
 import { GameCard } from './GameCard';
 import { IconBadge } from './IconBadge';
 import { SectionHeader } from './SectionHeader';
@@ -219,8 +220,9 @@ describe('UI Components', () => {
     });
 
     it('applies accent color', () => {
-      const { getByText } = render(
+      const { getByText, getByTestId } = render(
         <GameCard
+          gameId='memory-snap'
           icon='🎮'
           title='Game'
           description='Desc'
@@ -229,6 +231,17 @@ describe('UI Components', () => {
         />,
       );
       expect(getByText('Game')).toBeTruthy();
+      expect(getByTestId('game-artwork-memory-snap')).toBeTruthy();
+    });
+  });
+
+  describe('GameArtwork', () => {
+    it('falls back to the code-native illustration when an asset cannot load', () => {
+      const screen = render(<GameArtwork gameId='bubble-pop' />);
+
+      fireEvent(screen.getByTestId('game-artwork-bubble-pop'), 'error');
+
+      expect(screen.getByTestId('game-artwork-bubble-pop-fallback')).toBeTruthy();
     });
   });
 

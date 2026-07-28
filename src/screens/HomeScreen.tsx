@@ -20,7 +20,7 @@ export const HomeScreen: React.FC = () => {
   const { settings, updateSettings } = useSettings();
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
-  const { gridColumns, contentWidth, isTablet } = useLayout();
+  const { contentWidth, isTablet } = useLayout();
   const { t } = useTranslation();
   const { celebrate, showMochi } = useMochi();
   const {
@@ -165,44 +165,40 @@ export const HomeScreen: React.FC = () => {
         style={[
           styles.content,
           isTablet && {
-            maxWidth: contentWidth,
+            maxWidth: Math.min(contentWidth, 640),
             alignSelf: 'center',
             width: '100%',
           },
         ]}
       >
         <View style={styles.titleArea}>
-          <View style={styles.titleRow}>
-            <Text style={styles.title} accessibilityRole='header'>
+          <View style={styles.titleCopy}>
+            <Text
+              style={styles.title}
+              accessibilityRole='header'
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
               {t('home.title')}
             </Text>
-            <MochiPresence size='sm' style={styles.mochiInHeader} />
+            <Text style={styles.subtitle}>{t('home.subtitle')}</Text>
           </View>
-          <Text style={styles.subtitle}>{t('home.subtitle')}</Text>
+          <MochiPresence size='sm' showPhrase={false} style={styles.mochiInHeader} />
         </View>
 
         <View style={styles.gamesContainer} testID='home-games-container'>
           {visibleGames.length > 0 ? (
             <ScrollView
               style={styles.gamesScroll}
-              contentContainerStyle={[styles.gamesScrollContent, isTablet && styles.gamesGrid]}
+              contentContainerStyle={styles.gamesScrollContent}
               showsVerticalScrollIndicator
               persistentScrollbar
             >
               {visibleGames.map((game) => (
-                <View
-                  key={game.id}
-                  style={
-                    isTablet
-                      ? {
-                          width: `${Math.floor(100 / gridColumns)}%`,
-                          paddingHorizontal: Space.xs,
-                          justifyContent: 'center',
-                        }
-                      : undefined
-                  }
-                >
+                <View key={game.id}>
                   <GameCard
+                    gameId={game.id}
                     icon={game.icon}
                     title={t(game.nameKey)}
                     description={t(game.descriptionKey)}
@@ -210,7 +206,7 @@ export const HomeScreen: React.FC = () => {
                     accentColor={game.accentColor}
                     disabled={isLaunching}
                     accessibilityState={{ busy: isLaunching }}
-                    style={gridColumns === 1 ? { padding: Space.md } : undefined}
+                    testID={`home-game-${game.id}`}
                   />
                 </View>
               ))}
@@ -223,8 +219,9 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.footer}>
           <AppButton
             label={t('home.settingsButton')}
-            variant='secondary'
+            variant='ghost'
             size='lg'
+            fullWidth
             onPress={() => navigation.navigate(APP_ROUTES.Settings)}
             accessibilityHint={t('home.settingsHint')}
           />
@@ -290,30 +287,30 @@ const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
       paddingTop: Space.lg,
     },
     titleArea: {
-      alignItems: 'center',
-      marginBottom: Space['2xl'],
-    },
-    titleRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: Space.sm,
+      justifyContent: 'space-between',
+      gap: Space.base,
+      marginBottom: Space.xl,
+      minHeight: 72,
+    },
+    titleCopy: {
+      flex: 1,
+      alignItems: 'flex-start',
     },
     mochiInHeader: {
-      marginTop: -Space.xs,
-    },
-    mochiInTitle: {
-      marginBottom: Space.md,
+      flexShrink: 0,
     },
     title: {
       ...TypeStyle.h1,
       color: colors.text,
-      textAlign: 'center',
+      textAlign: 'left',
       marginBottom: Space.xs,
     },
     subtitle: {
       ...TypeStyle.body,
-      color: colors.textLight,
-      textAlign: 'center',
+      color: colors.text,
+      textAlign: 'left',
     },
     gamesContainer: {
       flex: 1,
@@ -325,11 +322,7 @@ const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
       flex: 1,
     },
     gamesScrollContent: {
-      paddingBottom: Space.sm,
-    },
-    gamesGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
+      paddingBottom: Space.base,
     },
     emptyGamesText: {
       ...TypeStyle.body,
@@ -338,18 +331,18 @@ const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
       marginTop: Space.lg,
     },
     footer: {
-      alignItems: 'center',
+      alignItems: 'stretch',
       paddingBottom: Space.sm,
-      gap: Space.md,
+      gap: Space.sm,
     },
     websiteLinkContainer: {
+      alignSelf: 'center',
       paddingVertical: Space.xs,
     },
     websiteLinkText: {
       ...TypeStyle.bodySm,
-      color: colors.textLight,
+      color: colors.text,
       textDecorationLine: 'underline',
-      opacity: 0.6,
     },
     modalSubtitle: {
       ...TypeStyle.bodySm,

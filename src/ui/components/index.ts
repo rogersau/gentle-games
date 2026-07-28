@@ -3,6 +3,8 @@ export { AppHeader } from './AppHeader';
 export { AppButton } from './AppButton';
 export { AppCard } from './AppCard';
 export { IconBadge } from './IconBadge';
+export { GameIcon } from './GameIcon';
+export { GameArtwork } from './GameArtwork';
 export { GameCard } from './GameCard';
 export { AppModal } from './AppModal';
 export { SettingToggle } from './SettingToggle';

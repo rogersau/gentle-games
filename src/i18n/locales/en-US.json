@@ -20,7 +20,7 @@
   },
   "home": {
     "title": "Gentle Games",
-    "subtitle": "Calm games for little ones",
+    "subtitle": "Choose something gentle",
     "emptyGames": "All games are hidden. Enable one in Settings.",
     "settingsButton": "⚙️  Settings",
     "settingsHint": "Opens app settings",
@@ -41,7 +41,7 @@
   "games": {
     "memorySnap": {
       "name": "Memory Snap",
-      "description": "A calm memory matching game",
+      "description": "Find matching pairs",
       "title": "Memory Snap",
       "wellDone": "Well Done! 🎉",
       "completed": "You finished the game!",
@@ -162,7 +162,7 @@
     },
     "drawing": {
       "name": "Drawing Pad",
-      "description": "Draw with colors and erase",
+      "description": "Draw and make shapes",
       "title": "Drawing Pad",
       "welcomeBack": "Welcome Back! 🎨",
       "newDrawing": "New Drawing",
@@ -250,7 +250,7 @@
     },
     "glitterFall": {
       "name": "Glitter Fall",
-      "description": "Snow globe glitter play",
+      "description": "Watch sparkles drift",
       "title": "Glitter Fall",
       "addGlitter": "Add Glitter",
       "addGlitterHint": "Add glitter particles to the globe",
@@ -261,7 +261,7 @@
     },
     "bubblePop": {
       "name": "Bubble Pop",
-      "description": "Tap falling bubbles",
+      "description": "Pop bubbles slowly",
       "title": "Bubble Pop",
       "subtitle": "Tap the falling bubbles to pop them.",
       "popped": "Popped: {{count}}",
@@ -278,7 +278,7 @@
     },
     "categoryMatch": {
       "name": "Category Match",
-      "description": "Drag to sort by category",
+      "description": "Sort pictures into groups",
       "title": "Category Match",
       "subtitle": "Sort items into their correct categories",
       "greatStreak": "Great streak!",
@@ -344,7 +344,7 @@
     },
     "keepyUppy": {
       "name": "Keepy Uppy",
-      "description": "Tap balloons in the backyard",
+      "description": "Keep the balloon floating",
       "title": "Keepy Uppy",
       "subtitle": "Keep the balloon in the air!",
       "addBalloon": "Add Balloon",
@@ -356,10 +356,10 @@
     },
     "breathingGarden": {
       "name": "Breathing Garden",
-      "description": "Follow calm breathing rhythms",
+      "description": "Follow a calm breathing rhythm",
       "title": "Breathing Garden",
       "progressLabel": "Breathing ball. Current phase: {{phase}}. {{count}} cycles completed.",
-    "phaseProgressLabel": "Breathing ball. Current phase: {{phase}}.",
+      "phaseProgressLabel": "Breathing ball. Current phase: {{phase}}.",
       "resetSession": "Reset Session",
       "inhale": "Breathe In",
       "exhale": "Breathe Out",
@@ -370,7 +370,7 @@
     },
     "patternTrain": {
       "name": "Pattern Train",
-      "description": "Complete cozy pattern sequences",
+      "description": "Complete cozy patterns",
       "missingCarriage": "missing carriage",
       "difficultyAccessibilityLabel": "{{label}} difficulty",
       "title": "Pattern Train",
