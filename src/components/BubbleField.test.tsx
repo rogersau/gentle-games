@@ -1,8 +1,10 @@
 import React, { Profiler } from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { AccessibilityInfo, PanResponder, Platform, View } from 'react-native';
+import { AccessibilityInfo, PanResponder, Platform, StyleSheet, View } from 'react-native';
 import { Circle, Text as SvgText } from 'react-native-svg';
 import { BubbleField } from './BubbleField';
+
+let mockBubblePosition: { x: number; y: number } | undefined;
 
 jest.mock('../utils/theme', () => ({
   useThemeColors: () => ({
@@ -53,7 +55,11 @@ jest.mock('../utils/bubbleLogic', () => {
   let nextBubbleIndex = 0;
   const createBubble = () => {
     const index = nextBubbleIndex++;
-    return makeBubble(`bubble-${index}`, 60 + index * 70, 70 + index * 25);
+    return makeBubble(
+      `bubble-${index}`,
+      mockBubblePosition?.x ?? 60 + index * 70,
+      mockBubblePosition?.y ?? 70 + index * 25,
+    );
   };
 
   return {
@@ -131,6 +137,7 @@ describe('BubbleField', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockBubblePosition = undefined;
     frameCallbacks = new Map();
     nextFrameId = 0;
     jest
@@ -196,12 +203,42 @@ describe('BubbleField', () => {
     expect(screen.UNSAFE_root.findAll((node: any) => typeof node.props.onPanResponderRelease === 'function')).toHaveLength(0);
   });
 
-  it('uses accessible buttons when reduced-motion disables bubble movement', () => {
+  it('keeps reduced-motion bubbles visible, stationary, and replenished', () => {
+    const onBubblePop = jest.fn();
+    mockBubblePosition = { x: -20, y: -40 };
     const screen = render(
-      <BubbleField width={240} height={220} minActiveBubbles={2} maxActiveBubbles={3} motionEnabled={false} />,
+      <BubbleField
+        width={240}
+        height={220}
+        minActiveBubbles={2}
+        maxActiveBubbles={3}
+        motionEnabled={false}
+        onBubblePop={onBubblePop}
+      />,
     );
 
+    expect(globalThis.requestAnimationFrame).not.toHaveBeenCalled();
+    const buttons = screen.getAllByRole('button');
+    expect(buttons).toHaveLength(2);
+    buttons.forEach((button) => {
+      const style = StyleSheet.flatten(button.props.style);
+      expect(style.left).toBeGreaterThanOrEqual(0);
+      expect(style.top).toBeGreaterThanOrEqual(0);
+      expect(style.left + style.width).toBeLessThanOrEqual(240);
+      expect(style.top + style.height).toBeLessThanOrEqual(220);
+    });
+
+    fireEvent.press(buttons[0]);
+
+    expect(onBubblePop).toHaveBeenCalledTimes(1);
     expect(screen.getAllByRole('button')).toHaveLength(2);
+    screen.getAllByRole('button').forEach((button) => {
+      const style = StyleSheet.flatten(button.props.style);
+      expect(style.left).toBeGreaterThanOrEqual(0);
+      expect(style.top).toBeGreaterThanOrEqual(0);
+      expect(style.left + style.width).toBeLessThanOrEqual(240);
+      expect(style.top + style.height).toBeLessThanOrEqual(220);
+    });
   });
 
   it('lets keyboard and switch users explicitly enable stationary buttons', () => {

@@ -56,6 +56,22 @@ interface PopIndicatorVisualNodes {
 const haveSameIds = <T extends { id: string }>(left: T[], right: T[]): boolean =>
   left.length === right.length && left.every((item, index) => item.id === right[index]?.id);
 
+const keepBubblesVisible = (bubbles: Bubble[], width: number, height: number): Bubble[] =>
+  bubbles.map((bubble, index) => {
+    const hitTargetRadius = Math.max(32, bubble.radius + 8);
+    const minX = Math.min(width / 2, hitTargetRadius);
+    const maxX = Math.max(minX, width - hitTargetRadius);
+    const minY = Math.min(height / 2, hitTargetRadius);
+    const maxY = Math.max(minY, height - hitTargetRadius);
+    const slot = (index + 1) / (bubbles.length + 1);
+
+    return {
+      ...bubble,
+      x: bubble.x >= minX && bubble.x <= maxX ? bubble.x : minX + (maxX - minX) * slot,
+      y: bubble.y >= minY && bubble.y <= maxY ? bubble.y : minY + (maxY - minY) * slot,
+    };
+  });
+
 export const BubbleField: React.FC<BubbleFieldProps> = ({
   width,
   height,
@@ -71,13 +87,16 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { t } = useTranslation();
   const [snapshot, setSnapshot] = useState<BubbleFieldSnapshot>(() => {
-    const initialBubbles = ensureMinimumBubbles(
+    let initialBubbles = ensureMinimumBubbles(
       [],
       minActiveBubbles,
       width,
       height,
       maxActiveBubbles,
     );
+    if (accessibleMode === true || !motionEnabled) {
+      initialBubbles = keepBubblesVisible(initialBubbles, width, height);
+    }
     return {
       bubbles: initialBubbles,
       popIndicators: [],
@@ -183,12 +202,22 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   useEffect(() => {
     widthRef.current = width;
     heightRef.current = height;
+    let nextBubbles = ensureMinimumBubbles(
+      bubblesRef.current,
+      minActiveBubbles,
+      width,
+      height,
+      maxActiveBubbles,
+    );
+    if (isAccessibleMode) {
+      nextBubbles = keepBubblesVisible(nextBubbles, width, height);
+    }
     publishSnapshot(
-      ensureMinimumBubbles(bubblesRef.current, minActiveBubbles, width, height, maxActiveBubbles),
+      nextBubbles,
       popIndicatorsRef.current,
       true,
     );
-  }, [height, maxActiveBubbles, minActiveBubbles, publishSnapshot, width]);
+  }, [height, isAccessibleMode, maxActiveBubbles, minActiveBubbles, publishSnapshot, width]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
@@ -277,13 +306,16 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
       const poppedBubble = bubblesRef.current.find((bubble) => bubble.id === bubbleId);
       if (!poppedBubble) return;
 
-      const nextBubbles = ensureMinimumBubbles(
+      let nextBubbles = ensureMinimumBubbles(
         bubblesRef.current.filter((bubble) => bubble.id !== poppedBubble.id),
         minActiveBubbles,
         widthRef.current,
         heightRef.current,
         maxActiveBubbles,
       );
+      if (isAccessibleMode) {
+        nextBubbles = keepBubblesVisible(nextBubbles, widthRef.current, heightRef.current);
+      }
       const nextPopIndicators = motionEnabled && !isAccessibleMode
         ? [
             ...popIndicatorsRef.current,
