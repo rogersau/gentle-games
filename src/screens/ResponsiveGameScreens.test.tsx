@@ -17,27 +17,58 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 jest.mock('../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
-      background: '#FFFEF7', cardBack: '#E8E4E1', cardFront: '#FFFFFF', text: '#5A5A5A',
-      textLight: '#8A8A8A', primary: '#A8D8EA', secondary: '#FFB6C1', success: '#B8E6B8',
-      matched: '#D3D3D3', surfaceGame: '#FFFFFF', surface: '#FFFFFF', border: '#DDD',
-      borderSubtle: '#EEE', danger: '#D66',
+      background: '#FFFEF7',
+      cardBack: '#E8E4E1',
+      cardFront: '#FFFFFF',
+      text: '#5A5A5A',
+      textLight: '#8A8A8A',
+      primary: '#A8D8EA',
+      secondary: '#FFB6C1',
+      success: '#B8E6B8',
+      matched: '#D3D3D3',
+      surfaceGame: '#FFFFFF',
+      surface: '#FFFFFF',
+      border: '#DDD',
+      borderSubtle: '#EEE',
+      danger: '#D66',
     },
-    resolvedMode: 'light', colorMode: 'light',
+    resolvedMode: 'light',
+    colorMode: 'light',
   }),
 }));
 
 jest.mock('../context/SettingsContext', () => ({
-  useSettings: () => ({ settings: {
-    animationsEnabled: false, reducedMotionEnabled: false, soundEnabled: false,
-    soundVolume: 0.5, showMochiInGames: false, keepyUppyEasyMode: true,
-  } }),
+  useSettings: () => ({
+    settings: {
+      animationsEnabled: false,
+      reducedMotionEnabled: false,
+      soundEnabled: false,
+      soundVolume: 0.5,
+      showMochiInGames: false,
+      keepyUppyEasyMode: true,
+    },
+  }),
 }));
 
-jest.mock('../hooks/useMochi', () => ({ useMochi: () => ({ showMochi: jest.fn() }) }));
-jest.mock('../ui/animations', () => ({ useAnimationEnabled: () => false, useScalePress: () => ({ scale: 1, onPressIn: jest.fn(), onPressOut: jest.fn() }) }));
-jest.mock('../utils/sounds', () => ({ playBubblePopSound: jest.fn(), playMatchSound: jest.fn(), playFlipSound: jest.fn() }));
+jest.mock('../hooks/useMochi', () => ({
+  useMochi: () => ({ showMochi: jest.fn() }),
+}));
+jest.mock('../ui/animations', () => ({
+  useAnimationEnabled: () => false,
+  useScalePress: () => ({
+    scale: 1,
+    onPressIn: jest.fn(),
+    onPressOut: jest.fn(),
+  }),
+}));
+jest.mock('../utils/sounds', () => ({
+  playBubblePopSound: jest.fn(),
+  playMatchSound: jest.fn(),
+  playFlipSound: jest.fn(),
+}));
 
 jest.mock('../components/BubbleField', () => ({
   BubbleField: (props: Record<string, unknown>) => {
