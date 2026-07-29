@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Animated, StyleSheet, TouchableOpacity, View } from 'react-native';
 import {
   addBalloon,
   createBalloon,
@@ -36,13 +36,34 @@ interface KeepyUppyBoardProps {
   motionEnabled?: boolean;
 }
 
-const STEP_MS = 1000 / 30;
+interface AnimatedBalloon {
+  model: KeepyUppyBalloon;
+  position: Animated.ValueXY;
+  opacity: Animated.Value;
+}
+
 const BALLOON_WIDTH_RATIO = 1.7;
 const BALLOON_HEIGHT_RATIO = 2.1;
 const BALLOON_STRING_HEIGHT = 22;
 const BALLOON_KNOT_HEIGHT = 8;
 const MIN_FLICK_DISTANCE = 8;
 const MAX_FLICK_DURATION_MS = 500;
+const GROUNDED_OPACITY = 0.72;
+
+const getBalloonOpacity = (balloon: KeepyUppyBalloon) =>
+  balloon.groundedAt === null ? 1 : GROUNDED_OPACITY;
+
+const createAnimatedBalloon = (model: KeepyUppyBalloon): AnimatedBalloon => ({
+  model,
+  position: new Animated.ValueXY({ x: model.x, y: model.y }),
+  opacity: new Animated.Value(getBalloonOpacity(model)),
+});
+
+const syncAnimatedBalloon = (balloon: AnimatedBalloon, model: KeepyUppyBalloon) => {
+  balloon.model = model;
+  balloon.position.setValue({ x: model.x, y: model.y });
+  balloon.opacity.setValue(getBalloonOpacity(model));
+};
 
 export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>(
   ({ bounds, onScoreChange, onBalloonCountChange, onPoppedChange, easyMode = false, motionEnabled = true }, ref) => {
@@ -53,10 +74,15 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
       () => createBalloon(bounds, { colors, resolvedMode }),
       [bounds, colors, resolvedMode],
     );
+    const createAnimatedBoardBalloon = useCallback(
+      () => createAnimatedBalloon(createBoardBalloon()),
+      [createBoardBalloon],
+    );
     const [score, setScore] = useState(0);
     const [popped, setPopped] = useState(0);
     const touchStartRef = useRef<Record<string, { x: number; y: number; startedAt: number }>>({});
-    const [balloons, setBalloons] = useState<KeepyUppyBalloon[]>(() => [createBoardBalloon()]);
+    const [balloons, setBalloons] = useState<AnimatedBalloon[]>(() => [createAnimatedBoardBalloon()]);
+    const balloonsRef = useRef(balloons);
     const onBalloonCountChangeRef = useRef(onBalloonCountChange);
     const onScoreChangeRef = useRef(onScoreChange);
     const onPoppedChangeRef = useRef(onPoppedChange);
@@ -65,17 +91,13 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
     onScoreChangeRef.current = onScoreChange;
     onPoppedChangeRef.current = onPoppedChange;
 
-    useEffect(() => {
-      if (balloons.length === 0) {
-        setBalloons([createBoardBalloon()]);
-        return;
-      }
-    }, [balloons.length, createBoardBalloon]);
+    const commitBalloons = useCallback((next: AnimatedBalloon[]) => {
+      balloonsRef.current = next;
+      setBalloons(next);
+    }, []);
 
     useEffect(() => {
-      if (balloons.length > 0) {
-        onBalloonCountChangeRef.current?.(balloons.length);
-      }
+      onBalloonCountChangeRef.current?.(balloons.length);
     }, [balloons.length]);
 
     useEffect(() => {
@@ -88,38 +110,93 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
 
     useEffect(() => {
       if (!motionEnabled) return;
-      const timer = setInterval(() => {
-        const now = Date.now();
-        setBalloons((previous) => {
-          const stepped = stepBalloons(previous, bounds, STEP_MS / 1000, now);
-          if (stepped.popped > 0) {
-            setPopped((currentPopped) => currentPopped + stepped.popped);
-          }
-          return stepped.balloons;
-        });
-      }, STEP_MS);
 
-      return () => clearInterval(timer);
-    }, [bounds, motionEnabled]);
+      let frameId: number | null = null;
+      let previousFrameTime: number | null = null;
+
+      const animate = (frameTime: number) => {
+        if (previousFrameTime === null) {
+          previousFrameTime = frameTime;
+          frameId = requestAnimationFrame(animate);
+          return;
+        }
+
+        const deltaSeconds = Math.max(0, (frameTime - previousFrameTime) / 1000);
+        previousFrameTime = frameTime;
+
+        const current = balloonsRef.current;
+        const stepped = stepBalloons(
+          current.map((balloon) => balloon.model),
+          bounds,
+          deltaSeconds,
+          Date.now(),
+        );
+        const currentById = new Map(current.map((balloon) => [balloon.model.id, balloon]));
+        let next = stepped.balloons.map((model) => {
+          const existing = currentById.get(model.id);
+          if (!existing) {
+            return createAnimatedBalloon(model);
+          }
+          syncAnimatedBalloon(existing, model);
+          return existing;
+        });
+        let balloonSetChanged = stepped.popped > 0;
+
+        if (next.length === 0) {
+          next = [createAnimatedBoardBalloon()];
+          balloonSetChanged = true;
+        }
+
+        balloonsRef.current = next;
+        if (balloonSetChanged) {
+          setBalloons(next);
+        }
+        if (stepped.popped > 0) {
+          setPopped((currentPopped) => currentPopped + stepped.popped);
+        }
+
+        frameId = requestAnimationFrame(animate);
+      };
+
+      frameId = requestAnimationFrame(animate);
+
+      return () => {
+        if (frameId !== null) {
+          cancelAnimationFrame(frameId);
+        }
+      };
+    }, [bounds, createAnimatedBoardBalloon, motionEnabled]);
 
     const resetBoard = useCallback(() => {
-      setBalloons([createBoardBalloon()]);
+      commitBalloons([createAnimatedBoardBalloon()]);
       setScore(0);
       setPopped(0);
-    }, [createBoardBalloon]);
+    }, [commitBalloons, createAnimatedBoardBalloon]);
 
     const addBoardBalloon = useCallback(() => {
-      setBalloons((previous) => addBalloon(previous, bounds, { colors, resolvedMode }));
-    }, [bounds, colors, resolvedMode]);
+      const current = balloonsRef.current;
+      const nextModels = addBalloon(
+        current.map((balloon) => balloon.model),
+        bounds,
+        { colors, resolvedMode },
+      );
+      if (nextModels.length === current.length) {
+        return;
+      }
+
+      const currentById = new Map(current.map((balloon) => [balloon.model.id, balloon]));
+      const next = nextModels.map((model) => currentById.get(model.id) ?? createAnimatedBalloon(model));
+      commitBalloons(next);
+    }, [bounds, colors, commitBalloons, resolvedMode]);
 
     useImperativeHandle(
       ref,
       () => ({
         addBalloon: addBoardBalloon,
         resetBalloons: resetBoard,
-        getBalloonCount: () => balloons.length,
+        getBalloonCount: () => balloonsRef.current.length,
       }),
-      [addBoardBalloon, balloons.length, resetBoard],
+      [addBoardBalloon, resetBoard],
     );
 
     const toBoardPoint = useCallback(
@@ -135,24 +212,21 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
     );
 
     const handleBalloonPress = useCallback(
-      (balloon: KeepyUppyBalloon, locationX: number, locationY: number) => {
-        const tapPoint = toBoardPoint(balloon, locationX, locationY);
+      (balloon: AnimatedBalloon, locationX: number, locationY: number) => {
+        const tapPoint = toBoardPoint(balloon.model, locationX, locationY);
         setScore((currentScore) => currentScore + 1);
-        setBalloons((previous) =>
-          previous.map((current) =>
-            current.id === balloon.id
-              ? tapBalloon(current, tapPoint.x, tapPoint.y, easyMode)
-              : current,
-          ),
+        syncAnimatedBalloon(
+          balloon,
+          tapBalloon(balloon.model, tapPoint.x, tapPoint.y, easyMode),
         );
       },
       [easyMode, toBoardPoint],
     );
 
     const handleBalloonRelease = useCallback(
-      (balloon: KeepyUppyBalloon, pageX: number, pageY: number) => {
-        const touchStart = touchStartRef.current[balloon.id];
-        delete touchStartRef.current[balloon.id];
+      (balloon: AnimatedBalloon, pageX: number, pageY: number) => {
+        const touchStart = touchStartRef.current[balloon.model.id];
+        delete touchStartRef.current[balloon.model.id];
         if (!touchStart) {
           return;
         }
@@ -162,11 +236,7 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
         if (Math.hypot(deltaX, deltaY) < MIN_FLICK_DISTANCE || durationMs > MAX_FLICK_DURATION_MS) {
           return;
         }
-        setBalloons((previous) =>
-          previous.map((current) =>
-            current.id === balloon.id ? flickBalloon(current, deltaX, deltaY, durationMs) : current,
-          ),
-        );
+        syncAnimatedBalloon(balloon, flickBalloon(balloon.model, deltaX, deltaY, durationMs));
       },
       [],
     );
@@ -180,57 +250,67 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
         <View style={styles.ground}>
           <View style={styles.grassStripe} />
         </View>
-        {balloons.map((balloon) => {
+        {balloons.map((animatedBalloon) => {
+          const balloon = animatedBalloon.model;
           const balloonW = balloon.radius * BALLOON_WIDTH_RATIO;
           const balloonH = balloon.radius * BALLOON_HEIGHT_RATIO;
           return (
-            <TouchableOpacity
+            <Animated.View
               key={balloon.id}
-              accessibilityRole='button'
-              accessibilityLabel={t('games.keepyUppy.balloonAccessibility')}
-              testID={`balloon-${balloon.id}`}
-              onPressIn={(event) => {
-                touchStartRef.current[balloon.id] = {
-                  x: event.nativeEvent.pageX,
-                  y: event.nativeEvent.pageY,
-                  startedAt: Date.now(),
-                };
-                handleBalloonPress(
-                  balloon,
-                  event.nativeEvent.locationX,
-                  event.nativeEvent.locationY,
-                );
-              }}
-              onPressOut={(event) =>
-                handleBalloonRelease(balloon, event.nativeEvent.pageX, event.nativeEvent.pageY)
-              }
               style={[
                 styles.balloonHitArea,
                 {
-                  left: balloon.x - balloonW / 2,
-                  top: balloon.y - balloonH / 2,
+                  left: -balloonW / 2,
+                  top: -balloonH / 2,
                   width: balloonW,
                   height: balloonH + BALLOON_KNOT_HEIGHT + BALLOON_STRING_HEIGHT,
-                  opacity: balloon.groundedAt === null ? 1 : 0.72,
+                  opacity: animatedBalloon.opacity,
+                  transform: animatedBalloon.position.getTranslateTransform(),
                 },
               ]}
             >
-              <View
-                style={[
-                  styles.balloonBody,
-                  {
-                    width: balloonW,
-                    height: balloonH,
-                    borderRadius: balloonW / 2,
-                    backgroundColor: balloon.color,
-                  },
-                ]}
+              <TouchableOpacity
+                accessibilityRole='button'
+                accessibilityLabel={t('games.keepyUppy.balloonAccessibility')}
+                testID={`balloon-${balloon.id}`}
+                onPressIn={(event) => {
+                  touchStartRef.current[balloon.id] = {
+                    x: event.nativeEvent.pageX,
+                    y: event.nativeEvent.pageY,
+                    startedAt: Date.now(),
+                  };
+                  handleBalloonPress(
+                    animatedBalloon,
+                    event.nativeEvent.locationX,
+                    event.nativeEvent.locationY,
+                  );
+                }}
+                onPressOut={(event) =>
+                  handleBalloonRelease(
+                    animatedBalloon,
+                    event.nativeEvent.pageX,
+                    event.nativeEvent.pageY,
+                  )
+                }
+                style={styles.balloonTouchTarget}
               >
-                <View style={styles.balloonShine} />
-              </View>
-              <View style={[styles.balloonKnot, { borderTopColor: balloon.color }]} />
-              <View style={styles.balloonString} />
-            </TouchableOpacity>
+                <View
+                  style={[
+                    styles.balloonBody,
+                    {
+                      width: balloonW,
+                      height: balloonH,
+                      borderRadius: balloonW / 2,
+                      backgroundColor: balloon.color,
+                    },
+                  ]}
+                >
+                  <View style={styles.balloonShine} />
+                </View>
+                <View style={[styles.balloonKnot, { borderTopColor: balloon.color }]} />
+                <View style={styles.balloonString} />
+              </TouchableOpacity>
+            </Animated.View>
           );
         })}
       </View>
@@ -301,6 +381,10 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     },
     balloonHitArea: {
       position: 'absolute',
+    },
+    balloonTouchTarget: {
+      width: '100%',
+      height: '100%',
       alignItems: 'center',
     },
     balloonBody: {
