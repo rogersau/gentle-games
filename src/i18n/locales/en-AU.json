@@ -254,7 +254,47 @@
         "darkCyan": "Dark cyan",
         "cadetBlue": "Cadet blue"
       },
-      "saveError": "Your drawing is still here, but could not be saved. Please try again later."
+      "saveError": "Your drawing is still here, but could not be saved. Please try again later.",
+      "stampTool": "Stamp dot tool",
+      "redo": "Redo",
+      "strokeWidth": "Stroke width",
+      "strokeWidthValue": "Stroke width {{value}}",
+      "smoothing": "Smoothing",
+      "smoothingOn": "Smoothing on",
+      "smoothingOff": "Smoothing off",
+      "guided": {
+        "chooseMode": "Choose a calm drawing space",
+        "modes": {
+          "freeDraw": "Free Draw",
+          "gentleTrails": "Gentle Trails",
+          "copyContinue": "Copy and Continue",
+          "prompted": "Prompted Drawing"
+        },
+        "patterns": {
+          "straight": "Straight",
+          "wave": "Wave",
+          "spiral": "Spiral",
+          "zigzag": "Zigzag",
+          "shape": "Shape",
+          "road": "Road"
+        },
+        "copyActivities": {
+          "copy-line": "Copy a line",
+          "complete-picture": "Complete a picture",
+          "continue-pattern": "Continue a pattern"
+        },
+        "pathWidth": "Wide path",
+        "pathWidthValue": "Wide path {{value}}",
+        "tolerance": "Tolerance",
+        "toleranceValue": "Tolerance {{value}}",
+        "trailInstruction": "Follow the wide path at your own pace.",
+        "copyInstruction": "Look at the first marks, then add your own beside them.",
+        "prompt": "Add somewhere Mochi could rest. There is no right answer.",
+        "inProgress": "A calm path is waiting. Take your time.",
+        "complete": "Path complete. You can stop whenever you like.",
+        "cellLabel": "Trail step {{current}} of {{total}}",
+        "cellHint": "Activate to place a dot along the calm path"
+      }
     },
     "glitterFall": {
       "name": "Glitter Fall",
@@ -294,7 +334,58 @@
       "movingMode": "Moving mode",
       "useAccessibleMode": "Use stationary bubble buttons",
       "useMovingMode": "Use moving bubbles",
-      "modeToggleHint": "Switch between moving bubbles and stationary buttons"
+      "modeToggleHint": "Switch between moving bubbles and stationary buttons",
+      "freePlay": "Free play",
+      "freePlayTitle": "Free play",
+      "freePlayDescription": "Pop any bubble. There is no score, timer, or finish line.",
+      "freePlaySelected": "Free play. Choose any bubble.",
+      "sensory": {
+        "title": "Sensory profile",
+        "description": "Choose a calm way to play. You can change it at any time.",
+        "motion": "Motion",
+        "still": "Still",
+        "floating": "Floating",
+        "reducedMotion": "Still is recommended for reduced motion. Floating is still available if you choose it.",
+        "speed": "Speed",
+        "density": "Bubbles",
+        "size": "Bubble size",
+        "slow": "Slow",
+        "medium": "Medium",
+        "fast": "Fast",
+        "sparse": "Sparse",
+        "full": "Full",
+        "small": "Small",
+        "large": "Large",
+        "sound": "Bubble sounds",
+        "soundDescription": "Play a gentle sound when a bubble is popped."
+      },
+      "guided": {
+        "title": "Try this",
+        "tryAgain": "That was okay. Try again when you are ready.",
+        "correct": "Yes. Keep going when you are ready.",
+        "next": "A new round is ready. Take your time.",
+        "nextRound": "Next round",
+        "exit": "Exit guided play",
+        "colour": {
+          "label": "Colour",
+          "prompt": "Pop bubbles matching the colour shown."
+        },
+        "size": {
+          "label": "Biggest or smallest",
+          "prompt": "Pop bubbles matching the size shown."
+        },
+        "count": {
+          "label": "Exact count",
+          "prompt": "Pop exactly three bubbles, then stop.",
+          "locked": "That count is complete. Choose Next round or Exit.",
+          "complete": "You counted exactly {{count}} bubbles.",
+          "progress": "{{current}} of {{target}}"
+        },
+        "direction": {
+          "label": "Left or right",
+          "prompt": "Pop bubbles on the side shown by the arrow."
+        }
+      }
     },
     "categoryMatch": {
       "name": "Category Match",
@@ -356,7 +447,25 @@
       "taps": "Taps: {{count}}",
       "balloons": "Balloons: {{count}}",
       "popped": "Popped: {{count}}",
-      "balloonAccessibility": "Balloon, tap to keep it up"
+      "balloonAccessibility": "Balloon, tap to keep it up",
+      "liftAgain": "Lift it again",
+      "restingBalloonAccessibility": "Balloon resting. Lift it again",
+      "tapAnywhere": "Tap anywhere to lift a balloon",
+      "leftTargetZone": "Left target zone",
+      "rightTargetZone": "Right target zone",
+      "leftSide": "Left side",
+      "rightSide": "Right side",
+      "restart": "Start again",
+      "restartHint": "Start with a fresh balloon. Nothing is lost when a balloon rests.",
+      "profile": {
+        "title": "Choose how to play",
+        "large-and-slow": "Large and slow",
+        "tap-anywhere": "Tap anywhere",
+        "direct-touch": "Direct touch",
+        "target-zones": "Target zones",
+        "left-and-right": "Left and right",
+        "more-balloons": "More balloons"
+      }
     },
     "breathingGarden": {
       "name": "Breathing Garden",
@@ -670,6 +779,57 @@
       "label": "Keepy Uppy Easy Mode",
       "description": "Any tap gives a gentle lift while good taps still go higher"
     },
+    "drawing": {
+      "title": "Drawing Pad",
+      "mode": { "title": "Starting mode" },
+      "modes": {
+        "freeDraw": "Free Draw",
+        "gentleTrails": "Gentle Trails",
+        "copyContinue": "Copy and Continue",
+        "prompted": "Prompted Drawing"
+      },
+      "strokeWidth": {
+        "title": "Stroke width",
+        "thin": "Thin",
+        "medium": "Medium",
+        "wide": "Wide"
+      },
+      "smoothing": {
+        "label": "Smooth strokes",
+        "description": "Gently soften drawn lines"
+      }
+    },
+    "keepyUppy": {
+      "title": "Keepy Uppy",
+      "profile": { "title": "Motor profile" },
+      "profiles": {
+        "large-and-slow": "Large and slow",
+        "tap-anywhere": "Tap anywhere",
+        "direct-touch": "Direct touch",
+        "target-zones": "Target zones",
+        "left-and-right": "Left and right",
+        "more-balloons": "More balloons"
+      },
+      "balloonSize": {
+        "title": "Balloon size",
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large"
+      },
+      "gravity": {
+        "title": "Gravity",
+        "low": "Low",
+        "gentle": "Gentle",
+        "standard": "Standard"
+      },
+      "targetSize": {
+        "title": "Touch target size",
+        "direct": "Direct",
+        "large": "Large",
+        "extraLarge": "Extra large"
+      },
+      "balloonCount": { "title": "Number of balloons" }
+    },
     "bubblePop": {
       "title": "Bubble Pop",
       "moving": {
@@ -679,6 +839,22 @@
       "fullField": {
         "label": "More bubbles",
         "description": "Show a fuller field of bubbles"
+      },
+      "speed": {
+        "title": "Speed",
+        "slow": "Slow",
+        "medium": "Medium",
+        "fast": "Fast"
+      },
+      "size": {
+        "title": "Bubble size",
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large"
+      },
+      "sound": {
+        "label": "Bubble sounds",
+        "description": "Sounds only play when the main Sound setting is also on"
       }
     },
     "glitterFall": {

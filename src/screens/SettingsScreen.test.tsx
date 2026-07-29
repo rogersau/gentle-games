@@ -148,12 +148,20 @@ describe('SettingsScreen', () => {
     expect(screen.queryByText('Difficulty')).toBeNull();
   });
 
-  it('toggles Keepy Uppy easy mode setting', () => {
+  it('persists a Keepy Uppy motor profile with its explicit controls', () => {
+    mockSettings.gameSettings = { ...DEFAULT_GAME_SETTINGS };
     const screen = render(React.createElement(SettingsScreen));
-    const keepyUppySwitch = screen.getByRole('switch', { name: /Keepy Uppy Easy Mode/i });
-    fireEvent(keepyUppySwitch, 'valueChange', false);
+    fireEvent.press(
+      screen.getByRole('radio', { name: 'settings.keepyUppy.profiles.direct-touch' }),
+    );
 
-    expect(mockUpdateSettings).toHaveBeenCalledWith('keepy-uppy', { liftMode: 'precise' });
+    expect(mockUpdateSettings).toHaveBeenCalledWith('keepy-uppy', {
+      profile: 'direct-touch',
+      balloonSize: 34,
+      gravity: 220,
+      targetSize: 1,
+      balloonCount: 1,
+    });
   });
 
   it('persists individual Glitter Fall overrides', () => {

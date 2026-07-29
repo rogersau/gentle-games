@@ -12,7 +12,7 @@ import {
   resolveGlitterSettings,
 } from './glitterSettings';
 
-export const SETTINGS_VERSION = 4;
+export const SETTINGS_VERSION = 5;
 
 export type MemorySnapPairCount = 2 | 3 | 4 | 6 | 10 | 15;
 export type MemorySnapPreviewMode = 'none' | 'until-ready' | '4-seconds' | '8-seconds';
@@ -37,13 +37,48 @@ export interface BreathingGardenSettings {
   visualCue: boolean;
 }
 
+export interface BubblePopSettings {
+  motion: 'still' | 'moving';
+  speed: 'slow' | 'medium' | 'fast';
+  density: 'sparse' | 'medium' | 'full';
+  size: 'small' | 'medium' | 'large';
+  sound: boolean;
+}
+
+export interface DrawingSettings {
+  mode: 'free-draw' | 'gentle-trails' | 'copy-and-continue' | 'prompted-drawing';
+  trailPattern: 'straight' | 'wave' | 'spiral' | 'zigzag' | 'shape' | 'road';
+  copyActivity: 'copy-line' | 'complete-picture' | 'continue-pattern';
+  tolerance: 24 | 40 | 56;
+  pathWidth: 48 | 68 | 88;
+  strokeWidth: 3 | 5 | 8;
+  smoothing: boolean;
+}
+
+export type KeepyUppyProfile =
+  | 'large-and-slow'
+  | 'tap-anywhere'
+  | 'direct-touch'
+  | 'target-zones'
+  | 'left-and-right'
+  | 'more-balloons';
+
+export interface KeepyUppySettings {
+  liftMode: 'gentle' | 'precise';
+  profile: KeepyUppyProfile;
+  balloonSize: number;
+  gravity: number;
+  targetSize: number;
+  balloonCount: 1 | 2 | 3;
+}
+
 export interface GameSettingsMap {
   'memory-snap': MemorySnapSettings;
-  drawing: Record<string, never>;
+  drawing: DrawingSettings;
   'glitter-fall': GlitterFallSettings;
-  'bubble-pop': { motion: 'still' | 'moving'; density: 'sparse' | 'full' };
+  'bubble-pop': BubblePopSettings;
   'category-match': CategoryMatchSettings;
-  'keepy-uppy': { liftMode: 'gentle' | 'precise' };
+  'keepy-uppy': KeepyUppySettings;
   'breathing-garden': BreathingGardenSettings;
   'pattern-train': { level: PatternTrainLevel };
   'number-picnic': {
@@ -61,11 +96,32 @@ export const DEFAULT_GAME_SETTINGS: GameSettingsMap = {
     mismatchDuration: 2000,
     hintEnabled: true,
   },
-  drawing: {},
+  drawing: {
+    mode: 'free-draw',
+    trailPattern: 'straight',
+    copyActivity: 'copy-line',
+    tolerance: 40,
+    pathWidth: 68,
+    strokeWidth: 5,
+    smoothing: true,
+  },
   'glitter-fall': DEFAULT_GLITTER_SETTINGS,
-  'bubble-pop': { motion: 'still', density: 'sparse' },
+  'bubble-pop': {
+    motion: 'still',
+    speed: 'slow',
+    density: 'sparse',
+    size: 'large',
+    sound: true,
+  },
   'category-match': { categoryCount: 2, showPreview: true },
-  'keepy-uppy': { liftMode: 'gentle' },
+  'keepy-uppy': {
+    liftMode: 'gentle',
+    profile: 'large-and-slow',
+    balloonSize: 46,
+    gravity: 82,
+    targetSize: 1.8,
+    balloonCount: 1,
+  },
   'breathing-garden': { sessionLength: 'open-ended', visualCue: true },
   'pattern-train': { level: 'starter' },
   'number-picnic': {
@@ -127,6 +183,7 @@ export function sanitizeGameSettings(
       (typeof legacy.settingsVersion === 'number' && legacy.settingsVersion < 2)) &&
     Object.keys(legacy).length > 0;
   const memory = isObject(candidate['memory-snap']) ? candidate['memory-snap'] : {};
+  const drawing = isObject(candidate.drawing) ? candidate.drawing : {};
   const glitter = isObject(candidate['glitter-fall']) ? candidate['glitter-fall'] : {};
   const bubble = isObject(candidate['bubble-pop']) ? candidate['bubble-pop'] : {};
   const category = isObject(candidate['category-match']) ? candidate['category-match'] : {};
@@ -191,7 +248,46 @@ export function sanitizeGameSettings(
           ? memory.hintEnabled
           : DEFAULT_GAME_SETTINGS['memory-snap'].hintEnabled,
     },
-    drawing: {},
+    drawing: {
+      mode:
+        drawing.mode === 'free-draw' ||
+        drawing.mode === 'gentle-trails' ||
+        drawing.mode === 'copy-and-continue' ||
+        drawing.mode === 'prompted-drawing'
+          ? drawing.mode
+          : DEFAULT_GAME_SETTINGS.drawing.mode,
+      trailPattern:
+        drawing.trailPattern === 'straight' ||
+        drawing.trailPattern === 'wave' ||
+        drawing.trailPattern === 'spiral' ||
+        drawing.trailPattern === 'zigzag' ||
+        drawing.trailPattern === 'shape' ||
+        drawing.trailPattern === 'road'
+          ? drawing.trailPattern
+          : DEFAULT_GAME_SETTINGS.drawing.trailPattern,
+      copyActivity:
+        drawing.copyActivity === 'copy-line' ||
+        drawing.copyActivity === 'complete-picture' ||
+        drawing.copyActivity === 'continue-pattern'
+          ? drawing.copyActivity
+          : DEFAULT_GAME_SETTINGS.drawing.copyActivity,
+      tolerance:
+        drawing.tolerance === 24 || drawing.tolerance === 40 || drawing.tolerance === 56
+          ? drawing.tolerance
+          : DEFAULT_GAME_SETTINGS.drawing.tolerance,
+      pathWidth:
+        drawing.pathWidth === 48 || drawing.pathWidth === 68 || drawing.pathWidth === 88
+          ? drawing.pathWidth
+          : DEFAULT_GAME_SETTINGS.drawing.pathWidth,
+      strokeWidth:
+        drawing.strokeWidth === 3 || drawing.strokeWidth === 5 || drawing.strokeWidth === 8
+          ? drawing.strokeWidth
+          : DEFAULT_GAME_SETTINGS.drawing.strokeWidth,
+      smoothing:
+        typeof drawing.smoothing === 'boolean'
+          ? drawing.smoothing
+          : DEFAULT_GAME_SETTINGS.drawing.smoothing,
+    },
     'glitter-fall': isLegacyProfile
       ? resolveGlitterSettings({ ...GLITTER_PRESETS.explore, shakeResponse: true })
       : resolveGlitterSettings(glitter),
@@ -203,11 +299,23 @@ export function sanitizeGameSettings(
             ? 'moving'
             : 'still',
       density:
-        bubble.density === 'full' || bubble.density === 'sparse'
+        bubble.density === 'full' || bubble.density === 'medium' || bubble.density === 'sparse'
           ? bubble.density
           : isLegacyProfile
             ? 'full'
-            : 'sparse',
+            : DEFAULT_GAME_SETTINGS['bubble-pop'].density,
+      speed:
+        bubble.speed === 'slow' || bubble.speed === 'medium' || bubble.speed === 'fast'
+          ? bubble.speed
+          : DEFAULT_GAME_SETTINGS['bubble-pop'].speed,
+      size:
+        bubble.size === 'small' || bubble.size === 'medium' || bubble.size === 'large'
+          ? bubble.size
+          : DEFAULT_GAME_SETTINGS['bubble-pop'].size,
+      sound:
+        typeof bubble.sound === 'boolean'
+          ? bubble.sound
+          : DEFAULT_GAME_SETTINGS['bubble-pop'].sound,
     },
     'category-match': {
       categoryCount:
@@ -226,6 +334,33 @@ export function sanitizeGameSettings(
           : legacy.keepyUppyEasyMode === false
             ? 'precise'
             : 'gentle',
+      profile:
+        keepy.profile === 'large-and-slow' ||
+        keepy.profile === 'tap-anywhere' ||
+        keepy.profile === 'direct-touch' ||
+        keepy.profile === 'target-zones' ||
+        keepy.profile === 'left-and-right' ||
+        keepy.profile === 'more-balloons'
+          ? keepy.profile
+          : keepy.liftMode === 'precise' || legacy.keepyUppyEasyMode === false
+            ? 'direct-touch'
+            : DEFAULT_GAME_SETTINGS['keepy-uppy'].profile,
+      balloonSize:
+        typeof keepy.balloonSize === 'number' && keepy.balloonSize >= 24 && keepy.balloonSize <= 52
+          ? keepy.balloonSize
+          : DEFAULT_GAME_SETTINGS['keepy-uppy'].balloonSize,
+      gravity:
+        typeof keepy.gravity === 'number' && keepy.gravity >= 60 && keepy.gravity <= 260
+          ? keepy.gravity
+          : DEFAULT_GAME_SETTINGS['keepy-uppy'].gravity,
+      targetSize:
+        typeof keepy.targetSize === 'number' && keepy.targetSize >= 1 && keepy.targetSize <= 3
+          ? keepy.targetSize
+          : DEFAULT_GAME_SETTINGS['keepy-uppy'].targetSize,
+      balloonCount:
+        keepy.balloonCount === 1 || keepy.balloonCount === 2 || keepy.balloonCount === 3
+          ? keepy.balloonCount
+          : DEFAULT_GAME_SETTINGS['keepy-uppy'].balloonCount,
     },
     'breathing-garden': {
       sessionLength:

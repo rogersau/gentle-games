@@ -1,6 +1,7 @@
 import {
   addBalloon,
   createBalloon,
+  createInitialBalloons,
   flickBalloon,
   GROUND_POP_DELAY_MS,
   MAX_BALLOONS,
@@ -8,6 +9,11 @@ import {
   stepBalloons,
   tapBalloon,
   resolveBalloonPalette,
+  DEFAULT_KEEPY_UPPY_CONFIG,
+  KEEPY_UPPY_PROFILES,
+  KEEPY_UPPY_VELOCITY_LIMITS,
+  isBalloonResting,
+  resolveKeepyUppyConfig,
 } from './keepyUppyLogic';
 import { PASTEL_COLORS, ThemeColors } from '../types';
 
@@ -84,7 +90,7 @@ describe('keepyUppyLogic', () => {
     expect(flicked.groundedAt).toBeNull();
   });
 
-  it('gives a brief ground grace period before popping', () => {
+  it('turns ground contact into a resting state without popping', () => {
     const balloon: KeepyUppyBalloon = {
       id: 'g',
       x: 160,
@@ -96,12 +102,110 @@ describe('keepyUppyLogic', () => {
       groundedAt: 1000,
     };
 
-    const beforePop = stepBalloons([balloon], bounds, 1 / 30, 1000 + GROUND_POP_DELAY_MS - 1);
-    const afterPop = stepBalloons([balloon], bounds, 1 / 30, 1000 + GROUND_POP_DELAY_MS + 1);
+    const beforeRest = stepBalloons([balloon], bounds, 1 / 30, 1000 + GROUND_POP_DELAY_MS - 1);
+    const afterRest = stepBalloons([balloon], bounds, 1 / 30, 1000 + GROUND_POP_DELAY_MS + 1);
 
-    expect(beforePop.balloons).toHaveLength(1);
-    expect(afterPop.balloons).toHaveLength(0);
-    expect(afterPop.popped).toBe(1);
+    expect(beforeRest.balloons).toHaveLength(1);
+    expect(afterRest.balloons).toHaveLength(1);
+    expect(afterRest.balloons[0].resting).toBe(true);
+    expect(afterRest.popped).toBe(0);
+    expect(isBalloonResting(afterRest.balloons[0])).toBe(true);
+  });
+
+  it('restarts a resting balloon through the normal lift input', () => {
+    const balloon: KeepyUppyBalloon = {
+      id: 'resting',
+      x: 160,
+      y: 446,
+      vx: 0,
+      vy: 0,
+      radius: 34,
+      color: '#fff',
+      groundedAt: 1000,
+      resting: true,
+    };
+
+    const lifted = tapBalloon(balloon, 160, 446);
+
+    expect(lifted.resting).toBe(false);
+    expect(lifted.groundedAt).toBeNull();
+    expect(lifted.vy).toBeLessThan(0);
+  });
+
+  it('provides materially distinct deterministic profiles', () => {
+    const profiles = Object.keys(KEEPY_UPPY_PROFILES) as Array<keyof typeof KEEPY_UPPY_PROFILES>;
+    const configs = profiles.map((profile) => resolveKeepyUppyConfig({ profile }));
+
+    expect(configs).toHaveLength(6);
+    expect(new Set(configs.map((config) => config.balloonSize)).size).toBeGreaterThan(1);
+    expect(new Set(configs.map((config) => config.gravity)).size).toBeGreaterThan(1);
+    expect(new Set(configs.map((config) => config.targetSize)).size).toBeGreaterThan(1);
+    expect(resolveKeepyUppyConfig({ profile: 'more-balloons' }).balloonCount).toBe(3);
+    expect(DEFAULT_KEEPY_UPPY_CONFIG.profile).toBe('large-and-slow');
+  });
+
+  it('keeps a profile interaction when persisted physics values override it', () => {
+    expect(
+      resolveKeepyUppyConfig({
+        profile: 'target-zones',
+        balloonSize: 46,
+        gravity: 82,
+        targetSize: 2.6,
+        balloonCount: 1,
+      }).interaction,
+    ).toBe('target-zones');
+    expect(
+      resolveKeepyUppyConfig({
+        profile: 'tap-anywhere',
+        balloonSize: 34,
+        gravity: 175,
+        targetSize: 2.6,
+        balloonCount: 1,
+      }).interaction,
+    ).toBe('tap-anywhere');
+  });
+
+  it('keeps every profile playable and deterministic', () => {
+    (Object.keys(KEEPY_UPPY_PROFILES) as Array<keyof typeof KEEPY_UPPY_PROFILES>).forEach(
+      (profile) => {
+        const config = resolveKeepyUppyConfig({ profile });
+        const initial = createInitialBalloons(bounds, { rng: () => 0.5, config });
+        const lifted = initial.map((balloon) =>
+          tapBalloon(balloon, balloon.x, balloon.y, false, config),
+        );
+
+        expect(initial.length).toBe(profile === 'more-balloons' ? 3 : 1);
+        expect(
+          lifted.every((balloon) => Number.isFinite(balloon.x) && Number.isFinite(balloon.y)),
+        ).toBe(true);
+        expect(lifted.every((balloon) => !isBalloonResting(balloon))).toBe(true);
+      },
+    );
+  });
+
+  it('honours an explicit balloon count independently of the profile', () => {
+    expect(
+      createInitialBalloons(bounds, {
+        rng: () => 0.5,
+        config: { profile: 'direct-touch', balloonCount: 2 },
+      }),
+    ).toHaveLength(2);
+  });
+
+  it('uses a slower, stable but playable reduced-motion step', () => {
+    const balloon = createBalloon(bounds, {
+      rng: () => 0.5,
+      config: { profile: 'large-and-slow' },
+    });
+    const normal = stepBalloons([balloon], bounds, 1 / 30, 1000, { profile: 'large-and-slow' });
+    const reduced = stepBalloons([balloon], bounds, 1 / 30, 1000, {
+      profile: 'large-and-slow',
+      reducedMotion: true,
+    });
+
+    expect(reduced.balloons).toHaveLength(1);
+    expect(reduced.balloons[0].y).toBeLessThanOrEqual(normal.balloons[0].y);
+    expect(reduced.popped).toBe(0);
   });
 
   it('separates overlapping balloons and transfers velocity on collision', () => {
@@ -319,7 +423,7 @@ describe('keepyUppyLogic', () => {
       expect(result[0].groundedAt).toBeNull();
     });
 
-    it('skips collision resolution when balloons are at exact same position', () => {
+    it('separates balloons at exact same position for edge recovery', () => {
       const balloons: KeepyUppyBalloon[] = [
         {
           id: 'a',
@@ -344,9 +448,10 @@ describe('keepyUppyLogic', () => {
       ];
 
       const { balloons: result } = stepBalloons(balloons, bounds, 1 / 30, 1000);
-      // When distance is 0, collision is skipped, so positions remain the same
-      expect(result[0].x).toBe(160);
-      expect(result[1].x).toBe(160);
+      expect(result[0].x).not.toBe(result[1].x);
+      expect(
+        Math.hypot(result[1].x - result[0].x, result[1].y - result[0].y),
+      ).toBeGreaterThanOrEqual(result[0].radius + result[1].radius - 0.001);
     });
 
     it('handles velocity clamping in flickBalloon', () => {
@@ -363,10 +468,10 @@ describe('keepyUppyLogic', () => {
 
       // Extreme flick should be clamped
       const flicked = flickBalloon(balloon, 1000, -1000, 50);
-      expect(flicked.vx).toBeLessThanOrEqual(320);
-      expect(flicked.vx).toBeGreaterThanOrEqual(-320);
-      expect(flicked.vy).toBeGreaterThanOrEqual(-420);
-      expect(flicked.vy).toBeLessThanOrEqual(320);
+      expect(flicked.vx).toBeLessThanOrEqual(KEEPY_UPPY_VELOCITY_LIMITS.horizontal);
+      expect(flicked.vx).toBeGreaterThanOrEqual(-KEEPY_UPPY_VELOCITY_LIMITS.horizontal);
+      expect(flicked.vy).toBeGreaterThanOrEqual(-KEEPY_UPPY_VELOCITY_LIMITS.upward);
+      expect(flicked.vy).toBeLessThanOrEqual(KEEPY_UPPY_VELOCITY_LIMITS.downward);
     });
 
     it('handles velocity clamping in tapBalloon', () => {
@@ -383,10 +488,10 @@ describe('keepyUppyLogic', () => {
 
       // Tap should clamp velocities
       const tapped = tapBalloon(balloon, 100, 100);
-      expect(tapped.vx).toBeLessThanOrEqual(260);
-      expect(tapped.vx).toBeGreaterThanOrEqual(-260);
-      expect(tapped.vy).toBeGreaterThanOrEqual(-360);
-      expect(tapped.vy).toBeLessThanOrEqual(280);
+      expect(tapped.vx).toBeLessThanOrEqual(KEEPY_UPPY_VELOCITY_LIMITS.horizontal);
+      expect(tapped.vx).toBeGreaterThanOrEqual(-KEEPY_UPPY_VELOCITY_LIMITS.horizontal);
+      expect(tapped.vy).toBeGreaterThanOrEqual(-KEEPY_UPPY_VELOCITY_LIMITS.upward);
+      expect(tapped.vy).toBeLessThanOrEqual(KEEPY_UPPY_VELOCITY_LIMITS.downward);
     });
   });
 });

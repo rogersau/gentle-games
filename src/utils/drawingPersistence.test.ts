@@ -84,4 +84,18 @@ describe('drawing persistence budgets', () => {
       serializeDrawingHistory([impossible], { ...DRAWING_HISTORY_BUDGET, maxSerializedBytes: 10 }),
     ).toThrow(DrawingPersistenceError);
   });
+
+  it('accepts temporary stamp actions without changing free-draw storage shape', () => {
+    const stamp: HistoryEntry = {
+      kind: 'stamp',
+      id: 'stamp-1',
+      actionId: 'stamp-action',
+      x: 12,
+      y: 18,
+      size: 16,
+      color: '#00ff00',
+    };
+
+    expect(sanitizeDrawingHistory([stamp])).toEqual([stamp]);
+  });
 });

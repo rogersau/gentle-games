@@ -72,6 +72,16 @@ const isHistoryEntry = (value: unknown): value is HistoryEntry => {
       value.size > 0 &&
       typeof value.color === 'string'
     );
+  if (value.kind === 'stamp')
+    return (
+      isFiniteNumber(value.x) &&
+      isFiniteNumber(value.y) &&
+      Math.abs(value.x) <= DRAWING_HISTORY_MAX_COORDINATE &&
+      Math.abs(value.y) <= DRAWING_HISTORY_MAX_COORDINATE &&
+      isFiniteNumber(value.size) &&
+      value.size > 0 &&
+      typeof value.color === 'string'
+    );
   return false;
 };
 

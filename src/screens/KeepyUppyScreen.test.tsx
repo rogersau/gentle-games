@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor, act } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import { KeepyUppyScreen } from './KeepyUppyScreen';
 import {
   assertNoSetStateDuringRender,
@@ -7,6 +7,7 @@ import {
 } from '../test-utils/setStateDetection';
 
 const mockGoBack = jest.fn();
+const mockUpdateGameSettings = jest.fn().mockResolvedValue(undefined);
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
@@ -37,6 +38,7 @@ const keepySettings = { keepyUppyEasyMode: true, showMochiInGames: true, pressur
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: keepySettings,
+    updateGameSettings: mockUpdateGameSettings,
   }),
 }));
 jest.mock('../context/MochiContext', () => ({
@@ -73,44 +75,20 @@ describe('KeepyUppyScreen', () => {
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 
-  it('adds balloons up to a max of three', async () => {
+  it('selects the advanced three-balloon profile without showing pressure totals', () => {
     const screen = render(<KeepyUppyScreen />);
-    const addButton = screen.getByText('+ Balloon');
+    fireEvent.press(screen.getByRole('radio', { name: 'more balloons' }));
 
-    expect(screen.getByText('Balloons: 1')).toBeTruthy();
-
-    await act(async () => {
-      fireEvent.press(addButton);
+    expect(mockUpdateGameSettings).toHaveBeenCalledWith('keepy-uppy', {
+      profile: 'more-balloons',
+      balloonSize: 29,
+      gravity: 220,
+      targetSize: 1.8,
+      balloonCount: 3,
     });
-
-    await waitFor(() => {
-      expect(screen.getByText('Balloons: 2')).toBeTruthy();
-    });
-
-    await act(async () => {
-      fireEvent.press(addButton);
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('Balloons: 3')).toBeTruthy();
-    });
-
-    await act(async () => {
-      fireEvent.press(addButton);
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('Balloons: 3')).toBeTruthy();
-    });
-
-    // Press button again - should stay at 3 balloons
-    await act(async () => {
-      fireEvent.press(addButton);
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('Balloons: 3')).toBeTruthy();
-    });
+    expect(screen.queryByText('Taps: 0')).toBeNull();
+    expect(screen.queryByText('Balloons: 1')).toBeNull();
+    expect(screen.queryByText('Popped: 0')).toBeNull();
   });
 
   it('handles multiple renders without setState during render errors', () => {
@@ -124,14 +102,23 @@ describe('KeepyUppyScreen', () => {
     assertNoSetStateDuringRender(consoleErrorSpy);
   });
 
-  it('hides score, balloon, and popped counters in pressure-free mode', () => {
+  it('hides score, balloon, and popped counters by default', () => {
     const settingsModule = jest.requireMock('../context/SettingsContext') as {
       useSettings: () => { settings: { pressureFreeMode: boolean } };
     };
-    settingsModule.useSettings().settings.pressureFreeMode = true;
+    settingsModule.useSettings().settings.pressureFreeMode = false;
     const screen = render(<KeepyUppyScreen />);
     expect(screen.queryByText('Taps: 0')).toBeNull();
     expect(screen.queryByText('Balloons: 1')).toBeNull();
     expect(screen.queryByText('Popped: 0')).toBeNull();
+  });
+
+  it('offers a focusable non-failure restart control', () => {
+    const screen = render(<KeepyUppyScreen />);
+    const restart = screen.getByRole('button', { name: 'Start again' });
+
+    fireEvent.press(restart);
+
+    expect(restart).toBeTruthy();
   });
 });

@@ -10,7 +10,13 @@ import {
 } from 'react-native';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { ThemeColors } from '../types';
-import { Bubble, ensureMinimumBubbles, spawnBubbles, stepBubbles } from '../utils/bubbleLogic';
+import {
+  Bubble,
+  BubbleSize,
+  ensureMinimumBubbles,
+  spawnBubbles,
+  stepBubbles,
+} from '../utils/bubbleLogic';
 import { useThemeColors } from '../utils/theme';
 import { useTranslation } from 'react-i18next';
 import { Radius } from '../ui/tokens';
@@ -29,8 +35,11 @@ interface BubbleFieldProps {
   minActiveBubbles?: number;
   maxActiveBubbles?: number;
   spawnIntervalMs?: number;
-  onBubblePop?: () => void;
+  onBubblePop?: (bubble: Bubble) => boolean | void;
+  onBubblesChange?: (bubbles: Bubble[]) => void;
   motionEnabled?: boolean;
+  speedMultiplier?: number;
+  bubbleSize?: BubbleSize;
   /** Force the stationary, keyboard/switch-friendly interaction mode. */
   accessibleMode?: boolean;
   /** Whether the containing route is currently focused. */
@@ -40,6 +49,11 @@ interface BubbleFieldProps {
 const POP_INDICATOR_DECAY_PER_SECOND = 3;
 const POP_INDICATOR_FLOAT_PER_SECOND = 28;
 const SNAPSHOT_INTERVAL_MS = 1000 / 30;
+const BUBBLE_SIZE_MULTIPLIERS: Record<BubbleSize, number> = {
+  small: 0.78,
+  medium: 1,
+  large: 1.25,
+};
 
 interface BubbleFieldSnapshot {
   bubbles: Bubble[];
@@ -49,9 +63,14 @@ interface BubbleFieldSnapshot {
 const haveSameIds = <T extends { id: string }>(left: T[], right: T[]): boolean =>
   left.length === right.length && left.every((item, index) => item.id === right[index]?.id);
 
-const keepBubblesVisible = (bubbles: Bubble[], width: number, height: number): Bubble[] =>
+const keepBubblesVisible = (
+  bubbles: Bubble[],
+  width: number,
+  height: number,
+  sizeMultiplier = 1,
+): Bubble[] =>
   bubbles.map((bubble, index) => {
-    const hitTargetRadius = Math.max(32, bubble.radius + 8);
+    const hitTargetRadius = Math.max(32, bubble.radius * sizeMultiplier + 8);
     const minX = Math.min(width / 2, hitTargetRadius);
     const maxX = Math.max(minX, width - hitTargetRadius);
     const minY = Math.min(height / 2, hitTargetRadius);
@@ -72,7 +91,10 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   maxActiveBubbles = 12,
   spawnIntervalMs = 800,
   onBubblePop,
+  onBubblesChange,
   motionEnabled = true,
+  speedMultiplier = 1,
+  bubbleSize = 'medium',
   accessibleMode,
   isFocused = true,
 }) => {
@@ -88,7 +110,12 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
       maxActiveBubbles,
     );
     if (accessibleMode === true || !motionEnabled) {
-      initialBubbles = keepBubblesVisible(initialBubbles, width, height);
+      initialBubbles = keepBubblesVisible(
+        initialBubbles,
+        width,
+        height,
+        BUBBLE_SIZE_MULTIPLIERS[bubbleSize],
+      );
     }
     return {
       bubbles: initialBubbles,
@@ -116,6 +143,10 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   const [accessibilityAnnouncement, setAccessibilityAnnouncement] = useState('');
   const isAccessibleMode =
     accessibleMode === true || manualAccessibleMode || screenReaderEnabled || !motionEnabled;
+
+  useEffect(() => {
+    onBubblesChange?.(snapshot.bubbles);
+  }, [onBubblesChange, snapshot.bubbles]);
 
   useEffect(() => {
     let mounted = true;
@@ -179,10 +210,23 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
       maxActiveBubbles,
     );
     if (isAccessibleMode) {
-      nextBubbles = keepBubblesVisible(nextBubbles, width, height);
+      nextBubbles = keepBubblesVisible(
+        nextBubbles,
+        width,
+        height,
+        BUBBLE_SIZE_MULTIPLIERS[bubbleSize],
+      );
     }
     publishSnapshot(nextBubbles, popIndicatorsRef.current, true);
-  }, [height, isAccessibleMode, maxActiveBubbles, minActiveBubbles, publishSnapshot, width]);
+  }, [
+    bubbleSize,
+    height,
+    isAccessibleMode,
+    maxActiveBubbles,
+    minActiveBubbles,
+    publishSnapshot,
+    width,
+  ]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
@@ -212,7 +256,12 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
       spawnAccumulatorRef.current += elapsedMs;
       const spawnCount = Math.floor(spawnAccumulatorRef.current / spawnIntervalMs);
       if (spawnCount > 0) spawnAccumulatorRef.current -= spawnCount * spawnIntervalMs;
-      let nextBubbles = stepBubbles(bubblesRef.current, elapsedMs / 1000, heightRef.current);
+      let nextBubbles = stepBubbles(
+        bubblesRef.current,
+        elapsedMs / 1000,
+        heightRef.current,
+        speedMultiplier,
+      );
       if (spawnCount > 0 && nextBubbles.length < maxActiveBubbles) {
         nextBubbles = spawnBubbles(
           nextBubbles,
@@ -257,6 +306,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
     minActiveBubbles,
     publishSnapshot,
     spawnIntervalMs,
+    speedMultiplier,
     motionEnabled,
   ]);
 
@@ -281,7 +331,12 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
         maxActiveBubbles,
       );
       if (isAccessibleMode) {
-        nextBubbles = keepBubblesVisible(nextBubbles, widthRef.current, heightRef.current);
+        nextBubbles = keepBubblesVisible(
+          nextBubbles,
+          widthRef.current,
+          heightRef.current,
+          BUBBLE_SIZE_MULTIPLIERS[bubbleSize],
+        );
       }
       const nextPopIndicators =
         motionEnabled && !isAccessibleMode
@@ -296,14 +351,24 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
             ]
           : [];
 
+      const accepted = onBubblePop?.(poppedBubble);
+      if (accepted === false) {
+        setAccessibilityAnnouncement(
+          t('games.bubblePop.tryAgain', {
+            defaultValue: 'That was okay. Try the bubble in the prompt.',
+          }),
+        );
+        return;
+      }
+
       publishSnapshot(nextBubbles, nextPopIndicators, true);
       if (isAccessibleMode) {
         setAccessibilityAnnouncement(t('games.bubblePop.newBubbleAnnouncement'));
       }
-      onBubblePop?.();
     },
     [
       isAccessibleMode,
+      bubbleSize,
       maxActiveBubbles,
       minActiveBubbles,
       motionEnabled,
@@ -323,7 +388,8 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
           const poppedBubble = bubblesRef.current.find((bubble) => {
             const dx = bubble.x - locationX;
             const dy = bubble.y - locationY;
-            return dx * dx + dy * dy <= bubble.radius * bubble.radius;
+            const radius = bubble.radius * BUBBLE_SIZE_MULTIPLIERS[bubbleSize];
+            return dx * dx + dy * dy <= radius * radius;
           });
 
           if (!poppedBubble) {
@@ -348,7 +414,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
             <Circle
               cx={bubble.x}
               cy={bubble.y}
-              r={bubble.radius}
+              r={bubble.radius * BUBBLE_SIZE_MULTIPLIERS[bubbleSize]}
               fill={bubble.color}
               opacity={bubble.opacity}
               stroke={colors.cardFront}
@@ -357,7 +423,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
             <Circle
               cx={bubble.x - bubble.radius * 0.25}
               cy={bubble.y - bubble.radius * 0.3}
-              r={Math.max(3, bubble.radius * 0.25)}
+              r={Math.max(3, bubble.radius * BUBBLE_SIZE_MULTIPLIERS[bubbleSize] * 0.25)}
               fill={colors.cardFront}
               opacity={0.35}
             />
@@ -395,7 +461,8 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
           accessibilityLabel={t('games.bubblePop.accessibility')}
         >
           {snapshot.bubbles.map((bubble) => {
-            const targetSize = Math.max(64, bubble.radius * 2 + 16);
+            const renderedRadius = bubble.radius * BUBBLE_SIZE_MULTIPLIERS[bubbleSize];
+            const targetSize = Math.max(64, renderedRadius * 2 + 16);
             return (
               <Pressable
                 key={bubble.id}

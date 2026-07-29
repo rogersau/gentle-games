@@ -7,6 +7,7 @@ const mockGoBack = jest.fn();
 const mockDispatch = jest.fn();
 const mockClearCanvas = jest.fn();
 const mockDrawingCanvas = jest.fn();
+const mockUpdateGameSettings = jest.fn().mockResolvedValue(undefined);
 const mockInsets = { top: 500, bottom: 500, left: 0, right: 0 };
 let mockCanvasHistory: unknown[] = [];
 let beforeRemoveListener:
@@ -85,6 +86,7 @@ jest.mock('../context/SettingsContext', () => ({
       reducedMotionEnabled: false,
       showMochiInGames: true,
     },
+    updateGameSettings: mockUpdateGameSettings,
   }),
 }));
 
@@ -119,6 +121,10 @@ const getLatestCanvasProps = () =>
     bottomInset: number;
     initialHistory: typeof historyA;
     onHistoryChange: (history: typeof historyA) => void;
+    mode?: string;
+    onStrokeWidthChange: (strokeWidth: 3 | 5 | 8) => void;
+    onSmoothingChange: (smoothing: boolean) => void;
+    guidedConfig?: { copyActivity?: string };
   };
 
 describe('DrawingScreen', () => {
@@ -496,5 +502,56 @@ describe('DrawingScreen', () => {
       await Promise.resolve();
     });
     expect(screen.queryByTestId('drawing-save-notice')).toBeNull();
+  });
+
+  it('keeps guided attempts temporary and separate from free-draw autosave', async () => {
+    jest.useFakeTimers();
+    const screen = render(React.createElement(DrawingScreen));
+    await waitFor(() => expect(mockDrawingCanvas).toHaveBeenCalled());
+
+    fireEvent.press(screen.getByTestId('drawing-mode-gentle-trails'));
+    await waitFor(() => expect(getLatestCanvasProps().initialHistory).toEqual([]));
+    expect(getLatestCanvasProps().mode).toBe('gentle-trails');
+    const guidedHistoryChange = getLatestCanvasProps().onHistoryChange;
+
+    fireEvent.press(screen.getByTestId('drawing-mode-prompted-drawing'));
+    expect(getLatestCanvasProps().mode).toBe('prompted-drawing');
+    fireEvent.press(screen.getByTestId('drawing-mode-free-draw'));
+    expect(getLatestCanvasProps().mode).toBe('free-draw');
+
+    act(() => {
+      guidedHistoryChange(historyA);
+      jest.advanceTimersByTime(DRAWING_SAVE_DEBOUNCE_MS);
+    });
+
+    expect(AsyncStorage.setItem).not.toHaveBeenCalled();
+    expect(screen.getByTestId('drawing-mode-free-draw')).toBeTruthy();
+    expect(screen.getByTestId('drawing-mode-prompted-drawing')).toBeTruthy();
+  });
+
+  it('persists toolbar stroke and smoothing changes independently', async () => {
+    render(React.createElement(DrawingScreen));
+    await waitFor(() => expect(mockDrawingCanvas).toHaveBeenCalled());
+
+    act(() => {
+      getLatestCanvasProps().onStrokeWidthChange(8);
+      getLatestCanvasProps().onSmoothingChange(false);
+    });
+
+    expect(mockUpdateGameSettings).toHaveBeenCalledWith('drawing', { strokeWidth: 8 });
+    expect(mockUpdateGameSettings).toHaveBeenCalledWith('drawing', { smoothing: false });
+  });
+
+  it('persists Copy and Continue activity changes with a fresh canvas configuration', async () => {
+    const screen = render(React.createElement(DrawingScreen));
+    await waitFor(() => expect(mockDrawingCanvas).toHaveBeenCalled());
+
+    fireEvent.press(screen.getByTestId('drawing-mode-copy-and-continue'));
+    fireEvent.press(screen.getByTestId('drawing-copy-continue-pattern'));
+
+    expect(mockUpdateGameSettings).toHaveBeenCalledWith('drawing', {
+      copyActivity: 'continue-pattern',
+    });
+    expect(getLatestCanvasProps().guidedConfig?.copyActivity).toBe('continue-pattern');
   });
 });

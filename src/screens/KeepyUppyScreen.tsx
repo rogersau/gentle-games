@@ -1,62 +1,54 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
-import { useMochi } from '../hooks/useMochi';
 import { KeepyUppyBoard, KeepyUppyBoardRef } from '../components/KeepyUppyBoard';
-import { KeepyUppyBounds, MAX_BALLOONS } from '../utils/keepyUppyLogic';
+import {
+  KEEPY_UPPY_PROFILES,
+  KeepyUppyBounds,
+  KeepyUppyProfile,
+  resolveKeepyUppyConfig,
+} from '../utils/keepyUppyLogic';
 import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
-import { AppScreen, AppHeader, AppButton } from '../ui/components';
+import { AppScreen, AppHeader, AppButton, SegmentedControl } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useAnimationEnabled } from '../ui/animations';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
-import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 import { getGameSettings } from '../games/settings';
+
+const PROFILES: KeepyUppyProfile[] = [
+  'large-and-slow',
+  'tap-anywhere',
+  'direct-touch',
+  'target-zones',
+  'left-and-right',
+  'more-balloons',
+];
 
 export const KeepyUppyScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { settings } = useSettings();
-  const { showPressureMetrics, showMilestoneCelebrations } = getGamePresentationPolicy(settings);
+  const { settings, updateGameSettings } = useSettings();
   const { colors } = useThemeColors();
   const motionEnabled = useAnimationEnabled();
   const { t } = useTranslation();
-  const { showMochi } = useMochi();
+  const persistedSettings = getGameSettings(settings, 'keepy-uppy');
+  const keepyConfig = useMemo(
+    () =>
+      resolveKeepyUppyConfig({
+        profile: persistedSettings.profile,
+        balloonSize: persistedSettings.balloonSize,
+        gravity: persistedSettings.gravity,
+        targetSize: persistedSettings.targetSize,
+        balloonCount: persistedSettings.balloonCount,
+        reducedMotion: !motionEnabled,
+      }),
+    [motionEnabled, persistedSettings],
+  );
   const styles = useMemo(() => createStyles(colors), [colors]);
   const boardRef = useRef<KeepyUppyBoardRef>(null);
   const { viewport, onLayout } = useMeasuredGameViewport();
-  const [score, setScore] = useState(0);
-  const [balloonCount, setBalloonCount] = useState(1);
-  const [popped, setPopped] = useState(0);
-  const tapCountRef = useRef(0);
-  const lastPhraseIndexRef = useRef(-1);
-
-  const MILESTONES = [10, 25, 50];
-
-  const pickPhrase = (phrases: string[], lastIndex: number): { phrase: string; index: number } => {
-    let idx: number;
-    do {
-      idx = Math.floor(Math.random() * phrases.length);
-    } while (idx === lastIndex && phrases.length > 1);
-    return { phrase: phrases[idx], index: idx };
-  };
-
-  const handleScoreChange = useCallback(
-    (newScore: number) => {
-      setScore(newScore);
-      tapCountRef.current = newScore;
-      if (MILESTONES.includes(newScore) && settings.showMochiInGames && showMilestoneCelebrations) {
-        const { phrase, index } = pickPhrase(
-          t('mascot.keepyUppyPhrases', { returnObjects: true }) as string[],
-          lastPhraseIndexRef.current,
-        );
-        lastPhraseIndexRef.current = index;
-        showMochi(phrase, 'happy');
-      }
-    },
-    [settings.showMochiInGames, showMilestoneCelebrations, showMochi, t],
-  );
 
   const bounds = useMemo<KeepyUppyBounds>(() => {
     return calculateGameBoardSize(viewport, {
@@ -67,8 +59,19 @@ export const KeepyUppyScreen: React.FC = () => {
     });
   }, [viewport]);
 
-  const handleAddBalloon = () => {
-    boardRef.current?.addBalloon();
+  const textOrFallback = (key: string, fallback: string) => {
+    const translated = t(key, { defaultValue: fallback });
+    return translated === key ? fallback : translated;
+  };
+  const selectProfile = (profile: KeepyUppyProfile) => {
+    const next = KEEPY_UPPY_PROFILES[profile];
+    void updateGameSettings('keepy-uppy', {
+      profile,
+      balloonSize: next.balloonSize,
+      gravity: next.gravity,
+      targetSize: next.targetSize,
+      balloonCount: Math.min(3, next.balloonCount) as 1 | 2 | 3,
+    });
   };
 
   return (
@@ -79,45 +82,39 @@ export const KeepyUppyScreen: React.FC = () => {
         <Text style={styles.subtitle} accessibilityRole='text'>
           {t('games.keepyUppy.subtitle')}
         </Text>
-        {showPressureMetrics ? (
-          <View style={styles.statsRow}>
-            <Text
-              style={styles.statText}
-              accessibilityLabel={t('games.keepyUppy.taps', { count: score })}
-            >
-              {t('games.keepyUppy.taps', { count: score })}
-            </Text>
-            <Text
-              style={styles.statText}
-              accessibilityLabel={t('games.keepyUppy.balloons', { count: balloonCount })}
-            >
-              {t('games.keepyUppy.balloons', { count: balloonCount })}
-            </Text>
-            <Text
-              style={styles.statText}
-              accessibilityLabel={t('games.keepyUppy.popped', { count: popped })}
-            >
-              {t('games.keepyUppy.popped', { count: popped })}
-            </Text>
-          </View>
-        ) : null}
+        <Text style={styles.controlLabel}>
+          {textOrFallback('games.keepyUppy.profile.title', 'Choose how to play')}
+        </Text>
+        <SegmentedControl
+          options={PROFILES.map((profile) => ({
+            value: profile,
+            label: textOrFallback(
+              `games.keepyUppy.profile.${profile}`,
+              profile.replaceAll('-', ' '),
+            ),
+          }))}
+          value={keepyConfig.profile}
+          onValueChange={selectProfile}
+          wrap
+        />
         <AppButton
-          label={t('games.keepyUppy.addBalloon')}
-          variant='secondary'
+          label={textOrFallback('games.keepyUppy.restart', 'Start again')}
+          variant='ghost'
           size='sm'
-          onPress={handleAddBalloon}
-          disabled={balloonCount >= MAX_BALLOONS}
-          accessibilityHint={t('games.keepyUppy.addBalloonHint')}
+          onPress={() => boardRef.current?.resetBalloons()}
+          accessibilityHint={textOrFallback(
+            'games.keepyUppy.restartHint',
+            'Start with a fresh balloon. Nothing is lost when a balloon rests.',
+          )}
           style={{ marginBottom: Space.sm }}
         />
 
         <KeepyUppyBoard
+          key={keepyConfig.profile}
           ref={boardRef}
           bounds={bounds}
-          onScoreChange={handleScoreChange}
-          onBalloonCountChange={setBalloonCount}
-          onPoppedChange={setPopped}
-          easyMode={getGameSettings(settings, 'keepy-uppy').liftMode === 'gentle'}
+          config={keepyConfig}
+          easyMode={persistedSettings.liftMode === 'gentle'}
           motionEnabled={motionEnabled}
         />
       </View>
@@ -140,13 +137,10 @@ const createStyles = (colors: ThemeColors) =>
       textAlign: 'center',
       marginBottom: Space.sm,
     },
-    statsRow: {
-      flexDirection: 'row',
-      gap: Space.md,
-      marginBottom: Space.md,
-    },
-    statText: {
-      ...TypeStyle.buttonSm,
+    controlLabel: {
+      ...TypeStyle.label,
       color: colors.text,
+      alignSelf: 'stretch',
+      marginBottom: Space.xs,
     },
   });

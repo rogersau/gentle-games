@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Override the global mock — this test exercises the real SettingsContext
 jest.unmock('./SettingsContext');
 import { SettingsProvider, useSettings } from './SettingsContext';
+import { DEFAULT_GAME_SETTINGS } from '../games/settings';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   getItem: jest.fn(),
@@ -213,7 +214,7 @@ describe('SettingsContext', () => {
     expect(screen.getByTestId('number-picnic-mode').props.children).toBe('make-amount');
     expect(screen.getByTestId('number-picnic-spoken').props.children).toBe('false');
     expect(JSON.parse(storage.setItem.mock.calls[0][1])).toMatchObject({
-      settingsVersion: 4,
+      settingsVersion: 5,
       gameSettings: {
         'number-picnic': {
           maxQuantity: 8,
@@ -275,7 +276,7 @@ describe('SettingsContext', () => {
     expect(screen.getByTestId('hiddenGames').props.children).toBe('memory-snap,bubble-pop');
     const migrated = JSON.parse(storage.setItem.mock.calls[0][1]);
     expect(migrated).toMatchObject({
-      settingsVersion: 4,
+      settingsVersion: 5,
       hiddenGames: ['memory-snap', 'bubble-pop'],
       pressureFreeMode: false,
       gameSettings: {
@@ -485,8 +486,16 @@ describe('SettingsContext', () => {
       mismatchDuration: 2000,
       hintEnabled: true,
     });
-    expect(migrated.gameSettings['keepy-uppy']).toEqual({ liftMode: 'precise' });
-    expect(migrated.gameSettings['bubble-pop']).toEqual({ motion: 'moving', density: 'full' });
+    expect(migrated.gameSettings['keepy-uppy']).toEqual({
+      ...DEFAULT_GAME_SETTINGS['keepy-uppy'],
+      liftMode: 'precise',
+      profile: 'direct-touch',
+    });
+    expect(migrated.gameSettings['bubble-pop']).toEqual({
+      ...DEFAULT_GAME_SETTINGS['bubble-pop'],
+      motion: 'moving',
+      density: 'full',
+    });
   });
 
   it('falls back safely when versioned per-game values are invalid', async () => {
@@ -529,7 +538,7 @@ describe('SettingsContext', () => {
 
     expect(screen.getByTestId('glitter-preset').props.children).toBe('settle');
     const saved = JSON.parse(storage.setItem.mock.calls[0][1]);
-    expect(saved.gameSettings['bubble-pop']).toEqual({ motion: 'still', density: 'sparse' });
+    expect(saved.gameSettings['bubble-pop']).toEqual(DEFAULT_GAME_SETTINGS['bubble-pop']);
   });
 
   it('updates and resets one game without changing another game', async () => {
