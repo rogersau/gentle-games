@@ -186,13 +186,13 @@ describe('HomeScreen', () => {
     jest.useRealTimers();
   });
 
-  it('shows registry direct-launch games even when unfinished games are disabled', () => {
+  it('shows finished direct-launch games while keeping unfinished games hidden', () => {
     mockSettings = { ...mockSettings, enableUnfinishedGames: false };
     const screen = render(<HomeScreen />);
 
     expect(screen.getByText('Drawing Pad')).toBeTruthy();
     expect(screen.getByText('Keepy Uppy')).toBeTruthy();
-    expect(screen.getByText('Number Picnic')).toBeTruthy();
+    expect(screen.queryByText('Number Picnic')).toBeNull();
   });
 
   it('shows difficulty modal for Memory Snap and navigates to Game after selection', async () => {
