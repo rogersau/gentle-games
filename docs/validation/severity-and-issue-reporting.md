@@ -39,7 +39,7 @@ Use one anonymous finding per issue. Do not include identifying or health data.
 [Observable behaviour and product response only. No participant identity, diagnosis, or health information.]
 
 ### Impact and stop action
-[Comfort, frustration, avoidance, access, or autonomy impact. State whether testing stopped.] 
+[Comfort, frustration, avoidance, access, or autonomy impact. State whether testing stopped.]
 
 ### Smallest useful change
 [Concrete product change, not a judgement of the child.]
