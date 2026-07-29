@@ -65,6 +65,19 @@ describe('KeepyUppyBoard', () => {
     expect(mockOnPoppedChange).toHaveBeenLastCalledWith(0);
   });
 
+  it('drives motion with animation frames instead of a fixed interval', () => {
+    const requestAnimationFrameSpy = jest.spyOn(global, 'requestAnimationFrame');
+    const setIntervalSpy = jest.spyOn(global, 'setInterval');
+
+    render(<KeepyUppyBoard bounds={defaultBounds} />);
+
+    expect(requestAnimationFrameSpy).toHaveBeenCalled();
+    expect(setIntervalSpy).not.toHaveBeenCalled();
+
+    requestAnimationFrameSpy.mockRestore();
+    setIntervalSpy.mockRestore();
+  });
+
   it('keeps callback payloads aligned across repeated add and reset interactions', () => {
     const ref = React.createRef<KeepyUppyBoardRef>();
 
