@@ -3,6 +3,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { CategoryMatchScreen } from './CategoryMatchScreen';
 
 const mockGoBack = jest.fn();
+const mockRecordResult = jest.fn().mockResolvedValue(undefined);
 let mockSettings: any = {
   pressureFreeMode: true,
   gameSettings: { 'category-match': { categoryCount: 2 as const, showPreview: true } },
@@ -59,12 +60,35 @@ jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({ settings: mockSettings }),
 }));
 
+jest.mock('../context/PracticeHistoryContext', () => ({
+  usePracticeHistory: () => ({ recordResult: mockRecordResult }),
+}));
+
 jest.mock('../components/CategoryMatchBoard', () => {
-  const { Text, View } = require('react-native');
+  const { Text, TouchableOpacity, View } = require('react-native');
   return {
-    CategoryMatchBoard: ({ categoryCount }: { categoryCount: number }) => (
+    CategoryMatchBoard: ({
+      categoryCount,
+      onPracticeResult,
+    }: {
+      categoryCount: number;
+      onPracticeResult: (result: Record<string, unknown>) => void;
+    }) => (
       <View testID='category-board'>
         <Text>{`category-count-${categoryCount}`}</Text>
+        <TouchableOpacity
+          testID='record-category-result'
+          onPress={() =>
+            onPracticeResult({
+              game: 'category-match',
+              targetSkill: 'sort-by-stated-category',
+              level: '2-groups',
+              response: 'independent',
+              attempts: 1,
+              occurredAt: '2026-01-31T11:00:00.000Z',
+            })
+          }
+        />
       </View>
     ),
   };
@@ -93,6 +117,10 @@ describe('CategoryMatchScreen', () => {
     fireEvent.press(screen.getByText('Start Sorting'));
     expect(screen.getByTestId('category-board')).toBeTruthy();
     expect(screen.getByText('category-count-2')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('record-category-result'));
+    expect(mockRecordResult).toHaveBeenCalledWith(
+      expect.objectContaining({ game: 'category-match', response: 'independent' }),
+    );
     fireEvent.press(screen.getByText('← Back'));
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });

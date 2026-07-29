@@ -7,7 +7,6 @@ describe('game registry', () => {
   it('filters hidden and unfinished games from visible games', () => {
     const visibleGames = getVisibleGames({
       hiddenGames: ['drawing'],
-      enableUnfinishedGames: false,
     });
 
     expect(visibleGames.map((game) => game.id)).not.toContain('drawing');
@@ -17,9 +16,9 @@ describe('game registry', () => {
 
   it('keeps Number Picnic behind the unfinished gate until child validation', () => {
     expect(getGameById('number-picnic')?.isUnfinished).toBe(true);
-    expect(
-      getVisibleGames({ hiddenGames: [], enableUnfinishedGames: false }).map((game) => game.id),
-    ).not.toContain('number-picnic');
+    expect(getVisibleGames({ hiddenGames: [] }).map((game) => game.id)).not.toContain(
+      'number-picnic',
+    );
   });
 
   it('keeps every game route aligned with the registry contract', () => {

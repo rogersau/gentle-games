@@ -79,6 +79,24 @@ jest.mock('./src/context/SettingsContext', () => {
   };
 });
 
+jest.mock('./src/context/PracticeHistoryContext', () => {
+  const actual = jest.requireActual('./src/context/PracticeHistoryContext');
+  return {
+    ...actual,
+    usePracticeHistory: () => ({
+      records: [],
+      settings: { enabled: false, retentionDays: 30 },
+      recordResult: jest.fn().mockResolvedValue(undefined),
+      updateSettings: jest.fn().mockResolvedValue(undefined),
+      deleteAllRecords: jest.fn().mockResolvedValue(undefined),
+      clearHistory: jest.fn().mockResolvedValue(undefined),
+      isLoading: false,
+      isSaving: false,
+      persistenceError: null,
+    }),
+  };
+});
+
 // Mock react-i18next
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({

@@ -134,6 +134,65 @@ describe('usePatternTrainGame', () => {
     expect(result.current.state.guidedRound.phase).toBe('independent');
   });
 
+  it('records independent, hinted, modelled, and skipped guided responses', () => {
+    const independentResult = jest.fn();
+    const independent = renderHook(() =>
+      usePatternTrainGame({
+        difficulty: 'easy',
+        t: mockT,
+        onPracticeResult: independentResult,
+      }),
+    );
+    act(() => independent.result.current.actions.handleDifficultySelect('medium'));
+    (patternTrainLogic.isTrainChoiceCorrect as jest.Mock).mockReturnValue(true);
+    act(() => independent.result.current.actions.submitChoice('🌈'));
+    expect(independentResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        game: 'pattern-train',
+        targetSkill: 'continue-repeating-pattern',
+        level: 'medium',
+        response: 'independent',
+        attempts: 1,
+        selectedConfiguration: 'pattern-train:medium',
+      }),
+    );
+
+    const hintedResult = jest.fn();
+    const hinted = renderHook(() =>
+      usePatternTrainGame({ difficulty: 'easy', t: mockT, onPracticeResult: hintedResult }),
+    );
+    act(() => hinted.result.current.actions.handleDifficultySelect('easy'));
+    act(() => hinted.result.current.actions.showHint());
+    act(() => hinted.result.current.actions.submitChoice('🌈'));
+    expect(hintedResult).toHaveBeenCalledWith(
+      expect.objectContaining({ response: 'after-visual-hint', attempts: 1 }),
+    );
+
+    const modelledResult = jest.fn();
+    const modelled = renderHook(() =>
+      usePatternTrainGame({ difficulty: 'easy', t: mockT, onPracticeResult: modelledResult }),
+    );
+    act(() => modelled.result.current.actions.handleDifficultySelect('easy'));
+    (patternTrainLogic.isTrainChoiceCorrect as jest.Mock).mockReturnValue(false);
+    act(() => modelled.result.current.actions.submitChoice('🌸'));
+    act(() => modelled.result.current.actions.submitChoice('🌸'));
+    (patternTrainLogic.isTrainChoiceCorrect as jest.Mock).mockReturnValue(true);
+    act(() => modelled.result.current.actions.submitChoice('🌈'));
+    expect(modelledResult).toHaveBeenCalledWith(
+      expect.objectContaining({ response: 'after-model', attempts: 3 }),
+    );
+
+    const skippedResult = jest.fn();
+    const skipped = renderHook(() =>
+      usePatternTrainGame({ difficulty: 'easy', t: mockT, onPracticeResult: skippedResult }),
+    );
+    act(() => skipped.result.current.actions.handleDifficultySelect('easy'));
+    act(() => skipped.result.current.actions.skipRound());
+    expect(skippedResult).toHaveBeenCalledWith(
+      expect.objectContaining({ response: 'skipped', attempts: 0 }),
+    );
+  });
+
   it('keeps normal milestones child-controlled and suppresses them in pressure-free mode', () => {
     const { result } = renderHook(() =>
       usePatternTrainGame({ difficulty: 'easy', t: mockT, showMilestones: true }),

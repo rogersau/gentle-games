@@ -2,6 +2,7 @@ export type AppStackParamList = {
   Home: undefined;
   Game: undefined;
   Settings: undefined;
+  PracticeHistory: undefined;
   Drawing: undefined;
   Glitter: undefined;
   Bubble: undefined;
@@ -18,6 +19,7 @@ export const APP_ROUTES = {
   Home: 'Home',
   Game: 'Game',
   Settings: 'Settings',
+  PracticeHistory: 'PracticeHistory',
   Drawing: 'Drawing',
   Glitter: 'Glitter',
   Bubble: 'Bubble',

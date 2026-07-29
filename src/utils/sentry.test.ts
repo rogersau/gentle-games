@@ -102,11 +102,16 @@ describe('sentry consent-aware wrappers', () => {
       extra: {
         rawMessage: 'drop me',
       },
+      request: {
+        url: 'https://example.com/child-name',
+      },
+      unknownTopLevel: 'drop me',
       exception: {
         values: [
           {
             type: 'Error',
             value: 'drop me',
+            unknownValueField: 'drop me',
           },
         ],
       },
@@ -121,7 +126,10 @@ describe('sentry consent-aware wrappers', () => {
     expect(filteredEvent.message).toBeUndefined();
     expect(filteredEvent.contexts).toBeUndefined();
     expect(filteredEvent.extra).toBeUndefined();
+    expect(filteredEvent.request).toBeUndefined();
+    expect(filteredEvent.unknownTopLevel).toBeUndefined();
     expect(filteredEvent.exception.values[0].value).toBeUndefined();
+    expect(filteredEvent.exception.values[0].unknownValueField).toBeUndefined();
 
     const filteredBreadcrumb = options.beforeBreadcrumb({
       category: 'error',

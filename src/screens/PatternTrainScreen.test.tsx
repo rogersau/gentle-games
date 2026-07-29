@@ -6,6 +6,7 @@ import { playFlipSound } from '../utils/sounds';
 
 const mockGoBack = jest.fn();
 const mockNavigate = jest.fn();
+const mockRecordResult = jest.fn().mockResolvedValue(undefined);
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
@@ -126,6 +127,10 @@ jest.mock('../context/SettingsContext', () => ({
     settings: patternSettings,
     updateGameSettings: jest.fn(),
   }),
+}));
+
+jest.mock('../context/PracticeHistoryContext', () => ({
+  usePracticeHistory: () => ({ recordResult: mockRecordResult }),
 }));
 
 jest.mock('../utils/sounds', () => ({
@@ -288,6 +293,9 @@ describe('PatternTrainScreen', () => {
     fireEvent.press(carriage);
 
     expect(await screen.findByTestId('pattern-train-next')).toBeTruthy();
+    expect(mockRecordResult).toHaveBeenCalledWith(
+      expect.objectContaining({ game: 'pattern-train', response: 'independent' }),
+    );
   });
 
   it('shows the staged hint and model before accepting corrected Next', async () => {

@@ -109,7 +109,7 @@
   <body>
     <header>
       <h1>🔒 Privacy Policy</h1>
-      <p>Gentle Games &nbsp;·&nbsp; Effective date: 4 March 2026</p>
+      <p>Gentle Games &nbsp;·&nbsp; Effective date: 30 July 2026</p>
       <p style="font-size: 0.85rem; color: var(--subtext); margin-top: 0.4rem">
         📍 Hosted at
         <a href="https://rogersau.github.io/gentle-games/docs/privacy-policy.html"
@@ -129,8 +129,8 @@
     <main>
       <div class="callout">
         <p>
-          Gentle Games does not collect any personally identifiable information (PII). Anonymous
-          data is collected only to fix bugs and improve the app experience.
+          Gentle Games does not collect any personally identifiable information (PII). Optional
+          anonymous technical telemetry stays off until a caregiver enables it.
         </p>
       </div>
 
@@ -142,17 +142,16 @@
 
       <h2>1. What We Collect (Anonymous Only)</h2>
       <p>
-        To improve the app and fix technical issues, Gentle Games collects only anonymous,
-        non-identifiable information:
+        If a caregiver enables telemetry, Gentle Games collects only anonymous, non-identifiable
+        technical information:
       </p>
       <ul>
         <li>
           <strong>Error reports</strong> — When the app crashes or encounters an error, we receive
-          technical details about what went wrong (stack traces, device type, OS version)
+          an error type and scrubbed technical stack trace
         </li>
         <li>
-          <strong>Usage analytics</strong> — Which games are played, settings changed, and basic
-          interaction patterns (no content of drawings or gameplay details)
+          <strong>Usage analytics</strong> — Screen navigation, such as which game screen is opened
         </li>
         <li>
           <strong>Anonymous install ID</strong> — A randomly generated identifier stored on your
@@ -178,7 +177,10 @@
         <li>All error data is scrubbed to remove any potential PII before transmission</li>
         <li>Only a random install ID identifies sessions — no personal identifiers</li>
         <li>Email addresses, phone numbers, credit cards, and SSNs are automatically redacted</li>
-        <li>Enabled only in production builds (not during development)</li>
+        <li>
+          Enabled in production only, unless a developer explicitly enables the local debug flag;
+          caregiver telemetry consent is still required
+        </li>
       </ul>
 
       <h2>3. Usage Analytics with PostHog</h2>
@@ -189,10 +191,16 @@
       <ul>
         <li>Hosted in the EU (GDPR compliant)</li>
         <li>Anonymous tracking only — no PII collected</li>
-        <li>Tracks: which games are opened, settings changes, screen navigation</li>
-        <li>Does NOT track: what children draw, game scores, or personal gameplay details</li>
+        <li>Tracks only screen navigation, such as which game screen is opened</li>
+        <li>
+          Does NOT track: drawings, answers, attempts, support levels, scores, session duration, or
+          other child performance details
+        </li>
         <li>Uses the same random install ID as Sentry for consistent anonymous identification</li>
-        <li>Enabled only in production builds</li>
+        <li>
+          Enabled in production only, unless a developer explicitly enables the local debug flag;
+          caregiver telemetry consent is still required
+        </li>
       </ul>
 
       <h2>4. Data Stored Locally on Your Device</h2>
@@ -201,18 +209,32 @@
         device:
       </p>
       <ul>
-        <li>Sound on/off and volume level</li>
-        <li>Animation on/off preference</li>
-        <li>Last selected pair count for Memory Snap</li>
+        <li>Sound, animation, appearance, accessibility, and game preferences</li>
         <li>Anonymous install ID for session correlation</li>
+        <li>
+          <strong>Optional caregiver practice summaries</strong> — If a caregiver turns this feature
+          on, the app stores the guided game, target skill, selected level or configuration, support
+          used, number of attempts, and time of the response
+        </li>
       </ul>
-      <p>You can clear all local data at any time by uninstalling the application.</p>
+      <p>
+        Practice summaries are off by default and are available only behind the caregiver check.
+        They do not include names, account details, advertising identifiers, drawings, or detailed
+        interaction traces. They are never included in Sentry error reports, PostHog analytics, or
+        any other network request.
+      </p>
+      <p>
+        A caregiver can keep summaries for 7, 30, or 90 days and can use
+        <strong>Delete all practice summaries</strong> at any time. Turning the feature off stops
+        new summaries without deleting existing ones. Uninstalling the application clears all
+        locally stored data.
+      </p>
 
       <h2>5. Limited Network Requests</h2>
       <p>Gentle Games makes minimal network requests:</p>
       <ul>
-        <li>Error reports to Sentry (only when crashes occur)</li>
-        <li>Analytics events to PostHog (batched to reduce network usage)</li>
+        <li>Error reports to Sentry when telemetry is enabled and a crash occurs</li>
+        <li>Screen-navigation events to PostHog when telemetry is enabled</li>
       </ul>
       <p>
         All game content and assets are bundled with the application. No other network activity

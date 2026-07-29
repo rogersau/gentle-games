@@ -1,34 +1,49 @@
 # Gentle Games
 
-A calm, sensory-friendly mobile application designed for children with sensory sensitivities, particularly those with autism spectrum disorder (ASD). Built with accessibility and inclusion at its core.
+A free, open-source collection of adjustable, pressure-free games for children. Sound, motion, visual presentation, and game-specific controls can be changed to suit the player.
 
 ## Mission
 
-To provide a safe, predictable, and stress-free digital space where children can play, create, and explore at their own pace. Every interaction is designed with sensory needs in mind—no ads, no time pressure, no overwhelming stimuli, and no hidden paywalls.
+To provide predictable activities where children can play, create, practise an in-game rule, or stop at their own pace. There are no ads, hidden paywalls, required scores, or forced timers.
+
+Gentle Games is not therapy, medical care, diagnosis, or a promise of educational or developmental improvement. Sensory preferences differ between children, so caregivers should use the available controls and the child's own communication to decide what is comfortable.
 
 ## Core Principles
 
-- **Sensory-Friendly**: Soft color palettes, optional audio, smooth animations, and zero flashing lights or jarring visuals
-- **Predictable & Calm**: Consistent UI patterns, clear navigation, and gameplay that never rushes the player
+- **Adjustable Presentation**: Soft color palettes, optional audio, reduced-motion controls, and no flashing effects
+- **Predictable Navigation**: Consistent UI patterns, clear controls, and gameplay that never rushes the player
 - **Fully Accessible**: Light/dark mode support, animation toggles, sound controls, large touch targets, and internationalization-ready design
 - **Offline-First**: Works without an internet connection so play is always available
 - **Truly Free**: No ads, no in-app purchases, no subscriptions—just gentle games
 
 ## What You'll Find
 
-The app offers a collection of calm, creative activities including memory games, creative drawing tools, sensory experiences, and simple interactive toys. Each activity is designed to be:
+The catalogue distinguishes sensory/regulation activities, creative play, and guided practice. Sensory and creative activities do not assign a correct performance outcome. Guided activities state the current in-game rule and use optional hints or models.
 
 - Non-competitive and pressure-free
 - Adjustable to individual comfort levels
-- Immediately accessible without tutorials or gates
-- Safe for independent play
+- Available without paid or progression gates
+- Easy to pause, stop, skip where relevant, or leave
+
+## Released Game Catalogue
+
+- **Memory Snap - guided practice**: Remember and find matching pictures on the current board.
+- **Drawing Pad - creative play**: Make free-form marks or choose an optional structured drawing mode; there is no creative score.
+- **Glitter Fall - sensory/regulation activity**: Add, move, and clear visual particles with adjustable motion and sound.
+- **Bubble Pop - sensory/regulation activity**: Explore cause and effect in free play or choose an optional exact-count activity.
+- **Category Match - guided practice**: Sort an item using the stated Food, Toys, or Clothes rule.
+- **Keepy Uppy - sensory/regulation activity**: Track a balloon and choose when and how to lift it.
+- **Breathing Garden - sensory/regulation activity**: Use, watch, pause, or leave an optional visual pacing rhythm; there is no breathing requirement.
+- **Pattern Train - guided practice**: Recognise and continue the current repeating rule.
+
+Number Picnic remains an unfinished preview and is hidden from the released catalogue until its child-centred validation gate is completed.
 
 ## Who It's For
 
 - Children ages 4-10 with sensory processing differences
-- Parents and caregivers seeking calm, appropriate screen time
-- Therapists and educators supporting neurodivergent children
-- Anyone who benefits from gentle, predictable digital experiences
+- Parents and caregivers seeking adjustable, pressure-free activities
+- Educators or practitioners reviewing accessible interaction design, without treating the app as therapy
+- Anyone who prefers predictable digital experiences
 
 ## Tech Stack
 
@@ -237,8 +252,22 @@ export const PASTEL_COLORS = {
 ### Adding New Games
 
 1. Create a new screen component in `src/screens/`
-2. Add the game to the `GAMES` array in `src/screens/HomeScreen.tsx`
-3. Add the route to navigation in `App.tsx`
+2. Define its mode, exact immediate target, claim boundaries, and accessibility assumptions in `src/games/outcomes.ts`
+3. Add it to `GAME_REGISTRY` in `src/games/registry.ts`
+4. Add its typed route in `src/types/navigation.ts` and register the screen in `App.tsx`
+5. Add translated copy and update the public catalogue only when the game is released
+6. Complete the relevant checks in `docs/validation/`
+
+### Claims And Data Checklist
+
+- State only the immediate in-game experience or target supported by the implementation.
+- Do not call a game therapy, treatment, diagnosis, or evidence of developmental improvement.
+- Do not describe sensory or creative play through scores, correctness, compliance, or guaranteed comfort.
+- Keep guided feedback neutral and do not claim automatic transfer beyond the current in-game example.
+- Explain pressure-free defaults, stop/leave controls, and optional caregiver settings where relevant.
+- Never send guided answers, attempts, support classifications, scores, or session duration to remote analytics or crash reporting.
+- Keep registry, translations, website, privacy policy, and store metadata consistent.
+- Identify the evidence and scope for any new outcome claim in the pull request.
 
 ## Development Tips
 
@@ -279,4 +308,4 @@ For issues or questions:
 
 ---
 
-Made with 💜 for calm, sensory-friendly gaming
+Made for adjustable, pressure-free play

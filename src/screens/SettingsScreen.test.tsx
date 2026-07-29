@@ -19,6 +19,7 @@ jest.mock('../games/registry', () => {
 });
 
 const mockGoBack = jest.fn();
+const mockNavigate = jest.fn();
 const mockUpdateSettings = jest.fn();
 let mockIsSaving = false;
 let mockPersistenceError: string | null = null;
@@ -49,6 +50,7 @@ const TranslationProbe = ({ translationKey }: { translationKey: TranslationKey }
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     goBack: mockGoBack,
+    navigate: mockNavigate,
   }),
 }));
 
@@ -200,6 +202,14 @@ describe('SettingsScreen', () => {
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 
+  it('opens caregiver practice summaries from settings', () => {
+    const screen = render(<SettingsScreen />);
+
+    fireEvent.press(screen.getByText('settings.practiceHistory.open'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('PracticeHistory');
+  });
+
   it('shows accessible autosave status without announcing every update', () => {
     const screen = render(React.createElement(SettingsScreen));
 
@@ -237,6 +247,12 @@ describe('SettingsScreen', () => {
     const screen = render(React.createElement(SettingsScreen));
 
     expect(screen.getByRole('switch', { name: /Number Picnic/i })).toBeTruthy();
+  });
+
+  it('does not expose a caregiver override for unfinished release gates', () => {
+    const screen = render(<SettingsScreen />);
+
+    expect(screen.queryByText('settings.unfinishedGames.label')).toBeNull();
   });
 
   it('removes a game from hidden games when re-enabled', () => {

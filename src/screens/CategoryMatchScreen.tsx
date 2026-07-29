@@ -11,12 +11,14 @@ import { Space, TypeStyle } from '../ui/tokens';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
 import { getGameSettings } from '../games/settings';
 import { getCategoryMatchItems } from '../utils/categoryMatchLogic';
+import { usePracticeHistory } from '../context/PracticeHistoryContext';
 
 export const CategoryMatchScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useThemeColors();
   const { settings } = useSettings();
   const { t } = useTranslation();
+  const { recordResult } = usePracticeHistory();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const categorySettings = getGameSettings(settings, 'category-match');
   const [showPreview, setShowPreview] = useState(categorySettings.showPreview);
@@ -80,6 +82,7 @@ export const CategoryMatchScreen: React.FC = () => {
               width={boardSize.width}
               height={boardSize.height}
               categoryCount={categorySettings.categoryCount}
+              onPracticeResult={(result) => void recordResult(result)}
             />
           </View>
         )}

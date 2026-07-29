@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
 import {
@@ -40,9 +41,10 @@ import {
   GlitterParticleDensity,
 } from '../games/glitterSettings';
 import { KEEPY_UPPY_PROFILES } from '../utils/keepyUppyLogic';
+import { APP_ROUTES, AppStackParamList } from '../types/navigation';
 
 export const SettingsScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<StackNavigationProp<AppStackParamList>>();
   const { settings, updateSettings, updateGameSettings, isSaving, persistenceError } =
     useSettings();
   const { colors, resolvedMode } = useThemeColors();
@@ -306,47 +308,49 @@ export const SettingsScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* Number Picnic */}
-        <View style={styles.section}>
-          <SectionHeader title={t('settings.numberPicnic.title')} />
-          <Text style={styles.controlLabel}>{t('settings.numberPicnic.stage.title')}</Text>
-          <SegmentedControl
-            options={numberPicnicStageOptions}
-            value={numberPicnicSettings.stage}
-            onValueChange={(stage) =>
-              updateGameSettings('number-picnic', {
-                stage,
-                maxQuantity: stageToMaxQuantity(stage),
-                mode:
-                  stage === '6-10'
-                    ? numberPicnicSettings.mode
-                    : numberPicnicSettings.mode === 'add-one-more'
-                      ? 'make-amount'
-                      : numberPicnicSettings.mode,
-              })
-            }
-            wrap
-          />
-          <Text style={styles.description}>{t('settings.numberPicnic.stage.description')}</Text>
-          <Text style={styles.controlLabel}>{t('settings.numberPicnic.mode.title')}</Text>
-          <SegmentedControl
-            options={numberPicnicModeOptions.filter(
-              (option) => option.value !== 'add-one-more' || numberPicnicSettings.stage === '6-10',
-            )}
-            value={numberPicnicSettings.mode}
-            onValueChange={(mode) => updateGameSettings('number-picnic', { mode })}
-            wrap
-          />
-          <Text style={styles.description}>{t('settings.numberPicnic.mode.description')}</Text>
-          <SettingToggle
-            label={t('settings.numberPicnic.spokenCounting.label')}
-            description={t('settings.numberPicnic.spokenCounting.description')}
-            value={numberPicnicSettings.spokenCounting}
-            onValueChange={(spokenCounting) =>
-              updateGameSettings('number-picnic', { spokenCounting })
-            }
-          />
-        </View>
+        {GAME_REGISTRY.some((game) => game.id === 'number-picnic' && !game.isUnfinished) ? (
+          <View style={styles.section}>
+            <SectionHeader title={t('settings.numberPicnic.title')} />
+            <Text style={styles.controlLabel}>{t('settings.numberPicnic.stage.title')}</Text>
+            <SegmentedControl
+              options={numberPicnicStageOptions}
+              value={numberPicnicSettings.stage}
+              onValueChange={(stage) =>
+                updateGameSettings('number-picnic', {
+                  stage,
+                  maxQuantity: stageToMaxQuantity(stage),
+                  mode:
+                    stage === '6-10'
+                      ? numberPicnicSettings.mode
+                      : numberPicnicSettings.mode === 'add-one-more'
+                        ? 'make-amount'
+                        : numberPicnicSettings.mode,
+                })
+              }
+              wrap
+            />
+            <Text style={styles.description}>{t('settings.numberPicnic.stage.description')}</Text>
+            <Text style={styles.controlLabel}>{t('settings.numberPicnic.mode.title')}</Text>
+            <SegmentedControl
+              options={numberPicnicModeOptions.filter(
+                (option) =>
+                  option.value !== 'add-one-more' || numberPicnicSettings.stage === '6-10',
+              )}
+              value={numberPicnicSettings.mode}
+              onValueChange={(mode) => updateGameSettings('number-picnic', { mode })}
+              wrap
+            />
+            <Text style={styles.description}>{t('settings.numberPicnic.mode.description')}</Text>
+            <SettingToggle
+              label={t('settings.numberPicnic.spokenCounting.label')}
+              description={t('settings.numberPicnic.spokenCounting.description')}
+              value={numberPicnicSettings.spokenCounting}
+              onValueChange={(spokenCounting) =>
+                updateGameSettings('number-picnic', { spokenCounting })
+              }
+            />
+          </View>
+        ) : null}
 
         {/* Animations */}
         <View style={styles.section}>
@@ -526,16 +530,6 @@ export const SettingsScreen: React.FC = () => {
           />
         </View>
 
-        {/* Enable Unfinished Games */}
-        <View style={styles.section}>
-          <SettingToggle
-            label={t('settings.unfinishedGames.label')}
-            description={t('settings.unfinishedGames.description')}
-            value={!!settings.enableUnfinishedGames}
-            onValueChange={(value) => updateSettings({ enableUnfinishedGames: value })}
-          />
-        </View>
-
         {/* Sound */}
         <View style={styles.section}>
           <SettingToggle
@@ -561,24 +555,22 @@ export const SettingsScreen: React.FC = () => {
         {/* Games on Home Screen */}
         <View style={styles.section}>
           <SectionHeader title={t('settings.gamesOnHomeScreen.title')} />
-          {GAME_REGISTRY.filter((game) => settings.enableUnfinishedGames || !game.isUnfinished).map(
-            (game) => {
-              const isVisible = !settings.hiddenGames.includes(game.id);
-              return (
-                <SettingToggle
-                  key={game.id}
-                  label={`${game.icon}  ${t(game.nameKey)}`}
-                  value={isVisible}
-                  onValueChange={(value) => {
-                    const updated = value
-                      ? settings.hiddenGames.filter((id) => id !== game.id)
-                      : [...settings.hiddenGames, game.id];
-                    updateSettings({ hiddenGames: updated });
-                  }}
-                />
-              );
-            },
-          )}
+          {GAME_REGISTRY.filter((game) => !game.isUnfinished).map((game) => {
+            const isVisible = !settings.hiddenGames.includes(game.id);
+            return (
+              <SettingToggle
+                key={game.id}
+                label={`${game.icon}  ${t(game.nameKey)}`}
+                value={isVisible}
+                onValueChange={(value) => {
+                  const updated = value
+                    ? settings.hiddenGames.filter((id) => id !== game.id)
+                    : [...settings.hiddenGames, game.id];
+                  updateSettings({ hiddenGames: updated });
+                }}
+              />
+            );
+          })}
           <Text style={styles.description}>{t('settings.gamesOnHomeScreen.description')}</Text>
         </View>
 
@@ -592,6 +584,16 @@ export const SettingsScreen: React.FC = () => {
             wrap
           />
           <Text style={styles.description}>{t('settings.parentTimer.description')}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title={t('settings.practiceHistory.title')} />
+          <Text style={styles.description}>{t('settings.practiceHistory.description')}</Text>
+          <AppButton
+            label={t('settings.practiceHistory.open')}
+            variant='secondary'
+            onPress={() => navigation.navigate(APP_ROUTES.PracticeHistory)}
+          />
         </View>
 
         {/* Telemetry */}

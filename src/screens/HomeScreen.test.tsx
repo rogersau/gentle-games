@@ -187,7 +187,6 @@ describe('HomeScreen', () => {
   });
 
   it('shows finished direct-launch games while keeping unfinished games hidden', () => {
-    mockSettings = { ...mockSettings, enableUnfinishedGames: false };
     const screen = render(<HomeScreen />);
 
     expect(screen.getByText('Drawing Pad')).toBeTruthy();

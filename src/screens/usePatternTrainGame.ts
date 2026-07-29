@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated } from 'react-native';
 import { createGuidedRoundController, GuidedRoundState } from '../guided-practice/controller';
 import { Difficulty } from '../types';
+import type { PracticeResponse, PracticeResult } from '../utils/practiceHistory';
 import {
   generateTrainPattern,
   generateTransferPattern,
@@ -55,14 +56,23 @@ interface UsePatternTrainGameOptions {
   difficulty: Difficulty;
   t: (key: string, options?: Record<string, unknown>) => string;
   showMilestones?: boolean;
+  onPracticeResult?: (result: PracticeResult) => void;
 }
 
 const createController = () => createGuidedRoundController({ hintAfter: 1, modelAfter: 2 });
+
+const practiceResponse = (state: GuidedRoundState): PracticeResponse =>
+  state.phase === 'modelled'
+    ? 'after-model'
+    : state.phase === 'hinted'
+      ? 'after-visual-hint'
+      : 'independent';
 
 export function usePatternTrainGame({
   difficulty: initialDifficulty,
   t,
   showMilestones = true,
+  onPracticeResult,
 }: UsePatternTrainGameOptions) {
   const [pattern, setPattern] = useState<TrainPattern | null>(null);
   const [activeDifficulty, setActiveDifficulty] = useState(initialDifficulty);
@@ -142,11 +152,21 @@ export function usePatternTrainGame({
       }
 
       const isCorrect = isTrainChoiceCorrect(pattern, choice);
+      const previousGuidedRound = controllerRef.current.getState();
       const nextGuidedRound = controllerRef.current.attempt(isCorrect);
       setGuidedRound(nextGuidedRound);
       setWrongAttempts(nextGuidedRound.incorrectAttempts);
 
       if (isCorrect) {
+        onPracticeResult?.({
+          game: 'pattern-train',
+          targetSkill: 'continue-repeating-pattern',
+          level: activeDifficulty,
+          response: practiceResponse(previousGuidedRound),
+          attempts: previousGuidedRound.incorrectAttempts + 1,
+          occurredAt: new Date().toISOString(),
+          selectedConfiguration: `pattern-train:${activeDifficulty}`,
+        });
         setAttachedCarriage(choice);
         setIsProcessing(true);
         const nextCompletedRounds = completedRounds + 1;
@@ -161,14 +181,33 @@ export function usePatternTrainGame({
 
       return { isCorrect, guidedRound: nextGuidedRound };
     },
-    [completedRounds, guidedRound.phase, isProcessing, pattern, showMilestones, t],
+    [
+      activeDifficulty,
+      completedRounds,
+      guidedRound.phase,
+      isProcessing,
+      onPracticeResult,
+      pattern,
+      showMilestones,
+      t,
+    ],
   );
 
   const skipRound = useCallback(() => {
-    if (!pattern) return;
+    if (!pattern || guidedRound.phase === 'corrected' || guidedRound.phase === 'skipped') return;
+    const previousGuidedRound = controllerRef.current.getState();
     setGuidedRound(controllerRef.current.skip());
+    onPracticeResult?.({
+      game: 'pattern-train',
+      targetSkill: 'continue-repeating-pattern',
+      level: activeDifficulty,
+      response: 'skipped',
+      attempts: previousGuidedRound.incorrectAttempts,
+      occurredAt: new Date().toISOString(),
+      selectedConfiguration: `pattern-train:${activeDifficulty}`,
+    });
     setIsProcessing(false);
-  }, [pattern]);
+  }, [activeDifficulty, guidedRound.phase, onPracticeResult, pattern]);
 
   const showHint = useCallback(() => {
     setGuidedRound(controllerRef.current.showHint());
