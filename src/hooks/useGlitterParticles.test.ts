@@ -1,8 +1,8 @@
-import { renderHook, act } from '@testing-library/react-native';
+import { renderHook } from '@testing-library/react-native';
 import { useGlitterParticles } from './useGlitterParticles';
 
 describe('useGlitterParticles', () => {
-  it('starts with empty particles', () => {
+  it('initializes particles without requiring animation to start', () => {
     const { result } = renderHook(() =>
       useGlitterParticles({
         particleCount: 20,
@@ -10,7 +10,7 @@ describe('useGlitterParticles', () => {
         canvasHeight: 400,
       }),
     );
-    expect(result.current.particles).toEqual([]);
+    expect(result.current.particles).toHaveLength(20);
     expect(result.current.ripples).toEqual([]);
   });
 

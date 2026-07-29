@@ -91,7 +91,7 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
     }, [elapsedMs]);
 
     const ballSize = useMemo(() => {
-      if (reducedMotion) return phase === 'inhale' ? expandSize : baseSize;
+      if (reducedMotion) return baseSize + (expandSize - baseSize) / 2;
       const sizeMultiplier = phase === 'inhale' ? phaseProgress : 1 - phaseProgress;
       return baseSize + sizeMultiplier * (expandSize - baseSize);
     }, [phase, phaseProgress, baseSize, expandSize, reducedMotion]);

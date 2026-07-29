@@ -4,6 +4,8 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { useTranslation } from 'react-i18next';
 import { SettingsScreen } from './SettingsScreen';
 import { TranslationKey } from '../i18n/types';
+import { DEFAULT_GAME_SETTINGS } from '../games/settings';
+import { GLITTER_PRESETS } from '../games/glitterSettings';
 
 jest.mock('../games/registry', () => {
   const actual = jest.requireActual('../games/registry');
@@ -20,7 +22,7 @@ const mockGoBack = jest.fn();
 const mockUpdateSettings = jest.fn();
 let mockIsSaving = false;
 let mockPersistenceError: string | null = null;
-let mockSettings = {
+let mockSettings: any = {
   animationsEnabled: true,
   soundEnabled: true,
   soundVolume: 0.5,
@@ -123,6 +125,32 @@ describe('SettingsScreen', () => {
     expect(mockUpdateSettings).toHaveBeenCalledWith('keepy-uppy', { liftMode: 'precise' });
   });
 
+  it('persists individual Glitter Fall overrides', () => {
+    mockSettings.gameSettings = {
+      ...DEFAULT_GAME_SETTINGS,
+      'glitter-fall': GLITTER_PRESETS.explore,
+    };
+    const screen = render(<SettingsScreen />);
+
+    fireEvent(
+      screen.getByRole('switch', { name: /settings.glitterFall.ripples/i }),
+      'valueChange',
+      false,
+    );
+    expect(mockUpdateSettings).toHaveBeenCalledWith('glitter-fall', { ripples: false });
+  });
+
+  it('resets Glitter Fall overrides to the selected preset', () => {
+    mockSettings.gameSettings = {
+      ...DEFAULT_GAME_SETTINGS,
+      'glitter-fall': { ...GLITTER_PRESETS.watch, colorCount: 6, ripples: true },
+    };
+    const screen = render(<SettingsScreen />);
+
+    fireEvent.press(screen.getByText('settings.glitterFall.resetPreset'));
+    expect(mockUpdateSettings).toHaveBeenCalledWith('glitter-fall', GLITTER_PRESETS.watch);
+  });
+
   it('autosaves changes without a Save action and has one clear back path', () => {
     const screen = render(React.createElement(SettingsScreen));
 
@@ -201,7 +229,7 @@ describe('SettingsScreen', () => {
 
   it('toggles sound setting', () => {
     const screen = render(React.createElement(SettingsScreen));
-    const soundSwitch = screen.getByRole('switch', { name: /Sound/i });
+    const soundSwitch = screen.getByRole('switch', { name: /^Sound,/i });
     fireEvent(soundSwitch, 'valueChange', false);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({ soundEnabled: false });

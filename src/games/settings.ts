@@ -1,20 +1,32 @@
 import type { Difficulty } from '../types';
 import type { GameId } from './registry';
+import {
+  DEFAULT_GLITTER_SETTINGS,
+  GLITTER_PRESETS,
+  GlitterFallSettings,
+  resolveGlitterSettings,
+} from './glitterSettings';
 
 export const SETTINGS_VERSION = 2;
 
 export type MemorySnapPairCount = 6 | 10 | 15;
 export type PatternTrainLevel = 'starter' | 'growing' | 'challenge';
 export type NumberPicnicMaxQuantity = 5 | 8 | 10;
+export type BreathingSessionLength = 3 | 5 | 10 | 'open-ended';
+
+export interface BreathingGardenSettings {
+  sessionLength: BreathingSessionLength;
+  visualCue: boolean;
+}
 
 export interface GameSettingsMap {
   'memory-snap': { pairCount: MemorySnapPairCount; showPreview: boolean };
   drawing: Record<string, never>;
-  'glitter-fall': Record<string, never>;
+  'glitter-fall': GlitterFallSettings;
   'bubble-pop': { motion: 'still' | 'moving'; density: 'sparse' | 'full' };
   'category-match': { showPreview: boolean };
   'keepy-uppy': { liftMode: 'gentle' | 'precise' };
-  'breathing-garden': Record<string, never>;
+  'breathing-garden': BreathingGardenSettings;
   'pattern-train': { level: PatternTrainLevel };
   'number-picnic': { maxQuantity: NumberPicnicMaxQuantity };
 }
@@ -22,11 +34,11 @@ export interface GameSettingsMap {
 export const DEFAULT_GAME_SETTINGS: GameSettingsMap = {
   'memory-snap': { pairCount: 6, showPreview: true },
   drawing: {},
-  'glitter-fall': {},
+  'glitter-fall': DEFAULT_GLITTER_SETTINGS,
   'bubble-pop': { motion: 'still', density: 'sparse' },
   'category-match': { showPreview: true },
   'keepy-uppy': { liftMode: 'gentle' },
-  'breathing-garden': {},
+  'breathing-garden': { sessionLength: 'open-ended', visualCue: true },
   'pattern-train': { level: 'starter' },
   'number-picnic': { maxQuantity: 5 },
 };
@@ -57,11 +69,16 @@ export function sanitizeGameSettings(
   legacy: Record<string, unknown> = {},
 ): GameSettingsMap {
   const candidate = isObject(value) ? value : {};
-  const isLegacyProfile = !isObject(value) && Object.keys(legacy).length > 0;
+  const isLegacyProfile =
+    !isObject(value) &&
+    legacy.settingsVersion !== SETTINGS_VERSION &&
+    Object.keys(legacy).length > 0;
   const memory = isObject(candidate['memory-snap']) ? candidate['memory-snap'] : {};
+  const glitter = isObject(candidate['glitter-fall']) ? candidate['glitter-fall'] : {};
   const bubble = isObject(candidate['bubble-pop']) ? candidate['bubble-pop'] : {};
   const category = isObject(candidate['category-match']) ? candidate['category-match'] : {};
   const keepy = isObject(candidate['keepy-uppy']) ? candidate['keepy-uppy'] : {};
+  const breathing = isObject(candidate['breathing-garden']) ? candidate['breathing-garden'] : {};
   const pattern = isObject(candidate['pattern-train']) ? candidate['pattern-train'] : {};
   const picnic = isObject(candidate['number-picnic']) ? candidate['number-picnic'] : {};
 
@@ -83,7 +100,9 @@ export function sanitizeGameSettings(
             : DEFAULT_GAME_SETTINGS['memory-snap'].showPreview,
     },
     drawing: {},
-    'glitter-fall': {},
+    'glitter-fall': isLegacyProfile
+      ? resolveGlitterSettings({ ...GLITTER_PRESETS.explore, shakeResponse: true })
+      : resolveGlitterSettings(glitter),
     'bubble-pop': {
       motion:
         bubble.motion === 'moving' || bubble.motion === 'still'
@@ -112,7 +131,16 @@ export function sanitizeGameSettings(
             ? 'precise'
             : 'gentle',
     },
-    'breathing-garden': {},
+    'breathing-garden': {
+      sessionLength:
+        breathing.sessionLength === 3 ||
+        breathing.sessionLength === 5 ||
+        breathing.sessionLength === 10 ||
+        breathing.sessionLength === 'open-ended'
+          ? breathing.sessionLength
+          : 'open-ended',
+      visualCue: typeof breathing.visualCue === 'boolean' ? breathing.visualCue : true,
+    },
     'pattern-train': {
       level:
         level === 'starter' || level === 'growing' || level === 'challenge'

@@ -15,10 +15,17 @@ import {
   SelectBox,
   VolumeControl,
   SectionHeader,
+  AppButton,
 } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useLayout } from '../ui/useLayout';
 import { getGameSettings } from '../games/settings';
+import {
+  GLITTER_PRESETS,
+  GlitterColorCount,
+  GlitterFallSpeed,
+  GlitterParticleDensity,
+} from '../games/glitterSettings';
 
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -28,6 +35,24 @@ export const SettingsScreen: React.FC = () => {
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const { contentWidth, isTablet } = useLayout();
   const { t } = useTranslation();
+  const glitterSettings = getGameSettings(settings, 'glitter-fall');
+
+  const glitterDensityOptions: { value: GlitterParticleDensity; label: string }[] = [
+    { value: 'very-sparse', label: t('settings.glitterFall.density.verySparse') },
+    { value: 'sparse', label: t('settings.glitterFall.density.sparse') },
+    { value: 'medium', label: t('settings.glitterFall.density.medium') },
+    { value: 'dense', label: t('settings.glitterFall.density.dense') },
+  ];
+  const glitterSpeedOptions: { value: GlitterFallSpeed; label: string }[] = [
+    { value: 'very-slow', label: t('settings.glitterFall.speed.verySlow') },
+    { value: 'slow', label: t('settings.glitterFall.speed.slow') },
+    { value: 'normal', label: t('settings.glitterFall.speed.normal') },
+  ];
+  const glitterColorOptions: { value: GlitterColorCount; label: string }[] = [
+    { value: 1, label: t('settings.glitterFall.colors.one') },
+    { value: 3, label: t('settings.glitterFall.colors.three') },
+    { value: 6, label: t('settings.glitterFall.colors.six') },
+  ];
 
   const colorModeOptions: { value: ColorMode; label: string }[] = [
     { value: 'light', label: t('settings.appearance.light') },
@@ -173,6 +198,62 @@ export const SettingsScreen: React.FC = () => {
           />
         </View>
 
+        <View style={styles.section}>
+          <SectionHeader title={t('settings.glitterFall.title')} />
+          <Text style={styles.controlLabel}>{t('settings.glitterFall.density.title')}</Text>
+          <SegmentedControl
+            options={glitterDensityOptions}
+            value={glitterSettings.particleDensity}
+            onValueChange={(particleDensity) =>
+              updateGameSettings('glitter-fall', { particleDensity })
+            }
+            wrap
+          />
+          <Text style={styles.controlLabel}>{t('settings.glitterFall.speed.title')}</Text>
+          <SegmentedControl
+            options={glitterSpeedOptions}
+            value={glitterSettings.fallSpeed}
+            onValueChange={(fallSpeed) => updateGameSettings('glitter-fall', { fallSpeed })}
+          />
+          <Text style={styles.controlLabel}>{t('settings.glitterFall.colors.title')}</Text>
+          <SegmentedControl
+            options={glitterColorOptions}
+            value={glitterSettings.colorCount}
+            onValueChange={(colorCount) => updateGameSettings('glitter-fall', { colorCount })}
+          />
+          <SettingToggle
+            label={t('settings.glitterFall.ripples')}
+            value={glitterSettings.ripples}
+            onValueChange={(ripples) => updateGameSettings('glitter-fall', { ripples })}
+          />
+          <SettingToggle
+            label={t('settings.glitterFall.shakeResponse')}
+            value={glitterSettings.shakeResponse}
+            onValueChange={(shakeResponse) => updateGameSettings('glitter-fall', { shakeResponse })}
+          />
+          <SettingToggle
+            label={t('settings.glitterFall.backgroundMotion')}
+            value={glitterSettings.backgroundMotion}
+            onValueChange={(backgroundMotion) =>
+              updateGameSettings('glitter-fall', { backgroundMotion })
+            }
+          />
+          <SettingToggle
+            label={t('settings.glitterFall.sound')}
+            description={t('settings.glitterFall.soundDescription')}
+            value={glitterSettings.sound}
+            onValueChange={(sound) => updateGameSettings('glitter-fall', { sound })}
+          />
+          <AppButton
+            label={t('settings.glitterFall.resetPreset')}
+            variant='ghost'
+            size='sm'
+            onPress={() =>
+              updateGameSettings('glitter-fall', GLITTER_PRESETS[glitterSettings.preset])
+            }
+          />
+        </View>
+
         {/* Enable Unfinished Games */}
         <View style={styles.section}>
           <SettingToggle
@@ -271,6 +352,12 @@ const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
       ...TypeStyle.bodySm,
       color: colors.textLight,
       marginTop: Space.xs,
+    },
+    controlLabel: {
+      ...TypeStyle.label,
+      color: colors.text,
+      marginTop: Space.base,
+      marginBottom: Space.xs,
     },
     errorMessage: {
       ...TypeStyle.bodySm,

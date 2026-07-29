@@ -50,6 +50,13 @@ const TestConsumer = () => {
       <Text testID='unfinishedGames'>{String(settings.enableUnfinishedGames)}</Text>
       <Text testID='memory-pairs'>{String(settings.gameSettings?.['memory-snap'].pairCount)}</Text>
       <Text testID='pattern-level'>{settings.gameSettings?.['pattern-train'].level}</Text>
+      <Text testID='glitter-preset'>{settings.gameSettings?.['glitter-fall'].preset}</Text>
+      <Text testID='glitter-ripples'>
+        {String(settings.gameSettings?.['glitter-fall'].ripples)}
+      </Text>
+      <Text testID='breathing-session'>
+        {String(settings.gameSettings?.['breathing-garden'].sessionLength)}
+      </Text>
       <Text testID='saving'>{String(!!isSaving)}</Text>
       <Text testID='persistence-error'>{persistenceError ?? ''}</Text>
       <TouchableOpacity testID='set-volume' onPress={() => updateSettings({ soundVolume: 0.9 })}>
@@ -85,6 +92,15 @@ const TestConsumer = () => {
       <TouchableOpacity testID='reset-memory' onPress={() => resetGameSettings('memory-snap')}>
         <Text>reset-memory</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        testID='set-glitter-ripples'
+        onPress={() => updateGameSettings('glitter-fall', { ripples: true })}
+      >
+        <Text>set-glitter-ripples</Text>
+      </TouchableOpacity>
+      <TouchableOpacity testID='reset-glitter' onPress={() => resetGameSettings('glitter-fall')}>
+        <Text>reset-glitter</Text>
+      </TouchableOpacity>
       <TouchableOpacity testID='reset-all' onPress={() => resetAllSettings()}>
         <Text>reset-all</Text>
       </TouchableOpacity>
@@ -119,6 +135,8 @@ describe('SettingsContext', () => {
     expect(screen.getByTestId('difficulty').props.children).toBe('easy');
     expect(screen.getByTestId('memory-pairs').props.children).toBe('6');
     expect(screen.getByTestId('pattern-level').props.children).toBe('starter');
+    expect(screen.getByTestId('glitter-preset').props.children).toBe('settle');
+    expect(screen.getByTestId('breathing-session').props.children).toBe('open-ended');
   });
 
   it('hides unfinished games on fresh installs', async () => {
@@ -344,6 +362,26 @@ describe('SettingsContext', () => {
     expect(screen.getByTestId('pattern-level').props.children).toBe('starter');
   });
 
+  it('uses current defaults when a versioned profile is missing per-game settings', async () => {
+    storage.getItem.mockResolvedValueOnce(
+      JSON.stringify({
+        settingsVersion: 2,
+        pressureFreeMode: true,
+      }),
+    );
+
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+
+    expect(screen.getByTestId('glitter-preset').props.children).toBe('settle');
+    const saved = JSON.parse(storage.setItem.mock.calls[0][1]);
+    expect(saved.gameSettings['bubble-pop']).toEqual({ motion: 'still', density: 'sparse' });
+  });
+
   it('updates and resets one game without changing another game', async () => {
     storage.getItem.mockResolvedValueOnce(null);
     const screen = render(
@@ -360,6 +398,26 @@ describe('SettingsContext', () => {
     fireEvent.press(screen.getByTestId('reset-memory'));
     await waitFor(() => expect(screen.getByTestId('memory-pairs').props.children).toBe('6'));
     expect(screen.getByTestId('pattern-level').props.children).toBe('starter');
+  });
+
+  it('persists and resets Glitter Fall overrides independently', async () => {
+    storage.getItem.mockResolvedValueOnce(null);
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+
+    fireEvent.press(screen.getByTestId('set-glitter-ripples'));
+    await waitFor(() => expect(screen.getByTestId('glitter-ripples').props.children).toBe('true'));
+    const saved = JSON.parse(storage.setItem.mock.calls.at(-1)[1]);
+    expect(saved.gameSettings['glitter-fall'].ripples).toBe(true);
+    expect(saved.gameSettings['breathing-garden'].sessionLength).toBe('open-ended');
+
+    fireEvent.press(screen.getByTestId('reset-glitter'));
+    await waitFor(() => expect(screen.getByTestId('glitter-ripples').props.children).toBe('false'));
+    expect(screen.getByTestId('glitter-preset').props.children).toBe('settle');
   });
 
   it('reset-all restores pressure-free starter defaults', async () => {

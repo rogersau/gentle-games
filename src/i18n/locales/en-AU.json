@@ -257,7 +257,19 @@
       "clearGlitter": "Clear Glitter",
       "clearGlitterHint": "Remove all glitter from the globe",
       "accessibility": "Glitter globe. Swipe or shake to move glitter particles.",
-      "subtitle": "Shake or swipe to make the glitter sparkle"
+      "subtitle": "Watch quietly or choose how the glitter moves",
+      "profileTitle": "Glitter feeling",
+      "preset": {
+        "settle": "Settle",
+        "watch": "Watch",
+        "explore": "Explore",
+        "full": "Full"
+      },
+      "controls": {
+        "addFew": "Add a few",
+        "swirl": "Swirl",
+        "settle": "Let them settle"
+      }
     },
     "bubblePop": {
       "name": "Bubble Pop",
@@ -366,7 +378,30 @@
       "changeColor": "Change Colour",
       "breaths": "Breaths: {{count}}",
       "musicOn": "Turn Music On 🔊",
-      "musicOff": "Turn Music Off 🔇"
+      "musicOff": "Turn Music Off 🔇",
+      "comfortMessage": "Breathe comfortably. You can stop at any time.",
+      "start": "Start",
+      "watchFirst": "Watch first",
+      "breatheNormally": "Breathe normally",
+      "exit": "Exit",
+      "pause": "Pause",
+      "resume": "Resume",
+      "stop": "Stop and finish",
+      "soundOn": "Sound on",
+      "soundOff": "Sound off",
+      "visualOn": "Show visual cue",
+      "visualOff": "Hide visual cue",
+      "watching": "Just watching. This breath will not be counted.",
+      "normalMessage": "Breathe in your own comfortable way. There is no pace to follow.",
+      "cueOffMessage": "The visual cue is off. Breathe comfortably.",
+      "finished": "Finished for now. You can start again or leave.",
+      "startAgain": "Start again",
+      "sessionProgress": "Breathing session progress",
+      "session": {
+        "title": "Choose a session",
+        "breaths": "{{count}} breaths",
+        "openEnded": "Open-ended"
+      }
     },
     "patternTrain": {
       "name": "Pattern Train",
@@ -542,6 +577,34 @@
         "label": "More bubbles",
         "description": "Show a fuller field of bubbles"
       }
+    },
+    "glitterFall": {
+      "title": "Glitter Fall",
+      "density": {
+        "title": "Particle density",
+        "verySparse": "Very sparse",
+        "sparse": "Sparse",
+        "medium": "Medium",
+        "dense": "Dense"
+      },
+      "speed": {
+        "title": "Fall speed",
+        "verySlow": "Very slow",
+        "slow": "Slow",
+        "normal": "Normal"
+      },
+      "colors": {
+        "title": "Colour variety",
+        "one": "One",
+        "three": "Three",
+        "six": "Six"
+      },
+      "ripples": "Touch ripples",
+      "shakeResponse": "Respond to shaking",
+      "backgroundMotion": "Background motion",
+      "sound": "Glitter sounds",
+      "soundDescription": "Sounds only play when the main Sound setting is also on",
+      "resetPreset": "Reset individual choices to selected preset"
     },
     "unfinishedGames": {
       "label": "Enable Unfinished Games",
