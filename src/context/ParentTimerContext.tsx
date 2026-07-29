@@ -44,7 +44,14 @@ const parsePersistedSession = (value: string | null): PersistedTimerSession | nu
     const parsed: unknown = JSON.parse(value);
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
     const candidate = parsed as Record<string, unknown>;
-    if (typeof candidate.expiresAt !== 'number' || !Number.isFinite(candidate.expiresAt) || typeof candidate.durationMinutes !== 'number' || !Number.isFinite(candidate.durationMinutes) || candidate.durationMinutes <= 0) return null;
+    if (
+      typeof candidate.expiresAt !== 'number' ||
+      !Number.isFinite(candidate.expiresAt) ||
+      typeof candidate.durationMinutes !== 'number' ||
+      !Number.isFinite(candidate.durationMinutes) ||
+      candidate.durationMinutes <= 0
+    )
+      return null;
     return {
       expiresAt: candidate.expiresAt,
       durationMinutes: candidate.durationMinutes,
@@ -69,7 +76,8 @@ const generateMathQuestion = (): { question: string; answer: number } => {
 
 export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { settings } = useSettings();
-  const animationsEnabled = typeof useAnimationEnabled === 'function' ? useAnimationEnabled() : settings.animationsEnabled;
+  const animationsEnabled =
+    typeof useAnimationEnabled === 'function' ? useAnimationEnabled() : settings.animationsEnabled;
   const { colors, resolvedMode } = useThemeColors();
   const initialDurationMinutes = settings.parentTimerMinutes;
   const [secondsRemaining, setSecondsRemaining] = useState(initialDurationMinutes * 60);
@@ -183,14 +191,22 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setShowError(false);
         return;
       }
-      if (persisted && persisted.durationMinutes === durationMinutes && persisted.expiresAt > Date.now()) {
+      if (
+        persisted &&
+        persisted.durationMinutes === durationMinutes &&
+        persisted.expiresAt > Date.now()
+      ) {
         expiryRef.current = persisted.expiresAt;
         setSecondsRemaining(Math.max(0, Math.ceil((persisted.expiresAt - Date.now()) / 1000)));
         setIsLocked(false);
         return;
       }
 
-      if (persisted && persisted.durationMinutes === durationMinutes && persisted.expiresAt <= Date.now()) {
+      if (
+        persisted &&
+        persisted.durationMinutes === durationMinutes &&
+        persisted.expiresAt <= Date.now()
+      ) {
         expiryRef.current = persisted.expiresAt;
         setSecondsRemaining(0);
         setIsLocked(true);

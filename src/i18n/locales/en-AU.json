@@ -425,15 +425,15 @@
       },
       "difficulty": {
         "easy": {
-          "label": "Easy",
+          "label": "Starter",
           "description": "Simple AB patterns (3 carriages)"
         },
         "medium": {
-          "label": "Medium",
+          "label": "Growing",
           "description": "ABC and AAB patterns (4 carriages)"
         },
         "hard": {
-          "label": "Hard",
+          "label": "Challenge",
           "description": "AABB and complex patterns (5 carriages)"
         }
       },
@@ -486,19 +486,19 @@
     }
   },
   "difficulty": {
-    "title": "Select Difficulty",
+    "title": "Choose a board size",
     "optionLabel": "{{label}} · {{description}}",
     "accessibilityLabel": "{{label}} difficulty",
     "easy": {
-      "label": "Easy",
+      "label": "6 pairs",
       "description": "3×4 grid (12 cards)"
     },
     "medium": {
-      "label": "Medium",
+      "label": "10 pairs",
       "description": "4×5 grid (20 cards)"
     },
     "hard": {
-      "label": "Hard",
+      "label": "15 pairs",
       "description": "5×6 grid (30 cards)"
     }
   },
@@ -531,6 +531,17 @@
     "keepyUppyEasyMode": {
       "label": "Keepy Uppy Easy Mode",
       "description": "Any tap gives a gentle lift while good taps still go higher"
+    },
+    "bubblePop": {
+      "title": "Bubble Pop",
+      "moving": {
+        "label": "Moving bubbles",
+        "description": "Let bubbles drift across the play area"
+      },
+      "fullField": {
+        "label": "More bubbles",
+        "description": "Show a fuller field of bubbles"
+      }
     },
     "unfinishedGames": {
       "label": "Enable Unfinished Games",

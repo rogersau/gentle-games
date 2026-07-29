@@ -6,6 +6,7 @@ import type { GameDefinition } from '../games/registry';
 import * as registry from '../games/registry';
 import { APP_ROUTES } from '../types/navigation';
 import { openExternalUrl } from '../utils/externalLinks';
+import { GAME_OUTCOMES } from '../games/outcomes';
 
 const mockNavigate = jest.fn();
 let mockFocusCallback: (() => void) | undefined;
@@ -37,7 +38,7 @@ jest.mock('@react-navigation/native', () => ({
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: mockSettings,
-    updateSettings: mockUpdateSettings,
+    updateGameSettings: mockUpdateSettings,
   }),
 }));
 
@@ -213,7 +214,7 @@ describe('HomeScreen', () => {
     fireEvent.press(hardButton!);
 
     await waitFor(() => {
-      expect(mockUpdateSettings).toHaveBeenCalledWith({ difficulty: 'hard' });
+      expect(mockUpdateSettings).toHaveBeenCalledWith('memory-snap', { pairCount: 15 });
       expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Game);
     });
   });
@@ -308,6 +309,7 @@ describe('HomeScreen', () => {
       accentColor: '#A8DADC',
       isUnfinished: false,
       launchMode: 'difficulty-select',
+      outcome: GAME_OUTCOMES['pattern-train'],
     };
 
     mockGetVisibleGames.mockReturnValue([routedDifficultyGame]);
@@ -324,7 +326,7 @@ describe('HomeScreen', () => {
     fireEvent.press(easyButton!);
 
     await waitFor(() => {
-      expect(mockUpdateSettings).toHaveBeenCalledWith({ difficulty: 'easy' });
+      expect(mockUpdateSettings).toHaveBeenCalledWith('memory-snap', { pairCount: 6 });
       expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.PatternTrain);
     });
   });

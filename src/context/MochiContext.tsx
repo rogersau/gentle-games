@@ -43,26 +43,29 @@ export const MochiProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, []);
 
-  const showMochi = useCallback((p?: string, v?: MochiProps['variant']) => {
-    const payload = { phrase: p || null, variant: v || 'idle' };
+  const showMochi = useCallback(
+    (p?: string, v?: MochiProps['variant']) => {
+      const payload = { phrase: p || null, variant: v || 'idle' };
 
-    if (isShowing) {
-      if (!queuedShow.current) {
-        queuedShow.current = payload;
+      if (isShowing) {
+        if (!queuedShow.current) {
+          queuedShow.current = payload;
+        }
+        return;
       }
-      return;
-    }
 
-    setPhrase(payload.phrase);
-    setVariant(payload.variant);
-    setVisible(true);
-    setIsShowing(true);
+      setPhrase(payload.phrase);
+      setVariant(payload.variant);
+      setVisible(true);
+      setIsShowing(true);
 
-    if (autoHideTimer.current) clearTimeout(autoHideTimer.current);
-    autoHideTimer.current = setTimeout(() => {
-      hideMochiInternal();
-    }, 3000);
-  }, [isShowing, hideMochiInternal]);
+      if (autoHideTimer.current) clearTimeout(autoHideTimer.current);
+      autoHideTimer.current = setTimeout(() => {
+        hideMochiInternal();
+      }, 3000);
+    },
+    [isShowing, hideMochiInternal],
+  );
 
   const hideMochi = useCallback(() => {
     hideMochiInternal();

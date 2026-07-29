@@ -83,7 +83,13 @@ export const GlitterScreen: React.FC = () => {
         </Text>
 
         <View style={styles.globeWrap}>
-          <GlitterGlobe ref={globeRef} width={globeSize} height={globeSize} onInteraction={handleInteraction} motionEnabled={motionEnabled} />
+          <GlitterGlobe
+            ref={globeRef}
+            width={globeSize}
+            height={globeSize}
+            onInteraction={handleInteraction}
+            motionEnabled={motionEnabled}
+          />
         </View>
 
         <View style={styles.controls} testID='glitter-controls'>

@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react-native';
 import type { GameDefinition } from '../games/registry';
 import { APP_ROUTES } from '../types/navigation';
+import { GAME_OUTCOMES } from '../games/outcomes';
 import { useGameSelection } from './useGameSelection';
 
 const memorySnapGame: GameDefinition = {
@@ -12,6 +13,7 @@ const memorySnapGame: GameDefinition = {
   accentColor: '#abc123',
   isUnfinished: false,
   launchMode: 'difficulty-select',
+  outcome: GAME_OUTCOMES['memory-snap'],
 };
 
 const drawingGame: GameDefinition = {
@@ -23,6 +25,7 @@ const drawingGame: GameDefinition = {
   accentColor: '#def456',
   isUnfinished: false,
   launchMode: 'direct',
+  outcome: GAME_OUTCOMES.drawing,
 };
 
 describe('useGameSelection', () => {

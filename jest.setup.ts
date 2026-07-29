@@ -72,6 +72,9 @@ jest.mock('./src/context/SettingsContext', () => {
         telemetryEnabled: false,
       },
       updateSettings: jest.fn(),
+      updateGameSettings: jest.fn(),
+      resetGameSettings: jest.fn(),
+      resetAllSettings: jest.fn(),
     }),
   };
 });

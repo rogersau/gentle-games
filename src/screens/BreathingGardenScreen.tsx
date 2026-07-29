@@ -192,11 +192,11 @@ export const BreathingGardenScreen: React.FC = () => {
         </AppCard>
 
         {showPressureMetrics ? (
-        <View style={styles.statsRow}>
-          <Text style={styles.statText}>
-            {t('games.breathingGarden.breaths', { count: breaths })}
-          </Text>
-        </View>
+          <View style={styles.statsRow}>
+            <Text style={styles.statText}>
+              {t('games.breathingGarden.breaths', { count: breaths })}
+            </Text>
+          </View>
         ) : null}
 
         <View style={styles.actionsRow}>

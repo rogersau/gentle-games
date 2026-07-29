@@ -13,6 +13,7 @@ import { Space, TypeStyle } from '../ui/tokens';
 import { useAnimationEnabled } from '../ui/animations';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
 import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
+import { getGameSettings } from '../games/settings';
 
 export const KeepyUppyScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -79,26 +80,26 @@ export const KeepyUppyScreen: React.FC = () => {
           {t('games.keepyUppy.subtitle')}
         </Text>
         {showPressureMetrics ? (
-        <View style={styles.statsRow}>
-          <Text
-            style={styles.statText}
-            accessibilityLabel={t('games.keepyUppy.taps', { count: score })}
-          >
-            {t('games.keepyUppy.taps', { count: score })}
-          </Text>
-          <Text
-            style={styles.statText}
-            accessibilityLabel={t('games.keepyUppy.balloons', { count: balloonCount })}
-          >
-            {t('games.keepyUppy.balloons', { count: balloonCount })}
-          </Text>
-          <Text
-            style={styles.statText}
-            accessibilityLabel={t('games.keepyUppy.popped', { count: popped })}
-          >
-            {t('games.keepyUppy.popped', { count: popped })}
-          </Text>
-        </View>
+          <View style={styles.statsRow}>
+            <Text
+              style={styles.statText}
+              accessibilityLabel={t('games.keepyUppy.taps', { count: score })}
+            >
+              {t('games.keepyUppy.taps', { count: score })}
+            </Text>
+            <Text
+              style={styles.statText}
+              accessibilityLabel={t('games.keepyUppy.balloons', { count: balloonCount })}
+            >
+              {t('games.keepyUppy.balloons', { count: balloonCount })}
+            </Text>
+            <Text
+              style={styles.statText}
+              accessibilityLabel={t('games.keepyUppy.popped', { count: popped })}
+            >
+              {t('games.keepyUppy.popped', { count: popped })}
+            </Text>
+          </View>
         ) : null}
         <AppButton
           label={t('games.keepyUppy.addBalloon')}
@@ -116,7 +117,7 @@ export const KeepyUppyScreen: React.FC = () => {
           onScoreChange={handleScoreChange}
           onBalloonCountChange={setBalloonCount}
           onPoppedChange={setPopped}
-          easyMode={settings.keepyUppyEasyMode}
+          easyMode={getGameSettings(settings, 'keepy-uppy').liftMode === 'gentle'}
           motionEnabled={motionEnabled}
         />
       </View>

@@ -12,6 +12,7 @@ import { AppScreen, AppHeader } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
 import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
+import { getGameSettings } from '../games/settings';
 
 export const BubbleScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -29,6 +30,7 @@ export const BubbleScreen: React.FC = () => {
   const { showPressureMetrics, showMilestoneCelebrations } = getGamePresentationPolicy(settings);
   const { t } = useTranslation();
   const motionEnabled = !useReducedMotion();
+  const bubbleSettings = getGameSettings(settings, 'bubble-pop');
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [poppedCount, setPoppedCount] = useState(0);
   const popCountRef = useRef(0);
@@ -96,10 +98,10 @@ export const BubbleScreen: React.FC = () => {
           <BubbleField
             width={boardSize.width}
             height={boardSize.height}
-            minActiveBubbles={2}
-            maxActiveBubbles={12}
+            minActiveBubbles={bubbleSettings.density === 'sparse' ? 1 : 2}
+            maxActiveBubbles={bubbleSettings.density === 'sparse' ? 4 : 12}
             onBubblePop={handleBubblePop}
-            motionEnabled={motionEnabled}
+            motionEnabled={motionEnabled && bubbleSettings.motion === 'moving'}
             isFocused={isFocused}
           />
         </View>

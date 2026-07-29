@@ -41,45 +41,47 @@ export function useGlitterParticles({
   const rafRef = useRef<number | null>(null);
   const particlesRef = useRef<GlitterParticle[]>([]);
   const initializedRef = useRef(false);
-  const stepParticlesRef = useRef<(currentParticles: GlitterParticle[], dt: number) => GlitterParticle[]>(() => []);
+  const stepParticlesRef = useRef<
+    (currentParticles: GlitterParticle[], dt: number) => GlitterParticle[]
+  >(() => []);
 
   const centerX = canvasWidth / 2;
   const centerY = canvasHeight / 2;
   const globeRadius = Math.min(canvasWidth, canvasHeight) / 2 - GLOBE_PADDING;
 
-  const stepParticles = useCallback((
-    currentParticles: GlitterParticle[],
-    dt: number,
-  ): GlitterParticle[] => {
-    const damping = Math.pow(DRAG, dt * 60);
-    return currentParticles.map((p) => {
-      const vx = p.vx * damping;
-      const vy = p.vy * damping;
-      const clampedVx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, vx));
-      const clampedVy = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, vy));
-      const x = p.x + clampedVx * dt;
-      const y = p.y + clampedVy * dt;
-      const dx = x - centerX;
-      const dy = y - centerY;
-      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      const maxDist = globeRadius - p.radius;
-      if (dist > maxDist && maxDist > 0) {
-        const nx = dx / dist;
-        const ny = dy / dist;
-        const outwardVel = vx * nx + vy * ny;
-        if (outwardVel > 0) {
-          return {
-            ...p,
-            x: centerX + nx * maxDist,
-            y: centerY + ny * maxDist,
-            vx: vx - (1 + BOUNCE) * outwardVel * nx,
-            vy: vy - (1 + BOUNCE) * outwardVel * ny,
-          };
+  const stepParticles = useCallback(
+    (currentParticles: GlitterParticle[], dt: number): GlitterParticle[] => {
+      const damping = Math.pow(DRAG, dt * 60);
+      return currentParticles.map((p) => {
+        const vx = p.vx * damping;
+        const vy = p.vy * damping;
+        const clampedVx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, vx));
+        const clampedVy = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, vy));
+        const x = p.x + clampedVx * dt;
+        const y = p.y + clampedVy * dt;
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const maxDist = globeRadius - p.radius;
+        if (dist > maxDist && maxDist > 0) {
+          const nx = dx / dist;
+          const ny = dy / dist;
+          const outwardVel = vx * nx + vy * ny;
+          if (outwardVel > 0) {
+            return {
+              ...p,
+              x: centerX + nx * maxDist,
+              y: centerY + ny * maxDist,
+              vx: vx - (1 + BOUNCE) * outwardVel * nx,
+              vy: vy - (1 + BOUNCE) * outwardVel * ny,
+            };
+          }
         }
-      }
-      return { ...p, x, y, vx: clampedVx, vy: clampedVy };
-    });
-  }, [centerX, centerY, globeRadius]);
+        return { ...p, x, y, vx: clampedVx, vy: clampedVy };
+      });
+    },
+    [centerX, centerY, globeRadius],
+  );
 
   stepParticlesRef.current = stepParticles;
 

@@ -11,6 +11,7 @@ import { AppScreen, AppHeader, AppCard } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { PicnicBasket, PicnicBlanket } from '../components/numberpicnic';
 import type { TranslationKey } from '../i18n/types';
+import { getGameSettings, maxQuantityToDifficulty } from '../games/settings';
 
 const { width: _SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -47,7 +48,9 @@ export const NumberPicnicScreen: React.FC = () => {
     handleDropEnd,
     handleDragOverBasket,
     startNewRound,
-  } = useNumberPicnicGame(settings.difficulty);
+  } = useNumberPicnicGame(
+    maxQuantityToDifficulty(getGameSettings(settings, 'number-picnic').maxQuantity),
+  );
 
   const { showMochi } = useMochi();
   const lastPhraseIndexRef = useRef(-1);

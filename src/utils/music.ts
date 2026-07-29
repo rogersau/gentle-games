@@ -129,7 +129,11 @@ export const useBackgroundMusic = () => {
 
       // Awaiting also catches a rejected play promise in test/native adapters.
       await player.play();
-      if (playRequest !== playRequestRef.current || !settingsRef.current.soundEnabled || isExplicitlyInactive(appStateRef.current)) {
+      if (
+        playRequest !== playRequestRef.current ||
+        !settingsRef.current.soundEnabled ||
+        isExplicitlyInactive(appStateRef.current)
+      ) {
         removePlayer(playerRef.current);
         playerRef.current = null;
         setIsLoaded(false);

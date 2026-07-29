@@ -74,7 +74,7 @@ const patternSettings = { pressureFreeMode: false, difficulty: 'easy' as const }
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: patternSettings,
-    updateSettings: jest.fn(),
+    updateGameSettings: jest.fn(),
   }),
 }));
 

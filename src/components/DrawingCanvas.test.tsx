@@ -190,7 +190,10 @@ describe('DrawingCanvas', () => {
   it('skips duplicate pointer samples and bounds long live strokes', () => {
     const ref = React.createRef<DrawingCanvasRef>();
     const screen = render(<DrawingCanvas ref={ref} width={320} height={280} initialHistory={[]} />);
-    const moves = Array.from({ length: 2_000 }, (_, index) => ({ x: (index % 300) + 1, y: (index % 200) + 1 }));
+    const moves = Array.from({ length: 2_000 }, (_, index) => ({
+      x: (index % 300) + 1,
+      y: (index % 200) + 1,
+    }));
     drawGesture(screen, { x: 1, y: 1 }, [{ x: 1, y: 1 }, ...moves]);
     const history = ref.current?.getHistory() ?? [];
     expect(history).toHaveLength(1);

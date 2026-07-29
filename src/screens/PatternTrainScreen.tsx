@@ -25,6 +25,7 @@ import { playMatchSound, playFlipSound, playCompleteSound } from '../utils/sound
 import { useThemeColors } from '../utils/theme';
 import { AppScreen, AppHeader, AppButton, AppCard, AppModal } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
+import { getGameSettings, patternLevelToDifficulty, PatternTrainLevel } from '../games/settings';
 import { useGentleBounce, useAnimationEnabled } from '../ui/animations';
 import { TrainEngine, Carriage } from '../components/train';
 import { useMochi } from '../hooks/useMochi';
@@ -52,7 +53,9 @@ const pickPhrase = (phrases: string[], lastIndex: number): { phrase: string; ind
 
 export const PatternTrainScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { settings, updateSettings } = useSettings();
+  const { settings, updateGameSettings } = useSettings();
+  const patternSettings = getGameSettings(settings, 'pattern-train');
+  const difficulty = patternLevelToDifficulty(patternSettings.level);
   const { showPressureMetrics, showMilestoneCelebrations } = getGamePresentationPolicy(settings);
   const animationsEnabled =
     typeof useAnimationEnabled === 'function' ? useAnimationEnabled() : settings.animationsEnabled;
@@ -63,7 +66,7 @@ export const PatternTrainScreen: React.FC = () => {
   const { showCelebration, celebrationPhrase, milestoneCount, onPatternComplete } =
     usePatternTrainUI({ celebrationsEnabled: showMilestoneCelebrations });
   const { state, actions } = usePatternTrainGame({
-    difficulty: settings.difficulty,
+    difficulty,
     t: t as (key: string, options?: Record<string, unknown>) => string,
     showMilestones: showMilestoneCelebrations,
   });
@@ -143,7 +146,9 @@ export const PatternTrainScreen: React.FC = () => {
   };
 
   const handleDifficultySelect = async (difficulty: Difficulty) => {
-    await updateSettings({ difficulty });
+    const level: PatternTrainLevel =
+      difficulty === 'hard' ? 'challenge' : difficulty === 'medium' ? 'growing' : 'starter';
+    await updateGameSettings('pattern-train', { level });
     gameHandleDifficultySelect(difficulty);
   };
 
@@ -573,9 +578,9 @@ export const PatternTrainScreen: React.FC = () => {
         </Text>
 
         <Text style={styles.meta}>
-          {settings.difficulty === 'easy'
+          {difficulty === 'easy'
             ? t('games.patternTrain.difficulty.easy.label')
-            : settings.difficulty === 'medium'
+            : difficulty === 'medium'
               ? t('games.patternTrain.difficulty.medium.label')
               : t('games.patternTrain.difficulty.hard.label')}
         </Text>
@@ -714,15 +719,14 @@ export const PatternTrainScreen: React.FC = () => {
       >
         <Text style={styles.modalSubtitle}>
           {t('difficulty.title')}
-          {settings.difficulty &&
-            ` (${t('games.memorySnap.lastUsed')}: ${getDifficultyLabel(settings.difficulty)})`}
+          {` (${t('games.memorySnap.lastUsed')}: ${getDifficultyLabel(difficulty)})`}
         </Text>
         <View style={styles.optionsList}>
           {difficultyOptions.map(({ value, label }) => (
             <AppButton
               key={value}
               label={label}
-              variant={settings.difficulty === value ? 'primary' : 'ghost'}
+              variant={difficulty === value ? 'primary' : 'ghost'}
               size='md'
               fullWidth
               onPress={() => handleDifficultySelect(value)}

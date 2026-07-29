@@ -20,7 +20,16 @@ const storage = AsyncStorage as unknown as {
 };
 
 const TestConsumer = () => {
-  const { settings, isLoading, updateSettings, isSaving, persistenceError } = useSettings();
+  const {
+    settings,
+    isLoading,
+    updateSettings,
+    updateGameSettings,
+    resetGameSettings,
+    resetAllSettings,
+    isSaving,
+    persistenceError,
+  } = useSettings();
 
   if (isLoading) {
     return <Text testID='loading'>loading</Text>;
@@ -39,6 +48,8 @@ const TestConsumer = () => {
       <Text testID='telemetry'>{String(settings.telemetryEnabled)}</Text>
       <Text testID='pressure-free'>{String(settings.pressureFreeMode)}</Text>
       <Text testID='unfinishedGames'>{String(settings.enableUnfinishedGames)}</Text>
+      <Text testID='memory-pairs'>{String(settings.gameSettings?.['memory-snap'].pairCount)}</Text>
+      <Text testID='pattern-level'>{settings.gameSettings?.['pattern-train'].level}</Text>
       <Text testID='saving'>{String(!!isSaving)}</Text>
       <Text testID='persistence-error'>{persistenceError ?? ''}</Text>
       <TouchableOpacity testID='set-volume' onPress={() => updateSettings({ soundVolume: 0.9 })}>
@@ -59,8 +70,23 @@ const TestConsumer = () => {
       <TouchableOpacity testID='set-hard' onPress={() => updateSettings({ difficulty: 'hard' })}>
         <Text>set-hard</Text>
       </TouchableOpacity>
-      <TouchableOpacity testID='set-pressure-free' onPress={() => updateSettings({ pressureFreeMode: true })}>
+      <TouchableOpacity
+        testID='set-pressure-free'
+        onPress={() => updateSettings({ pressureFreeMode: true })}
+      >
         <Text>set-pressure-free</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID='set-memory-hard'
+        onPress={() => updateGameSettings('memory-snap', { pairCount: 15 })}
+      >
+        <Text>set-memory-hard</Text>
+      </TouchableOpacity>
+      <TouchableOpacity testID='reset-memory' onPress={() => resetGameSettings('memory-snap')}>
+        <Text>reset-memory</Text>
+      </TouchableOpacity>
+      <TouchableOpacity testID='reset-all' onPress={() => resetAllSettings()}>
+        <Text>reset-all</Text>
       </TouchableOpacity>
       <TouchableOpacity
         testID='set-telemetry'
@@ -89,7 +115,10 @@ describe('SettingsContext', () => {
     await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
 
     expect(screen.getByTestId('telemetry').props.children).toBe('false');
-    expect(screen.getByTestId('pressure-free').props.children).toBe('false');
+    expect(screen.getByTestId('pressure-free').props.children).toBe('true');
+    expect(screen.getByTestId('difficulty').props.children).toBe('easy');
+    expect(screen.getByTestId('memory-pairs').props.children).toBe('6');
+    expect(screen.getByTestId('pattern-level').props.children).toBe('starter');
   });
 
   it('hides unfinished games on fresh installs', async () => {
@@ -131,7 +160,7 @@ describe('SettingsContext', () => {
     expect(screen.getByTestId('animations').props.children).toBe('false');
     expect(screen.getByTestId('sound').props.children).toBe('true');
     expect(screen.getByTestId('volume').props.children).toBe('1');
-    expect(screen.getByTestId('difficulty').props.children).toBe('medium');
+    expect(screen.getByTestId('difficulty').props.children).toBe('easy');
     expect(screen.getByTestId('theme').props.children).toBe('mixed');
     expect(screen.getByTestId('keepyEasy').props.children).toBe('true');
     expect(screen.getByTestId('colorMode').props.children).toBe('system');
@@ -154,27 +183,16 @@ describe('SettingsContext', () => {
     await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
 
     expect(screen.getByTestId('hiddenGames').props.children).toBe('memory-snap,bubble-pop');
-    expect(storage.setItem).toHaveBeenCalledWith(
-      'gentleMatchSettings',
-      JSON.stringify({
-        animationsEnabled: true,
-        soundEnabled: true,
-        soundVolume: 0.5,
-        difficulty: 'medium',
-        theme: 'mixed',
-        showCardPreview: true,
-        keepyUppyEasyMode: true,
-        colorMode: 'system',
-        hiddenGames: ['memory-snap', 'bubble-pop'],
-        parentTimerMinutes: 0,
-        enableUnfinishedGames: false,
-        language: 'en-AU',
-        reducedMotionEnabled: false,
-        telemetryEnabled: false,
-        showMochiInGames: true,
-        pressureFreeMode: false,
-      }),
-    );
+    const migrated = JSON.parse(storage.setItem.mock.calls[0][1]);
+    expect(migrated).toMatchObject({
+      settingsVersion: 2,
+      hiddenGames: ['memory-snap', 'bubble-pop'],
+      pressureFreeMode: false,
+      gameSettings: {
+        'memory-snap': { pairCount: 6, showPreview: true },
+        'pattern-train': { level: 'starter' },
+      },
+    });
   });
 
   it('completes legacy migration before allowing later settings updates', async () => {
@@ -271,8 +289,97 @@ describe('SettingsContext', () => {
     );
     await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
     fireEvent.press(screen.getByTestId('set-pressure-free'));
-    await waitFor(() => expect(storage.setItem).toHaveBeenCalledWith('gentleMatchSettings', expect.any(String)));
+    await waitFor(() =>
+      expect(storage.setItem).toHaveBeenCalledWith('gentleMatchSettings', expect.any(String)),
+    );
     expect(JSON.parse(storage.setItem.mock.calls[0][1]).pressureFreeMode).toBe(true);
+  });
+
+  it('migrates explicit legacy choices into isolated game settings', async () => {
+    storage.getItem.mockResolvedValueOnce(
+      JSON.stringify({
+        difficulty: 'hard',
+        showCardPreview: false,
+        keepyUppyEasyMode: false,
+        pressureFreeMode: false,
+      }),
+    );
+
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+
+    expect(screen.getByTestId('pressure-free').props.children).toBe('false');
+    expect(screen.getByTestId('memory-pairs').props.children).toBe('15');
+    expect(screen.getByTestId('pattern-level').props.children).toBe('challenge');
+    const migrated = JSON.parse(storage.setItem.mock.calls[0][1]);
+    expect(migrated.gameSettings['memory-snap']).toEqual({ pairCount: 15, showPreview: false });
+    expect(migrated.gameSettings['keepy-uppy']).toEqual({ liftMode: 'precise' });
+    expect(migrated.gameSettings['bubble-pop']).toEqual({ motion: 'moving', density: 'full' });
+  });
+
+  it('falls back safely when versioned per-game values are invalid', async () => {
+    storage.getItem.mockResolvedValueOnce(
+      JSON.stringify({
+        settingsVersion: 2,
+        pressureFreeMode: true,
+        gameSettings: {
+          'memory-snap': { pairCount: 99 },
+          'pattern-train': { level: 'impossible' },
+        },
+      }),
+    );
+
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+
+    expect(screen.getByTestId('memory-pairs').props.children).toBe('6');
+    expect(screen.getByTestId('pattern-level').props.children).toBe('starter');
+  });
+
+  it('updates and resets one game without changing another game', async () => {
+    storage.getItem.mockResolvedValueOnce(null);
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+
+    fireEvent.press(screen.getByTestId('set-memory-hard'));
+    await waitFor(() => expect(screen.getByTestId('memory-pairs').props.children).toBe('15'));
+    expect(screen.getByTestId('pattern-level').props.children).toBe('starter');
+
+    fireEvent.press(screen.getByTestId('reset-memory'));
+    await waitFor(() => expect(screen.getByTestId('memory-pairs').props.children).toBe('6'));
+    expect(screen.getByTestId('pattern-level').props.children).toBe('starter');
+  });
+
+  it('reset-all restores pressure-free starter defaults', async () => {
+    storage.getItem.mockResolvedValueOnce(
+      JSON.stringify({
+        settingsVersion: 2,
+        pressureFreeMode: false,
+        gameSettings: { 'memory-snap': { pairCount: 15, showPreview: false } },
+      }),
+    );
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+
+    fireEvent.press(screen.getByTestId('reset-all'));
+    await waitFor(() => expect(screen.getByTestId('pressure-free').props.children).toBe('true'));
+    expect(screen.getByTestId('memory-pairs').props.children).toBe('6');
   });
 
   it('merges rapid updates and serialises delayed writes', async () => {

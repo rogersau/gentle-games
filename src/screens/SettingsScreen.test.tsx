@@ -54,6 +54,7 @@ jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: mockSettings,
     updateSettings: mockUpdateSettings,
+    updateGameSettings: mockUpdateSettings,
     isSaving: mockIsSaving,
     persistenceError: mockPersistenceError,
   }),
@@ -104,7 +105,7 @@ describe('SettingsScreen', () => {
     const cardPreviewSwitch = screen.getByRole('switch', { name: /Show Card Preview/i });
     fireEvent(cardPreviewSwitch, 'valueChange', false);
 
-    expect(mockUpdateSettings).toHaveBeenCalledWith({ showCardPreview: false });
+    expect(mockUpdateSettings).toHaveBeenCalledWith('memory-snap', { showPreview: false });
   });
 
   it('does not show theme or difficulty controls', () => {
@@ -119,7 +120,7 @@ describe('SettingsScreen', () => {
     const keepyUppySwitch = screen.getByRole('switch', { name: /Keepy Uppy Easy Mode/i });
     fireEvent(keepyUppySwitch, 'valueChange', false);
 
-    expect(mockUpdateSettings).toHaveBeenCalledWith({ keepyUppyEasyMode: false });
+    expect(mockUpdateSettings).toHaveBeenCalledWith('keepy-uppy', { liftMode: 'precise' });
   });
 
   it('autosaves changes without a Save action and has one clear back path', () => {

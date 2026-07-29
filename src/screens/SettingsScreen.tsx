@@ -18,10 +18,12 @@ import {
 } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useLayout } from '../ui/useLayout';
+import { getGameSettings } from '../games/settings';
 
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { settings, updateSettings, isSaving, persistenceError } = useSettings();
+  const { settings, updateSettings, updateGameSettings, isSaving, persistenceError } =
+    useSettings();
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const { contentWidth, isTablet } = useLayout();
@@ -44,10 +46,7 @@ export const SettingsScreen: React.FC = () => {
 
   return (
     <AppScreen>
-      <AppHeader
-        title={t('settings.title')}
-        onBack={() => navigation.goBack()}
-      />
+      <AppHeader title={t('settings.title')} onBack={() => navigation.goBack()} />
 
       <ScrollView
         style={styles.scroll}
@@ -126,8 +125,8 @@ export const SettingsScreen: React.FC = () => {
           <SettingToggle
             label={t('settings.cardPreview.label')}
             description={t('settings.cardPreview.description')}
-            value={!!settings.showCardPreview}
-            onValueChange={(value) => updateSettings({ showCardPreview: value })}
+            value={getGameSettings(settings, 'memory-snap').showPreview}
+            onValueChange={(showPreview) => updateGameSettings('memory-snap', { showPreview })}
           />
         </View>
 
@@ -146,8 +145,31 @@ export const SettingsScreen: React.FC = () => {
           <SettingToggle
             label={t('settings.keepyUppyEasyMode.label')}
             description={t('settings.keepyUppyEasyMode.description')}
-            value={!!settings.keepyUppyEasyMode}
-            onValueChange={(value) => updateSettings({ keepyUppyEasyMode: value })}
+            value={getGameSettings(settings, 'keepy-uppy').liftMode === 'gentle'}
+            onValueChange={(value) =>
+              updateGameSettings('keepy-uppy', { liftMode: value ? 'gentle' : 'precise' })
+            }
+          />
+        </View>
+
+        {/* Sensory game controls */}
+        <View style={styles.section}>
+          <SectionHeader title={t('settings.bubblePop.title')} />
+          <SettingToggle
+            label={t('settings.bubblePop.moving.label')}
+            description={t('settings.bubblePop.moving.description')}
+            value={getGameSettings(settings, 'bubble-pop').motion === 'moving'}
+            onValueChange={(value) =>
+              updateGameSettings('bubble-pop', { motion: value ? 'moving' : 'still' })
+            }
+          />
+          <SettingToggle
+            label={t('settings.bubblePop.fullField.label')}
+            description={t('settings.bubblePop.fullField.description')}
+            value={getGameSettings(settings, 'bubble-pop').density === 'full'}
+            onValueChange={(value) =>
+              updateGameSettings('bubble-pop', { density: value ? 'full' : 'sparse' })
+            }
           />
         </View>
 
@@ -228,7 +250,6 @@ export const SettingsScreen: React.FC = () => {
             onValueChange={(value) => updateSettings({ telemetryEnabled: value })}
           />
         </View>
-
       </ScrollView>
     </AppScreen>
   );

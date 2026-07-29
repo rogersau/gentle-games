@@ -199,6 +199,9 @@ const createSettingsValue = (overrides?: {
   return {
     settings,
     updateSettings: jest.fn(),
+    updateGameSettings: jest.fn(),
+    resetGameSettings: jest.fn(),
+    resetAllSettings: jest.fn(),
     isLoading: overrides?.isLoading ?? false,
     isSaving: false,
     persistenceError: null,

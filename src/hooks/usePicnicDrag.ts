@@ -18,8 +18,7 @@ export function usePicnicDrag({ onDrop, dropZoneBounds }: UsePicnicDragOptions) 
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
-        onPanResponderGrant: (evt) => {
-        },
+        onPanResponderGrant: (evt) => {},
         onPanResponderMove: (evt) => {
           const { pageX, pageY } = evt.nativeEvent;
           setDragPosition({ x: pageX, y: pageY });

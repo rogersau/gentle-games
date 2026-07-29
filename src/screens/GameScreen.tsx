@@ -37,19 +37,23 @@ export const GameScreen: React.FC = () => {
           onBackPress={handleBackPress}
           bottomInset={insets.bottom}
           onPositiveEvent={celebrate}
-          renderStats={showPressureMetrics ? ({ time, moves }) => (
-            <Text
-              style={[styles.stats, { color: colors.text }]}
-              accessibilityLabel={`${t('games.memorySnap.timeLabel', { time })}, ${t(
-                'games.memorySnap.moves',
-                { count: moves },
-              )}`}
-              testID='memory-snap-stats'
-            >
-              {t('games.memorySnap.timeLabel', { time })} ·{' '}
-              {t('games.memorySnap.moves', { count: moves })}
-            </Text>
-          ) : () => null}
+          renderStats={
+            showPressureMetrics
+              ? ({ time, moves }) => (
+                  <Text
+                    style={[styles.stats, { color: colors.text }]}
+                    accessibilityLabel={`${t('games.memorySnap.timeLabel', { time })}, ${t(
+                      'games.memorySnap.moves',
+                      { count: moves },
+                    )}`}
+                    testID='memory-snap-stats'
+                  >
+                    {t('games.memorySnap.timeLabel', { time })} ·{' '}
+                    {t('games.memorySnap.moves', { count: moves })}
+                  </Text>
+                )
+              : () => null
+          }
         />
       </View>
     </AppScreen>

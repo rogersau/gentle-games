@@ -12,20 +12,33 @@ import { ColorMode, Settings } from '../types';
 import { SupportedLanguage, DEFAULT_LANGUAGE } from '../types/i18n';
 import { changeLanguage } from '../i18n';
 import { GameId, isGameId } from '../games/registry';
+import {
+  DEFAULT_GAME_SETTINGS,
+  GameSettingsMap,
+  SETTINGS_VERSION,
+  sanitizeGameSettings,
+} from '../games/settings';
 
 interface SettingsContextType {
   settings: Settings;
   updateSettings: (newSettings: Partial<Settings>) => Promise<void>;
+  updateGameSettings: <K extends GameId>(
+    gameId: K,
+    newSettings: Partial<GameSettingsMap[K]>,
+  ) => Promise<void>;
+  resetGameSettings: (gameId: GameId) => Promise<void>;
+  resetAllSettings: () => Promise<void>;
   isLoading: boolean;
   isSaving: boolean;
   persistenceError: string | null;
 }
 
-const defaultSettings: Settings = {
+export const defaultSettings: Settings = {
+  settingsVersion: SETTINGS_VERSION,
   animationsEnabled: true,
   soundEnabled: true,
   soundVolume: 0.5,
-  difficulty: 'medium',
+  difficulty: 'easy',
   theme: 'mixed',
   showCardPreview: true,
   keepyUppyEasyMode: true,
@@ -37,7 +50,8 @@ const defaultSettings: Settings = {
   reducedMotionEnabled: false,
   telemetryEnabled: false,
   showMochiInGames: true,
-  pressureFreeMode: false,
+  pressureFreeMode: true,
+  gameSettings: DEFAULT_GAME_SETTINGS,
 };
 
 const toBoolean = (value: unknown, fallback: boolean): boolean => {
@@ -94,8 +108,10 @@ const sanitizeSettings = (candidate: unknown): Settings => {
   }
 
   const parsed = candidate as Record<string, unknown>;
+  const isLegacy = parsed.settingsVersion !== SETTINGS_VERSION;
 
   return {
+    settingsVersion: SETTINGS_VERSION,
     animationsEnabled: toBoolean(parsed.animationsEnabled, defaultSettings.animationsEnabled),
     soundEnabled: toBoolean(parsed.soundEnabled, defaultSettings.soundEnabled),
     soundVolume: toVolume(parsed.soundVolume, defaultSettings.soundVolume),
@@ -117,7 +133,11 @@ const sanitizeSettings = (candidate: unknown): Settings => {
     ),
     telemetryEnabled: toBoolean(parsed.telemetryEnabled, defaultSettings.telemetryEnabled),
     showMochiInGames: toBoolean(parsed.showMochiInGames, defaultSettings.showMochiInGames),
-    pressureFreeMode: toBoolean(parsed.pressureFreeMode, defaultSettings.pressureFreeMode ?? false),
+    pressureFreeMode: toBoolean(
+      parsed.pressureFreeMode,
+      isLegacy ? false : (defaultSettings.pressureFreeMode ?? true),
+    ),
+    gameSettings: sanitizeGameSettings(parsed.gameSettings, parsed),
   };
 };
 
@@ -271,9 +291,67 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     [hydrationGate, persistSettings],
   );
 
+  const replaceAndPersist = useCallback(
+    async (updated: Settings) => {
+      await hydrationGate.promise;
+      if (!mountedRef.current) return;
+      settingsRef.current = updated;
+      dispatchSettings({ type: 'replace', settings: updated });
+      try {
+        await persistSettings(updated);
+      } catch {
+        // Persistence failures are exposed through persistenceError without interrupting the UI.
+      }
+    },
+    [hydrationGate, persistSettings],
+  );
+
+  const updateGameSettings = useCallback(
+    async <K extends GameId>(gameId: K, newSettings: Partial<GameSettingsMap[K]>) => {
+      await hydrationGate.promise;
+      if (!mountedRef.current) return;
+      const current = settingsRef.current.gameSettings ?? DEFAULT_GAME_SETTINGS;
+      const gameSettings = sanitizeGameSettings({
+        ...current,
+        [gameId]: { ...current[gameId], ...newSettings },
+      });
+      await replaceAndPersist(sanitizeSettings({ ...settingsRef.current, gameSettings }));
+    },
+    [hydrationGate, replaceAndPersist],
+  );
+
+  const resetGameSettings = useCallback(
+    async (gameId: GameId) => {
+      await hydrationGate.promise;
+      if (!mountedRef.current) return;
+      const current = settingsRef.current.gameSettings ?? DEFAULT_GAME_SETTINGS;
+      await replaceAndPersist(
+        sanitizeSettings({
+          ...settingsRef.current,
+          gameSettings: { ...current, [gameId]: DEFAULT_GAME_SETTINGS[gameId] },
+        }),
+      );
+    },
+    [hydrationGate, replaceAndPersist],
+  );
+
+  const resetAllSettings = useCallback(
+    async () => replaceAndPersist(sanitizeSettings(defaultSettings)),
+    [replaceAndPersist],
+  );
+
   return (
     <SettingsContext.Provider
-      value={{ settings, updateSettings, isLoading, isSaving, persistenceError }}
+      value={{
+        settings,
+        updateSettings,
+        updateGameSettings,
+        resetGameSettings,
+        resetAllSettings,
+        isLoading,
+        isSaving,
+        persistenceError,
+      }}
     >
       {children}
     </SettingsContext.Provider>

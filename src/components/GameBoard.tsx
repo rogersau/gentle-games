@@ -16,6 +16,7 @@ import { AppButton, AppModal } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useTranslation } from 'react-i18next';
 import { useTrackedTimeouts } from '../utils/useTrackedTimeouts';
+import { getGameSettings, pairCountToDifficulty } from '../games/settings';
 
 interface GameBoardProps {
   onGameComplete: (time: number) => void;
@@ -47,13 +48,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const [currentTime, setCurrentTime] = useState<number>(Date.now());
   const [isPreviewPhase, setIsPreviewPhase] = useState(false);
   const { queueTimeout, clearAllTimeouts } = useTrackedTimeouts();
+  const memorySettings = getGameSettings(settings, 'memory-snap');
+  const difficulty = pairCountToDifficulty(memorySettings.pairCount);
 
   const padding = Space.base;
   const headerHeight = 60;
   const tileMargin = 4;
 
   const { boardWidth, boardHeight, tileSize } = useMemo(() => {
-    const { cols, rows } = calculateGridDimensions(settings.difficulty, screenWidth, screenHeight);
+    const { cols, rows } = calculateGridDimensions(difficulty, screenWidth, screenHeight);
 
     const maxBoardWidth = screenWidth - padding * 2;
     const maxBoardHeight = screenHeight - padding * 2 - headerHeight - 40 - bottomInset;
@@ -66,7 +69,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     const boardHeight = rows * (calculatedTileSize + tileMargin * 2);
 
     return { cols, boardWidth, boardHeight, tileSize: calculatedTileSize };
-  }, [bottomInset, screenWidth, screenHeight, settings.difficulty]);
+  }, [bottomInset, difficulty, screenWidth, screenHeight]);
 
   // Timer effect - updates every second while game is active
   useEffect(() => {
@@ -81,7 +84,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
   const startNewGame = useCallback(() => {
     clearAllTimeouts();
-    const newTiles = generateTiles(settings.difficulty, settings.theme);
+    const newTiles = generateTiles(difficulty, settings.theme);
     setSelectedTiles([]);
     setIsGameComplete(false);
     setStartTime(null);
@@ -90,7 +93,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     setIsProcessing(false);
     setCurrentTime(Date.now());
 
-    if (settings.showCardPreview) {
+    if (memorySettings.showPreview) {
       setTiles(newTiles.map((tile) => ({ ...tile, isFlipped: true })));
       setIsPreviewPhase(true);
       queueTimeout(() => {
@@ -101,13 +104,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       setTiles(newTiles);
       setIsPreviewPhase(false);
     }
-  }, [
-    clearAllTimeouts,
-    queueTimeout,
-    settings.difficulty,
-    settings.showCardPreview,
-    settings.theme,
-  ]);
+  }, [clearAllTimeouts, queueTimeout, difficulty, memorySettings.showPreview, settings.theme]);
 
   useEffect(() => {
     startNewGame();

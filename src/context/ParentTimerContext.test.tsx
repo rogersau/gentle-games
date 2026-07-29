@@ -130,10 +130,12 @@ describe('ParentTimerContext', () => {
 
   it('reconciles elapsed wall-clock time when returning to the foreground', async () => {
     let onAppStateChange: ((state: any) => void) | undefined;
-    const addListenerSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_event, callback) => {
-      onAppStateChange = callback;
-      return { remove: jest.fn() } as ReturnType<typeof AppState.addEventListener>;
-    });
+    const addListenerSpy = jest
+      .spyOn(AppState, 'addEventListener')
+      .mockImplementation((_event, callback) => {
+        onAppStateChange = callback;
+        return { remove: jest.fn() } as ReturnType<typeof AppState.addEventListener>;
+      });
     const { getByTestId } = await renderTimer();
 
     jest.setSystemTime(Date.now() + 30_000);

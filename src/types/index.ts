@@ -34,6 +34,7 @@ export interface ThemeColors {
 }
 
 export interface Settings {
+  settingsVersion?: number;
   animationsEnabled: boolean;
   soundEnabled: boolean;
   soundVolume: number;
@@ -51,6 +52,8 @@ export interface Settings {
   showMochiInGames: boolean;
   /** When enabled, hide non-essential scores, counters, and milestone celebrations in games. */
   pressureFreeMode?: boolean;
+  /** Independently persisted challenge and assistance controls for each game. */
+  gameSettings?: import('../games/settings').GameSettingsMap;
 }
 
 export type BreathingGardenPhase = 'inhale' | 'exhale';

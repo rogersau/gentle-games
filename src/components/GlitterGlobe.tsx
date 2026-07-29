@@ -324,7 +324,10 @@ const applyFingerImpulse = (
 };
 
 export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
-  ({ width, height, initialCount = 36, maxParticles = 120, onInteraction, motionEnabled = true }, ref) => {
+  (
+    { width, height, initialCount = 36, maxParticles = 120, onInteraction, motionEnabled = true },
+    ref,
+  ) => {
     const { colors } = useThemeColors();
     const { t } = useTranslation();
     const sizeRef = useRef({ width, height });
@@ -340,7 +343,17 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
       sizeRef.current = { width, height };
     }, [width, height]);
 
-    const { particles, ripples, syncParticles, addParticles, clearParticles, clearRipples, syncRipples, startAnimation, stopAnimation } = useGlitterParticles({
+    const {
+      particles,
+      ripples,
+      syncParticles,
+      addParticles,
+      clearParticles,
+      clearRipples,
+      syncRipples,
+      startAnimation,
+      stopAnimation,
+    } = useGlitterParticles({
       particleCount: initialCount,
       canvasWidth: width,
       canvasHeight: height,
@@ -361,13 +374,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
 
     const handleShakeCallback = useCallback(() => {
       onInteractionRef.current?.();
-      addParticles(
-        applyShakeImpulse(
-          particles,
-          sizeRef.current.width,
-          sizeRef.current.height,
-        ),
-      );
+      addParticles(applyShakeImpulse(particles, sizeRef.current.width, sizeRef.current.height));
     }, [particles, addParticles]);
 
     const handleWakeCallback = useCallback(() => {
@@ -386,10 +393,7 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
       ref,
       () => ({
         addGlitter: (count = 20) => {
-          const nextCount = Math.max(
-            0,
-            Math.min(count, maxParticles - particles.length),
-          );
+          const nextCount = Math.max(0, Math.min(count, maxParticles - particles.length));
           if (nextCount === 0) {
             return;
           }
@@ -427,16 +431,18 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
               const now = Date.now();
               lastWakeAtRef.current = now;
               onInteraction?.();
-              syncRipplesRef.current([
-                ...ripplesRef.current,
-                {
-                  id: `wake-${now}-start`,
-                  x: locationX,
-                  y: locationY,
-                  radius: 6,
-                  opacity: 0.34,
-                },
-              ].slice(-WAKE_MAX_TRAIL));
+              syncRipplesRef.current(
+                [
+                  ...ripplesRef.current,
+                  {
+                    id: `wake-${now}-start`,
+                    x: locationX,
+                    y: locationY,
+                    radius: 6,
+                    opacity: 0.34,
+                  },
+                ].slice(-WAKE_MAX_TRAIL),
+              );
             }
           },
           onPanResponderMove: (event) => {
