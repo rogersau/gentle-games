@@ -1,415 +1,161 @@
-import { renderHook, act } from '@testing-library/react-native';
+import { act, renderHook } from '@testing-library/react-native';
 import { usePatternTrainGame } from './usePatternTrainGame';
 import * as patternTrainLogic from '../utils/patternTrainLogic';
 
-// Mock the patternTrainLogic module
 jest.mock('../utils/patternTrainLogic', () => ({
   generateTrainPattern: jest.fn(),
+  generateTransferPattern: jest.fn(),
   isTrainChoiceCorrect: jest.fn(),
-  removeWrongChoices: jest.fn(),
 }));
 
-const mockT = (key: string, options?: Record<string, unknown>): string => {
-  const translations: Record<string, string> = {
-    'games.patternTrain.feedback.initial': 'Drag a carriage to complete the train',
-    'games.patternTrain.feedback.correct': 'Correct! Well done!',
-    'games.patternTrain.feedback.incorrect': 'Not quite right. Try again!',
-    'games.patternTrain.feedback.correctOptions': 'Great job! Wonderful! Perfect!',
-    'games.patternTrain.feedback.incorrectOptions': 'Try again! Keep trying! Almost!',
-    'games.patternTrain.feedback.reveal': 'The answer was {{answer}}',
-  };
-
-  let result = translations[key] || key;
-  if (options && typeof options === 'object') {
-    Object.entries(options).forEach(([k, v]) => {
-      result = result.replace(`{{${k}}}`, String(v));
-    });
-  }
-  return result;
-};
-
-const createMockPattern = (overrides = {}) => ({
+const mockT = (key: string): string => key;
+const pattern = {
   carriages: [
-    { emoji: '🚂', isMissing: false },
-    { emoji: '🚃', isMissing: false },
-    { emoji: '🚃', isMissing: true },
+    { emoji: '🌟', isMissing: false },
+    { emoji: '🌈', isMissing: true },
+    { emoji: '🌟', isMissing: false },
   ],
-  answer: '🚃',
-  choices: ['🚃', '🚂', '🚕', '🚗'],
+  answer: '🌈',
+  choices: ['🌈', '🌸'],
   patternLabel: 'AB pattern',
-  ...overrides,
-});
+  repeatUnit: ['🌟', '🌈'],
+  templateId: 'ab',
+  missingIndex: 1,
+  difficulty: 'easy' as const,
+};
 
 describe('usePatternTrainGame', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
-    (patternTrainLogic.generateTrainPattern as jest.Mock).mockReturnValue(createMockPattern());
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
-  describe('Initial State', () => {
-    it('should initialize with correct default state', () => {
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
-
-      expect(result.current.state.pattern).toBeNull();
-      expect(result.current.state.completedRounds).toBe(0);
-      expect(result.current.state.wrongAttempts).toBe(0);
-      expect(result.current.state.isProcessing).toBe(false);
-      expect(result.current.state.showMilestoneModal).toBe(false);
-      expect(result.current.state.showDifficultySelector).toBe(true);
-      expect(result.current.state.selectedChoice).toBeNull();
-      expect(result.current.state.attachedCarriage).toBeNull();
-      expect(result.current.state.trainPhase).toBe('offscreen');
-      expect(result.current.state.feedback).toBe('Drag a carriage to complete the train');
-      expect(result.current.state.feedbackType).toBe('initial');
+    (patternTrainLogic.generateTrainPattern as jest.Mock).mockReturnValue(pattern);
+    (patternTrainLogic.generateTransferPattern as jest.Mock).mockReturnValue({
+      ...pattern,
+      repeatUnit: ['🌸', '☁️'],
+      answer: '☁️',
+      choices: ['☁️', '🫧'],
     });
   });
 
-  describe('Difficulty Selection', () => {
-    it('should handle difficulty selection and generate pattern', () => {
-      const mockPattern = createMockPattern();
-      (patternTrainLogic.generateTrainPattern as jest.Mock).mockReturnValue(mockPattern);
+  it('starts without a round until a level is chosen', () => {
+    const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
+    expect(result.current.state.pattern).toBeNull();
+    expect(result.current.state.guidedRound.phase).toBe('independent');
+    expect(result.current.state.completedRounds).toBe(0);
+  });
 
-      act(() => {
-        result.current.actions.handleDifficultySelect('medium');
-      });
+  it('generates the selected independent level', () => {
+    const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
-      expect(patternTrainLogic.generateTrainPattern).toHaveBeenCalledWith('medium');
-      expect(result.current.state.pattern).toEqual(mockPattern);
-      expect(result.current.state.showDifficultySelector).toBe(false);
-    });
+    act(() => result.current.actions.handleDifficultySelect('medium'));
 
-    it('should handle closing difficulty selector', () => {
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
+    expect(patternTrainLogic.generateTrainPattern).toHaveBeenCalledWith('medium');
+    expect(result.current.state.pattern).toBe(pattern);
+    expect(result.current.state.showDifficultySelector).toBe(false);
+  });
 
-      act(() => {
-        result.current.actions.handleCloseDifficultySelector();
-      });
+  it('stages a hint, then a model, and requires a corrected response', () => {
+    const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
+    act(() => result.current.actions.handleDifficultySelect('easy'));
 
-      expect(result.current.state.showDifficultySelector).toBe(false);
+    (patternTrainLogic.isTrainChoiceCorrect as jest.Mock).mockReturnValue(false);
+    act(() => result.current.actions.submitChoice('🌸'));
+    expect(result.current.state.guidedRound.phase).toBe('hinted');
+
+    act(() => result.current.actions.submitChoice('🌸'));
+    expect(result.current.state.guidedRound.phase).toBe('modelled');
+
+    act(() => result.current.actions.startNewRound());
+    expect(result.current.state.pattern).toBe(pattern);
+    expect(result.current.state.guidedRound.phase).toBe('modelled');
+
+    (patternTrainLogic.isTrainChoiceCorrect as jest.Mock).mockReturnValue(true);
+    act(() => result.current.actions.submitChoice('🌈'));
+    expect(result.current.state.guidedRound.phase).toBe('corrected');
+  });
+
+  it('shows a child-requested hint without recording an error', () => {
+    const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
+    act(() => result.current.actions.handleDifficultySelect('easy'));
+
+    act(() => result.current.actions.showHint());
+
+    expect(result.current.state.guidedRound).toMatchObject({
+      phase: 'hinted',
+      incorrectAttempts: 0,
     });
   });
 
-  describe('Game Flow', () => {
-    it('should start a new round with fresh state', () => {
-      const mockPattern = createMockPattern();
-      (patternTrainLogic.generateTrainPattern as jest.Mock).mockReturnValue(mockPattern);
+  it('keeps all choices after an incorrect response', () => {
+    const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
+    act(() => result.current.actions.handleDifficultySelect('easy'));
+    (patternTrainLogic.isTrainChoiceCorrect as jest.Mock).mockReturnValue(false);
 
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
+    act(() => result.current.actions.submitChoice('🌸'));
 
-      // Set some state first
-      act(() => {
-        result.current.actions.setWrongAttempts(2);
-        result.current.actions.setSelectedChoice('🚃');
-        result.current.actions.setAttachedCarriage('🚃');
-        result.current.actions.setFeedbackType('incorrect');
-      });
-
-      act(() => {
-        result.current.actions.startNewRound();
-      });
-
-      expect(patternTrainLogic.generateTrainPattern).toHaveBeenCalledWith('easy');
-      expect(result.current.state.wrongAttempts).toBe(0);
-      expect(result.current.state.selectedChoice).toBeNull();
-      expect(result.current.state.attachedCarriage).toBeNull();
-      expect(result.current.state.feedbackType).toBe('initial');
-      expect(result.current.state.isProcessing).toBe(false);
-    });
-
-    it('should handle correct answer and increment rounds', () => {
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
-
-      act(() => {
-        result.current.actions.handleCorrectAnswer();
-      });
-
-      expect(result.current.state.completedRounds).toBe(1);
-    });
-
-    it('should trigger milestone modal every 5 rounds', () => {
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
-
-      // Complete 4 rounds one at a time
-      act(() => {
-        result.current.actions.handleCorrectAnswer();
-      });
-      act(() => {
-        result.current.actions.handleCorrectAnswer();
-      });
-      act(() => {
-        result.current.actions.handleCorrectAnswer();
-      });
-      act(() => {
-        result.current.actions.handleCorrectAnswer();
-      });
-
-      expect(result.current.state.completedRounds).toBe(4);
-      expect(result.current.state.showMilestoneModal).toBe(false);
-
-      // Complete the 5th round
-      act(() => {
-        result.current.actions.handleCorrectAnswer();
-      });
-
-      expect(result.current.state.completedRounds).toBe(5);
-      expect(result.current.state.showMilestoneModal).toBe(true);
-    });
-
-    it('should handle incorrect answer and increment wrong attempts', () => {
-      const mockPattern = createMockPattern();
-      (patternTrainLogic.generateTrainPattern as jest.Mock).mockReturnValue(mockPattern);
-
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
-
-      // First set a pattern
-      act(() => {
-        result.current.actions.handleDifficultySelect('easy');
-      });
-
-      act(() => {
-        result.current.actions.handleIncorrectAnswer('🚕');
-      });
-
-      expect(result.current.state.wrongAttempts).toBe(1);
-      expect(patternTrainLogic.removeWrongChoices).toHaveBeenCalled();
-    });
-
-    it('should track wrong attempts up to 3', () => {
-      const mockPattern = createMockPattern();
-      (patternTrainLogic.generateTrainPattern as jest.Mock).mockReturnValue(mockPattern);
-
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
-
-      // Set a pattern first
-      act(() => {
-        result.current.actions.handleDifficultySelect('easy');
-      });
-
-      // Make 3 wrong attempts
-      act(() => {
-        result.current.actions.handleIncorrectAnswer('🚕');
-      });
-      act(() => {
-        result.current.actions.handleIncorrectAnswer('🚗');
-      });
-      act(() => {
-        result.current.actions.handleIncorrectAnswer('🚂');
-      });
-
-      expect(result.current.state.wrongAttempts).toBe(3);
-    });
+    expect(result.current.state.pattern?.choices).toEqual(['🌈', '🌸']);
+    expect(result.current.state.wrongAttempts).toBe(1);
   });
 
-  describe('Timeout Management', () => {
-    it('should queue and execute timeouts', () => {
-      const callback = jest.fn();
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
+  it('uses the same template with new symbols after Next', () => {
+    const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
+    act(() => result.current.actions.handleDifficultySelect('easy'));
+    (patternTrainLogic.isTrainChoiceCorrect as jest.Mock).mockReturnValue(true);
+    act(() => result.current.actions.submitChoice('🌈'));
+    act(() => result.current.actions.startNewRound());
 
-      act(() => {
-        result.current.actions.queueTimeout(callback, 1000);
-      });
-
-      expect(callback).not.toHaveBeenCalled();
-
-      act(() => {
-        jest.advanceTimersByTime(1000);
-      });
-
-      expect(callback).toHaveBeenCalled();
-    });
-
-    it('should clear all timeouts', () => {
-      const callback = jest.fn();
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
-
-      act(() => {
-        result.current.actions.queueTimeout(callback, 1000);
-      });
-
-      act(() => {
-        result.current.actions.clearAllTimeouts();
-      });
-
-      act(() => {
-        jest.advanceTimersByTime(1000);
-      });
-
-      expect(callback).not.toHaveBeenCalled();
-    });
-
-    it('should clear all timeouts when requested', () => {
-      const callback = jest.fn();
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
-
-      act(() => {
-        result.current.actions.queueTimeout(callback, 1000);
-      });
-
-      act(() => {
-        result.current.actions.clearAllTimeouts();
-      });
-
-      act(() => {
-        jest.advanceTimersByTime(1000);
-      });
-
-      // Timeout should be cleared
-      expect(callback).not.toHaveBeenCalled();
-    });
+    expect(patternTrainLogic.generateTransferPattern).toHaveBeenCalledWith(pattern);
+    expect(result.current.state.guidedRound.phase).toBe('independent');
+    expect(result.current.state.pattern?.templateId).toBe(pattern.templateId);
+    expect(result.current.state.pattern?.repeatUnit).not.toEqual(pattern.repeatUnit);
   });
 
-  describe('Feedback', () => {
-    it('should return random feedback for correct answers', () => {
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
+  it('moves to a fresh rule after the transfer example', () => {
+    const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
+    act(() => result.current.actions.handleDifficultySelect('easy'));
+    (patternTrainLogic.isTrainChoiceCorrect as jest.Mock).mockReturnValue(true);
 
-      const feedback = result.current.actions.getRandomFeedback('correct');
-      expect(feedback).toBeTruthy();
-      expect(typeof feedback).toBe('string');
-      // Should return the options string when returnObjects is used
-      expect(feedback.length).toBeGreaterThan(0);
-    });
+    act(() => result.current.actions.submitChoice('🌈'));
+    act(() => result.current.actions.startNewRound());
+    act(() => result.current.actions.submitChoice('☁️'));
+    act(() => result.current.actions.startNewRound());
 
-    it('should return random feedback for incorrect answers', () => {
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
-
-      const feedback = result.current.actions.getRandomFeedback('incorrect');
-      expect(feedback).toBeTruthy();
-      expect(typeof feedback).toBe('string');
-      expect(feedback.length).toBeGreaterThan(0);
-    });
-
-    it('should fallback to default feedback when options array is empty', () => {
-      const emptyT = () => '';
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: emptyT }));
-
-      const feedback = result.current.actions.getRandomFeedback('correct');
-      expect(feedback).toBe('');
-    });
+    expect(patternTrainLogic.generateTransferPattern).toHaveBeenCalledTimes(1);
+    expect(patternTrainLogic.generateTrainPattern).toHaveBeenLastCalledWith('easy');
   });
 
-  describe('State Setters', () => {
-    it('should update showMilestoneModal', () => {
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
+  it('allows Skip to advance without completing the response', () => {
+    const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
+    act(() => result.current.actions.handleDifficultySelect('easy'));
+    act(() => result.current.actions.skipRound());
+    expect(result.current.state.guidedRound.phase).toBe('skipped');
 
-      act(() => {
-        result.current.actions.setShowMilestoneModal(true);
-      });
-
-      expect(result.current.state.showMilestoneModal).toBe(true);
-    });
-
-    it('should update selectedChoice', () => {
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
-
-      act(() => {
-        result.current.actions.setSelectedChoice('🚃');
-      });
-
-      expect(result.current.state.selectedChoice).toBe('🚃');
-    });
-
-    it('should update attachedCarriage', () => {
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
-
-      act(() => {
-        result.current.actions.setAttachedCarriage('🚃');
-      });
-
-      expect(result.current.state.attachedCarriage).toBe('🚃');
-    });
-
-    it('should update feedback', () => {
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
-
-      act(() => {
-        result.current.actions.setFeedback('Great job!');
-      });
-
-      expect(result.current.state.feedback).toBe('Great job!');
-    });
-
-    it('should update feedbackType', () => {
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
-
-      act(() => {
-        result.current.actions.setFeedbackType('correct');
-      });
-
-      expect(result.current.state.feedbackType).toBe('correct');
-    });
-
-    it('should update trainPhase', () => {
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
-
-      act(() => {
-        result.current.actions.setTrainPhase('entering');
-      });
-
-      expect(result.current.state.trainPhase).toBe('entering');
-    });
-
-    it('should update isProcessing', () => {
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
-
-      act(() => {
-        result.current.actions.setIsProcessing(true);
-      });
-
-      expect(result.current.state.isProcessing).toBe(true);
-    });
+    act(() => result.current.actions.startNewRound());
+    expect(result.current.state.guidedRound.phase).toBe('independent');
   });
 
-  describe('Reset Game', () => {
-    it('should reset all state to initial values', () => {
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
+  it('keeps normal milestones child-controlled and suppresses them in pressure-free mode', () => {
+    const { result } = renderHook(() =>
+      usePatternTrainGame({ difficulty: 'easy', t: mockT, showMilestones: true }),
+    );
+    act(() => result.current.actions.handleDifficultySelect('easy'));
+    (patternTrainLogic.isTrainChoiceCorrect as jest.Mock).mockReturnValue(true);
 
-      // Set various state
-      act(() => {
-        result.current.actions.handleDifficultySelect('easy');
-        result.current.actions.handleCorrectAnswer();
-        result.current.actions.setWrongAttempts(2);
-        result.current.actions.setSelectedChoice('🚃');
-        result.current.actions.setAttachedCarriage('🚃');
-        result.current.actions.setTrainPhase('waiting');
-        result.current.actions.setIsProcessing(true);
-      });
+    for (let round = 0; round < 5; round += 1) {
+      act(() => result.current.actions.submitChoice('🌈'));
+      if (round < 4) act(() => result.current.actions.startNewRound());
+    }
 
-      act(() => {
-        result.current.actions.resetGame();
-      });
+    expect(result.current.state.showMilestoneModal).toBe(true);
+    act(() => result.current.actions.handleMilestoneContinue());
+    expect(result.current.state.showMilestoneModal).toBe(false);
+    expect(result.current.state.guidedRound.phase).toBe('independent');
 
-      expect(result.current.state.pattern).toBeNull();
-      expect(result.current.state.completedRounds).toBe(0);
-      expect(result.current.state.wrongAttempts).toBe(0);
-      expect(result.current.state.showMilestoneModal).toBe(false);
-      expect(result.current.state.showDifficultySelector).toBe(true);
-      expect(result.current.state.selectedChoice).toBeNull();
-      expect(result.current.state.attachedCarriage).toBeNull();
-      expect(result.current.state.trainPhase).toBe('offscreen');
-      expect(result.current.state.isProcessing).toBe(false);
-      expect(result.current.state.feedback).toBe('Drag a carriage to complete the train');
-      expect(result.current.state.feedbackType).toBe('initial');
-    });
-  });
-
-  describe('Handle Reveal Answer', () => {
-    it('should handle reveal answer', () => {
-      const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
-
-      // Just verify it doesn't throw
-      act(() => {
-        result.current.actions.handleRevealAnswer();
-      });
-
-      // This action currently doesn't modify state, just a placeholder
-      expect(result.current.state).toBeDefined();
-    });
+    const pressureFree = renderHook(() =>
+      usePatternTrainGame({ difficulty: 'easy', t: mockT, showMilestones: false }),
+    );
+    act(() => pressureFree.result.current.actions.handleDifficultySelect('easy'));
+    act(() => pressureFree.result.current.actions.submitChoice('🌈'));
+    expect(pressureFree.result.current.state.showMilestoneModal).toBe(false);
   });
 });

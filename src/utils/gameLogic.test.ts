@@ -1,9 +1,12 @@
-import { ANIMALS, SHAPES, Tile } from '../types';
+import { ANIMALS, MEMORY_SNAP_OBJECTS, Tile } from '../types';
 import {
   checkGameComplete,
   checkMatch,
+  calculateMemorySnapBoardSize,
   formatTime,
   generateTiles,
+  generateMemorySnapTiles,
+  getMemorySnapGridConfig,
   getGridConfig,
 } from './gameLogic';
 
@@ -32,6 +35,49 @@ describe('gameLogic', () => {
     });
   });
 
+  it.each([
+    [2, 2, 2],
+    [3, 2, 3],
+    [4, 2, 4],
+    [6, 3, 4],
+    [10, 4, 5],
+    [15, 5, 6],
+  ] as const)('supports %i pairs on a %ix%i board', (pairs, cols, rows) => {
+    expect(getMemorySnapGridConfig(pairs)).toEqual({ cols, rows, pairs });
+    const tiles = generateMemorySnapTiles(pairs, 'animals', () => 0.25);
+    expect(tiles).toHaveLength(pairs * 2);
+    expect(
+      Object.values(
+        tiles.reduce<Record<string, number>>((counts, tile) => {
+          counts[tile.value] = (counts[tile.value] ?? 0) + 1;
+          return counts;
+        }, {}),
+      ),
+    ).toEqual(Array.from({ length: pairs }, () => 2));
+  });
+
+  it('uses the injected random source for deterministic exact pairs', () => {
+    const randomValues = [0.1, 0.8, 0.2, 0.7, 0.3, 0.6, 0.4, 0.5, 0.9, 0.05];
+    let index = 0;
+    const random = () => randomValues[index++ % randomValues.length];
+    const first = generateMemorySnapTiles(4, 'mixed', random);
+    index = 0;
+    const second = generateMemorySnapTiles(4, 'mixed', random);
+
+    expect(first).toEqual(second);
+    expect(first.map((tile) => tile.value).sort()).toEqual(first.map((tile) => tile.value).sort());
+    expect(new Set(first.map((tile) => tile.value)).size).toBe(4);
+  });
+
+  it('keeps every board inside responsive viewport bounds', () => {
+    ([2, 3, 4, 6, 10, 15] as const).forEach((pairs) => {
+      const board = calculateMemorySnapBoardSize({ width: 320, height: 568 }, pairs);
+      expect(board.width).toBeLessThanOrEqual(288);
+      expect(board.height).toBeLessThanOrEqual(348);
+      expect(board.tileSize).toBeGreaterThan(0);
+    });
+  });
+
   it('prioritizes animals in mixed theme', () => {
     const tiles = generateTiles('medium', 'mixed');
     const animalTiles = tiles.filter((tile) => tile.type === 'animal').length;
@@ -49,14 +95,14 @@ describe('gameLogic', () => {
   });
 
   it('includes gentle buildings in the non-animal tile pool', () => {
-    const shapeNames = SHAPES.map((shape) => shape.name);
+    const shapeNames = MEMORY_SNAP_OBJECTS.map((shape) => shape.name);
     expect(shapeNames).toContain('house');
     expect(shapeNames).toContain('school');
     expect(shapeNames).toContain('castle');
   });
 
   it('uses objects and places instead of geometric shapes in the non-animal pool', () => {
-    const shapeNames = SHAPES.map((shape) => shape.name);
+    const shapeNames = MEMORY_SNAP_OBJECTS.map((shape) => shape.name);
     expect(shapeNames).not.toContain('circle');
     expect(shapeNames).not.toContain('square');
     expect(shapeNames).not.toContain('triangle');

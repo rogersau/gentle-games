@@ -11,8 +11,15 @@ describe('game registry', () => {
     });
 
     expect(visibleGames.map((game) => game.id)).not.toContain('drawing');
-    expect(visibleGames.map((game) => game.id)).not.toContain('number-picnic');
+    expect(visibleGames.map((game) => game.id)).toContain('number-picnic');
     expect(visibleGames.map((game) => game.id)).toContain('memory-snap');
+  });
+
+  it('releases Number Picnic after the validated interaction and learning modes', () => {
+    expect(getGameById('number-picnic')?.isUnfinished).toBe(false);
+    expect(
+      getVisibleGames({ hiddenGames: [], enableUnfinishedGames: false }).map((game) => game.id),
+    ).toContain('number-picnic');
   });
 
   it('keeps every game route aligned with the registry contract', () => {
@@ -176,7 +183,7 @@ describe('game registry', () => {
         descriptionKey: 'games.numberPicnic.description',
         icon: '🧺',
         accentColor: PASTEL_COLORS.success,
-        isUnfinished: true,
+        isUnfinished: false,
         launchMode: 'direct',
       },
     ]);

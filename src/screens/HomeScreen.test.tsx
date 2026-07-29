@@ -192,7 +192,7 @@ describe('HomeScreen', () => {
 
     expect(screen.getByText('Drawing Pad')).toBeTruthy();
     expect(screen.getByText('Keepy Uppy')).toBeTruthy();
-    expect(screen.queryByText('Number Picnic')).toBeNull();
+    expect(screen.getByText('Number Picnic')).toBeTruthy();
   });
 
   it('shows difficulty modal for Memory Snap and navigates to Game after selection', async () => {

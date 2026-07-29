@@ -59,7 +59,7 @@ export const GAME_OUTCOMES = {
   },
   'category-match': {
     mode: 'guided-practice',
-    immediateTarget: 'Sort an item by the explicitly stated sky, land, or ocean rule.',
+    immediateTarget: 'Sort an item by the explicitly stated food, toy, or clothing rule.',
     completionMeaning: 'The child applies the current sorting rule to the presented item.',
     prohibitedClaims: [...NO_THERAPY_CLAIMS, 'general reasoning improvement'],
     recordPerformance: true,

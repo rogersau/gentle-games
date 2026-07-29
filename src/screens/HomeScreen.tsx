@@ -61,6 +61,21 @@ export const HomeScreen: React.FC = () => {
     description: string;
   }[] = [
     {
+      value: 2,
+      label: t('settings.memorySnap.pairs.two'),
+      description: t('settings.memorySnap.pairs.twoDescription'),
+    },
+    {
+      value: 3,
+      label: t('settings.memorySnap.pairs.three'),
+      description: t('settings.memorySnap.pairs.threeDescription'),
+    },
+    {
+      value: 4,
+      label: t('settings.memorySnap.pairs.four'),
+      description: t('settings.memorySnap.pairs.fourDescription'),
+    },
+    {
       value: 6,
       label: t('difficulty.easy.label'),
       description: t('difficulty.easy.description'),

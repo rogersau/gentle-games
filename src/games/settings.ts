@@ -1,4 +1,9 @@
-import type { Difficulty } from '../types';
+import type {
+  CategoryMatchCategoryCount,
+  Difficulty,
+  NumberPicnicMode,
+  NumberPicnicStage,
+} from '../types';
 import type { GameId } from './registry';
 import {
   DEFAULT_GLITTER_SETTINGS,
@@ -7,12 +12,25 @@ import {
   resolveGlitterSettings,
 } from './glitterSettings';
 
-export const SETTINGS_VERSION = 2;
+export const SETTINGS_VERSION = 4;
 
-export type MemorySnapPairCount = 6 | 10 | 15;
+export type MemorySnapPairCount = 2 | 3 | 4 | 6 | 10 | 15;
+export type MemorySnapPreviewMode = 'none' | 'until-ready' | '4-seconds' | '8-seconds';
+export type MemorySnapMismatchDuration = 1000 | 2000 | 3000;
+
+export interface MemorySnapSettings {
+  pairCount: MemorySnapPairCount;
+  previewMode: MemorySnapPreviewMode;
+  mismatchDuration: MemorySnapMismatchDuration;
+  hintEnabled: boolean;
+}
 export type PatternTrainLevel = 'starter' | 'growing' | 'challenge';
-export type NumberPicnicMaxQuantity = 5 | 8 | 10;
+export type NumberPicnicMaxQuantity = 3 | 5 | 8 | 10;
 export type BreathingSessionLength = 3 | 5 | 10 | 'open-ended';
+export interface CategoryMatchSettings {
+  categoryCount: CategoryMatchCategoryCount;
+  showPreview: boolean;
+}
 
 export interface BreathingGardenSettings {
   sessionLength: BreathingSessionLength;
@@ -20,27 +38,42 @@ export interface BreathingGardenSettings {
 }
 
 export interface GameSettingsMap {
-  'memory-snap': { pairCount: MemorySnapPairCount; showPreview: boolean };
+  'memory-snap': MemorySnapSettings;
   drawing: Record<string, never>;
   'glitter-fall': GlitterFallSettings;
   'bubble-pop': { motion: 'still' | 'moving'; density: 'sparse' | 'full' };
-  'category-match': { showPreview: boolean };
+  'category-match': CategoryMatchSettings;
   'keepy-uppy': { liftMode: 'gentle' | 'precise' };
   'breathing-garden': BreathingGardenSettings;
   'pattern-train': { level: PatternTrainLevel };
-  'number-picnic': { maxQuantity: NumberPicnicMaxQuantity };
+  'number-picnic': {
+    maxQuantity: NumberPicnicMaxQuantity;
+    stage: NumberPicnicStage;
+    mode: NumberPicnicMode;
+    spokenCounting: boolean;
+  };
 }
 
 export const DEFAULT_GAME_SETTINGS: GameSettingsMap = {
-  'memory-snap': { pairCount: 6, showPreview: true },
+  'memory-snap': {
+    pairCount: 2,
+    previewMode: 'none',
+    mismatchDuration: 2000,
+    hintEnabled: true,
+  },
   drawing: {},
   'glitter-fall': DEFAULT_GLITTER_SETTINGS,
   'bubble-pop': { motion: 'still', density: 'sparse' },
-  'category-match': { showPreview: true },
+  'category-match': { categoryCount: 2, showPreview: true },
   'keepy-uppy': { liftMode: 'gentle' },
   'breathing-garden': { sessionLength: 'open-ended', visualCue: true },
   'pattern-train': { level: 'starter' },
-  'number-picnic': { maxQuantity: 5 },
+  'number-picnic': {
+    maxQuantity: 5,
+    stage: '1-5',
+    mode: 'make-amount',
+    spokenCounting: false,
+  },
 };
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -54,6 +87,25 @@ const difficultyToPatternLevel = (difficulty: unknown): PatternTrainLevel =>
 
 const difficultyToMaxQuantity = (difficulty: unknown): NumberPicnicMaxQuantity =>
   difficulty === 'hard' ? 10 : difficulty === 'medium' ? 8 : 5;
+
+export const maxQuantityToStage = (maxQuantity: NumberPicnicMaxQuantity): NumberPicnicStage =>
+  maxQuantity === 3 ? '1-3' : maxQuantity === 5 ? '1-5' : '6-10';
+
+export const stageToMaxQuantity = (stage: NumberPicnicStage): NumberPicnicMaxQuantity =>
+  stage === '1-3' ? 3 : stage === '1-5' ? 5 : 10;
+
+const isNumberPicnicStage = (value: unknown): value is NumberPicnicStage =>
+  value === '1-3' || value === '1-5' || value === '6-10';
+
+const isNumberPicnicMode = (value: unknown): value is NumberPicnicMode =>
+  value === 'make-amount' ||
+  value === 'find-amount' ||
+  value === 'match-numeral' ||
+  value === 'more-fewer' ||
+  value === 'add-one-more';
+
+const isStageModeAvailable = (stage: NumberPicnicStage, mode: NumberPicnicMode): boolean =>
+  mode !== 'add-one-more' || stage === '6-10';
 
 export const pairCountToDifficulty = (pairCount: MemorySnapPairCount): Difficulty =>
   pairCount === 15 ? 'hard' : pairCount === 10 ? 'medium' : 'easy';
@@ -71,7 +123,8 @@ export function sanitizeGameSettings(
   const candidate = isObject(value) ? value : {};
   const isLegacyProfile =
     !isObject(value) &&
-    legacy.settingsVersion !== SETTINGS_VERSION &&
+    (legacy.settingsVersion === undefined ||
+      (typeof legacy.settingsVersion === 'number' && legacy.settingsVersion < 2)) &&
     Object.keys(legacy).length > 0;
   const memory = isObject(candidate['memory-snap']) ? candidate['memory-snap'] : {};
   const glitter = isObject(candidate['glitter-fall']) ? candidate['glitter-fall'] : {};
@@ -85,19 +138,58 @@ export function sanitizeGameSettings(
   const pairCount = memory.pairCount;
   const level = pattern.level;
   const maxQuantity = picnic.maxQuantity;
+  const stage = picnic.stage;
+  const mode = picnic.mode;
+  const previewMode = memory.previewMode;
+  const mismatchDuration = memory.mismatchDuration;
+  const categoryCount = category.categoryCount;
+  const candidateMaxQuantity =
+    maxQuantity === 3 || maxQuantity === 5 || maxQuantity === 8 || maxQuantity === 10
+      ? maxQuantity
+      : difficultyToMaxQuantity(legacy.difficulty);
+  const resolvedStage = isNumberPicnicStage(stage)
+    ? stage
+    : maxQuantityToStage(candidateMaxQuantity);
+  const resolvedMaxQuantity = isNumberPicnicStage(stage)
+    ? stageToMaxQuantity(stage)
+    : candidateMaxQuantity;
 
   return {
     'memory-snap': {
       pairCount:
-        pairCount === 6 || pairCount === 10 || pairCount === 15
+        pairCount === 2 ||
+        pairCount === 3 ||
+        pairCount === 4 ||
+        pairCount === 6 ||
+        pairCount === 10 ||
+        pairCount === 15
           ? pairCount
-          : difficultyToPairCount(legacy.difficulty),
-      showPreview:
-        typeof memory.showPreview === 'boolean'
-          ? memory.showPreview
-          : typeof legacy.showCardPreview === 'boolean'
-            ? legacy.showCardPreview
-            : DEFAULT_GAME_SETTINGS['memory-snap'].showPreview,
+          : isLegacyProfile
+            ? difficultyToPairCount(legacy.difficulty)
+            : DEFAULT_GAME_SETTINGS['memory-snap'].pairCount,
+      previewMode:
+        previewMode === 'none' ||
+        previewMode === 'until-ready' ||
+        previewMode === '4-seconds' ||
+        previewMode === '8-seconds'
+          ? previewMode
+          : typeof memory.showPreview === 'boolean'
+            ? memory.showPreview
+              ? '4-seconds'
+              : 'none'
+            : typeof legacy.showCardPreview === 'boolean'
+              ? legacy.showCardPreview
+                ? '4-seconds'
+                : 'none'
+              : DEFAULT_GAME_SETTINGS['memory-snap'].previewMode,
+      mismatchDuration:
+        mismatchDuration === 1000 || mismatchDuration === 2000 || mismatchDuration === 3000
+          ? mismatchDuration
+          : DEFAULT_GAME_SETTINGS['memory-snap'].mismatchDuration,
+      hintEnabled:
+        typeof memory.hintEnabled === 'boolean'
+          ? memory.hintEnabled
+          : DEFAULT_GAME_SETTINGS['memory-snap'].hintEnabled,
     },
     drawing: {},
     'glitter-fall': isLegacyProfile
@@ -118,6 +210,10 @@ export function sanitizeGameSettings(
             : 'sparse',
     },
     'category-match': {
+      categoryCount:
+        categoryCount === 2 || categoryCount === 3
+          ? categoryCount
+          : DEFAULT_GAME_SETTINGS['category-match'].categoryCount,
       showPreview:
         typeof category.showPreview === 'boolean'
           ? category.showPreview
@@ -148,10 +244,16 @@ export function sanitizeGameSettings(
           : difficultyToPatternLevel(legacy.difficulty),
     },
     'number-picnic': {
-      maxQuantity:
-        maxQuantity === 5 || maxQuantity === 8 || maxQuantity === 10
-          ? maxQuantity
-          : difficultyToMaxQuantity(legacy.difficulty),
+      maxQuantity: resolvedMaxQuantity,
+      stage: resolvedStage,
+      mode:
+        isNumberPicnicMode(mode) && isStageModeAvailable(resolvedStage, mode)
+          ? mode
+          : DEFAULT_GAME_SETTINGS['number-picnic'].mode,
+      spokenCounting:
+        typeof picnic.spokenCounting === 'boolean'
+          ? picnic.spokenCounting
+          : DEFAULT_GAME_SETTINGS['number-picnic'].spokenCounting,
     },
   };
 }

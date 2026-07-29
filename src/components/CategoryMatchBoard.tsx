@@ -9,18 +9,27 @@ import {
   Text,
   View,
 } from 'react-native';
-import { CategoryMatchCategory, CategoryMatchItem, ThemeColors } from '../types';
+import type {
+  CategoryMatchCategory,
+  CategoryMatchCategoryCount,
+  CategoryMatchItem,
+  ThemeColors,
+} from '../types';
 import { createCategoryMatchRound, isCategoryMatchCorrect } from '../utils/categoryMatchLogic';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { useSettings } from '../context/SettingsContext';
 import { useAnimationEnabled } from '../ui/animations';
-import { playFlipSound, playMatchSound } from '../utils/sounds';
+import { playMatchSound } from '../utils/sounds';
 import { Radius, Space, TypeStyle } from '../ui/tokens';
 import { useTranslation } from 'react-i18next';
+import { createGuidedRoundController, GuidedRoundState } from '../guided-practice/controller';
+import { GuidedPracticePrompt } from '../ui/components/GuidedPracticePrompt';
+import { AppButton } from '../ui/components';
 
 interface CategoryMatchBoardProps {
   width: number;
   height: number;
+  categoryCount?: CategoryMatchCategoryCount;
   onCorrectMatch?: (item: CategoryMatchItem, category: CategoryMatchCategory) => void;
   onIncorrectMatch?: () => void;
 }
@@ -28,7 +37,6 @@ interface CategoryMatchBoardProps {
 interface DropZone {
   category: CategoryMatchCategory;
   label: string;
-  labelKey?: CategoryMatchCategory;
   icon: string;
   x: number;
   y: number;
@@ -36,13 +44,10 @@ interface DropZone {
   height: number;
 }
 
-type Feedback = { message: string; isSuccess: boolean } | null;
-
-const FEEDBACK_DURATION_MS = 850;
-
 export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   width,
   height,
+  categoryCount = 2,
   onCorrectMatch,
   onIncorrectMatch,
 }) => {
@@ -52,55 +57,67 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   const translate = t as unknown as (key: string, options?: Record<string, unknown>) => string;
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
-  const [round, setRound] = useState(() => createCategoryMatchRound(undefined, 0));
-  const [, setRoundsCompleted] = useState(0);
-  const [feedback, setFeedback] = useState<Feedback>(null);
+  const controllerRef = useRef(createGuidedRoundController({ hintAfter: 1, modelAfter: 2 }));
+  const answerLockRef = useRef(false);
+  const [guidedRound, setGuidedRound] = useState<GuidedRoundState>(() =>
+    controllerRef.current.getState(),
+  );
+  const [round, setRound] = useState(() =>
+    createCategoryMatchRound(undefined, 0, Math.random, categoryCount),
+  );
+  const [feedback, setFeedback] = useState<string | null>(null);
   const [isTokenSelected, setIsTokenSelected] = useState(false);
   const [activeDropCategory, setActiveDropCategory] = useState<CategoryMatchCategory | null>(null);
   const activeDropCategoryRef = useRef<CategoryMatchCategory | null>(null);
   const dragPosition = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const tokenScale = useRef(new Animated.Value(1)).current;
-  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const boardPadding = 12;
   const zoneGap = 10;
+  const zoneHeight = Math.max(90, Math.min(130, Math.floor(height * 0.29)));
   const tokenSize = Math.max(72, Math.min(104, Math.floor(width * 0.24)));
   const tokenStartX = (width - tokenSize) / 2;
-  const tokenStartY = Math.max(20, Math.floor(height * 0.14));
+  const tokenStartY = Math.min(250, Math.max(160, height - zoneHeight - tokenSize - Space['2xl']));
   const tokenCenterX = tokenStartX + tokenSize / 2;
   const tokenCenterY = tokenStartY + tokenSize / 2;
-
-  const zoneHeight = Math.max(90, Math.min(130, Math.floor(height * 0.29)));
   const zoneTop = height - zoneHeight - boardPadding;
-  const zoneWidth = (width - boardPadding * 2 - zoneGap * 2) / 3;
+  const zoneWidth = (width - boardPadding * 2 - zoneGap * (categoryCount - 1)) / categoryCount;
 
   const zones: DropZone[] = useMemo(
     () =>
       round.categories.map((category, index) => ({
         category: category.id,
-        label: translate('games.categoryMatch.categories.' + category.id),
-        labelKey: category.id,
+        label: translate(`games.categoryMatch.categories.${category.id}`),
         icon: category.icon,
         x: boardPadding + index * (zoneWidth + zoneGap),
         y: zoneTop,
         width: zoneWidth,
         height: zoneHeight,
       })),
-    [boardPadding, round.categories, translate, zoneHeight, zoneTop, zoneWidth, zoneGap],
+    [round.categories, translate, zoneWidth, zoneTop, zoneHeight],
   );
 
-  useEffect(
-    () => () => {
-      if (feedbackTimerRef.current) {
-        clearTimeout(feedbackTimerRef.current);
-      }
-    },
-    [],
-  );
+  const itemLabel = translate(`games.categoryMatch.items.${round.item.name}`, {
+    defaultValue: round.item.name,
+  });
+  const categoryLabel = translate(`games.categoryMatch.categories.${round.item.category}`);
+  const instruction = t('games.categoryMatch.sortingInstruction', {
+    categories: zones.map((zone) => zone.label).join(', '),
+  });
+  const roundFinished = guidedRound.phase === 'corrected' || guidedRound.phase === 'skipped';
 
-  const snapTokenBack = useCallback(() => {
-    dragPosition.setValue({ x: 0, y: 0 });
-  }, [dragPosition]);
+  useEffect(() => {
+    answerLockRef.current = false;
+  }, [guidedRound]);
+
+  const announce = useCallback((message: string) => {
+    setFeedback(message);
+    try {
+      void AccessibilityInfo.announceForAccessibility(message);
+    } catch {
+      // Native accessibility announcements are not available on every host.
+    }
+  }, []);
 
   const springTokenBack = useCallback(() => {
     if (animationsEnabled) {
@@ -115,23 +132,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
     }
   }, [animationsEnabled, dragPosition]);
 
-  const showFeedback = useCallback((message: string, isSuccess: boolean) => {
-    setFeedback({ message, isSuccess });
-    try {
-      void AccessibilityInfo.announceForAccessibility(message);
-    } catch {
-      // Some hosts do not provide native accessibility announcements.
-    }
-    if (feedbackTimerRef.current) {
-      clearTimeout(feedbackTimerRef.current);
-    }
-    feedbackTimerRef.current = setTimeout(() => {
-      setFeedback(null);
-      feedbackTimerRef.current = null;
-    }, FEEDBACK_DURATION_MS);
-  }, []);
-
-  const playCorrectPulse = useCallback(() => {
+  const pulseToken = useCallback(() => {
     if (animationsEnabled) {
       Animated.sequence([
         Animated.timing(tokenScale, {
@@ -159,63 +160,96 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
     [zones],
   );
 
-  const handleCategoryAnswer = useCallback(
+  // Tap, keyboard activation, and drag release all call this same answer path.
+  const answerCategory = useCallback(
     (category: CategoryMatchCategory) => {
-      if (isCategoryMatchCorrect(round.item, category)) {
-        const matchedItem = round.item;
-        snapTokenBack();
-        setIsTokenSelected(false);
-        showFeedback(t('games.categoryMatch.greatMatch'), true);
+      if (
+        answerLockRef.current ||
+        guidedRound.phase === 'corrected' ||
+        guidedRound.phase === 'skipped'
+      ) {
+        return;
+      }
+      answerLockRef.current = true;
+
+      const isCorrect = isCategoryMatchCorrect(round.item, category);
+      const nextState = controllerRef.current.attempt(isCorrect);
+      setGuidedRound(nextState);
+      setIsTokenSelected(false);
+      dragPosition.setValue({ x: 0, y: 0 });
+
+      if (isCorrect) {
+        announce(
+          t('games.categoryMatch.correctFeedback', {
+            item: itemLabel,
+            category: categoryLabel,
+          }),
+        );
         void playMatchSound(settings);
-        playCorrectPulse();
-        setRoundsCompleted((previousCount) => {
-          const nextCount = previousCount + 1;
-          setRound((previousRound) => createCategoryMatchRound(previousRound.item, nextCount));
-          return nextCount;
-        });
-        onCorrectMatch?.(matchedItem, category);
+        pulseToken();
+        onCorrectMatch?.(round.item, category);
       } else {
-        showFeedback(t('games.categoryMatch.tryDifferent'), false);
-        void playFlipSound(settings);
+        announce(
+          t('games.categoryMatch.incorrectFeedback', {
+            item: itemLabel,
+            chosenCategory: translate(`games.categoryMatch.categories.${category}`),
+            correctCategory: categoryLabel,
+          }),
+        );
         onIncorrectMatch?.();
         springTokenBack();
       }
     },
     [
+      announce,
+      categoryLabel,
+      dragPosition,
+      guidedRound.phase,
+      itemLabel,
       onCorrectMatch,
       onIncorrectMatch,
-      playCorrectPulse,
+      pulseToken,
       round.item,
       settings,
-      showFeedback,
-      snapTokenBack,
       springTokenBack,
       t,
+      translate,
     ],
   );
 
-  const handleTokenPress = useCallback(() => {
-    setIsTokenSelected(true);
-    showFeedback(
-      t('games.categoryMatch.itemSelected', {
-        item: translate('games.categoryMatch.items.' + round.item.name, {
-          defaultValue: round.item.name,
-        }),
-      }),
-      true,
+  const handleNextRound = useCallback(() => {
+    if (guidedRound.phase !== 'corrected' && guidedRound.phase !== 'skipped') return;
+    const nextState = controllerRef.current.startNextExample();
+    setGuidedRound(nextState);
+    setRound((previousRound) =>
+      createCategoryMatchRound(
+        previousRound.item,
+        nextState.exampleNumber,
+        Math.random,
+        categoryCount,
+      ),
     );
-  }, [round.item.name, t, translate]);
+    setFeedback(null);
+    setIsTokenSelected(false);
+    answerLockRef.current = false;
+  }, [categoryCount, guidedRound.phase]);
 
-  const handleCategoryPress = useCallback(
-    (category: CategoryMatchCategory) => {
-      if (!isTokenSelected) {
-        showFeedback(t('games.categoryMatch.selectItemFirst'), false);
-        return;
-      }
-      handleCategoryAnswer(category);
-    },
-    [handleCategoryAnswer, isTokenSelected, t],
-  );
+  const handleHint = useCallback(() => {
+    setGuidedRound(controllerRef.current.showHint());
+  }, []);
+
+  const handleReplay = useCallback(() => {
+    setGuidedRound(controllerRef.current.replayInstructions());
+    announce(instruction);
+  }, [announce, instruction]);
+
+  const handleSkip = useCallback(() => {
+    const nextState = controllerRef.current.skip();
+    setGuidedRound(nextState);
+    setIsTokenSelected(false);
+    announce(t('games.categoryMatch.skippedFeedback', { item: itemLabel }));
+    springTokenBack();
+  }, [announce, itemLabel, springTokenBack, t]);
 
   const panResponder = useMemo(
     () =>
@@ -225,9 +259,10 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
           Math.abs(gestureState.dx) > 8 || Math.abs(gestureState.dy) > 8,
         onPanResponderMove: (_, gestureState) => {
           dragPosition.setValue({ x: gestureState.dx, y: gestureState.dy });
-          const hoverX = tokenCenterX + gestureState.dx;
-          const hoverY = tokenCenterY + gestureState.dy;
-          const hoveredZone = getDropTarget(hoverX, hoverY);
+          const hoveredZone = getDropTarget(
+            tokenCenterX + gestureState.dx,
+            tokenCenterY + gestureState.dy,
+          );
           const nextActive = hoveredZone?.category ?? null;
           if (nextActive !== activeDropCategoryRef.current) {
             activeDropCategoryRef.current = nextActive;
@@ -235,17 +270,17 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
           }
         },
         onPanResponderRelease: (_, gestureState) => {
-          const dropX = tokenCenterX + gestureState.dx;
-          const dropY = tokenCenterY + gestureState.dy;
-          const droppedZone = getDropTarget(dropX, dropY);
+          const droppedZone = getDropTarget(
+            tokenCenterX + gestureState.dx,
+            tokenCenterY + gestureState.dy,
+          );
           activeDropCategoryRef.current = null;
           setActiveDropCategory(null);
-
           if (!droppedZone) {
             springTokenBack();
             return;
           }
-          handleCategoryAnswer(droppedZone.category);
+          answerCategory(droppedZone.category);
         },
         onPanResponderTerminate: () => {
           activeDropCategoryRef.current = null;
@@ -253,35 +288,57 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
           springTokenBack();
         },
       }),
-    [dragPosition, getDropTarget, handleCategoryAnswer, tokenCenterX, tokenCenterY],
+    [answerCategory, dragPosition, getDropTarget, springTokenBack, tokenCenterX, tokenCenterY],
   );
 
   return (
-    <View
-      style={[styles.container, { width, height }]}
-      accessibilityLabel={t('games.categoryMatch.accessibilityLabel')}
-    >
-      <Text style={styles.promptText} accessibilityRole='text'>
-        {isTokenSelected
-          ? t('games.categoryMatch.selectionInstruction')
-          : t('games.categoryMatch.interactionInstruction')}
-      </Text>
+    <View style={[styles.container, { width, height }]} testID='category-match-board'>
+      <GuidedPracticePrompt
+        state={guidedRound}
+        instruction={instruction}
+        hint={t('games.categoryMatch.hint')}
+        model={
+          <Text
+            style={styles.modelText}
+            accessibilityLabel={t('games.categoryMatch.modelAccessibilityLabel', {
+              item: itemLabel,
+              category: categoryLabel,
+            })}
+          >
+            {t('games.categoryMatch.model', { item: itemLabel, category: categoryLabel })}
+          </Text>
+        }
+        replayLabel={t('games.categoryMatch.replay')}
+        skipLabel={t('games.categoryMatch.skip')}
+        onReplay={handleReplay}
+        onHint={handleHint}
+        hintLabel={t('games.categoryMatch.showHint')}
+        onSkip={handleSkip}
+      />
+      <Text style={styles.interactionText}>{t('games.categoryMatch.interactionInstruction')}</Text>
+
+      {feedback ? (
+        <Text
+          testID='category-match-feedback'
+          accessibilityRole='text'
+          accessibilityLiveRegion='polite'
+          style={styles.feedback}
+        >
+          {feedback}
+        </Text>
+      ) : null}
 
       <Pressable
         testID='category-draggable-token'
         accessibilityRole='button'
-        accessibilityLabel={t('games.categoryMatch.itemAccessibilityLabel', {
-          item: translate('games.categoryMatch.items.' + round.item.name, {
-            defaultValue: round.item.name,
-          }),
-        })}
-        accessibilityHint={
-          isTokenSelected
-            ? t('games.categoryMatch.selectedItemHint')
-            : t('games.categoryMatch.selectItemHint')
-        }
-        accessibilityState={{ selected: isTokenSelected }}
-        onPress={handleTokenPress}
+        accessibilityLabel={t('games.categoryMatch.itemAccessibilityLabel', { item: itemLabel })}
+        accessibilityHint={t('games.categoryMatch.selectItemHint')}
+        accessibilityState={{
+          selected: isTokenSelected,
+          disabled: roundFinished,
+        }}
+        disabled={roundFinished}
+        onPress={() => setIsTokenSelected(true)}
         style={{
           position: 'absolute',
           left: tokenStartX,
@@ -295,9 +352,6 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
           style={[
             styles.draggableToken,
             {
-              position: 'absolute',
-              left: 0,
-              top: 0,
               width: '100%',
               height: '100%',
               transform: [...dragPosition.getTranslateTransform(), { scale: tokenScale }],
@@ -310,46 +364,49 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
         </Animated.View>
       </Pressable>
 
-      {feedback && (
-        <Text
-          accessibilityRole='text'
-          accessibilityLiveRegion='polite'
-          importantForAccessibility='yes'
-          style={[
-            feedback.isSuccess ? styles.successText : styles.errorText,
-            { marginTop: tokenStartY + tokenSize - 12 },
-          ]}
-        >
-          {feedback.message}
-        </Text>
-      )}
+      {!roundFinished ? (
+        <View style={[styles.zoneRow, { top: zoneTop, left: boardPadding, right: boardPadding }]}>
+          {zones.map((zone) => (
+            <Pressable
+              key={zone.category}
+              onPress={() => {
+                if (!isTokenSelected) {
+                  announce(t('games.categoryMatch.selectItemFirst'));
+                  return;
+                }
+                answerCategory(zone.category);
+              }}
+              accessibilityRole='button'
+              accessibilityLabel={t('games.categoryMatch.categoryAccessibilityLabel', {
+                category: zone.label,
+              })}
+              accessibilityHint={t('games.categoryMatch.categoryActivationHint')}
+              accessibilityState={{ disabled: roundFinished }}
+              disabled={roundFinished}
+              testID={`category-zone-${zone.category}`}
+              style={[
+                styles.zoneCard,
+                { width: zone.width, height: zone.height },
+                activeDropCategory === zone.category ? styles.zoneCardActive : undefined,
+              ]}
+            >
+              <Text style={styles.zoneIcon}>{zone.icon}</Text>
+              <Text style={styles.zoneLabel}>{zone.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
 
-      <View style={[styles.zoneRow, { top: zoneTop, left: boardPadding, right: boardPadding }]}>
-        {zones.map((zone) => (
-          <Pressable
-            key={zone.category}
-            onPress={() => handleCategoryPress(zone.category)}
-            accessibilityRole='button'
-            accessibilityLabel={t('games.categoryMatch.categoryAccessibilityLabel', {
-              category: zone.label,
-            })}
-            accessibilityHint={
-              isTokenSelected
-                ? t('games.categoryMatch.categoryActivationHint')
-                : t('games.categoryMatch.categorySelectFirstHint')
-            }
-            testID={`category-zone-${zone.category}`}
-            style={[
-              styles.zoneCard,
-              { width: zone.width, height: zone.height },
-              activeDropCategory === zone.category ? styles.zoneCardActive : undefined,
-            ]}
-          >
-            <Text style={styles.zoneIcon}>{zone.icon}</Text>
-            <Text style={styles.zoneLabel}>{zone.label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      {roundFinished ? (
+        <AppButton
+          label={t('games.categoryMatch.next')}
+          onPress={handleNextRound}
+          testID='category-match-next'
+          accessibilityHint={t('games.categoryMatch.nextHint')}
+          fullWidth
+          style={styles.nextButton}
+        />
+      ) : null}
     </View>
   );
 };
@@ -362,15 +419,26 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       backgroundColor: colors.surfaceGame,
       borderWidth: 2,
       borderColor: colors.cardBack,
+      padding: Space.sm,
     },
-    promptText: {
-      marginTop: Space.sm,
-      textAlign: 'center',
-      color: resolvedMode === 'dark' ? colors.text : colors.textLight,
+    modelText: {
       ...TypeStyle.bodySm,
+      color: colors.text,
+      textAlign: 'center',
+    },
+    interactionText: {
+      ...TypeStyle.bodySm,
+      color: colors.textLight,
+      textAlign: 'center',
+      marginTop: Space.xs,
+    },
+    feedback: {
+      ...TypeStyle.bodySm,
+      color: colors.text,
+      textAlign: 'center',
+      marginTop: Space.xs,
     },
     draggableToken: {
-      position: 'absolute',
       borderRadius: Radius.xl,
       backgroundColor: colors.cardFront,
       borderWidth: 2,
@@ -380,19 +448,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       zIndex: 2,
       elevation: 2,
     },
-    emojiText: {
-      textAlign: 'center',
-    },
-    successText: {
-      textAlign: 'center',
-      color: colors.success,
-      ...TypeStyle.button,
-    },
-    errorText: {
-      textAlign: 'center',
-      color: resolvedMode === 'dark' ? colors.secondary : '#B76A7C',
-      ...TypeStyle.button,
-    },
+    emojiText: { textAlign: 'center' },
     zoneRow: {
       position: 'absolute',
       flexDirection: 'row',
@@ -411,13 +467,11 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       borderColor: colors.primary,
       backgroundColor: resolvedMode === 'dark' ? colors.primary : colors.matched,
     },
-    zoneIcon: {
-      fontSize: 30,
-      marginBottom: Space.xxs,
-    },
+    zoneIcon: { fontSize: 30, marginBottom: Space.xxs },
     zoneLabel: {
       color: resolvedMode === 'dark' ? colors.background : colors.text,
       ...TypeStyle.button,
       textAlign: 'center',
     },
+    nextButton: { position: 'absolute', left: Space.md, right: Space.md, bottom: Space.sm },
   });

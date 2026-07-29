@@ -21,6 +21,31 @@ const knownLeafKeys = [
   'games.patternTrain.title',
   'games.patternTrain.subtitle',
 
+  // Category Match
+  'games.categoryMatch.sortingInstruction',
+  'games.categoryMatch.correctFeedback',
+  'games.categoryMatch.incorrectFeedback',
+  'games.categoryMatch.model',
+  'games.categoryMatch.categories.food',
+  'games.categoryMatch.categories.toys',
+  'games.categoryMatch.categories.clothes',
+  'games.categoryMatch.items.apple',
+  'games.categoryMatch.items.teddy',
+  'settings.categoryMatch.categories.two',
+  'settings.categoryMatch.categories.three',
+
+  // Number Picnic
+  'games.numberPicnic.undo',
+  'games.numberPicnic.reset',
+  'games.numberPicnic.nextPicnic',
+  'games.numberPicnic.removeItemAccessibilityLabel',
+  'games.numberPicnic.removeItemAccessibilityHint',
+  'settings.numberPicnic.maximumQuantity.title',
+  'settings.numberPicnic.maximumQuantity.description',
+  'settings.numberPicnic.maximumQuantity.five',
+  'settings.numberPicnic.maximumQuantity.eight',
+  'settings.numberPicnic.maximumQuantity.ten',
+
   // Add more known keys here...
 ];
 

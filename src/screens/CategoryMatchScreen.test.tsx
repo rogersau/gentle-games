@@ -3,6 +3,10 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { CategoryMatchScreen } from './CategoryMatchScreen';
 
 const mockGoBack = jest.fn();
+let mockSettings: any = {
+  pressureFreeMode: true,
+  gameSettings: { 'category-match': { categoryCount: 2 as const, showPreview: true } },
+};
 
 jest.mock('../utils/theme', () => ({
   useThemeColors: () => ({
@@ -17,73 +21,50 @@ jest.mock('../utils/theme', () => ({
       success: '#B8E6B8',
       matched: '#D3D3D3',
       surfaceGame: '#FFFFFF',
+      surface: '#FFFFFF',
+      surfaceElevated: '#FFFFFF',
+      border: '#E8E4E1',
+      borderSubtle: '#F0EDE9',
+      overlay: 'rgba(90, 90, 90, 0.4)',
+      accent: '#D4A9E6',
+      danger: '#E8A0A0',
     },
     resolvedMode: 'light',
-    colorMode: 'light',
   }),
 }));
 
 jest.mock('react-i18next', () => ({
-  initReactI18next: {
-    type: '3rdParty',
-    init: () => {},
-  },
   useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
+    t: (key: string) =>
+      ({
         'common.back': '← Back',
         'games.categoryMatch.title': 'Category Match',
-        'games.categoryMatch.subtitle': 'Sort each emoji into Sky, Land, or Ocean.',
-        'games.categoryMatch.correct': 'Correct',
         'games.categoryMatch.quickPreview': 'Quick Preview',
-        'games.categoryMatch.dragInstruction': 'Drag each emoji into the matching place.',
+        'games.categoryMatch.previewInstruction':
+          'The sorting rule is item type. Choose the matching group.',
         'games.categoryMatch.startSorting': 'Start Sorting',
-        'games.categoryMatch.startSortingHint': 'Begin the sorting round.',
-        'games.categoryMatch.greatStreak': 'Wonderful sorting streak!',
-        'games.categoryMatch.streakMessage': 'Wonderful sorting streak!',
-      };
-      return translations[key] || key;
-    },
+        'games.categoryMatch.startSortingHint': 'Begin the category sorting game',
+        'games.categoryMatch.categories.food': 'Food',
+        'games.categoryMatch.categories.toys': 'Toys',
+        'games.categoryMatch.categories.clothes': 'Clothes',
+      })[key] ?? key,
   }),
 }));
 
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({
-    goBack: mockGoBack,
-  }),
+  useNavigation: () => ({ goBack: mockGoBack }),
 }));
 
-const categorySettings = { pressureFreeMode: false };
 jest.mock('../context/SettingsContext', () => ({
-  useSettings: () => ({ settings: categorySettings }),
+  useSettings: () => ({ settings: mockSettings }),
 }));
 
 jest.mock('../components/CategoryMatchBoard', () => {
-  const { Text, TouchableOpacity, View } = require('react-native');
-
+  const { Text, View } = require('react-native');
   return {
-    CategoryMatchBoard: ({
-      onCorrectMatch,
-      onIncorrectMatch,
-    }: {
-      onCorrectMatch?: (
-        item: { emoji: string; name: string; color: string; category: 'sky' },
-        category: 'sky',
-      ) => void;
-      onIncorrectMatch?: () => void;
-    }) => (
-      <View>
-        <Text>Mock Category Match Board</Text>
-        <TouchableOpacity
-          onPress={() =>
-            onCorrectMatch?.({ emoji: '☀️', name: 'sun', color: '#FFFACD', category: 'sky' }, 'sky')
-          }
-        >
-          <Text>Match Correct Item</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => onIncorrectMatch?.()}>
-          <Text>Match Incorrect Item</Text>
-        </TouchableOpacity>
+    CategoryMatchBoard: ({ categoryCount }: { categoryCount: number }) => (
+      <View testID='category-board'>
+        <Text>{`category-count-${categoryCount}`}</Text>
       </View>
     ),
   };
@@ -92,51 +73,35 @@ jest.mock('../components/CategoryMatchBoard', () => {
 describe('CategoryMatchScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSettings = {
+      pressureFreeMode: true,
+      gameSettings: { 'category-match': { categoryCount: 2, showPreview: true } },
+    };
   });
 
-  it('goes back when the back button is pressed', () => {
+  it('keeps the starter preview to two explicit groups and has no pressure metrics', () => {
     const screen = render(<CategoryMatchScreen />);
-    fireEvent.press(screen.getByText('← Back'));
+    expect(screen.getByText('Food')).toBeTruthy();
+    expect(screen.getByText('Toys')).toBeTruthy();
+    expect(screen.queryByText('Clothes')).toBeNull();
+    expect(screen.queryByText(/Correct/i)).toBeNull();
+    expect(screen.queryByText(/streak/i)).toBeNull();
+  });
 
+  it('starts the configured two-group game and preserves the single back path', () => {
+    const screen = render(<CategoryMatchScreen />);
+    fireEvent.press(screen.getByText('Start Sorting'));
+    expect(screen.getByTestId('category-board')).toBeTruthy();
+    expect(screen.getByText('category-count-2')).toBeTruthy();
+    fireEvent.press(screen.getByText('← Back'));
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 
-  it('increments correct count when the board reports a correct match', () => {
+  it('shows the third category only after the explicit three-group setting', () => {
+    mockSettings.gameSettings['category-match'].categoryCount = 3;
     const screen = render(<CategoryMatchScreen />);
-    expect(screen.getByText('Sort each emoji into Sky, Land, or Ocean.')).toBeTruthy();
+    expect(screen.getByText('Clothes')).toBeTruthy();
     fireEvent.press(screen.getByText('Start Sorting'));
-
-    expect(screen.getByText('Correct: 0')).toBeTruthy();
-    fireEvent.press(screen.getByText('Match Correct Item'));
-    expect(screen.getByText('Correct: 1')).toBeTruthy();
-  });
-
-  it('keeps the preview hidden, resets streaks on incorrect matches, and shows encouragement after three correct matches', () => {
-    const screen = render(<CategoryMatchScreen />);
-
-    fireEvent.press(screen.getByText('Start Sorting'));
-
-    expect(screen.queryByText('Start Sorting')).toBeNull();
-    fireEvent.press(screen.getByText('Match Correct Item'));
-    fireEvent.press(screen.getByText('Match Correct Item'));
-    fireEvent.press(screen.getByText('Match Incorrect Item'));
-    expect(screen.queryByText('Wonderful sorting streak! ✨')).toBeNull();
-
-    fireEvent.press(screen.getByText('Match Correct Item'));
-    fireEvent.press(screen.getByText('Match Correct Item'));
-    fireEvent.press(screen.getByText('Match Correct Item'));
-
-    expect(screen.getByText('Correct: 5')).toBeTruthy();
-    expect(screen.getByText('Wonderful sorting streak! ✨')).toBeTruthy();
-  });
-
-  it('hides counters and streak celebrations in pressure-free mode', () => {
-    categorySettings.pressureFreeMode = true;
-    const screen = render(<CategoryMatchScreen />);
-    fireEvent.press(screen.getByText('Start Sorting'));
-    expect(screen.queryByText('Correct: 0')).toBeNull();
-    fireEvent.press(screen.getByText('Match Correct Item'));
-    expect(screen.queryByText('Correct: 1')).toBeNull();
-    expect(screen.queryByText('Wonderful sorting streak! ✨')).toBeNull();
+    expect(screen.getByText('category-count-3')).toBeTruthy();
   });
 });

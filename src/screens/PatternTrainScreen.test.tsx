@@ -2,6 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Animated } from 'react-native';
 import { PatternTrainScreen } from '../screens/PatternTrainScreen';
+import { playFlipSound } from '../utils/sounds';
 
 const mockGoBack = jest.fn();
 const mockNavigate = jest.fn();
@@ -15,7 +16,7 @@ jest.mock('@react-navigation/native', () => ({
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, _options?: Record<string, unknown>) => {
+    t: (key: string, options?: Record<string, unknown>) => {
       const translations: Record<string, string> = {
         'games.patternTrain.title': 'Pattern Train',
         'games.patternTrain.subtitle': 'Complete the train pattern',
@@ -31,6 +32,26 @@ jest.mock('react-i18next', () => ({
         'games.patternTrain.instructions': 'Drag a carriage to complete the train',
         'games.patternTrain.train.accessibilityLabel': 'Train with pattern',
         'games.patternTrain.roundsAccessibilityLabel': '{{count}} rounds completed',
+        'games.patternTrain.guidance.instruction':
+          'Choose the carriage that continues the pattern.',
+        'games.patternTrain.guidance.showPattern': 'Show the pattern: {{unit}} repeats.',
+        'games.patternTrain.guidance.showPatternButton': 'Show the pattern',
+        'games.patternTrain.guidance.replay': 'Hear instructions again',
+        'games.patternTrain.guidance.skip': 'Skip',
+        'games.patternTrain.guidance.next': 'Next',
+        'games.patternTrain.guidance.nextHint': 'Next pattern',
+        'games.patternTrain.guidance.model': 'Model: {{sequence}}',
+        'games.patternTrain.guidance.modelAccessibilityLabel': 'Complete pattern: {{sequence}}.',
+        'games.patternTrain.repeatUnit': 'Repeat {{unit}} for the {{rule}}.',
+        'games.patternTrain.repeatUnitAccessibilityLabel': 'Repeat {{unit}}. Rule {{rule}}.',
+        'games.patternTrain.rules.ab': 'AB pattern',
+        'games.patternTrain.feedback.correct': 'Correct.',
+        'games.patternTrain.feedback.incorrect': 'Try again.',
+        'games.patternTrain.feedback.correctAnnouncement': 'Correct.',
+        'games.patternTrain.feedback.incorrectAnnouncement': 'Try again.',
+        'games.patternTrain.carriage.accessibilityLabel': 'Carriage with {{emoji}}',
+        'games.patternTrain.carriage.accessibilityHint':
+          'Tap to choose or drag to the missing place',
         'difficulty.title': 'Select Difficulty',
         'common.cancel': 'Cancel',
         'common.back': 'Back',
@@ -38,7 +59,11 @@ jest.mock('react-i18next', () => ({
         'settings.difficulty.medium': 'Medium',
         'settings.difficulty.hard': 'Hard',
       };
-      return translations[key] || key;
+      let value = translations[key] || key;
+      Object.entries(options ?? {}).forEach(([name, replacement]) => {
+        value = value.replace(`{{${name}}}`, String(replacement));
+      });
+      return value;
     },
   }),
 }));
@@ -47,6 +72,26 @@ jest.mock('../components/train', () => ({
   TrainEngine: jest.fn(() => null),
   Carriage: jest.fn(() => null),
   TrainTrack: jest.fn(() => null),
+}));
+
+jest.mock('../utils/patternTrainLogic', () => ({
+  generateTrainPattern: jest.fn(() => ({
+    carriages: [
+      { emoji: '🌟', isMissing: false },
+      { emoji: '🌈', isMissing: true },
+      { emoji: '🌟', isMissing: false },
+      { emoji: '🌈', isMissing: false },
+    ],
+    answer: '🌈',
+    choices: ['🌈', '🌸'],
+    patternLabel: 'AB pattern',
+    repeatUnit: ['🌟', '🌈'],
+    templateId: 'ab',
+    missingIndex: 1,
+    difficulty: 'easy',
+  })),
+  generateTransferPattern: jest.fn(),
+  isTrainChoiceCorrect: jest.fn((pattern, choice) => pattern.answer === choice),
 }));
 
 jest.mock('../utils/theme', () => ({
@@ -70,7 +115,12 @@ jest.mock('../utils/theme', () => ({
   }),
 }));
 
-const patternSettings = { pressureFreeMode: false, difficulty: 'easy' as const };
+const patternSettings = {
+  pressureFreeMode: false,
+  reducedMotionEnabled: false,
+  animationsEnabled: true,
+  difficulty: 'easy' as const,
+};
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: patternSettings,
@@ -108,6 +158,8 @@ jest.mock('../context/MochiContext', () => ({
 describe('PatternTrainScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    patternSettings.pressureFreeMode = false;
+    patternSettings.reducedMotionEnabled = false;
     // Mock Animated.timing to execute immediately
     jest.spyOn(Animated, 'timing').mockImplementation(
       () =>
@@ -225,9 +277,61 @@ describe('PatternTrainScreen', () => {
 
     expect(draggable.props.onStartShouldSetResponder()).toBe(false);
     expect(draggable.props.onMoveShouldSetResponder({}, { dx: 0, dy: 0 })).toBe(false);
-    expect(
-      screen.getAllByLabelText('games.patternTrain.carriage.accessibilityLabel')[0].props.hitSlop,
-    ).toBe(8);
+    expect(screen.getAllByLabelText('Carriage with 🌈')[0].props.hitSlop).toBe(8);
+  });
+
+  it('submits a choice through the accessible tap path and exposes child-controlled Next', async () => {
+    const screen = render(<PatternTrainScreen />);
+    fireEvent.press(screen.getByText('Easy'));
+
+    const carriage = await screen.findByLabelText('Carriage with 🌈');
+    fireEvent.press(carriage);
+
+    expect(await screen.findByTestId('pattern-train-next')).toBeTruthy();
+  });
+
+  it('shows the staged hint and model before accepting corrected Next', async () => {
+    const screen = render(<PatternTrainScreen />);
+    fireEvent.press(screen.getByText('Easy'));
+
+    const wrongChoice = await screen.findByLabelText('Carriage with 🌸');
+    fireEvent.press(wrongChoice);
+    expect(await screen.findByText('Show the pattern: 🌟 🌈 repeats.')).toBeTruthy();
+
+    fireEvent.press(wrongChoice);
+    expect(await screen.findByText('Model: 🌟 🌈 🌟 🌈')).toBeTruthy();
+    expect(screen.queryByTestId('pattern-train-next')).toBeNull();
+
+    fireEvent.press(await screen.findByLabelText('Carriage with 🌈'));
+    expect(await screen.findByTestId('pattern-train-next')).toBeTruthy();
+  });
+
+  it('lets the child show the pattern before making a choice', async () => {
+    const screen = render(<PatternTrainScreen />);
+    fireEvent.press(screen.getByText('Easy'));
+
+    fireEvent.press(await screen.findByText('Show the pattern'));
+
+    expect(await screen.findByText('Show the pattern: 🌟 🌈 repeats.')).toBeTruthy();
+    expect(screen.getAllByLabelText('Carriage with 🌈')).not.toHaveLength(0);
+  });
+
+  it('does not play a negative sound for an incorrect choice', async () => {
+    const screen = render(<PatternTrainScreen />);
+    fireEvent.press(screen.getByText('Easy'));
+
+    fireEvent.press(await screen.findByLabelText('Carriage with 🌸'));
+
+    expect(playFlipSound).not.toHaveBeenCalled();
+  });
+
+  it('uses an immediate reduced-motion path without auto-advancing', async () => {
+    patternSettings.reducedMotionEnabled = true;
+    const screen = render(<PatternTrainScreen />);
+    fireEvent.press(screen.getByText('Easy'));
+
+    expect(await screen.findByText('AB pattern')).toBeTruthy();
+    expect(screen.queryByTestId('pattern-train-next')).toBeNull();
   });
 
   it('hides completed-round stats in pressure-free mode', async () => {

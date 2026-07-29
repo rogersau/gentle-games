@@ -1,9 +1,7 @@
 import React from 'react';
 import { PanResponder } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { PicnicBlanket } from './PicnicBlanket';
-
-type NodeMockElement = React.ReactElement<unknown>;
+import { isNumberPicnicDropValid, PicnicBlanket } from './PicnicBlanket';
 
 let mockSettings = {
   animationsEnabled: false,
@@ -134,22 +132,27 @@ describe('PicnicBlanket', () => {
         onDropStart={onDropStart}
         onDropEnd={onDropEnd}
         dropZoneLayout={{ x: 20, y: 50, width: 120, height: 120 }}
+        measureItemInWindow={(_, callback) =>
+          callback(
+            mockMeasuredLayout.x,
+            mockMeasuredLayout.y,
+            mockMeasuredLayout.width,
+            mockMeasuredLayout.height,
+          )
+        }
       />,
       {
-        createNodeMock: (element: NodeMockElement) =>
-          (element.props as { testID?: string }).testID === 'picnic-item-0'
-            ? {
-                measureInWindow: (
-                  callback: (x: number, y: number, width: number, height: number) => void,
-                ) =>
-                  callback(
-                    mockMeasuredLayout.x,
-                    mockMeasuredLayout.y,
-                    mockMeasuredLayout.width,
-                    mockMeasuredLayout.height,
-                  ),
-              }
-            : {},
+        createNodeMock: () => ({
+          measureInWindow: (
+            callback: (x: number, y: number, width: number, height: number) => void,
+          ) =>
+            callback(
+              mockMeasuredLayout.x,
+              mockMeasuredLayout.y,
+              mockMeasuredLayout.width,
+              mockMeasuredLayout.height,
+            ),
+        }),
       },
     );
 
@@ -170,8 +173,8 @@ describe('PicnicBlanket', () => {
         },
       });
       onGrant?.({}, {});
-      onMove?.({}, { dx: 20, dy: -40 });
-      onRelease?.({}, { dx: 20, dy: -40 });
+      onMove?.({}, { dx: 20, dy: -40, moveX: 80, moveY: 100 });
+      onRelease?.({}, { dx: 20, dy: -40, moveX: 80, moveY: 100 });
     });
 
     expect(onDropStart).toHaveBeenCalledTimes(1);
@@ -189,22 +192,27 @@ describe('PicnicBlanket', () => {
         targetCount={3}
         onItemDrop={onItemDrop}
         dropZoneLayout={{ x: 220, y: 20, width: 100, height: 100 }}
+        measureItemInWindow={(_, callback) =>
+          callback(
+            mockMeasuredLayout.x,
+            mockMeasuredLayout.y,
+            mockMeasuredLayout.width,
+            mockMeasuredLayout.height,
+          )
+        }
       />,
       {
-        createNodeMock: (element: NodeMockElement) =>
-          (element.props as { testID?: string }).testID === 'picnic-item-0'
-            ? {
-                measureInWindow: (
-                  callback: (x: number, y: number, width: number, height: number) => void,
-                ) =>
-                  callback(
-                    mockMeasuredLayout.x,
-                    mockMeasuredLayout.y,
-                    mockMeasuredLayout.width,
-                    mockMeasuredLayout.height,
-                  ),
-              }
-            : {},
+        createNodeMock: () => ({
+          measureInWindow: (
+            callback: (x: number, y: number, width: number, height: number) => void,
+          ) =>
+            callback(
+              mockMeasuredLayout.x,
+              mockMeasuredLayout.y,
+              mockMeasuredLayout.width,
+              mockMeasuredLayout.height,
+            ),
+        }),
       },
     );
 
@@ -222,5 +230,15 @@ describe('PicnicBlanket', () => {
     });
 
     expect(onItemDrop).not.toHaveBeenCalled();
+  });
+
+  it('accepts visible item overlap even when the pointer is outside the basket', () => {
+    expect(
+      isNumberPicnicDropValid(
+        { x: 50, y: 150, width: 56, height: 56 },
+        { x: 100, y: 100, width: 100, height: 100 },
+        { dx: 45, dy: 0, moveX: 95, moveY: 210 },
+      ),
+    ).toBe(true);
   });
 });

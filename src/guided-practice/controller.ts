@@ -19,6 +19,7 @@ export interface GuidedRoundOptions {
 export interface GuidedRoundController {
   getState: () => GuidedRoundState;
   attempt: (isCorrect: boolean) => GuidedRoundState;
+  showHint: () => GuidedRoundState;
   replayInstructions: () => GuidedRoundState;
   skip: () => GuidedRoundState;
   startNextExample: () => GuidedRoundState;
@@ -69,6 +70,10 @@ export function createGuidedRoundController(
   return {
     getState: () => state,
     attempt,
+    showHint: () => {
+      if (!disposed && state.phase === 'independent') state = { ...state, phase: 'hinted' };
+      return state;
+    },
     replayInstructions: () => {
       if (!disposed && state.phase !== 'corrected' && state.phase !== 'skipped') {
         state = { ...state, instructionReplayCount: state.instructionReplayCount + 1 };

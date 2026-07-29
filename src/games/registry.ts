@@ -129,7 +129,7 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     descriptionKey: 'games.numberPicnic.description',
     icon: '🧺',
     accentColor: PASTEL_COLORS.success,
-    isUnfinished: true,
+    isUnfinished: false,
     launchMode: 'direct',
     outcome: GAME_OUTCOMES['number-picnic'],
   },

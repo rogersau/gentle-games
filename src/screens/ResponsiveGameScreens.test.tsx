@@ -123,12 +123,12 @@ describe('responsive game screens', () => {
     expect(mockBubbleProps.height).toBe(220);
   });
 
-  it('fits Category Match to a landscape measured viewport after starting', () => {
+  it('keeps Category Match interaction areas separated in a landscape scroll view', () => {
     const screen = render(<CategoryMatchScreen />);
     fireEvent.press(screen.getByText('Start Sorting'));
     layout(screen, 480, 320);
     expect(mockCategoryProps.width).toBe(456);
-    expect(mockCategoryProps.height).toBe(240);
+    expect(mockCategoryProps.height).toBe(540);
   });
 
   it('fits Keepy Uppy to a compact measured viewport', () => {

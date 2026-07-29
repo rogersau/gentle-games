@@ -102,12 +102,43 @@ describe('SettingsScreen', () => {
     expect(mockUpdateSettings).toHaveBeenCalledWith({ soundVolume: 0.6 });
   });
 
-  it('toggles card preview setting', () => {
+  it('updates Memory Snap preview setting', () => {
     const screen = render(React.createElement(SettingsScreen));
-    const cardPreviewSwitch = screen.getByRole('switch', { name: /Show Card Preview/i });
-    fireEvent(cardPreviewSwitch, 'valueChange', false);
+    fireEvent.press(screen.getByRole('radio', { name: 'None' }));
 
-    expect(mockUpdateSettings).toHaveBeenCalledWith('memory-snap', { showPreview: false });
+    expect(mockUpdateSettings).toHaveBeenCalledWith('memory-snap', { previewMode: 'none' });
+  });
+
+  it('keeps Category Match at two groups by default and allows the explicit third group', () => {
+    const screen = render(React.createElement(SettingsScreen));
+    expect(screen.getByRole('radio', { name: '2 groups: Food and Toys' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('radio', { name: '3 groups: Food, Toys, and Clothes' }));
+
+    expect(mockUpdateSettings).toHaveBeenCalledWith('category-match', { categoryCount: 3 });
+  });
+
+  it('persists Number Picnic quantity independently from global difficulty', () => {
+    mockSettings.gameSettings = { ...DEFAULT_GAME_SETTINGS };
+    const screen = render(React.createElement(SettingsScreen));
+
+    fireEvent.press(screen.getByRole('radio', { name: '6–10' }));
+
+    expect(mockUpdateSettings).toHaveBeenCalledWith('number-picnic', {
+      stage: '6-10',
+      maxQuantity: 10,
+      mode: 'make-amount',
+    });
+  });
+
+  it('selects a Number Picnic mode and optional spoken counting independently', () => {
+    mockSettings.gameSettings = { ...DEFAULT_GAME_SETTINGS };
+    const screen = render(React.createElement(SettingsScreen));
+
+    fireEvent.press(screen.getByRole('radio', { name: 'Find the amount' }));
+    expect(mockUpdateSettings).toHaveBeenCalledWith('number-picnic', { mode: 'find-amount' });
+
+    fireEvent(screen.getByRole('switch', { name: /Speak each count/i }), 'valueChange', true);
+    expect(mockUpdateSettings).toHaveBeenCalledWith('number-picnic', { spokenCounting: true });
   });
 
   it('does not show theme or difficulty controls', () => {

@@ -1,9 +1,12 @@
-import { Tile, TileType, Difficulty, ANIMALS, SHAPES } from '../types';
+import { Tile, TileType, Difficulty, ANIMALS, MEMORY_SNAP_OBJECTS } from '../types';
+import type { MemorySnapPairCount } from '../games/settings';
 
-const shuffle = <T>(array: T[]): T[] => {
+export type RandomSource = () => number;
+
+export const shuffle = <T>(array: T[], random: RandomSource = Math.random): T[] => {
   const result = [...array];
   for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;
@@ -14,6 +17,43 @@ const GRID_CONFIGS: Record<Difficulty, { cols: number; rows: number; pairs: numb
   easy: { cols: 3, rows: 4, pairs: 6 }, // 3x4 = 12 tiles = 6 pairs
   medium: { cols: 4, rows: 5, pairs: 10 }, // 4x5 = 20 tiles = 10 pairs
   hard: { cols: 5, rows: 6, pairs: 15 }, // 5x6 = 30 tiles = 15 pairs
+};
+
+export const MEMORY_SNAP_GRID_CONFIGS: Record<
+  MemorySnapPairCount,
+  { cols: number; rows: number; pairs: MemorySnapPairCount }
+> = {
+  2: { cols: 2, rows: 2, pairs: 2 },
+  3: { cols: 2, rows: 3, pairs: 3 },
+  4: { cols: 2, rows: 4, pairs: 4 },
+  6: { cols: 3, rows: 4, pairs: 6 },
+  10: { cols: 4, rows: 5, pairs: 10 },
+  15: { cols: 5, rows: 6, pairs: 15 },
+};
+
+export const getMemorySnapGridConfig = (pairCount: MemorySnapPairCount) =>
+  MEMORY_SNAP_GRID_CONFIGS[pairCount];
+
+export const calculateMemorySnapBoardSize = (
+  viewport: { width: number; height: number },
+  pairCount: MemorySnapPairCount,
+  bottomInset = 0,
+) => {
+  const { cols, rows } = getMemorySnapGridConfig(pairCount);
+  const width = Math.min(Math.max(viewport.width - 32, 1), 640);
+  const height = Math.max(viewport.height - 220 - bottomInset, 1);
+  const tileSize = Math.max(
+    1,
+    Math.floor(Math.min((width - cols * 8) / cols, (height - rows * 8) / rows)),
+  );
+
+  return {
+    cols,
+    rows,
+    tileSize,
+    width: cols * (tileSize + 8),
+    height: rows * (tileSize + 8),
+  };
 };
 
 export const getGridConfig = (
@@ -32,24 +72,40 @@ export const calculateGridDimensions = (
 };
 
 export const generateTiles = (
-  difficulty: Difficulty,
+  difficultyOrPairCount: Difficulty | MemorySnapPairCount,
   theme: 'animals' | 'shapes' | 'mixed',
+  random: RandomSource = Math.random,
 ): Tile[] => {
-  const { pairs } = GRID_CONFIGS[difficulty];
+  const pairCount =
+    typeof difficultyOrPairCount === 'number'
+      ? difficultyOrPairCount
+      : (GRID_CONFIGS[difficultyOrPairCount].pairs as MemorySnapPairCount);
+  return generateMemorySnapTiles(pairCount, theme, random);
+};
+
+export const generateMemorySnapTiles = (
+  pairCount: MemorySnapPairCount,
+  theme: 'animals' | 'shapes' | 'mixed',
+  random: RandomSource = Math.random,
+): Tile[] => {
+  const { pairs } = getMemorySnapGridConfig(pairCount);
 
   let availableItems: { emoji: string; name: string; color: string }[] = [];
 
   if (theme === 'animals') {
-    availableItems = shuffle(ANIMALS);
+    availableItems = shuffle(ANIMALS, random);
   } else if (theme === 'shapes') {
-    availableItems = shuffle(SHAPES);
+    availableItems = shuffle(MEMORY_SNAP_OBJECTS, random);
   } else {
     const animalPairs = Math.ceil(pairs * 0.75);
     const shapePairs = Math.max(0, pairs - animalPairs);
-    availableItems = shuffle([
-      ...shuffle(ANIMALS).slice(0, animalPairs),
-      ...shuffle(SHAPES).slice(0, shapePairs),
-    ]);
+    availableItems = shuffle(
+      [
+        ...shuffle(ANIMALS, random).slice(0, animalPairs),
+        ...shuffle(MEMORY_SNAP_OBJECTS, random).slice(0, shapePairs),
+      ],
+      random,
+    );
   }
 
   const selected = availableItems.slice(0, pairs);
@@ -78,7 +134,7 @@ export const generateTiles = (
     });
   });
 
-  return shuffle(tiles);
+  return shuffle(tiles, random);
 };
 
 export const formatTime = (milliseconds: number): string => {

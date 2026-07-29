@@ -1,10 +1,13 @@
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated } from 'react-native';
+import { createGuidedRoundController, GuidedRoundState } from '../guided-practice/controller';
 import { Difficulty } from '../types';
-import { generateTrainPattern, removeWrongChoices, TrainPattern } from '../utils/patternTrainLogic';
-
-export type TrainPhase = 'entering' | 'waiting' | 'exiting' | 'offscreen';
-export type FeedbackType = 'initial' | 'correct' | 'incorrect' | 'reveal';
+import {
+  generateTrainPattern,
+  generateTransferPattern,
+  isTrainChoiceCorrect,
+  TrainPattern,
+} from '../utils/patternTrainLogic';
 
 export interface DraggableCarriage {
   emoji: string;
@@ -15,50 +18,32 @@ export interface DraggableCarriage {
 }
 
 export interface PatternTrainGameState {
-  // Game state
   pattern: TrainPattern | null;
   completedRounds: number;
   wrongAttempts: number;
   isProcessing: boolean;
-  showMilestoneModal: boolean;
   showDifficultySelector: boolean;
-  selectedChoice: string | null;
+  showMilestoneModal: boolean;
   attachedCarriage: string | null;
-  draggableCarriages: DraggableCarriage[];
-
-  // Train state
-  trainPhase: TrainPhase;
-
-  // Feedback state
+  guidedRound: GuidedRoundState;
   feedback: string;
-  feedbackType: FeedbackType;
+}
+
+export interface ChoiceResult {
+  isCorrect: boolean;
+  guidedRound: GuidedRoundState;
 }
 
 export interface PatternTrainGameActions {
-  // Game actions
   handleDifficultySelect: (difficulty: Difficulty) => void;
   handleCloseDifficultySelector: () => void;
   startNewRound: () => void;
-  handleCorrectAnswer: () => void;
-  handleIncorrectAnswer: (carriageEmoji: string) => void;
-  handleRevealAnswer: () => void;
+  submitChoice: (choice: string) => ChoiceResult | null;
+  showHint: () => void;
+  skipRound: () => void;
+  replayInstructions: () => void;
+  handleMilestoneContinue: () => void;
   resetGame: () => void;
-
-  // UI actions
-  setShowMilestoneModal: (show: boolean) => void;
-  setSelectedChoice: (choice: string | null) => void;
-  setAttachedCarriage: (carriage: string | null) => void;
-  setWrongAttempts: (attempts: number) => void;
-  setFeedback: (feedback: string) => void;
-  setFeedbackType: (type: FeedbackType) => void;
-  setTrainPhase: (phase: TrainPhase) => void;
-  setIsProcessing: (processing: boolean) => void;
-  setDraggableCarriages: (carriages: DraggableCarriage[]) => void;
-
-  // Utility
-  queueTimeout: (callback: () => void, delay: number) => void;
-  clearAllTimeouts: () => void;
-  getRandomFeedback: (type: 'correct' | 'incorrect') => string;
 }
 
 export interface UsePatternTrainGameReturn {
@@ -72,173 +57,168 @@ interface UsePatternTrainGameOptions {
   showMilestones?: boolean;
 }
 
-const MILESTONE_INTERVAL = 5;
+const createController = () => createGuidedRoundController({ hintAfter: 1, modelAfter: 2 });
 
-export function usePatternTrainGame(
-  options: UsePatternTrainGameOptions,
-): UsePatternTrainGameReturn {
-  const { difficulty: initialDifficulty, t, showMilestones = true } = options;
-
-  // Game state
+export function usePatternTrainGame({
+  difficulty: initialDifficulty,
+  t,
+  showMilestones = true,
+}: UsePatternTrainGameOptions) {
   const [pattern, setPattern] = useState<TrainPattern | null>(null);
+  const [activeDifficulty, setActiveDifficulty] = useState(initialDifficulty);
   const [completedRounds, setCompletedRounds] = useState(0);
   const [wrongAttempts, setWrongAttempts] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [showDifficultySelector, setShowDifficultySelector] = useState(true);
-  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [attachedCarriage, setAttachedCarriage] = useState<string | null>(null);
-  const [draggableCarriages, setDraggableCarriages] = useState<DraggableCarriage[]>([]);
-
-  // Train state
-  const [trainPhase, setTrainPhase] = useState<TrainPhase>('offscreen');
-
-  // Feedback state
+  const [guidedRound, setGuidedRound] = useState<GuidedRoundState>(() =>
+    createController().getState(),
+  );
   const [feedback, setFeedback] = useState(t('games.patternTrain.feedback.initial'));
-  const [feedbackType, setFeedbackType] = useState<FeedbackType>('initial');
+  const controllerRef = useRef(createController());
 
-  // Timeout management
-  const timeoutIdsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  const queueTimeout = useCallback((callback: () => void, delay: number) => {
-    const timeoutId = setTimeout(() => {
-      timeoutIdsRef.current = timeoutIdsRef.current.filter((id) => id !== timeoutId);
-      callback();
-    }, delay);
-    timeoutIdsRef.current.push(timeoutId);
+  useEffect(() => {
+    return () => {
+      controllerRef.current.dispose();
+    };
   }, []);
 
-  const clearAllTimeouts = useCallback(() => {
-    timeoutIdsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
-    timeoutIdsRef.current = [];
+  const resetController = useCallback(() => {
+    controllerRef.current.dispose();
+    controllerRef.current = createController();
+    const nextState = controllerRef.current.getState();
+    setGuidedRound(nextState);
+    return nextState;
   }, []);
 
-  const getRandomFeedback = useCallback(
-    (type: 'correct' | 'incorrect'): string => {
-      const optionsKey =
-        type === 'correct'
-          ? 'games.patternTrain.feedback.correctOptions'
-          : 'games.patternTrain.feedback.incorrectOptions';
-      const fallbackKey =
-        type === 'correct'
-          ? 'games.patternTrain.feedback.correct'
-          : 'games.patternTrain.feedback.incorrect';
-
-      const messages = t(optionsKey, { returnObjects: true }) as unknown as string[];
-      if (Array.isArray(messages) && messages.length > 0) {
-        const index = Math.floor(Math.random() * messages.length);
-        return messages[index];
-      }
-      return t(fallbackKey);
+  const handleDifficultySelect = useCallback(
+    (nextDifficulty: Difficulty) => {
+      setActiveDifficulty(nextDifficulty);
+      setPattern(generateTrainPattern(nextDifficulty));
+      setWrongAttempts(0);
+      setAttachedCarriage(null);
+      setIsProcessing(false);
+      setShowDifficultySelector(false);
+      setShowMilestoneModal(false);
+      setFeedback(t('games.patternTrain.feedback.initial'));
+      resetController();
     },
-    [t],
+    [resetController, t],
   );
 
   const startNewRound = useCallback(() => {
-    const newPattern = generateTrainPattern(initialDifficulty);
-    setPattern(newPattern);
+    const currentGuidedRound = controllerRef.current.getState();
+    if (
+      pattern &&
+      currentGuidedRound.phase !== 'corrected' &&
+      currentGuidedRound.phase !== 'skipped'
+    ) {
+      return;
+    }
+    const nextPattern = pattern
+      ? currentGuidedRound.exampleNumber % 2 === 1
+        ? generateTransferPattern(pattern)
+        : generateTrainPattern(activeDifficulty)
+      : generateTrainPattern(activeDifficulty);
+    setPattern(nextPattern);
+    setGuidedRound(pattern ? controllerRef.current.startNextExample() : resetController());
     setWrongAttempts(0);
-    setSelectedChoice(null);
     setAttachedCarriage(null);
     setIsProcessing(false);
+    setShowMilestoneModal(false);
     setFeedback(t('games.patternTrain.feedback.initial'));
-    setFeedbackType('initial');
-  }, [initialDifficulty, t]);
+  }, [activeDifficulty, pattern, resetController, t]);
 
-  const handleDifficultySelect = useCallback((difficulty: Difficulty) => {
-    const newPattern = generateTrainPattern(difficulty);
-    setPattern(newPattern);
-    setShowDifficultySelector(false);
-  }, []);
-
-  const handleCloseDifficultySelector = useCallback(() => {
-    setShowDifficultySelector(false);
-  }, []);
-
-  const handleCorrectAnswer = useCallback(() => {
-    const newCount = completedRounds + 1;
-    setCompletedRounds(newCount);
-
-    // Check for milestone
-    if (showMilestones && newCount > 0 && newCount % MILESTONE_INTERVAL === 0) {
-      setShowMilestoneModal(true);
-    }
-  }, [completedRounds, showMilestones]);
-
-  const handleIncorrectAnswer = useCallback(
-    (carriageEmoji: string) => {
-      if (!pattern) return;
-
-      const newWrongAttempts = wrongAttempts + 1;
-      setWrongAttempts(newWrongAttempts);
-
-      if (newWrongAttempts < 3) {
-        // Remove the wrong choice that was dragged
-        removeWrongChoices(pattern.choices, pattern.answer, 1, carriageEmoji);
+  const submitChoice = useCallback(
+    (choice: string): ChoiceResult | null => {
+      if (
+        !pattern ||
+        isProcessing ||
+        guidedRound.phase === 'corrected' ||
+        guidedRound.phase === 'skipped'
+      ) {
+        return null;
       }
+
+      const isCorrect = isTrainChoiceCorrect(pattern, choice);
+      const nextGuidedRound = controllerRef.current.attempt(isCorrect);
+      setGuidedRound(nextGuidedRound);
+      setWrongAttempts(nextGuidedRound.incorrectAttempts);
+
+      if (isCorrect) {
+        setAttachedCarriage(choice);
+        setIsProcessing(true);
+        const nextCompletedRounds = completedRounds + 1;
+        setCompletedRounds(nextCompletedRounds);
+        if (showMilestones && nextCompletedRounds % 5 === 0) {
+          setShowMilestoneModal(true);
+        }
+        setFeedback(t('games.patternTrain.feedback.correct'));
+      } else {
+        setFeedback(t('games.patternTrain.feedback.incorrect'));
+      }
+
+      return { isCorrect, guidedRound: nextGuidedRound };
     },
-    [pattern, wrongAttempts],
+    [completedRounds, guidedRound.phase, isProcessing, pattern, showMilestones, t],
   );
 
-  const handleRevealAnswer = useCallback(() => {
-    // Answer revealed after 3 wrong attempts
-    // Game will exit train
+  const skipRound = useCallback(() => {
+    if (!pattern) return;
+    setGuidedRound(controllerRef.current.skip());
+    setIsProcessing(false);
+  }, [pattern]);
+
+  const showHint = useCallback(() => {
+    setGuidedRound(controllerRef.current.showHint());
   }, []);
 
+  const replayInstructions = useCallback(() => {
+    setGuidedRound(controllerRef.current.replayInstructions());
+  }, []);
+
+  const handleMilestoneContinue = useCallback(() => {
+    setShowMilestoneModal(false);
+    startNewRound();
+  }, [startNewRound]);
+
   const resetGame = useCallback(() => {
-    clearAllTimeouts();
     setPattern(null);
+    setActiveDifficulty(initialDifficulty);
     setCompletedRounds(0);
     setWrongAttempts(0);
     setIsProcessing(false);
-    setShowMilestoneModal(false);
     setShowDifficultySelector(true);
-    setSelectedChoice(null);
+    setShowMilestoneModal(false);
     setAttachedCarriage(null);
-    setTrainPhase('offscreen');
     setFeedback(t('games.patternTrain.feedback.initial'));
-    setFeedbackType('initial');
-  }, [clearAllTimeouts, t]);
+    resetController();
+  }, [initialDifficulty, resetController, t]);
 
   const state: PatternTrainGameState = {
     pattern,
     completedRounds,
     wrongAttempts,
     isProcessing,
-    showMilestoneModal,
     showDifficultySelector,
-    selectedChoice,
+    showMilestoneModal,
     attachedCarriage,
-    draggableCarriages,
-    trainPhase,
+    guidedRound,
     feedback,
-    feedbackType,
   };
 
   const actions: PatternTrainGameActions = {
     handleDifficultySelect,
-    handleCloseDifficultySelector,
+    handleCloseDifficultySelector: () => setShowDifficultySelector(false),
     startNewRound,
-    handleCorrectAnswer,
-    handleIncorrectAnswer,
-    handleRevealAnswer,
+    submitChoice,
+    showHint,
+    skipRound,
+    replayInstructions,
+    handleMilestoneContinue,
     resetGame,
-    setShowMilestoneModal,
-    setSelectedChoice,
-    setAttachedCarriage,
-    setWrongAttempts,
-    setFeedback,
-    setFeedbackType,
-    setTrainPhase,
-    setIsProcessing,
-    setDraggableCarriages,
-    queueTimeout,
-    clearAllTimeouts,
-    getRandomFeedback,
   };
 
-  return {
-    state,
-    actions,
-  };
+  return { state, actions };
 }

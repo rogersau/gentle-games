@@ -31,6 +31,13 @@ describe('guided round controller', () => {
     expect(controller.startNextExample().phase).toBe('independent');
   });
 
+  it('lets the child request a hint without counting an incorrect attempt', () => {
+    const controller = createGuidedRoundController();
+
+    expect(controller.showHint()).toMatchObject({ phase: 'hinted', incorrectAttempts: 0 });
+    expect(controller.showHint().phase).toBe('hinted');
+  });
+
   it('records support only when local progress recording is enabled', () => {
     const onRecordSupport = jest.fn();
     const privateController = createGuidedRoundController({ onRecordSupport });

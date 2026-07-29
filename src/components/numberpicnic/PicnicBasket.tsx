@@ -1,34 +1,18 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  ViewStyle,
-  Animated,
-  Easing,
-  Dimensions,
-  Platform,
-  LayoutChangeEvent,
-} from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { LayoutChangeEvent, Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
-import { Space, TypeStyle, Radius } from '../../ui/tokens';
-import { useAnimationEnabled } from '../../ui/animations';
+import { Space, TypeStyle, Radius, HitTarget } from '../../ui/tokens';
 import { ThemeColors } from '../../types';
 import { useTranslation } from 'react-i18next';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// Animation timing constants (in milliseconds)
-const BASKET_ANIMATION = {
-  ENTRY_DURATION: 1500,
-  EXIT_DURATION: 1500,
-  SUCCESS_DELAY: 800,
-};
-
 interface PicnicBasketProps {
   items: string[];
+  itemIds?: number[];
+  removableItemIds?: readonly number[];
+  measureRequest?: number;
   targetCount: number;
   onPress: () => void;
+  onItemPress?: (itemId: number) => void;
   onDropZoneLayout?: (layout: { x: number; y: number; width: number; height: number }) => void;
   onDrop?: (itemId: string, valid: boolean) => void;
   isDropTarget?: boolean;
@@ -42,300 +26,124 @@ interface PicnicBasketProps {
 
 export const PicnicBasket: React.FC<PicnicBasketProps> = ({
   items,
+  itemIds,
+  removableItemIds,
+  measureRequest = 0,
   targetCount,
+  onItemPress,
   onDropZoneLayout,
   isDropTarget = false,
   isSuccess = false,
-  onAnimationComplete,
   style,
   accessibilityLabel,
   accessibilityHint,
   testID,
 }) => {
   const { colors } = useThemeColors();
-  const animationsEnabled = useAnimationEnabled();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const basketRef = useRef<View>(null);
 
-  const effectiveIsDropTarget = isDropTarget;
-
-  // Animation state
-  const [basketPhase, setBasketPhase] = useState<'entering' | 'waiting' | 'exiting' | 'offscreen'>(
-    'entering',
-  );
-  const basketPosition = useRef(new Animated.Value(SCREEN_WIDTH)).current;
-  const basketOpacity = useRef(new Animated.Value(0)).current;
-  const dropHighlight = useRef(new Animated.Value(0)).current;
-
-  // Track previous item count for animation
-  const prevCountRef = useRef(items.length);
-  const itemAnimationsRef = useRef<Map<number, Animated.Value>>(new Map());
-
-  const isFull = items.length >= targetCount;
-  const isCorrect = items.length === targetCount;
-
-  // Show up to 12 items inside the basket
-  const displayItems = items.slice(0, 12);
-  const remainingCount = Math.max(0, items.length - 12);
-
-  const measureDropZone = React.useCallback(() => {
-    if (!basketRef.current) {
-      return;
-    }
-
-    basketRef.current.measureInWindow?.((x, y, width, height) => {
-      const bounds = { x, y, width, height };
-      onDropZoneLayout?.(bounds);
+  const measureDropZone = useCallback(() => {
+    basketRef.current?.measureInWindow?.((x, y, width, height) => {
+      onDropZoneLayout?.({ x, y, width, height });
     });
   }, [onDropZoneLayout]);
 
-  const handleDropZoneLayout = (_event: LayoutChangeEvent) => {
+  const handleLayout = (event: LayoutChangeEvent) => {
     if (basketRef.current?.measureInWindow) {
       measureDropZone();
       return;
     }
-
-    const { layout } = _event.nativeEvent;
-    onDropZoneLayout?.({
-      x: layout.x,
-      y: layout.y,
-      width: layout.width,
-      height: layout.height,
-    });
+    const { layout } = event.nativeEvent;
+    onDropZoneLayout?.(layout);
   };
 
-  // Measure drop zone layout
   useEffect(() => {
-    if (basketPhase === 'waiting') {
-      measureDropZone();
-    }
-  }, [basketPhase, measureDropZone]);
+    measureDropZone();
+  }, [items.length, measureDropZone, measureRequest]);
 
-  // Start basket entry animation
-  const startBasketEntry = () => {
-    setBasketPhase('entering');
-    basketPosition.setValue(SCREEN_WIDTH);
-    basketOpacity.setValue(0);
-
-    if (animationsEnabled) {
-      Animated.parallel([
-        Animated.timing(basketPosition, {
-          toValue: 0,
-          duration: BASKET_ANIMATION.ENTRY_DURATION,
-          useNativeDriver: Platform.OS !== 'web',
-        }),
-        Animated.timing(basketOpacity, {
-          toValue: 1,
-          duration: BASKET_ANIMATION.ENTRY_DURATION * 0.5,
-          useNativeDriver: Platform.OS !== 'web',
-        }),
-      ]).start(() => {
-        setBasketPhase('waiting');
-      });
-    } else {
-      basketPosition.setValue(0);
-      basketOpacity.setValue(1);
-      setBasketPhase('waiting');
-    }
-  };
-
-  // Start basket exit animation
-  const startBasketExit = () => {
-    setBasketPhase('exiting');
-
-    if (animationsEnabled) {
-      Animated.parallel([
-        Animated.timing(basketPosition, {
-          toValue: -SCREEN_WIDTH,
-          duration: BASKET_ANIMATION.EXIT_DURATION,
-          useNativeDriver: Platform.OS !== 'web',
-        }),
-        Animated.timing(basketOpacity, {
-          toValue: 0,
-          duration: BASKET_ANIMATION.EXIT_DURATION,
-          useNativeDriver: Platform.OS !== 'web',
-        }),
-      ]).start(() => {
-        setBasketPhase('offscreen');
-        onAnimationComplete?.();
-      });
-    } else {
-      basketPosition.setValue(-SCREEN_WIDTH);
-      basketOpacity.setValue(0);
-      setBasketPhase('offscreen');
-      onAnimationComplete?.();
-    }
-  };
-
-  // Trigger exit animation on success
-  useEffect(() => {
-    if (isSuccess && basketPhase === 'waiting') {
-      const timeoutId = setTimeout(() => {
-        startBasketExit();
-      }, BASKET_ANIMATION.SUCCESS_DELAY);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [isSuccess, basketPhase]);
-
-  // Animate drop highlight
-  useEffect(() => {
-    if (effectiveIsDropTarget && basketPhase === 'waiting') {
-      Animated.timing(dropHighlight, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: false,
-      }).start();
-    } else {
-      Animated.timing(dropHighlight, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: false,
-      }).start();
-    }
-  }, [effectiveIsDropTarget, basketPhase]);
-
-  // Start entry on mount
-  useEffect(() => {
-    startBasketEntry();
-  }, []);
-
-  // Animate new items
-  useEffect(() => {
-    const currentCount = items.length;
-    const prevCount = prevCountRef.current;
-
-    if (currentCount > prevCount) {
-      const newItemIndices = [];
-      for (let i = prevCount; i < currentCount; i++) {
-        newItemIndices.push(i);
-        if (!itemAnimationsRef.current.has(i)) {
-          itemAnimationsRef.current.set(i, new Animated.Value(0));
-        }
-      }
-
-      const duration = animationsEnabled ? 400 : 50;
-
-      newItemIndices.forEach((index) => {
-        const animValue = itemAnimationsRef.current.get(index);
-        if (animValue) {
-          animValue.setValue(0);
-          Animated.timing(animValue, {
-            toValue: 1,
-            duration,
-            easing: Easing.out(Easing.back(1.5)),
-            useNativeDriver: Platform.OS !== 'web',
-          }).start();
-        }
-      });
-    }
-
-    prevCountRef.current = currentCount;
-  }, [items.length, animationsEnabled]);
-
-  const getItemAnimatedStyle = (index: number) => {
-    const animValue = itemAnimationsRef.current.get(index);
-    if (!animValue) {
-      return {
-        transform: [{ scale: 1 }],
-        opacity: 1,
-      };
-    }
-
-    return {
-      transform: [
-        {
-          scale: animValue.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 1],
-          }),
-        },
-      ],
-      opacity: animValue,
-    };
-  };
-
-  const animatedBasketStyle = {
-    transform: [{ translateX: basketPosition }],
-    opacity: basketOpacity,
-  };
-
-  const highlightStyle = {
-    borderColor: dropHighlight.interpolate({
-      inputRange: [0, 1],
-      outputRange: [colors.border, colors.success],
-    }),
-    borderWidth: dropHighlight.interpolate({
-      inputRange: [0, 1],
-      outputRange: [4, 6],
-    }),
-  };
+  const ids = itemIds ?? items.map((_, index) => index);
+  const removableIds = new Set(removableItemIds ?? ids);
+  const displayedItems = items.slice(0, 12);
+  const remainingCount = Math.max(0, items.length - displayedItems.length);
+  const isFull = items.length >= targetCount;
 
   return (
-    <Animated.View
-      style={[styles.container, animatedBasketStyle, style]}
-      accessible
-      accessibilityLabel={accessibilityLabel}
-      accessibilityHint={accessibilityHint}
-    >
-      <View style={styles.basketContainer}>
-        {/* Basket Handle */}
-        <View style={styles.handle} />
-
-        {/* Basket Body */}
-        <Animated.View
-          ref={basketRef}
-          onLayout={handleDropZoneLayout}
-          testID={testID ? `${testID}-drop-zone` : undefined}
-          style={[
-            styles.basket,
-            isCorrect && styles.basketCorrect,
-            isFull && !isCorrect && styles.basketFull,
-            highlightStyle,
-          ]}
-        >
-          {/* Basket Top Rim */}
-          <View style={styles.rim} />
-
-          {/* Items Preview */}
-          <View style={styles.itemsArea}>
-            {displayItems.length > 0 ? (
-              <>
-                <View style={styles.itemsGrid}>
-                  {displayItems.map((emoji, index) => (
-                    <Animated.View key={`${emoji}-${index}`} style={getItemAnimatedStyle(index)}>
-                      <Text style={styles.itemEmoji} selectable={false}>
-                        {emoji}
-                      </Text>
-                    </Animated.View>
-                  ))}
-                </View>
-                {remainingCount > 0 && (
-                  <Text style={styles.moreIndicator}>
-                    {t('games.numberPicnic.moreItems', { count: remainingCount })}
+    <View style={[styles.container, style]} accessible={false}>
+      <View style={styles.handle} />
+      <View
+        ref={basketRef}
+        onLayout={handleLayout}
+        testID={testID ? `${testID}-drop-zone` : undefined}
+        style={[
+          styles.basket,
+          isDropTarget && styles.basketTarget,
+          isSuccess && styles.basketCorrect,
+          isFull && !isSuccess && styles.basketFull,
+        ]}
+      >
+        <View style={styles.rim} />
+        <View style={styles.itemsArea}>
+          {displayedItems.length > 0 ? (
+            <View style={styles.itemsGrid}>
+              {displayedItems.map((emoji, index) => {
+                const itemId = ids[index] ?? index;
+                const item = (
+                  <Text style={styles.itemEmoji} selectable={false}>
+                    {emoji}
                   </Text>
-                )}
-              </>
-            ) : (
-              <Text style={styles.emptyText}>{t('games.numberPicnic.emptyBasket')}</Text>
-            )}
-          </View>
-
-          {/* Count Badge */}
-          <View
-            style={[
-              styles.countBadge,
-              isCorrect && styles.countBadgeCorrect,
-              isFull && !isCorrect && styles.countBadgeFull,
-            ]}
-          >
-            <Text style={styles.countText}>
-              {items.length}/{targetCount}
+                );
+                if (!onItemPress || !removableIds.has(itemId)) {
+                  return (
+                    <View
+                      key={itemId}
+                      accessible={false}
+                      style={styles.placedItem}
+                      testID={`picnic-placed-item-${itemId}`}
+                    >
+                      {item}
+                    </View>
+                  );
+                }
+                return (
+                  <Pressable
+                    key={itemId}
+                    onPress={() => onItemPress?.(itemId)}
+                    accessibilityRole='button'
+                    accessibilityLabel={t('games.numberPicnic.removeItemAccessibilityLabel', {
+                      item: emoji,
+                      index: index + 1,
+                    })}
+                    accessibilityHint={t('games.numberPicnic.removeItemAccessibilityHint')}
+                    style={styles.placedItem}
+                    testID={`picnic-placed-item-${itemId}`}
+                  >
+                    {item}
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : (
+            <Text style={styles.emptyText}>{t('games.numberPicnic.emptyBasket')}</Text>
+          )}
+          {remainingCount > 0 && (
+            <Text style={styles.moreIndicator}>
+              {t('games.numberPicnic.moreItems', { count: remainingCount })}
             </Text>
-          </View>
-        </Animated.View>
+          )}
+        </View>
+        <View style={[styles.countBadge, isSuccess && styles.countBadgeCorrect]}>
+          <Text
+            style={styles.countText}
+            accessibilityLabel={accessibilityLabel}
+            accessibilityHint={accessibilityHint}
+          >
+            {items.length}/{targetCount}
+          </Text>
+        </View>
       </View>
-    </Animated.View>
+    </View>
   );
 };
 
@@ -345,33 +153,31 @@ const createStyles = (colors: ThemeColors) =>
       alignItems: 'center',
       paddingHorizontal: Space.md,
     },
-    basketContainer: {
-      height: 220,
-      alignItems: 'center',
-      position: 'relative',
-    },
     handle: {
       width: 100,
-      height: 40,
+      height: 30,
       borderWidth: 4,
       borderColor: colors.border,
       borderBottomWidth: 0,
       borderRadius: 50,
       marginBottom: -15,
       zIndex: 1,
-      backgroundColor: 'transparent',
     },
     basket: {
       width: 280,
+      minHeight: 180,
       backgroundColor: colors.surface,
       borderRadius: Radius.lg,
       borderWidth: 4,
       borderColor: colors.border,
-      height: 180,
       paddingHorizontal: Space.md,
       paddingTop: Space.lg,
       paddingBottom: Space.md,
       position: 'relative',
+    },
+    basketTarget: {
+      borderColor: colors.primary,
+      borderWidth: 6,
     },
     basketCorrect: {
       borderColor: colors.success,
@@ -379,7 +185,6 @@ const createStyles = (colors: ThemeColors) =>
     },
     basketFull: {
       borderColor: colors.danger,
-      backgroundColor: `${colors.danger}15`,
     },
     rim: {
       position: 'absolute',
@@ -392,7 +197,7 @@ const createStyles = (colors: ThemeColors) =>
       borderTopRightRadius: Radius.lg - 4,
     },
     itemsArea: {
-      height: 100,
+      minHeight: 100,
       justifyContent: 'center',
       alignItems: 'center',
     },
@@ -401,8 +206,13 @@ const createStyles = (colors: ThemeColors) =>
       flexWrap: 'wrap',
       justifyContent: 'center',
       alignItems: 'center',
-      gap: Space.xs,
       maxWidth: 240,
+    },
+    placedItem: {
+      minWidth: HitTarget.min,
+      minHeight: HitTarget.min,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     itemEmoji: {
       fontSize: 24,
@@ -432,9 +242,6 @@ const createStyles = (colors: ThemeColors) =>
     },
     countBadgeCorrect: {
       backgroundColor: colors.success,
-    },
-    countBadgeFull: {
-      backgroundColor: colors.danger,
     },
     countText: {
       ...TypeStyle.label,

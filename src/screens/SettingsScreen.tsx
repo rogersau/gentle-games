@@ -3,7 +3,13 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
-import { ColorMode, ThemeColors } from '../types';
+import {
+  CategoryMatchCategoryCount,
+  ColorMode,
+  NumberPicnicMode,
+  NumberPicnicStage,
+  ThemeColors,
+} from '../types';
 import { GAME_REGISTRY } from '../games/registry';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { LANGUAGE_OPTIONS } from '../types/i18n';
@@ -19,7 +25,13 @@ import {
 } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useLayout } from '../ui/useLayout';
-import { getGameSettings } from '../games/settings';
+import {
+  getGameSettings,
+  MemorySnapMismatchDuration,
+  MemorySnapPairCount,
+  MemorySnapPreviewMode,
+  stageToMaxQuantity,
+} from '../games/settings';
 import {
   GLITTER_PRESETS,
   GlitterColorCount,
@@ -36,6 +48,45 @@ export const SettingsScreen: React.FC = () => {
   const { contentWidth, isTablet } = useLayout();
   const { t } = useTranslation();
   const glitterSettings = getGameSettings(settings, 'glitter-fall');
+  const memorySettings = getGameSettings(settings, 'memory-snap');
+  const categorySettings = getGameSettings(settings, 'category-match');
+  const numberPicnicSettings = getGameSettings(settings, 'number-picnic');
+
+  const memoryPairOptions: { value: MemorySnapPairCount; label: string }[] = [
+    { value: 2, label: t('settings.memorySnap.pairs.two') },
+    { value: 3, label: t('settings.memorySnap.pairs.three') },
+    { value: 4, label: t('settings.memorySnap.pairs.four') },
+    { value: 6, label: t('settings.memorySnap.pairs.six') },
+    { value: 10, label: t('settings.memorySnap.pairs.ten') },
+    { value: 15, label: t('settings.memorySnap.pairs.fifteen') },
+  ];
+  const memoryPreviewOptions: { value: MemorySnapPreviewMode; label: string }[] = [
+    { value: 'none', label: t('settings.memorySnap.preview.none') },
+    { value: 'until-ready', label: t('settings.memorySnap.preview.untilReady') },
+    { value: '4-seconds', label: t('settings.memorySnap.preview.fourSeconds') },
+    { value: '8-seconds', label: t('settings.memorySnap.preview.eightSeconds') },
+  ];
+  const memoryMismatchOptions: { value: MemorySnapMismatchDuration; label: string }[] = [
+    { value: 1000, label: t('settings.memorySnap.mismatch.oneSecond') },
+    { value: 2000, label: t('settings.memorySnap.mismatch.twoSeconds') },
+    { value: 3000, label: t('settings.memorySnap.mismatch.threeSeconds') },
+  ];
+  const categoryCountOptions: { value: CategoryMatchCategoryCount; label: string }[] = [
+    { value: 2, label: t('settings.categoryMatch.categories.two') },
+    { value: 3, label: t('settings.categoryMatch.categories.three') },
+  ];
+  const numberPicnicStageOptions: { value: NumberPicnicStage; label: string }[] = [
+    { value: '1-3', label: t('settings.numberPicnic.stage.oneToThree') },
+    { value: '1-5', label: t('settings.numberPicnic.stage.oneToFive') },
+    { value: '6-10', label: t('settings.numberPicnic.stage.sixToTen') },
+  ];
+  const numberPicnicModeOptions: { value: NumberPicnicMode; label: string }[] = [
+    { value: 'make-amount', label: t('settings.numberPicnic.modes.makeAmount') },
+    { value: 'find-amount', label: t('settings.numberPicnic.modes.findAmount') },
+    { value: 'match-numeral', label: t('settings.numberPicnic.modes.matchNumeral') },
+    { value: 'more-fewer', label: t('settings.numberPicnic.modes.moreFewer') },
+    { value: 'add-one-more', label: t('settings.numberPicnic.modes.addOneMore') },
+  ];
 
   const glitterDensityOptions: { value: GlitterParticleDensity; label: string }[] = [
     { value: 'very-sparse', label: t('settings.glitterFall.density.verySparse') },
@@ -145,13 +196,97 @@ export const SettingsScreen: React.FC = () => {
           />
         </View>
 
-        {/* Card Preview */}
+        {/* Memory Snap */}
         <View style={styles.section}>
+          <SectionHeader title={t('settings.memorySnap.title')} />
+          <Text style={styles.controlLabel}>{t('settings.memorySnap.pairs.title')}</Text>
+          <SegmentedControl
+            options={memoryPairOptions}
+            value={memorySettings.pairCount}
+            onValueChange={(pairCount) => updateGameSettings('memory-snap', { pairCount })}
+            wrap
+          />
+          <Text style={styles.description}>{t('settings.memorySnap.pairs.description')}</Text>
+          <Text style={styles.controlLabel}>{t('settings.memorySnap.preview.title')}</Text>
+          <SegmentedControl
+            options={memoryPreviewOptions}
+            value={memorySettings.previewMode}
+            onValueChange={(previewMode) => updateGameSettings('memory-snap', { previewMode })}
+            wrap
+          />
+          <Text style={styles.description}>{t('settings.memorySnap.preview.description')}</Text>
+          <Text style={styles.controlLabel}>{t('settings.memorySnap.mismatch.title')}</Text>
+          <SegmentedControl
+            options={memoryMismatchOptions}
+            value={memorySettings.mismatchDuration}
+            onValueChange={(mismatchDuration) =>
+              updateGameSettings('memory-snap', { mismatchDuration })
+            }
+          />
+          <Text style={styles.description}>{t('settings.memorySnap.mismatch.description')}</Text>
           <SettingToggle
-            label={t('settings.cardPreview.label')}
-            description={t('settings.cardPreview.description')}
-            value={getGameSettings(settings, 'memory-snap').showPreview}
-            onValueChange={(showPreview) => updateGameSettings('memory-snap', { showPreview })}
+            label={t('settings.memorySnap.hint.label')}
+            description={t('settings.memorySnap.hint.description')}
+            value={memorySettings.hintEnabled}
+            onValueChange={(hintEnabled) => updateGameSettings('memory-snap', { hintEnabled })}
+          />
+        </View>
+
+        {/* Category Match */}
+        <View style={styles.section}>
+          <SectionHeader title={t('settings.categoryMatch.title')} />
+          <Text style={styles.controlLabel}>{t('settings.categoryMatch.categories.title')}</Text>
+          <SegmentedControl
+            options={categoryCountOptions}
+            value={categorySettings.categoryCount}
+            onValueChange={(categoryCount) =>
+              updateGameSettings('category-match', { categoryCount })
+            }
+          />
+          <Text style={styles.description}>
+            {t('settings.categoryMatch.categories.description')}
+          </Text>
+        </View>
+
+        {/* Number Picnic */}
+        <View style={styles.section}>
+          <SectionHeader title={t('settings.numberPicnic.title')} />
+          <Text style={styles.controlLabel}>{t('settings.numberPicnic.stage.title')}</Text>
+          <SegmentedControl
+            options={numberPicnicStageOptions}
+            value={numberPicnicSettings.stage}
+            onValueChange={(stage) =>
+              updateGameSettings('number-picnic', {
+                stage,
+                maxQuantity: stageToMaxQuantity(stage),
+                mode:
+                  stage === '6-10'
+                    ? numberPicnicSettings.mode
+                    : numberPicnicSettings.mode === 'add-one-more'
+                      ? 'make-amount'
+                      : numberPicnicSettings.mode,
+              })
+            }
+            wrap
+          />
+          <Text style={styles.description}>{t('settings.numberPicnic.stage.description')}</Text>
+          <Text style={styles.controlLabel}>{t('settings.numberPicnic.mode.title')}</Text>
+          <SegmentedControl
+            options={numberPicnicModeOptions.filter(
+              (option) => option.value !== 'add-one-more' || numberPicnicSettings.stage === '6-10',
+            )}
+            value={numberPicnicSettings.mode}
+            onValueChange={(mode) => updateGameSettings('number-picnic', { mode })}
+            wrap
+          />
+          <Text style={styles.description}>{t('settings.numberPicnic.mode.description')}</Text>
+          <SettingToggle
+            label={t('settings.numberPicnic.spokenCounting.label')}
+            description={t('settings.numberPicnic.spokenCounting.description')}
+            value={numberPicnicSettings.spokenCounting}
+            onValueChange={(spokenCounting) =>
+              updateGameSettings('number-picnic', { spokenCounting })
+            }
           />
         </View>
 

@@ -16,6 +16,7 @@ import {
   DEFAULT_GAME_SETTINGS,
   GameSettingsMap,
   SETTINGS_VERSION,
+  maxQuantityToStage,
   sanitizeGameSettings,
 } from '../games/settings';
 
@@ -311,9 +312,20 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await hydrationGate.promise;
       if (!mountedRef.current) return;
       const current = settingsRef.current.gameSettings ?? DEFAULT_GAME_SETTINGS;
+      const requestedSettings =
+        gameId === 'number-picnic' &&
+        typeof (newSettings as { maxQuantity?: unknown }).maxQuantity === 'number' &&
+        !('stage' in newSettings)
+          ? {
+              ...newSettings,
+              stage: maxQuantityToStage(
+                (newSettings as unknown as { maxQuantity: 3 | 5 | 8 | 10 }).maxQuantity,
+              ),
+            }
+          : newSettings;
       const gameSettings = sanitizeGameSettings({
         ...current,
-        [gameId]: { ...current[gameId], ...newSettings },
+        [gameId]: { ...current[gameId], ...requestedSettings },
       });
       await replaceAndPersist(sanitizeSettings({ ...settingsRef.current, gameSettings }));
     },

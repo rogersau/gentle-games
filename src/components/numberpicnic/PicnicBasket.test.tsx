@@ -1,39 +1,17 @@
 import React from 'react';
-import { Animated } from 'react-native';
-import { act, render, waitFor } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import { PicnicBasket } from './PicnicBasket';
-
-let mockSettings = {
-  animationsEnabled: true,
-  reducedMotionEnabled: false,
-};
-
-jest.mock('../../context/SettingsContext', () => ({
-  useSettings: () => ({
-    settings: mockSettings,
-  }),
-}));
 
 jest.mock('../../utils/theme', () => ({
   useThemeColors: () => ({
     colors: {
-      background: '#FFFEF7',
-      cardBack: '#E8E4E1',
-      cardFront: '#FFFFFF',
+      surface: '#FFFFFF',
+      border: '#E8E4E1',
+      primary: '#A8D8EA',
+      success: '#B8E6B8',
+      danger: '#E8A0A0',
       text: '#5A5A5A',
       textLight: '#8A8A8A',
-      primary: '#A8D8EA',
-      secondary: '#FFB6C1',
-      success: '#B8E6B8',
-      matched: '#D3D3D3',
-      surfaceGame: '#FFFFFF',
-      surface: '#FFFFFF',
-      surfaceElevated: '#FFFFFF',
-      border: '#E8E4E1',
-      borderSubtle: '#F0EDE9',
-      overlay: 'rgba(90, 90, 90, 0.4)',
-      accent: '#D4A9E6',
-      danger: '#E8A0A0',
     },
   }),
 }));
@@ -41,68 +19,33 @@ jest.mock('../../utils/theme', () => ({
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: Record<string, unknown>) =>
-      options ? `translated:${key}:${String(options.count ?? '')}` : `translated:${key}`,
+      options ? `${key}:${String(options.index ?? options.count ?? '')}` : key,
   }),
 }));
 
 describe('PicnicBasket', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers();
-    mockSettings = {
-      animationsEnabled: true,
-      reducedMotionEnabled: false,
-    };
-
-    jest.spyOn(Animated, 'timing').mockImplementation(
-      () =>
-        ({
-          start: (callback?: () => void) => callback?.(),
-          stop: jest.fn(),
-          reset: jest.fn(),
-        }) as any,
+  it('shows the exact count and exposes each placed item as a remove control', () => {
+    const onItemPress = jest.fn();
+    const { getByText, getByTestId } = render(
+      <PicnicBasket
+        items={['🍎', '🍎']}
+        itemIds={[3, 7]}
+        targetCount={3}
+        onPress={jest.fn()}
+        onItemPress={onItemPress}
+      />,
     );
 
-    jest.spyOn(Animated, 'parallel').mockImplementation(
-      (animations: any[]) =>
-        ({
-          start: (callback?: () => void) => {
-            animations.forEach((animation) => animation.start?.());
-            callback?.();
-          },
-          stop: jest.fn(),
-        }) as any,
-    );
+    expect(getByText('2/3')).toBeTruthy();
+    fireEvent.press(getByTestId('picnic-placed-item-7'));
+    expect(onItemPress).toHaveBeenCalledWith(7);
   });
 
-  afterEach(() => {
-    jest.useRealTimers();
-    jest.restoreAllMocks();
-  });
-
-  it('shows empty state text and current count', () => {
-    const { getByText } = render(<PicnicBasket items={[]} targetCount={3} onPress={jest.fn()} />);
-
-    expect(getByText('translated:games.numberPicnic.emptyBasket')).toBeTruthy();
-    expect(getByText('0/3')).toBeTruthy();
-  });
-
-  it('shows overflow indicator when more than 12 items are present', () => {
-    const items = Array.from({ length: 14 }, () => '🍎');
+  it('does not auto-advance after completion', () => {
+    const onAnimationComplete = jest.fn();
     const { getByText } = render(
-      <PicnicBasket items={items} targetCount={14} onPress={jest.fn()} />,
-    );
-
-    expect(getByText('translated:games.numberPicnic.moreItems:2')).toBeTruthy();
-    expect(getByText('14/14')).toBeTruthy();
-  });
-
-  it('triggers completion callback after success delay', async () => {
-    const onAnimationComplete = jest.fn();
-
-    render(
       <PicnicBasket
-        items={['🍓']}
+        items={['🍎']}
         targetCount={1}
         onPress={jest.fn()}
         isSuccess
@@ -110,35 +53,25 @@ describe('PicnicBasket', () => {
       />,
     );
 
-    act(() => {
-      jest.advanceTimersByTime(800);
-    });
-
-    await waitFor(() => {
-      expect(onAnimationComplete).toHaveBeenCalledTimes(1);
-    });
+    expect(getByText('1/1')).toBeTruthy();
+    expect(onAnimationComplete).not.toHaveBeenCalled();
   });
 
-  it('supports reduced-motion mode without animated timing dependency', async () => {
-    mockSettings.animationsEnabled = false;
-    const onAnimationComplete = jest.fn();
-
-    render(
+  it('does not present prefilled items as remove controls', () => {
+    const onItemPress = jest.fn();
+    const { getByTestId } = render(
       <PicnicBasket
-        items={['🍌']}
-        targetCount={1}
+        items={['🍎', '🍎']}
+        itemIds={[0, 1]}
+        removableItemIds={[1]}
+        targetCount={3}
         onPress={jest.fn()}
-        isSuccess
-        onAnimationComplete={onAnimationComplete}
+        onItemPress={onItemPress}
       />,
     );
 
-    act(() => {
-      jest.advanceTimersByTime(800);
-    });
-
-    await waitFor(() => {
-      expect(onAnimationComplete).toHaveBeenCalledTimes(1);
-    });
+    expect(getByTestId('picnic-placed-item-0').props.accessibilityRole).toBeUndefined();
+    fireEvent.press(getByTestId('picnic-placed-item-1'));
+    expect(onItemPress).toHaveBeenCalledWith(1);
   });
 });

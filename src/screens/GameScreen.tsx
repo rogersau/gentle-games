@@ -18,7 +18,7 @@ export const GameScreen: React.FC = () => {
   const { t } = useTranslation();
   const { celebrate } = useMochi();
   const { settings } = useSettings();
-  const { showPressureMetrics } = getGamePresentationPolicy(settings);
+  const { showPressureMetrics, showMilestoneCelebrations } = getGamePresentationPolicy(settings);
 
   const handleGameComplete = (_time: number) => {
     celebrate();
@@ -33,10 +33,10 @@ export const GameScreen: React.FC = () => {
       <AppHeader title={t('games.memorySnap.title')} onBack={handleBackPress} />
       <View style={styles.content}>
         <GameBoard
-          onGameComplete={handleGameComplete}
+          onGameComplete={showMilestoneCelebrations ? handleGameComplete : () => undefined}
           onBackPress={handleBackPress}
           bottomInset={insets.bottom}
-          onPositiveEvent={celebrate}
+          onPositiveEvent={showMilestoneCelebrations ? celebrate : undefined}
           renderStats={
             showPressureMetrics
               ? ({ time, moves }) => (
