@@ -225,7 +225,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     const [selectedColor, setSelectedColor] = useState('#FF6B6B');
     const [tool, setTool] = useState<Tool>('pen');
     const [shapeType, setShapeType] = useState<ShapeType>('circle');
-    const [shapeSize, setShapeSize] = useState(50);
+    const [shapeSize, setShapeSize] = useState(60);
     const [symmetryMode, setSymmetryMode] = useState<SymmetryMode>('none');
     const [showClearConfirm, setShowClearConfirm] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
@@ -657,7 +657,8 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
         <View style={[styles.toolbar, { paddingBottom: Math.max(8, bottomInset) }]}>
           <ScrollView
             horizontal
-            showsHorizontalScrollIndicator={false}
+            style={styles.toolbarScroll}
+            showsHorizontalScrollIndicator
             contentContainerStyle={styles.colorPalette}
           >
             {allColors.map((color) => {
@@ -695,7 +696,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             </TouchableOpacity>
           </ScrollView>
 
-          <View style={styles.toolButtons}>
+          <ScrollView
+            horizontal
+            style={styles.toolbarScroll}
+            showsHorizontalScrollIndicator
+            contentContainerStyle={styles.toolButtons}
+          >
             <TouchableOpacity
               style={[
                 styles.toolButton,
@@ -781,7 +787,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             >
               <Text style={styles.toolButtonText}>🗑️</Text>
             </TouchableOpacity>
-          </View>
+          </ScrollView>
         </View>
         <Text
           accessibilityRole='alert'
@@ -880,33 +886,45 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
         >
           <View style={styles.shapeGrid}>
             <TouchableOpacity
+              testID='shape-option-circle'
               style={[
                 styles.shapeButton,
                 shapeType === 'circle' ? styles.shapeButtonActive : undefined,
               ]}
               onPress={() => handleShapeSelect('circle')}
+              accessibilityRole='button'
+              accessibilityLabel={t('games.drawing.shape.circle')}
+              accessibilityState={{ selected: shapeType === 'circle' }}
             >
               <Text style={styles.shapeIcon}>🔴</Text>
               <Text style={styles.shapeLabel}>{t('games.drawing.shape.circle')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
+              testID='shape-option-square'
               style={[
                 styles.shapeButton,
                 shapeType === 'square' ? styles.shapeButtonActive : undefined,
               ]}
               onPress={() => handleShapeSelect('square')}
+              accessibilityRole='button'
+              accessibilityLabel={t('games.drawing.shape.square')}
+              accessibilityState={{ selected: shapeType === 'square' }}
             >
               <Text style={styles.shapeIcon}>🟦</Text>
               <Text style={styles.shapeLabel}>{t('games.drawing.shape.square')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
+              testID='shape-option-triangle'
               style={[
                 styles.shapeButton,
                 shapeType === 'triangle' ? styles.shapeButtonActive : undefined,
               ]}
               onPress={() => handleShapeSelect('triangle')}
+              accessibilityRole='button'
+              accessibilityLabel={t('games.drawing.shape.triangle')}
+              accessibilityState={{ selected: shapeType === 'triangle' }}
             >
               <Text style={styles.shapeIcon}>🔺</Text>
               <Text style={styles.shapeLabel}>{t('games.drawing.shape.triangle')}</Text>
@@ -915,13 +933,43 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
           <Text style={styles.sizeLabel}>{t('games.drawing.size', { size: shapeSize })}</Text>
           <View style={styles.sizeSlider}>
-            <TouchableOpacity style={styles.sizeControlButton} onPress={() => setShapeSize(30)}>
+            <TouchableOpacity
+              testID='shape-size-small'
+              style={[
+                styles.sizeControlButton,
+                shapeSize === 30 ? styles.sizeControlButtonActive : undefined,
+              ]}
+              onPress={() => setShapeSize(30)}
+              accessibilityRole='button'
+              accessibilityLabel={t('games.drawing.sizeSmall')}
+              accessibilityState={{ selected: shapeSize === 30 }}
+            >
               <Text style={styles.sizeControlText}>{t('games.drawing.sizeSmall')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.sizeControlButton} onPress={() => setShapeSize(60)}>
+            <TouchableOpacity
+              testID='shape-size-medium'
+              style={[
+                styles.sizeControlButton,
+                shapeSize === 60 ? styles.sizeControlButtonActive : undefined,
+              ]}
+              onPress={() => setShapeSize(60)}
+              accessibilityRole='button'
+              accessibilityLabel={t('games.drawing.sizeMedium')}
+              accessibilityState={{ selected: shapeSize === 60 }}
+            >
               <Text style={styles.sizeControlText}>{t('games.drawing.sizeMedium')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.sizeControlButton} onPress={() => setShapeSize(100)}>
+            <TouchableOpacity
+              testID='shape-size-large'
+              style={[
+                styles.sizeControlButton,
+                shapeSize === 100 ? styles.sizeControlButtonActive : undefined,
+              ]}
+              onPress={() => setShapeSize(100)}
+              accessibilityRole='button'
+              accessibilityLabel={t('games.drawing.sizeLarge')}
+              accessibilityState={{ selected: shapeSize === 100 }}
+            >
               <Text style={styles.sizeControlText}>{t('games.drawing.sizeLarge')}</Text>
             </TouchableOpacity>
           </View>
@@ -985,10 +1033,14 @@ const styles = StyleSheet.create({
     gap: Space.sm,
     alignItems: 'center',
   },
+  toolbarScroll: {
+    width: '100%',
+    flexGrow: 0,
+  },
   colorButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 2,
     borderColor: '#E8E4E1',
   },
@@ -1011,10 +1063,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     marginTop: 8,
+    paddingHorizontal: Space.xs,
+    alignItems: 'center',
   },
   toolButton: {
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 14,
+    minWidth: 48,
+    minHeight: 48,
+    paddingHorizontal: 11,
     paddingVertical: 10,
     borderRadius: Radius.full,
     borderWidth: 2,
@@ -1113,9 +1169,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   gridColorButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 2,
     borderColor: '#E8E4E1',
   },
@@ -1153,25 +1209,28 @@ const styles = StyleSheet.create({
   },
   shapeGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 16,
+    gap: 8,
     marginBottom: 24,
   },
   shapeButton: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
+    padding: 12,
     borderRadius: 16,
     borderWidth: 2,
     borderColor: '#E8E4E1',
     alignItems: 'center',
-    minWidth: 90,
+    minWidth: 80,
+    minHeight: 104,
+    justifyContent: 'center',
   },
   shapeButtonActive: {
     backgroundColor: '#A8D8EA',
     borderColor: '#A8D8EA',
   },
   shapeIcon: {
-    fontSize: 40,
+    fontSize: 36,
     marginBottom: 8,
   },
   shapeLabel: {
@@ -1194,11 +1253,19 @@ const styles = StyleSheet.create({
   },
   sizeControlButton: {
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
+    minHeight: 48,
+    minWidth: 72,
+    paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 2,
     borderColor: '#E8E4E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sizeControlButtonActive: {
+    backgroundColor: '#A8D8EA',
+    borderColor: '#A8D8EA',
   },
   accessibilityAnnouncement: {
     position: 'absolute',

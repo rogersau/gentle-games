@@ -73,7 +73,14 @@ export const NumberPicnicScreen: React.FC = () => {
     spokenCounting: picnicSettings.spokenCounting,
   });
 
-  const itemName = translate(t, `games.numberPicnic.items.${prompt.itemName}`);
+  const getItemName = (count: number) =>
+    translate(
+      t,
+      `games.numberPicnic.${count === 1 ? 'itemsSingular' : 'items'}.${prompt.itemName}`,
+    );
+  const getItemCountWord = (count: number) =>
+    t(`games.numberPicnic.itemCount.${count === 1 ? 'one' : 'other'}`);
+  const targetItemName = getItemName(prompt.targetCount);
   const isPlacementMode = mode === 'make-amount' || mode === 'add-one-more';
   const isChoiceMode = !isPlacementMode;
   const beginDrag = () => {
@@ -86,12 +93,12 @@ export const NumberPicnicScreen: React.FC = () => {
       case 'find-amount':
         return translate(t, 'games.numberPicnic.modes.findAmount.instruction', {
           count: prompt.targetCount,
-          item: itemName,
+          item: targetItemName,
         });
       case 'match-numeral':
         return translate(t, 'games.numberPicnic.modes.matchNumeral.instruction', {
           count: prompt.targetCount,
-          item: itemName,
+          item: targetItemName,
         });
       case 'more-fewer':
         return translate(t, 'games.numberPicnic.modes.moreFewer.instruction', {
@@ -101,12 +108,12 @@ export const NumberPicnicScreen: React.FC = () => {
         return translate(t, 'games.numberPicnic.modes.addOneMore.instruction', {
           count: prompt.targetCount - 1,
           target: prompt.targetCount,
-          item: itemName,
+          item: getItemName(prompt.targetCount - 1),
         });
       default:
         return translate(t, 'games.numberPicnic.modes.makeAmount.instruction', {
           count: prompt.targetCount,
-          item: itemName,
+          item: targetItemName,
         });
     }
   })();
@@ -118,7 +125,7 @@ export const NumberPicnicScreen: React.FC = () => {
         })
       : translate(t, 'games.numberPicnic.guidance.neutral', {
           target: prompt.targetCount,
-          item: itemName,
+          item: targetItemName,
         });
   const hint =
     mode === 'more-fewer'
@@ -148,6 +155,7 @@ export const NumberPicnicScreen: React.FC = () => {
         accessibilityLabel={translate(t, 'games.numberPicnic.groupAccessibilityLabel', {
           group: translate(t, `games.numberPicnic.groups.${modelGroup.id}`),
           count: modelGroup.quantity,
+          itemWord: getItemCountWord(modelGroup.quantity),
         })}
         testID='number-picnic-model'
       />
@@ -157,6 +165,7 @@ export const NumberPicnicScreen: React.FC = () => {
       representation={prompt.representation}
       accessibilityLabel={translate(t, 'games.numberPicnic.representation.accessibilityLabel', {
         count: prompt.targetCount,
+        itemWord: getItemCountWord(prompt.targetCount),
       })}
       testID='number-picnic-model'
     />
@@ -173,6 +182,7 @@ export const NumberPicnicScreen: React.FC = () => {
         accessibilityLabel={translate(t, 'games.numberPicnic.groupAccessibilityLabel', {
           group: translate(t, `games.numberPicnic.groups.${group.id}`),
           count: group.quantity,
+          itemWord: getItemCountWord(group.quantity),
         })}
         testID={`number-picnic-group-${group.id}`}
       />
@@ -214,7 +224,10 @@ export const NumberPicnicScreen: React.FC = () => {
                   accessibilityLabel={translate(
                     t,
                     'games.numberPicnic.representation.quantityAccessibilityLabel',
-                    { count: prompt.targetCount },
+                    {
+                      count: prompt.targetCount,
+                      itemWord: getItemCountWord(prompt.targetCount),
+                    },
                   )}
                   showNumeral={false}
                   testID='number-picnic-match-quantity'
@@ -231,6 +244,7 @@ export const NumberPicnicScreen: React.FC = () => {
                   'games.numberPicnic.representation.accessibilityLabel',
                   {
                     count: prompt.targetCount,
+                    itemWord: getItemCountWord(prompt.targetCount),
                   },
                 )}
                 testID='number-picnic-target-representation'
@@ -259,6 +273,7 @@ export const NumberPicnicScreen: React.FC = () => {
                           })
                         : translate(t, 'games.numberPicnic.choiceAccessibilityLabel', {
                             count: choice.quantity,
+                            itemWord: getItemCountWord(choice.quantity),
                           })
                     }
                     accessibilityHint={t('games.numberPicnic.choiceHint')}
@@ -314,7 +329,7 @@ export const NumberPicnicScreen: React.FC = () => {
                 style={styles.basket}
                 accessibilityLabel={t('games.numberPicnic.basketAccessibilityLabel', {
                   count: basketCount,
-                  item: itemName,
+                  item: getItemName(basketCount),
                 })}
                 accessibilityHint={t('games.numberPicnic.basketAccessibilityHint')}
                 testID='picnic-basket'

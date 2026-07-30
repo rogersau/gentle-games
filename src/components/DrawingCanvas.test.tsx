@@ -117,6 +117,21 @@ describe('DrawingCanvas', () => {
     expect(presetButtons[0].props.accessibilityState.selected).toBe(true);
     expect(presetButtons[0].props.hitSlop).toBe(4);
   });
+  it('exposes shape and size choices as labeled buttons with a clear selection', () => {
+    const screen = render(<DrawingCanvas width={320} height={280} initialHistory={[]} />);
+
+    fireEvent.press(screen.getByLabelText('games.drawing.shapeTool, games.drawing.shape.circle'));
+
+    const circle = screen.getByTestId('shape-option-circle');
+    const triangle = screen.getByTestId('shape-option-triangle');
+    const medium = screen.getByTestId('shape-size-medium');
+
+    expect(circle.props.accessibilityRole).toBe('button');
+    expect(circle.props.accessibilityState).toEqual({ selected: true });
+    expect(triangle.props.accessibilityLabel).toBe('games.drawing.shape.triangle');
+    expect(medium.props.accessibilityRole).toBe('button');
+    expect(medium.props.accessibilityState).toEqual({ selected: true });
+  });
   it('applies a custom canvas background color', () => {
     const initialHistory: HistoryEntry[] = [];
     const { getByTestId } = render(

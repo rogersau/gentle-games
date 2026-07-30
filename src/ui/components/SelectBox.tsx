@@ -77,7 +77,8 @@ export const SelectBox = <T extends string | number>({
                     style={[styles.option, isSelected && styles.optionSelected]}
                     onPress={() => handleSelect(option.value)}
                     accessibilityRole='radio'
-                    accessibilityState={{ selected: isSelected }}
+                    accessibilityState={{ checked: isSelected }}
+                    aria-checked={isSelected}
                     accessibilityLabel={option.label}
                   >
                     <Text

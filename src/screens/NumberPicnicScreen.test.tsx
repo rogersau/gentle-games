@@ -130,15 +130,10 @@ jest.mock('../components/numberpicnic', () => {
       showNumeral = true,
       testID,
     }: {
-      representation: { dots: string[]; numeral: number };
+      representation: { numeral: number };
       showNumeral?: boolean;
       testID?: string;
-    }) => (
-      <View testID={testID}>
-        {showNumeral && <Text>{representation.numeral}</Text>}
-        <Text>{representation.dots.join(' ')}</Text>
-      </View>
-    ),
+    }) => <View testID={testID}>{showNumeral && <Text>{representation.numeral}</Text>}</View>,
     NumberPicnicChoice: ({
       choice,
       display,
@@ -253,11 +248,11 @@ describe('NumberPicnicScreen', () => {
     expect(getByText('translated basket hint')).toBeTruthy();
   });
 
-  it('shows visual dots representing the target count', () => {
-    const { getByText } = render(<NumberPicnicScreen />);
+  it('shows one target representation for the target count', () => {
+    const { getByTestId, queryByText } = render(<NumberPicnicScreen />);
 
-    // Visual dots should be present
-    expect(getByText(/🟢/)).toBeTruthy();
+    expect(getByTestId('number-picnic-target-representation')).toBeTruthy();
+    expect(queryByText(/🟢/)).toBeNull();
   });
 
   it('renders a guided choice mode without requiring drag input', () => {

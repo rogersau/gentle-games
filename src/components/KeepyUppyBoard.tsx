@@ -205,6 +205,8 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
                   y: event.nativeEvent.pageY,
                   startedAt: Date.now(),
                 };
+              }}
+              onPress={(event) => {
                 handleBalloonPress(
                   balloon,
                   event.nativeEvent.locationX,

@@ -52,7 +52,13 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         <View style={styles.placeholder} />
       )}
 
-      <Text style={styles.title} numberOfLines={1} accessibilityRole='header'>
+      <Text
+        style={styles.title}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.75}
+        accessibilityRole='header'
+      >
         {title}
       </Text>
 
@@ -78,7 +84,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       backgroundColor: colors.background,
     },
     backButton: {
-      minWidth: 80,
+      minWidth: 72,
       minHeight: HitTarget.min,
       borderRadius: Radius.full,
       borderWidth: 2,
@@ -94,16 +100,17 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     },
     title: {
       ...TypeStyle.h3,
+      fontSize: 20,
       color: colors.text,
       flex: 1,
       textAlign: 'center',
-      marginHorizontal: Space.sm,
+      marginHorizontal: Space.xs,
     },
     placeholder: {
-      minWidth: 80,
+      minWidth: 72,
     },
     rightSlot: {
-      minWidth: 80,
+      minWidth: 72,
       alignItems: 'flex-end',
     },
   });

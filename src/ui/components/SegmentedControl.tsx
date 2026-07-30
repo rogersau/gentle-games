@@ -38,7 +38,8 @@ export const SegmentedControl = <T extends string | number>({
             onPress={() => onValueChange(option.value)}
             accessibilityLabel={option.label}
             accessibilityRole='radio'
-            accessibilityState={{ selected: isActive }}
+            accessibilityState={{ checked: isActive }}
+            aria-checked={isActive}
           >
             <Text style={[styles.label, isActive && styles.labelActive]}>{option.label}</Text>
           </TouchableOpacity>

@@ -33,6 +33,7 @@ interface AppButtonProps {
   accessibilityHint?: string;
   accessibilityState?: AccessibilityState;
   accessibilityRole?: AccessibilityRole;
+  'aria-checked'?: boolean | 'mixed';
   testID?: string;
 }
 
@@ -49,6 +50,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
   accessibilityHint,
   accessibilityState,
   accessibilityRole = 'button',
+  'aria-checked': ariaChecked,
   testID,
 }) => {
   const { colors, resolvedMode } = useThemeColors();
@@ -73,6 +75,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
         accessibilityRole={accessibilityRole}
         accessibilityHint={accessibilityHint}
         accessibilityState={{ ...accessibilityState, disabled }}
+        aria-checked={ariaChecked}
         testID={testID}
       >
         <Text style={[styles.label, textStyle]}>{label}</Text>

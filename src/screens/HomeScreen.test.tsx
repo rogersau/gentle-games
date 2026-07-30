@@ -205,6 +205,11 @@ describe('HomeScreen', () => {
     expect(memorySnapCard).toBeTruthy();
     fireEvent.press(memorySnapCard!);
     expect(screen.getByText(/Select difficulty/)).toBeTruthy();
+    expect(
+      screen
+        .getAllByRole('button')
+        .filter((el: any) => el.props.accessibilityLabel?.includes('difficulty')),
+    ).toHaveLength(3);
 
     // Find the Hard difficulty button
     const hardButton = screen

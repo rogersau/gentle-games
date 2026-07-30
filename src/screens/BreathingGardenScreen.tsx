@@ -244,15 +244,17 @@ export const BreathingGardenScreen: React.FC = () => {
             showCycleCount={false}
           />
           {settings.showMochiInGames ? (
-            <Mochi
-              size='lg'
-              breathingPhase={phase}
-              breathingProgress={progress}
-              animate={motionEnabled}
-              color={colorSchemes[colorIndex].primary}
-              highlightColor={colorSchemes[colorIndex].accent}
-              shadowColor={colorSchemes[colorIndex].accent}
-            />
+            <View style={styles.breathingMochi} pointerEvents='none'>
+              <Mochi
+                size='md'
+                breathingPhase={phase}
+                breathingProgress={progress}
+                animate={motionEnabled}
+                color={colorSchemes[colorIndex].primary}
+                highlightColor={colorSchemes[colorIndex].accent}
+                shadowColor={colorSchemes[colorIndex].accent}
+              />
+            </View>
           ) : null}
         </View>
         {!motionEnabled && visualCue ? (
@@ -387,7 +389,9 @@ const createStyles = (colors: ThemeColors) =>
     ballContainer: {
       alignItems: 'center',
       justifyContent: 'center',
+      position: 'relative',
     },
+    breathingMochi: { position: 'absolute', right: 0, bottom: 0 },
     hiddenCue: { opacity: 0, height: 1, overflow: 'hidden' },
     controls: {
       width: '100%',

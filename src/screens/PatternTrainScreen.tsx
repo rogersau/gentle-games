@@ -214,16 +214,6 @@ export const PatternTrainScreen: React.FC = () => {
       </Text>
     </View>
   ) : null;
-  const visiblePattern = pattern
-    ? pattern.carriages
-        .map((carriage) => (carriage.isMissing ? '?' : carriage.emoji))
-        .reduce<string[]>((groups, item, index) => {
-          const groupIndex = Math.floor(index / pattern.repeatUnit.length);
-          groups[groupIndex] = groups[groupIndex] ? `${groups[groupIndex]} ${item}` : item;
-          return groups;
-        }, [])
-        .join(' | ')
-    : '';
   const trainScale = pattern
     ? Math.min(1, (windowWidth - Space.xl * 2) / (64 + pattern.carriages.length * 56))
     : 1;
@@ -255,7 +245,6 @@ export const PatternTrainScreen: React.FC = () => {
                   rule: ruleLabel,
                 })}
               </Text>
-              <Text style={styles.patternSequence}>{visiblePattern}</Text>
               <View
                 ref={trainZoneRef}
                 style={styles.trainZone}
@@ -396,7 +385,7 @@ export const PatternTrainScreen: React.FC = () => {
         showClose
         closeLabel={t('common.cancel')}
       >
-        <Text style={styles.modalSubtitle}>{t('difficulty.title')}</Text>
+        <Text style={styles.modalSubtitle}>{t('games.patternTrain.chooseDifficulty')}</Text>
         <View style={styles.optionsList}>
           {difficultyOptions.map(({ value, label }) => (
             <AppButton
@@ -435,12 +424,6 @@ const createStyles = (colors: ThemeColors) =>
     patternCard: { width: '100%', alignItems: 'center', marginVertical: Space.sm },
     patternRule: { ...TypeStyle.label, color: colors.text, marginBottom: Space.xs },
     repeatUnit: { ...TypeStyle.bodySm, color: colors.text, textAlign: 'center' },
-    patternSequence: {
-      ...TypeStyle.h4,
-      color: colors.text,
-      textAlign: 'center',
-      marginTop: Space.sm,
-    },
     trainZone: {
       width: '100%',
       minHeight: 104,

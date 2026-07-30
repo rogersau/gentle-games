@@ -19,12 +19,14 @@ describe('NumberPicnicChoice', () => {
         label='Group showing 4 items'
         accessibilityHint='Choose this group'
         onPress={jest.fn()}
+        testID='quantity-choice'
       />,
     );
 
     expect(screen.queryByText('Group showing 4 items')).toBeNull();
     expect(screen.queryByText('4')).toBeNull();
-    expect(screen.getByText('🟢 🟢 🟢 🟢')).toBeTruthy();
+    expect(screen.getByTestId('quantity-choice-representation')).toBeTruthy();
+    expect(screen.queryByText(/🟢/)).toBeNull();
   });
 
   it('shows only the numeral for a numeral-matching choice', () => {

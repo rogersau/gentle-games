@@ -137,10 +137,8 @@ describe('GlitterScreen', () => {
   it('exposes presets as selectable radio controls', () => {
     const screen = render(<GlitterScreen />);
 
-    expect(
-      screen.getByRole('radio', { name: 'games.glitterFall.preset.settle' }).props
-        .accessibilityState.selected,
-    ).toBe(true);
+    const settle = screen.getByRole('radio', { name: 'games.glitterFall.preset.settle' });
+    expect(settle.props.accessibilityState.checked).toBe(true);
   });
 
   it('does not prompt after a long period without interaction', () => {

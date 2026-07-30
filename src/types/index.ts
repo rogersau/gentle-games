@@ -92,7 +92,6 @@ export interface NumberPicnicRepresentation {
   numeral: number;
   frameCapacity: 5 | 10;
   filledSlots: number[];
-  dots: string[];
 }
 
 export interface NumberPicnicChoice {
@@ -112,7 +111,6 @@ export interface NumberPicnicPrompt {
   itemEmoji: string;
   itemName: string;
   targetCount: number;
-  visualDots: string[];
   stage: NumberPicnicStage;
   mode: NumberPicnicMode;
   representation: NumberPicnicRepresentation;

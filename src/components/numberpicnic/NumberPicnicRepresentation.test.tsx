@@ -4,8 +4,25 @@ import { render } from '@testing-library/react-native';
 import { NumberPicnicRepresentation } from './NumberPicnicRepresentation';
 import { createNumberPicnicRepresentation } from '../../utils/numberPicnicLogic';
 
+jest.mock('react-i18next', () => {
+  const actual = jest.requireActual('react-i18next');
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (key: string, options?: Record<string, unknown>) => {
+        if (key.endsWith('spaceCount.one')) return 'space';
+        if (key.endsWith('spaceCount.other')) return 'spaces';
+        if (key.endsWith('frameAccessibilityLabel')) {
+          return `${String(options?.capacity)}-frame with ${String(options?.count)} filled ${String(options?.spaceWord)}`;
+        }
+        return key;
+      },
+    }),
+  };
+});
+
 describe('NumberPicnicRepresentation', () => {
-  it('exposes a frame, numeral, dots, and an accessible quantity label', () => {
+  it('shows the quantity once in the frame without a duplicate dot row', () => {
     const representation = createNumberPicnicRepresentation(7);
     const screen = render(
       <NumberPicnicRepresentation
@@ -17,8 +34,22 @@ describe('NumberPicnicRepresentation', () => {
 
     expect(screen.getByTestId('representation')).toBeTruthy();
     expect(screen.getByText('7')).toBeTruthy();
-    expect(screen.getByText('🟢 🟢 🟢 🟢 🟢 🟢 🟢')).toBeTruthy();
+    expect(screen.queryByText('🟢 🟢 🟢 🟢 🟢 🟢 🟢')).toBeNull();
     expect(screen.getAllByTestId(/representation-cell-/)).toHaveLength(10);
+  });
+
+  it('uses singular wording for a frame with one filled space', () => {
+    const screen = render(
+      <NumberPicnicRepresentation
+        representation={createNumberPicnicRepresentation(1)}
+        accessibilityLabel='1 item shown'
+        testID='single-representation'
+      />,
+    );
+
+    expect(screen.getByTestId('single-representation').props.accessibilityLabel).toContain(
+      '1 filled space',
+    );
   });
 
   it('keeps a ten-frame narrow enough for compact two-column cards', () => {

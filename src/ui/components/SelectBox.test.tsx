@@ -95,7 +95,7 @@ describe('SelectBox', () => {
   });
 
   it('shows checkmark for selected option', async () => {
-    const { getByText } = render(
+    const { getByText, getByRole } = render(
       <SelectBox options={mockOptions} value='option1' onValueChange={mockOnValueChange} />,
     );
 
@@ -105,6 +105,8 @@ describe('SelectBox', () => {
       // Should have checkmark next to option1
       const option1Element = getByText('Option 1');
       expect(option1Element).toBeTruthy();
+      const selected = getByRole('radio', { name: 'Option 1' });
+      expect(selected.props.accessibilityState.checked).toBe(true);
     });
   });
 

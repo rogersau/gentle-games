@@ -84,4 +84,18 @@ describe('patternTrainLogic', () => {
     ).toBe(false);
     expect(isPatternTrainChoiceCorrect(round, round.answer)).toBe(true);
   });
+
+  it('keeps the hidden carriage, answer, and offered choices aligned across generated rounds', () => {
+    for (const difficulty of ['easy', 'medium', 'hard'] as const) {
+      for (const sample of [0, 0.1, 0.25, 0.5, 0.75, 0.999999]) {
+        const pattern = generateTrainPattern(difficulty, () => sample);
+        const missing = pattern.carriages.filter(({ isMissing }) => isMissing);
+
+        expect(missing).toHaveLength(1);
+        expect(missing[0].emoji).toBe(pattern.answer);
+        expect(pattern.carriages[pattern.missingIndex]).toEqual(missing[0]);
+        expect(pattern.choices.filter((choice) => choice === pattern.answer)).toHaveLength(1);
+      }
+    }
+  });
 });
