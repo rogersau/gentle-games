@@ -1,282 +1,233 @@
-# Gentle Games
+<p align="center">
+  <img src="assets/pwa/icon-192x192.png" width="144" alt="Gentle Games app icon" />
+</p>
 
-A calm, sensory-friendly mobile application designed for children with sensory sensitivities, particularly those with autism spectrum disorder (ASD). Built with accessibility and inclusion at its core.
+<h1 align="center">Gentle Games</h1>
 
-## Mission
+<p align="center"><strong>Calm play, without pressure.</strong></p>
 
-To provide a safe, predictable, and stress-free digital space where children can play, create, and explore at their own pace. Every interaction is designed with sensory needs in mind—no ads, no time pressure, no overwhelming stimuli, and no hidden paywalls.
+<p align="center">
+  A free and open-source collection of sensory-considerate games for children who prefer gentle, predictable digital experiences.
+</p>
 
-## Core Principles
+<p align="center">
+  <a href="https://rogersau.github.io/gentle-games/"><strong>Play in your browser</strong></a>
+  ·
+  <a href="https://rogersau.github.io/gentle-games/docs/support.html">Get support</a>
+  ·
+  <a href="https://rogersau.github.io/gentle-games/docs/privacy-policy.html">Privacy</a>
+</p>
 
-- **Sensory-Friendly**: Soft color palettes, optional audio, smooth animations, and zero flashing lights or jarring visuals
-- **Predictable & Calm**: Consistent UI patterns, clear navigation, and gameplay that never rushes the player
-- **Fully Accessible**: Light/dark mode support, animation toggles, sound controls, large touch targets, and internationalization-ready design
-- **Offline-First**: Works without an internet connection so play is always available
-- **Truly Free**: No ads, no in-app purchases, no subscriptions—just gentle games
+<p align="center">
+  <strong>No ads</strong> · <strong>No purchases</strong> · <strong>No accounts</strong> · <strong>No time pressure</strong>
+</p>
 
-## What You'll Find
+> Gentle Games was created especially for children with sensory sensitivities, including autistic children. It is a play app—not a therapy, treatment, or assessment tool.
 
-The app offers a collection of calm, creative activities including memory games, creative drawing tools, sensory experiences, and simple interactive toys. Each activity is designed to be:
+## A quieter kind of screen time
 
-- Non-competitive and pressure-free
-- Adjustable to individual comfort levels
-- Immediately accessible without tutorials or gates
-- Safe for independent play
+Gentle Games gives children a place to play, create, and explore at their own pace. There are no streaks to maintain, advertisements to dismiss, competitive leaderboards, or surprise interruptions.
 
-## Who It's For
+Children and caregivers can adjust sound, motion, appearance, and other comfort settings. Activities use clear language, large touch targets, predictable interactions, and gentle feedback. A child can pause, restart, or leave whenever they choose.
 
-- Children ages 4-10 with sensory processing differences
-- Parents and caregivers seeking calm, appropriate screen time
-- Therapists and educators supporting neurodivergent children
-- Anyone who benefits from gentle, predictable digital experiences
+## Explore the games
 
-## Tech Stack
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <img src="src/assets/game-icons/memory-snap.png" width="112" alt="Pastel puzzle pieces for Memory Snap" /><br />
+      <strong>Memory Snap</strong><br />
+      Match friendly pictures at a comfortable pace.
+    </td>
+    <td align="center" width="25%">
+      <img src="src/assets/game-icons/drawing.png" width="112" alt="Pastel paint palette for Drawing Pad" /><br />
+      <strong>Drawing Pad</strong><br />
+      Draw, make shapes, undo, and continue later.
+    </td>
+    <td align="center" width="25%">
+      <img src="src/assets/game-icons/glitter-fall.png" width="112" alt="Pastel sparkle globe for Glitter Fall" /><br />
+      <strong>Glitter Fall</strong><br />
+      Add, move, watch, and settle soft sparkles.
+    </td>
+    <td align="center" width="25%">
+      <img src="src/assets/game-icons/bubble-pop.png" width="112" alt="Soft pastel bubbles for Bubble Pop" /><br />
+      <strong>Bubble Pop</strong><br />
+      Pop moving bubbles or use stationary buttons.
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="25%">
+      <img src="src/assets/game-icons/category-match.png" width="112" alt="Pastel picture cards for Category Match" /><br />
+      <strong>Category Match</strong><br />
+      Sort familiar pictures using tap or drag.
+    </td>
+    <td align="center" width="25%">
+      <img src="src/assets/game-icons/keepy-uppy.png" width="112" alt="Pastel balloon for Keepy Uppy" /><br />
+      <strong>Keepy Uppy</strong><br />
+      Tap to keep one or more balloons floating.
+    </td>
+    <td align="center" width="25%">
+      <img src="src/assets/game-icons/breathing-garden.png" width="112" alt="Pastel flower for Breathing Garden" /><br />
+      <strong>Breathing Garden</strong><br />
+      Watch or follow an optional visual breathing rhythm.
+    </td>
+    <td align="center" width="25%">
+      <img src="src/assets/game-icons/pattern-train.png" width="112" alt="Pastel train for Pattern Train" /><br />
+      <strong>Pattern Train</strong><br />
+      Complete cosy repeating patterns without a timer.
+    </td>
+  </tr>
+</table>
 
-- **Framework**: Expo (React Native)
-- **Language**: TypeScript
-- **Navigation**: React Navigation
-- **Audio**: Expo Audio
-- **Motion Sensors**: Expo Sensors (Accelerometer)
-- **Storage**: AsyncStorage
-- **Graphics**: React Native SVG
-- **State Management**: React Context API
+## Designed around comfort and choice
 
-## Getting Started
+- **Child-led play:** no forced pace, required score, or compulsory completion.
+- **Sensory controls:** sounds can be muted and reduced-motion preferences are respected.
+- **Predictable interactions:** consistent navigation and clear, neutral feedback.
+- **Accessible input:** large touch targets and tap alternatives where dragging may be difficult.
+- **Flexible appearance:** light and dark themes with soft, readable colour palettes.
+- **Offline-first:** the installed app remains useful without a continuous internet connection.
+- **Open from the start:** no locked activities, subscriptions, or hidden purchases.
 
-### Prerequisites
+## Try Gentle Games
 
-- Node.js (v16 or higher)
-- npm or yarn
-- Expo CLI (`npm install -g expo-cli`)
-- iOS Simulator (Mac only) or Android Emulator
+The easiest way to explore the project is the web app:
 
-### Installation
+**[Open Gentle Games](https://rogersau.github.io/gentle-games/)**
 
-1. Clone or download the project
-2. Navigate to the project directory:
+On supported browsers, it can also be installed to the home screen as a Progressive Web App (PWA).
 
-   ```bash
-   cd gentle-games
-   ```
+## Contributing
 
-3. Install dependencies:
+Contributions are welcome, particularly improvements to accessibility, sensory comfort, translations, testing, and new low-pressure activities.
 
-   ```bash
-   npm install
-   ```
+When contributing, please preserve the project's core approach:
 
-4. Start the development server:
+- use simple, inclusive language;
+- avoid flashing, jarring motion, forced timers, and disruptive feedback;
+- provide sound-off and reduced-motion experiences;
+- offer tap or button alternatives to gesture-only interactions;
+- route all visible text through the translation system;
+- describe immediate game interactions without making therapy or developmental claims.
 
-   ```bash
-   npm start
-   # or
-   npm run web  # For web browser
-   ```
+### Local development
 
-5. Press:
-   - `i` to open iOS Simulator
-   - `a` to open Android Emulator
-   - Scan QR code with Expo Go app on physical device
-   - `w` to open in web browser
-
-## Testing and Quality Checks
+A current Node.js LTS release and npm are required.
 
 ```bash
-# Full local CI pass (shared + cross-platform export checks)
-npm run ci:all
+git clone https://github.com/rogersau/gentle-games.git
+cd gentle-games
+npm install
+npm run web
+```
 
-# Shared checks used in PR CI gate
+For Expo's interactive development server instead:
+
+```bash
+npm start
+```
+
+From the Expo terminal, press `a` for Android, `i` for iOS on macOS, or `w` for web. You can also use Expo Go on a supported physical device.
+
+<details>
+<summary><strong>Testing and quality checks</strong></summary>
+
+```bash
+# Tests and TypeScript checks used by shared CI
 npm run ci:shared
 
-# Cross-platform export validation (web + android + ios)
+# Web, Android, and iOS export validation
 npm run ci:platform
 
-# TypeScript regression check
-npm run typecheck
+# Complete local CI pass
+npm run ci:all
 
-# Run all tests
+# Individual checks
 npm test
+npm run typecheck
+npm run lint
+npm run fmt:check
+```
 
-# CI-mode test run
-npm run test:ci
+To run one test file:
 
-# Watch mode during development
-npm run test:watch
-
-# Run one test file
+```bash
 npm run test:single -- src/utils/gameLogic.test.ts
 ```
 
-## Android and iOS Validation
+</details>
+
+<details>
+<summary><strong>Build and platform validation</strong></summary>
 
 ```bash
-# Launch app on emulator/simulator from Expo
+# Production web/PWA build
+npm run build:pwa
+
+# Platform exports
+npm run build:web
+npm run build:android
+npm run build:ios
+npm run build:all
+
+# Launch through Expo
 npm run android
 npm run ios
+```
 
-# CI-friendly bundle validation for each platform
-npm run validate:android
-npm run validate:ios
+Android emulator smoke testing also uses the scripts below and requires an emulator plus the Maestro CLI:
 
-# Android runtime smoke test pieces (requires emulator + Maestro CLI)
+```bash
 npm run smoke:android:build
 npm run smoke:android:install
 npm run smoke:android:test
 ```
 
-For GitHub Actions, use:
+</details>
 
-- `CI` workflow on pull requests/pushes for:
-  - shared checks (`npm run ci:shared`)
-  - platform export validation (web, android, ios)
-  - Android emulator smoke test via Maestro
-- `Mobile Validation` workflow (manual trigger) for on-demand Android/iOS export checks
+### Project structure
 
-## Building for Production
-
-### Web
-
-```bash
-# Export for web deployment
-npx expo export --platform web
-
-# Or serve locally
-npx expo start --web
-```
-
-## PWA Publish (GitHub Actions)
-
-This repo includes a workflow at [.github/workflows/pwa-deploy.yml](.github/workflows/pwa-deploy.yml) that builds and deploys the Expo web export to GitHub Pages.
-
-### One-time GitHub setup
-
-1. Go to **Settings → Pages** in your GitHub repo.
-2. Set **Source** to **GitHub Actions**.
-3. Push to `master` (or run the workflow manually from the **Actions** tab).
-
-### Workflow behavior
-
-- Installs dependencies with `npm ci`
-- Runs `npm run build:pwa` (exports web + prepares PWA assets)
-- Uses `expo.experiments.baseUrl` (`/gentle-games`) so assets resolve on GitHub Pages
-- Generates:
-  - `dist/manifest.webmanifest`
-  - `dist/sw.js`
-  - `dist/icons/*`
-- Adds cache-busted manifest/service-worker URLs per deploy while keeping an offline app-shell fallback
-- Publishes `dist` to GitHub Pages
-
-### Local PWA build
-
-```bash
-npm run build:pwa
-```
-
-### PWA placeholder icons (replace these)
-
-The workflow and app config use files in `assets/pwa/`:
-
-- `assets/pwa/icon-32x32.png` (favicon)
-- `assets/pwa/icon-180x180.png` (apple touch icon)
-- `assets/pwa/icon-192x192.png`
-- `assets/pwa/icon-384x384.png`
-- `assets/pwa/icon-512x512.png`
-- `assets/pwa/icon-192x192-maskable.png`
-- `assets/pwa/icon-512x512-maskable.png`
-
-Replace these files with your final brand assets using the same file names.
-
-### iOS
-
-```bash
-# Build for App Store
-expo build:ios
-
-# Or use EAS Build
-eas build --platform ios
-```
-
-### Android
-
-```bash
-# Build for Play Store
-expo build:android
-
-# Or use EAS Build
-eas build --platform android
-```
-
-## Project Structure
-
-```
+```text
 gentle-games/
+├── assets/                    # App, splash, and PWA artwork
+├── docs/                      # Website, privacy, and support pages
 ├── src/
-│   ├── components/        # Reusable game components
-│   ├── screens/           # Screen components
-│   ├── context/           # Global state (settings, etc.)
-│   ├── utils/             # Game logic and helpers
-│   └── types/             # TypeScript definitions
-├── App.tsx                # Main app entry
-├── app.json               # Expo configuration
+│   ├── assets/game-icons/     # Game artwork used by the app and this README
+│   ├── components/            # Reusable game components
+│   ├── context/               # App settings and shared state
+│   ├── games/                 # Game registry, settings, and outcome definitions
+│   ├── guided-practice/       # Shared guided-practice behaviour
+│   ├── i18n/                  # Translations
+│   ├── screens/               # App and game screens
+│   ├── ui/                    # Shared design system and layout helpers
+│   └── utils/                 # Game logic and supporting utilities
+├── App.tsx                    # Navigation and app entry component
+├── app.config.js              # Expo application configuration
 └── package.json
 ```
 
-## Customization
+### Adding a game
 
-### Changing Colors
+A new activity normally needs:
 
-Edit color constants in `src/types/index.ts`:
+1. a screen and any reusable components;
+2. an entry in [`src/games/registry.ts`](src/games/registry.ts);
+3. an outcome definition in [`src/games/outcomes.ts`](src/games/outcomes.ts);
+4. navigation and translated text;
+5. accessibility behaviour and tests;
+6. artwork that matches the existing calm visual language.
 
-```typescript
-export const PASTEL_COLORS = {
-  background: '#FFFEF7',
-  // ... other colors
-};
-```
+## Project links
 
-### Adding New Games
-
-1. Create a new screen component in `src/screens/`
-2. Add the game to the `GAMES` array in `src/screens/HomeScreen.tsx`
-3. Add the route to navigation in `App.tsx`
-
-## Development Tips
-
-- All text must go through the translation function for internationalization
-- Use soft pastel colors—avoid high contrast and bright colors
-- Keep interactions predictable and feedback gentle
-- Test with animation and sound toggled off
-- Support both light and dark mode
-
-## License
-
-This project is free and open source, released under the
-[GNU General Public License v3 (GPLv3)](LICENSE).
-
-You are free to use, modify, and distribute this software under the terms of
-that license. See the [LICENSE](LICENSE) file for the full text.
-
-## Website & App Store Pages
-
-The GitHub Pages docs site for this project lives in the [`docs/`](docs/) folder
-and is published at **https://rogersau.github.io/gentle-games/docs/**. It includes:
-
-- [Home page](https://rogersau.github.io/gentle-games/docs/)
-- [Privacy Policy](https://rogersau.github.io/gentle-games/docs/privacy-policy.html)
+- [Project website](https://rogersau.github.io/gentle-games/docs/)
+- [Privacy policy](https://rogersau.github.io/gentle-games/docs/privacy-policy.html)
 - [Support](https://rogersau.github.io/gentle-games/docs/support.html)
+- [Issue tracker](https://github.com/rogersau/gentle-games/issues)
 
-> **Note:** To enable GitHub Pages for this repository, go to
-> **Settings → Pages**, set **Source** to **GitHub Actions**.
+## Licence
 
-## Support
-
-For issues or questions:
-
-- Open an issue on the [GitHub issue tracker](https://github.com/rogersau/gentle-games/issues)
-- Visit the [Support page](https://rogersau.github.io/gentle-games/docs/support.html)
-- Check the [Expo documentation](https://docs.expo.dev)
-- Visit [React Native community resources](https://reactnative.dev/help)
+Gentle Games is free and open-source software released under the [GNU General Public License v3](LICENSE).
 
 ---
 
-Made with 💜 for calm, sensory-friendly gaming
+<p align="center">Made with care for gentler, more predictable play.</p>
