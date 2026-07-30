@@ -1,10 +1,19 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import { GlitterScreen } from './GlitterScreen';
+import { GLITTER_PRESETS } from '../games/glitterSettings';
 
 const mockGoBack = jest.fn();
 const mockAddGlitter = jest.fn();
-const mockClearGlitter = jest.fn();
+const mockSwirl = jest.fn();
+const mockSettle = jest.fn();
+const mockPlayBubblePopSound = jest.fn();
+const mockUpdateGameSettings = jest.fn().mockResolvedValue(undefined);
+let mockSettings: any;
+
+jest.mock('../utils/sounds', () => ({
+  playBubblePopSound: (...args: unknown[]) => mockPlayBubblePopSound(...args),
+}));
 
 jest.mock('../utils/theme', () => ({
   useThemeColors: () => ({
@@ -23,6 +32,7 @@ jest.mock('../utils/theme', () => ({
     resolvedMode: 'light',
     colorMode: 'light',
   }),
+  useReducedMotion: () => false,
 }));
 
 jest.mock('@react-navigation/native', () => ({
@@ -33,20 +43,8 @@ jest.mock('@react-navigation/native', () => ({
 
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
-    settings: {
-      animationsEnabled: false,
-      reducedMotionEnabled: false,
-      showMochiInGames: true,
-    },
-  }),
-}));
-
-jest.mock('../context/MochiContext', () => ({
-  useMochiContext: () => ({
-    mochiProps: { variant: 'idle' as const, visible: false, phrase: null },
-    showMochi: jest.fn(),
-    hideMochi: jest.fn(),
-    celebrate: jest.fn(),
+    settings: mockSettings,
+    updateGameSettings: mockUpdateGameSettings,
   }),
 }));
 
@@ -57,7 +55,9 @@ jest.mock('../components/GlitterGlobe', () => {
   const GlitterGlobe = React.forwardRef((_props: unknown, ref: any) => {
     React.useImperativeHandle(ref, () => ({
       addGlitter: (count?: number) => mockAddGlitter(count),
-      clearGlitter: () => mockClearGlitter(),
+      clearGlitter: jest.fn(),
+      swirl: () => mockSwirl(),
+      settle: () => mockSettle(),
     }));
     return (
       <View>
@@ -72,6 +72,20 @@ jest.mock('../components/GlitterGlobe', () => {
 describe('GlitterScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers();
+    mockSettings = {
+      settingsVersion: 2,
+      animationsEnabled: false,
+      reducedMotionEnabled: false,
+      showMochiInGames: true,
+      soundEnabled: true,
+      soundVolume: 0.5,
+      gameSettings: { 'glitter-fall': GLITTER_PRESETS.settle },
+    };
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('goes back when back button is pressed', () => {
@@ -81,23 +95,61 @@ describe('GlitterScreen', () => {
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 
-  it('calls globe controls from the action buttons', () => {
+  it('offers explicit add, swirl, and settle controls', () => {
     const screen = render(<GlitterScreen />);
 
-    fireEvent.press(screen.getByText('🧹 Clear'));
-    fireEvent.press(screen.getByText('⭐ Sprinkle'));
+    fireEvent.press(screen.getByTestId('glitter-add-few-button'));
+    fireEvent.press(screen.getByTestId('glitter-swirl-button'));
+    fireEvent.press(screen.getByTestId('glitter-settle-button'));
 
-    expect(mockClearGlitter).toHaveBeenCalledTimes(1);
-    expect(mockAddGlitter).toHaveBeenCalledWith(12);
+    expect(mockAddGlitter).toHaveBeenCalledWith(6);
+    expect(mockSwirl).toHaveBeenCalledTimes(1);
+    expect(mockSettle).toHaveBeenCalledTimes(1);
+    expect(mockPlayBubblePopSound).not.toHaveBeenCalled();
   });
 
-  it('keeps the negative action before the positive action', () => {
+  it('persists a deterministic preset selection', () => {
     const screen = render(<GlitterScreen />);
 
-    const buttonRow = screen.getByTestId('glitter-controls');
-    const [firstButtonContainer, secondButtonContainer] = buttonRow.children;
+    fireEvent.press(screen.getByTestId('glitter-preset-explore'));
 
-    expect(firstButtonContainer.findByProps({ testID: 'glitter-clear-button' })).toBeTruthy();
-    expect(secondButtonContainer.findByProps({ testID: 'glitter-add-button' })).toBeTruthy();
+    expect(mockUpdateGameSettings).toHaveBeenCalledWith('glitter-fall', {
+      preset: 'explore',
+      particleDensity: 'medium',
+      fallSpeed: 'slow',
+      colorCount: 3,
+      ripples: true,
+      shakeResponse: false,
+      backgroundMotion: true,
+      sound: false,
+    });
+  });
+
+  it('plays optional Glitter sound when the game setting enables it', () => {
+    mockSettings.gameSettings['glitter-fall'] = GLITTER_PRESETS.full;
+    const screen = render(<GlitterScreen />);
+
+    fireEvent.press(screen.getByTestId('glitter-add-few-button'));
+
+    expect(mockPlayBubblePopSound).toHaveBeenCalledWith(mockSettings);
+  });
+
+  it('exposes presets as selectable radio controls', () => {
+    const screen = render(<GlitterScreen />);
+
+    expect(
+      screen.getByRole('radio', { name: 'games.glitterFall.preset.settle' }).props
+        .accessibilityState.selected,
+    ).toBe(true);
+  });
+
+  it('does not prompt after a long period without interaction', () => {
+    const screen = render(<GlitterScreen />);
+
+    act(() => {
+      jest.advanceTimersByTime(60_000);
+    });
+
+    expect(screen.queryByText(/mascot|Mochi|check in/i)).toBeNull();
   });
 });

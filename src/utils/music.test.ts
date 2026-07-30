@@ -34,6 +34,9 @@ describe('useBackgroundMusic', () => {
     mockUseSettings.mockImplementation(() => ({
       settings: settings as never,
       updateSettings: jest.fn(),
+      updateGameSettings: jest.fn(),
+      resetGameSettings: jest.fn(),
+      resetAllSettings: jest.fn(),
       isLoading: false,
       isSaving: false,
       persistenceError: null,
@@ -166,7 +169,6 @@ describe('useBackgroundMusic', () => {
 
     expect(mockPlayer.remove).toHaveBeenCalled();
   });
-
 
   it('honours global volume, stops when sound is disabled, and does not auto-start on re-enable', async () => {
     const { result, rerender } = renderHook(() => useBackgroundMusic());

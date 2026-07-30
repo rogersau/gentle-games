@@ -1,70 +1,44 @@
 import {
-  CATEGORY_MATCH_CATEGORIES,
+  CATEGORY_MATCH_CATEGORIES_2,
+  CATEGORY_MATCH_CATEGORIES_3,
   CATEGORY_MATCH_ITEMS,
   CategoryMatchCategory,
   CategoryMatchCategoryConfig,
+  CategoryMatchCategoryCount,
   CategoryMatchItem,
 } from '../types';
 
 export interface CategoryMatchRound {
   item: CategoryMatchItem;
   categories: CategoryMatchCategoryConfig[];
+  sortingAttribute: 'type';
 }
 
-const CATEGORY_SEQUENCE: CategoryMatchCategory[] = CATEGORY_MATCH_CATEGORIES.map(
-  (category) => category.id,
-);
+const getCategories = (categoryCount: CategoryMatchCategoryCount): CategoryMatchCategoryConfig[] =>
+  categoryCount === 3 ? [...CATEGORY_MATCH_CATEGORIES_3] : [...CATEGORY_MATCH_CATEGORIES_2];
 
-const CATEGORY_ITEMS: Record<CategoryMatchCategory, CategoryMatchItem[]> = {
-  sky: CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'sky'),
-  land: CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'land'),
-  ocean: CATEGORY_MATCH_ITEMS.filter((item) => item.category === 'ocean'),
-};
-
-const getPoolLimitForRound = (roundsCompleted: number): number => {
-  if (roundsCompleted < 6) return 4;
-  if (roundsCompleted < 15) return 8;
-  return Number.POSITIVE_INFINITY;
-};
-
-const getNextCategory = (
-  previousCategory: CategoryMatchCategory | undefined,
-  random: () => number,
-): CategoryMatchCategory => {
-  if (!previousCategory) {
-    const startIndex = Math.floor(random() * CATEGORY_SEQUENCE.length);
-    return CATEGORY_SEQUENCE[startIndex];
-  }
-
-  const eligible = CATEGORY_SEQUENCE.filter((category) => category !== previousCategory);
-  const nextIndex = Math.floor(random() * eligible.length);
-  return eligible[nextIndex];
-};
-
-const getRoundItem = (
-  previousItem: CategoryMatchItem | undefined,
-  roundsCompleted: number,
-  random: () => number,
-): CategoryMatchItem => {
-  const nextCategory = getNextCategory(previousItem?.category, random);
-  const inCategoryPool = CATEGORY_ITEMS[nextCategory];
-  const poolLimit = getPoolLimitForRound(roundsCompleted);
-  const tierPool = Number.isFinite(poolLimit) ? inCategoryPool.slice(0, poolLimit) : inCategoryPool;
-  const pool = previousItem ? tierPool.filter((item) => item.name !== previousItem.name) : tierPool;
-  const selectedPool = pool.length > 0 ? pool : inCategoryPool;
-
-  const index = Math.floor(random() * selectedPool.length);
-  return selectedPool[index];
+export const getCategoryMatchItems = (
+  categoryCount: CategoryMatchCategoryCount = 2,
+): CategoryMatchItem[] => {
+  const categoryIds = new Set(getCategories(categoryCount).map((category) => category.id));
+  return CATEGORY_MATCH_ITEMS.filter((item) => categoryIds.has(item.category));
 };
 
 export const createCategoryMatchRound = (
   previousItem?: CategoryMatchItem,
-  roundsCompleted: number = 0,
+  _roundsCompleted = 0,
   random: () => number = Math.random,
-): CategoryMatchRound => ({
-  item: getRoundItem(previousItem, roundsCompleted, random),
-  categories: [...CATEGORY_MATCH_CATEGORIES],
-});
+  categoryCount: CategoryMatchCategoryCount = 2,
+): CategoryMatchRound => {
+  const pool = getCategoryMatchItems(categoryCount).filter((item) => item.id !== previousItem?.id);
+  const availableItems = pool.length > 0 ? pool : getCategoryMatchItems(categoryCount);
+
+  return {
+    item: availableItems[Math.floor(random() * availableItems.length)],
+    categories: getCategories(categoryCount),
+    sortingAttribute: 'type',
+  };
+};
 
 export const isCategoryMatchCorrect = (
   item: CategoryMatchItem,

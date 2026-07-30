@@ -1,12 +1,7 @@
 import { PASTEL_COLORS } from '../types';
 import { APP_ROUTES } from '../types/navigation';
-import {
-  GAME_REGISTRY,
-  getGameById,
-  getGameRoute,
-  getVisibleGames,
-  isGameId,
-} from './registry';
+import { GAME_REGISTRY, getGameById, getGameRoute, getVisibleGames, isGameId } from './registry';
+import { GAME_OUTCOMES } from './outcomes';
 
 describe('game registry', () => {
   it('filters hidden and unfinished games from visible games', () => {
@@ -18,6 +13,13 @@ describe('game registry', () => {
     expect(visibleGames.map((game) => game.id)).not.toContain('drawing');
     expect(visibleGames.map((game) => game.id)).not.toContain('number-picnic');
     expect(visibleGames.map((game) => game.id)).toContain('memory-snap');
+  });
+
+  it('keeps Number Picnic behind the unfinished gate until child validation', () => {
+    expect(getGameById('number-picnic')?.isUnfinished).toBe(true);
+    expect(
+      getVisibleGames({ hiddenGames: [], enableUnfinishedGames: false }).map((game) => game.id),
+    ).not.toContain('number-picnic');
   });
 
   it('keeps every game route aligned with the registry contract', () => {
@@ -50,20 +52,23 @@ describe('game registry', () => {
   });
 
   it('returns the full game definition for direct id lookups', () => {
-    expect(getGameById('memory-snap')).toEqual({
-      id: 'memory-snap',
-      route: APP_ROUTES.Game,
-      nameKey: 'games.memorySnap.name',
-      descriptionKey: 'games.memorySnap.description',
-      icon: '🧩',
-      accentColor: PASTEL_COLORS.primary,
-      isUnfinished: false,
-      launchMode: 'difficulty-select',
-    });
+    expect(getGameById('memory-snap')).toEqual(
+      expect.objectContaining({
+        id: 'memory-snap',
+        route: APP_ROUTES.Game,
+        nameKey: 'games.memorySnap.name',
+        descriptionKey: 'games.memorySnap.description',
+        icon: '🧩',
+        accentColor: PASTEL_COLORS.primary,
+        isUnfinished: false,
+        launchMode: 'difficulty-select',
+        outcome: GAME_OUTCOMES['memory-snap'],
+      }),
+    );
   });
 
   it('throws for invalid route lookups', () => {
-    expect(() => getGameRoute('not-a-game')).toThrow("Unknown game id: not-a-game");
+    expect(() => getGameRoute('not-a-game')).toThrow('Unknown game id: not-a-game');
   });
 
   it('returns undefined for unknown game ids', () => {
@@ -90,7 +95,7 @@ describe('game registry', () => {
   });
 
   it('includes required metadata for every game', () => {
-    expect(GAME_REGISTRY).toEqual([
+    expect(GAME_REGISTRY.map(({ outcome: _outcome, ...game }) => game)).toEqual([
       {
         id: 'memory-snap',
         route: APP_ROUTES.Game,
@@ -182,5 +187,15 @@ describe('game registry', () => {
         launchMode: 'direct',
       },
     ]);
+
+    for (const game of GAME_REGISTRY) {
+      expect(game.outcome).toBe(GAME_OUTCOMES[game.id]);
+      expect(game.outcome.prohibitedClaims).toContain('therapy or treatment');
+      expect(game.outcome.usabilityIndicators.length).toBeGreaterThan(0);
+      expect(game.outcome.accessibilityAndSensoryAssumptions.length).toBeGreaterThan(0);
+      if (game.outcome.mode !== 'guided-practice') {
+        expect(game.outcome.recordPerformance).toBe(false);
+      }
+    }
   });
 });

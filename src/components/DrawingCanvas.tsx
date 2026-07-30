@@ -14,7 +14,11 @@ import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
 import { Space, Radius } from '../ui/tokens';
 import type { TranslationKey } from '../i18n/types';
-import { compactDrawingHistory, decimateDrawingPoints, DRAWING_HISTORY_MAX_POINTS_PER_ENTRY } from '../utils/drawingPersistence';
+import {
+  compactDrawingHistory,
+  decimateDrawingPoints,
+  DRAWING_HISTORY_MAX_POINTS_PER_ENTRY,
+} from '../utils/drawingPersistence';
 
 export interface Point {
   x: number;
@@ -207,7 +211,9 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     const { t } = useTranslation();
     const themedStyles = useMemo(() => createThemedStyles(colors), [colors]);
     // Unified ordered history — preserves exact draw order for correct undo
-    const [history, setHistory] = useState<HistoryEntry[]>(() => compactDrawingHistory(initialHistory));
+    const [history, setHistory] = useState<HistoryEntry[]>(() =>
+      compactDrawingHistory(initialHistory),
+    );
     // Current strokes being drawn (one per symmetry copy)
     const [currentStrokes, setCurrentStrokes] = useState<Array<Omit<Stroke, 'kind' | 'id'>>>([]);
 

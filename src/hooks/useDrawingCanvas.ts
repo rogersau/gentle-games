@@ -41,7 +41,12 @@ export function useDrawingCanvas({
           const offsets = symmetryHook.getSymmetryOffsets();
 
           const strokes = offsets.map(([xMult, yMult]) => ({
-            points: [{ x: xMult === 1 ? point.x : canvasWidth - point.x, y: yMult === 1 ? point.y : canvasHeight - point.y }],
+            points: [
+              {
+                x: xMult === 1 ? point.x : canvasWidth - point.x,
+                y: yMult === 1 ? point.y : canvasHeight - point.y,
+              },
+            ],
             color: toolsHook.selectedColorRef.current,
             width: 2,
             actionId,
@@ -61,9 +66,15 @@ export function useDrawingCanvas({
               const [xMult, yMult] = offsets[idx] || [1, 1];
               return {
                 ...stroke,
-                points: [...stroke.points, { x: xMult === 1 ? point.x : canvasWidth - point.x, y: yMult === 1 ? point.y : canvasHeight - point.y }],
+                points: [
+                  ...stroke.points,
+                  {
+                    x: xMult === 1 ? point.x : canvasWidth - point.x,
+                    y: yMult === 1 ? point.y : canvasHeight - point.y,
+                  },
+                ],
               };
-            })
+            }),
           );
         }
       },

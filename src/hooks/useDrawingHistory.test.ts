@@ -32,10 +32,12 @@ describe('useDrawingHistory', () => {
 
   it('calls onHistoryChange when history changes', () => {
     const onHistoryChange = jest.fn();
-    const { result } = renderHook(() => useDrawingHistory({
-      initialHistory: [],
-      onHistoryChange,
-    }));
+    const { result } = renderHook(() =>
+      useDrawingHistory({
+        initialHistory: [],
+        onHistoryChange,
+      }),
+    );
     act(() => {
       result.current.addToHistory(mockEntry);
     });
@@ -44,9 +46,11 @@ describe('useDrawingHistory', () => {
 
   it('removes last entry on undo', () => {
     const entry2: HistoryEntry = { ...mockEntry, id: 'test-2', actionId: undefined };
-    const { result } = renderHook(() => useDrawingHistory({
-      initialHistory: [mockEntry, entry2],
-    }));
+    const { result } = renderHook(() =>
+      useDrawingHistory({
+        initialHistory: [mockEntry, entry2],
+      }),
+    );
     act(() => {
       result.current.undo();
     });
@@ -56,9 +60,11 @@ describe('useDrawingHistory', () => {
   it('removes all entries with same actionId on undo', () => {
     const entry2: HistoryEntry = { ...mockEntry, id: 'test-2', actionId: 'action-1' };
     const entry3: HistoryEntry = { ...mockEntry, id: 'test-3', actionId: 'action-2' };
-    const { result } = renderHook(() => useDrawingHistory({
-      initialHistory: [mockEntry, entry2, entry3],
-    }));
+    const { result } = renderHook(() =>
+      useDrawingHistory({
+        initialHistory: [mockEntry, entry2, entry3],
+      }),
+    );
     act(() => {
       result.current.undo();
     });
@@ -66,9 +72,11 @@ describe('useDrawingHistory', () => {
   });
 
   it('clears all history', () => {
-    const { result } = renderHook(() => useDrawingHistory({
-      initialHistory: [mockEntry],
-    }));
+    const { result } = renderHook(() =>
+      useDrawingHistory({
+        initialHistory: [mockEntry],
+      }),
+    );
     act(() => {
       result.current.clearHistory();
     });
@@ -76,9 +84,11 @@ describe('useDrawingHistory', () => {
   });
 
   it('returns history snapshot', () => {
-    const { result } = renderHook(() => useDrawingHistory({
-      initialHistory: [mockEntry],
-    }));
+    const { result } = renderHook(() =>
+      useDrawingHistory({
+        initialHistory: [mockEntry],
+      }),
+    );
     const snapshot = result.current.getHistorySnapshot();
     expect(snapshot).toEqual([mockEntry]);
     expect(snapshot).not.toBe(result.current.history);

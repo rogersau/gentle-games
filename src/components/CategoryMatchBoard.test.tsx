@@ -2,20 +2,12 @@ import React from 'react';
 import { PanResponder } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { CategoryMatchBoard } from './CategoryMatchBoard';
-import { CATEGORY_MATCH_CATEGORIES } from '../types';
 
-const mockPlayFlipSound = jest.fn();
 const mockPlayMatchSound = jest.fn();
-const mockCreateCategoryMatchRound = jest.fn();
 
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
-    settings: {
-      animationsEnabled: false,
-      reducedMotionEnabled: false,
-      soundEnabled: true,
-      soundVolume: 0.5,
-    },
+    settings: { soundEnabled: true, soundVolume: 0.5, animationsEnabled: false },
   }),
 }));
 
@@ -41,198 +33,127 @@ jest.mock('../utils/theme', () => ({
       danger: '#E8A0A0',
     },
     resolvedMode: 'light',
-    colorMode: 'light',
   }),
 }));
 
+jest.mock('../ui/animations', () => ({
+  useAnimationEnabled: () => false,
+  useScalePress: () => ({ scale: 1, onPressIn: jest.fn(), onPressOut: jest.fn() }),
+}));
+jest.mock('../utils/sounds', () => ({
+  playMatchSound: (...args: unknown[]) => mockPlayMatchSound(...args),
+}));
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        'games.categoryMatch.accessibilityLabel': 'Sort each emoji into Sky, Land, or Ocean.',
-        'games.categoryMatch.dragToMatchingCategory': 'Drag to the matching category.',
-        'games.categoryMatch.interactionInstruction':
-          'Drag the item, or tap it to select it and choose a category.',
-        'games.categoryMatch.itemAccessibilityLabel': '{{item}} item',
-        'games.categoryMatch.selectItemHint': 'Tap to select this item, then choose a category.',
-        'games.categoryMatch.itemSelected': '{{item}} selected. Choose a category.',
-        'games.categoryMatch.selectItemFirst': 'Select the item before choosing a category.',
-        'games.categoryMatch.categoryAccessibilityLabel': '{{category}} category',
-        'games.categoryMatch.categoryActivationHint': 'Activate to place the selected item here.',
-        'games.categoryMatch.selectedItemHint': 'Item selected. Choose a category.',
-        'games.categoryMatch.categorySelectFirstHint':
-          'Select the item first, then activate this category.',
-        'games.categoryMatch.selectionInstruction':
-          'Item selected. Activate a category to place it.',
-        'games.categoryMatch.dragInstruction': 'Move the token to the matching category.',
-        'games.categoryMatch.greatMatch': 'Great match!',
-        'games.categoryMatch.tryDifferent': 'Try a different category.',
+    t: (key: string, options?: Record<string, unknown>) => {
+      const values: Record<string, string> = {
+        'games.categoryMatch.sortingInstruction': `Sorting rule: item type. Choose ${String(options?.categories ?? '')}.`,
+        'games.categoryMatch.hint': 'Look at the item type, then choose its group.',
+        'games.categoryMatch.itemAccessibilityLabel': `${String(options?.item)} item`,
+        'games.categoryMatch.selectItemHint': 'Tap to select this item, then activate a category',
+        'games.categoryMatch.selectItemFirst': 'Select the item before choosing a category',
+        'games.categoryMatch.categoryAccessibilityLabel': `${String(options?.category)} category`,
+        'games.categoryMatch.categoryActivationHint': 'Activate to place the selected item here',
+        'games.categoryMatch.correctFeedback': `${String(options?.item)} belongs in ${String(options?.category)}.`,
+        'games.categoryMatch.incorrectFeedback': `${String(options?.item)} does not belong in ${String(options?.chosenCategory)}. It belongs in ${String(options?.correctCategory)}.`,
+        'games.categoryMatch.model': `Model: ${String(options?.item)} belongs in ${String(options?.category)}. Now place it there.`,
+        'games.categoryMatch.modelAccessibilityLabel': `Model: ${String(options?.item)} belongs in ${String(options?.category)}.`,
+        'games.categoryMatch.showHint': 'Show a hint',
+        'games.categoryMatch.replay': 'Hear the rule again',
+        'games.categoryMatch.skip': 'Skip',
+        'games.categoryMatch.skippedFeedback': `${String(options?.item)} was skipped. Choose Next when you are ready.`,
+        'games.categoryMatch.next': 'Next item',
+        'games.categoryMatch.nextHint': 'Show a new item using the same sorting rule',
+        'games.categoryMatch.categories.food': 'Food',
+        'games.categoryMatch.categories.toys': 'Toys',
+        'games.categoryMatch.categories.clothes': 'Clothes',
+        'games.categoryMatch.items.apple': 'apple',
+        'games.categoryMatch.items.banana': 'banana',
+        'games.categoryMatch.items.teddy': 'teddy bear',
       };
-
-      return translations[key] ?? key;
+      return values[key] ?? key;
     },
   }),
 }));
 
-jest.mock('../utils/sounds', () => ({
-  playFlipSound: (...args: unknown[]) => mockPlayFlipSound(...args),
-  playMatchSound: (...args: unknown[]) => mockPlayMatchSound(...args),
-}));
-
-jest.mock('../utils/categoryMatchLogic', () => {
-  const actual = jest.requireActual('../utils/categoryMatchLogic');
-  return {
-    ...actual,
-    createCategoryMatchRound: (...args: unknown[]) => mockCreateCategoryMatchRound(...args),
-  };
-});
-
 describe('CategoryMatchBoard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
-    jest.spyOn(PanResponder, 'create').mockImplementation(
-      (handlers: any) =>
-        ({
-          panHandlers: handlers,
-        }) as any,
-    );
-
-    mockCreateCategoryMatchRound.mockReturnValue({
-      item: {
-        emoji: '☀️',
-        name: 'sun',
-        color: '#FFFACD',
-        category: 'sky',
-      },
-      categories: CATEGORY_MATCH_CATEGORIES,
-    });
+    jest.spyOn(Math, 'random').mockReturnValue(0);
+    jest
+      .spyOn(PanResponder, 'create')
+      .mockImplementation((handlers: any) => ({ panHandlers: handlers }) as any);
   });
 
   afterEach(() => {
-    jest.useRealTimers();
     jest.restoreAllMocks();
   });
 
-  it('highlights the hovered zone, reports correct drops, and resets styling after incorrect drops', () => {
-    const onCorrectMatch = jest.fn();
-    const onIncorrectMatch = jest.fn();
-    const screen = render(
-      <CategoryMatchBoard
-        width={360}
-        height={480}
-        onCorrectMatch={onCorrectMatch}
-        onIncorrectMatch={onIncorrectMatch}
-      />,
+  it('states the sorting attribute and exposes item and category accessibility labels', () => {
+    const screen = render(<CategoryMatchBoard width={360} height={480} />);
+
+    expect(screen.getByText('Sorting rule: item type. Choose Food, Toys.')).toBeTruthy();
+    expect(screen.getByTestId('category-draggable-token').props.accessibilityLabel).toBe(
+      'apple item',
     );
-
-    const token = screen.getByTestId('category-draggable-token');
-
-    act(() => {
-      token.props.onPanResponderMove?.({}, { dx: -116, dy: 293 });
-    });
-
-    expect(screen.getByTestId('category-zone-sky').props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ borderColor: '#A8D8EA' })]),
-    );
-
-    act(() => {
-      token.props.onPanResponderRelease?.({}, { dx: -116, dy: 293 });
-    });
-
-    expect(onCorrectMatch).toHaveBeenCalledWith(
-      expect.objectContaining({ emoji: '☀️', category: 'sky' }),
-      'sky',
-    );
-
-    act(() => {
-      token.props.onPanResponderMove?.({}, { dx: -10, dy: 293 });
-      token.props.onPanResponderRelease?.({}, { dx: -10, dy: 293 });
-    });
-
-    expect(onIncorrectMatch).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('Try a different category.')).toBeTruthy();
-
-    act(() => {
-      jest.advanceTimersByTime(850);
-    });
-
-    expect(screen.queryByText('Try a different category.')).toBeNull();
-    expect(screen.getByTestId('category-zone-land').props.style).not.toEqual(
-      expect.arrayContaining([expect.objectContaining({ borderColor: '#A8D8EA' })]),
-    );
+    expect(screen.getByTestId('category-zone-food').props.accessibilityLabel).toBe('Food category');
+    expect(screen.getByTestId('category-zone-toys').props.accessibilityRole).toBe('button');
   });
 
-  it('supports tap-to-select followed by category activation with the same scoring path', () => {
+  it('uses the same answer path for tap activation and drag release', () => {
     const onCorrectMatch = jest.fn();
     const screen = render(
       <CategoryMatchBoard width={360} height={480} onCorrectMatch={onCorrectMatch} />,
     );
     const token = screen.getByTestId('category-draggable-token');
-    const sky = screen.getByTestId('category-zone-sky');
+    fireEvent.press(token);
+    fireEvent.press(screen.getByTestId('category-zone-food'));
+    expect(onCorrectMatch).toHaveBeenCalledTimes(1);
+    expect(mockPlayMatchSound).toHaveBeenCalledTimes(1);
 
-    expect(token.props.accessibilityRole).toBe('button');
-    expect(token.props.accessibilityState).toEqual({ selected: false });
-    expect(sky.props.accessibilityRole).toBe('button');
-    expect(sky.props.accessibilityHint).toBe('Select the item first, then activate this category.');
-
+    fireEvent.press(screen.getByTestId('category-match-next'));
+    const nextToken = screen.getByTestId('category-draggable-token');
     act(() => {
-      fireEvent.press(token);
+      nextToken.props.onPanResponderMove({}, { dx: -86, dy: 128 });
+      nextToken.props.onPanResponderRelease({}, { dx: -86, dy: 128 });
     });
-    expect(screen.getByTestId('category-draggable-token').props.accessibilityState).toEqual({
-      selected: true,
-    });
-
-    act(() => {
-      // Pressable's onPress is also the keyboard/switch activation path.
-      fireEvent.press(sky);
-    });
-
-    expect(onCorrectMatch).toHaveBeenCalledWith(
-      expect.objectContaining({ emoji: '☀️', category: 'sky' }),
-      'sky',
-    );
-    expect(mockPlayMatchSound).toHaveBeenCalled();
-    expect(screen.getByText('Great match!')).toBeTruthy();
+    expect(onCorrectMatch).toHaveBeenCalledTimes(2);
   });
 
-  it('reports a wrong activated category and exposes polite live feedback', () => {
-    const onIncorrectMatch = jest.fn();
-    const screen = render(
-      <CategoryMatchBoard width={360} height={480} onIncorrectMatch={onIncorrectMatch} />,
-    );
-
-    act(() => {
+  it('progresses independent, hinted, modelled, and corrected stages with explanatory feedback', () => {
+    const screen = render(<CategoryMatchBoard width={360} height={480} />);
+    const choose = (testID: string) => {
       fireEvent.press(screen.getByTestId('category-draggable-token'));
-    });
-    act(() => {
-      fireEvent.press(screen.getByTestId('category-zone-land'));
-    });
+      fireEvent.press(screen.getByTestId(testID));
+    };
 
-    expect(onIncorrectMatch).toHaveBeenCalledTimes(1);
-    const feedback = screen.getByText('Try a different category.');
-    expect(feedback.props.accessibilityLiveRegion).toBe('polite');
-    expect(feedback.props.accessibilityRole).toBe('text');
+    choose('category-zone-toys');
+    expect(screen.getByTestId('category-match-feedback').props.children).toContain(
+      'apple does not belong in Toys',
+    );
+    choose('category-zone-toys');
+    expect(screen.getByText('Model: apple belongs in Food. Now place it there.')).toBeTruthy();
+    choose('category-zone-food');
+    expect(screen.getByTestId('category-match-feedback').props.children).toBe(
+      'apple belongs in Food.',
+    );
+    expect(screen.getByTestId('category-match-next')).toBeTruthy();
   });
 
-  it('clears feedback timers on unmount before delayed feedback completes', () => {
-    const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
-    const screen = render(
-      <CategoryMatchBoard width={360} height={480} onIncorrectMatch={jest.fn()} />,
+  it('supports the explicit three-category setting without adding a starter category', () => {
+    const screen = render(<CategoryMatchBoard width={360} height={480} categoryCount={3} />);
+    expect(screen.getByText('Sorting rule: item type. Choose Food, Toys, Clothes.')).toBeTruthy();
+    expect(screen.getByTestId('category-zone-clothes')).toBeTruthy();
+  });
+
+  it('allows Skip and Next without scoring, streaks, or item elimination', () => {
+    const screen = render(<CategoryMatchBoard width={360} height={480} />);
+    fireEvent.press(screen.getByText('Skip'));
+    expect(screen.getByTestId('category-match-feedback').props.children).toContain(
+      'apple was skipped',
     );
-    const token = screen.getByTestId('category-draggable-token');
-
-    act(() => {
-      token.props.onPanResponderMove?.({}, { dx: -10, dy: 293 });
-      token.props.onPanResponderRelease?.({}, { dx: -10, dy: 293 });
-    });
-
-    screen.unmount();
-
-    expect(clearTimeoutSpy).toHaveBeenCalled();
-
-    act(() => {
-      jest.runOnlyPendingTimers();
-    });
+    fireEvent.press(screen.getByTestId('category-match-next'));
+    expect(screen.queryByText(/streak/i)).toBeNull();
+    expect(screen.queryByText(/Correct:/i)).toBeNull();
   });
 });

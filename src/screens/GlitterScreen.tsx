@@ -1,16 +1,25 @@
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { GlitterGlobe, GlitterGlobeRef } from '../components/GlitterGlobe';
+import {
+  GLITTER_PARTICLE_COUNTS,
+  GLITTER_PRESETS,
+  GlitterPreset,
+  resolveGlitterSettings,
+} from '../games/glitterSettings';
+import { getGameSettings } from '../games/settings';
 import { ThemeColors } from '../types';
-import { useThemeColors } from '../utils/theme';
+import { useThemeColors, useReducedMotion } from '../utils/theme';
 import { AppScreen, AppHeader, AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
-import { useAnimationEnabled } from '../ui/animations';
-import { useMochi } from '../hooks/useMochi';
 import { useSettings } from '../context/SettingsContext';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
+import { useAnimationEnabled } from '../ui/animations';
+import { playBubblePopSound } from '../utils/sounds';
+
+const PRESETS: GlitterPreset[] = ['settle', 'watch', 'explore', 'full'];
 
 export const GlitterScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -19,59 +28,32 @@ export const GlitterScreen: React.FC = () => {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const globeRef = useRef<GlitterGlobeRef>(null);
   const { viewport, onLayout } = useMeasuredGameViewport();
-
-  const { settings } = useSettings();
+  const { settings, updateGameSettings } = useSettings();
+  const reducedMotion = useReducedMotion();
   const motionEnabled = useAnimationEnabled();
-  const { showMochi } = useMochi();
-
-  const lastInteractionRef = useRef(Date.now());
-  const checkInShownRef = useRef(false);
-  const showMochiRef = useRef(showMochi);
-  const tRef = useRef(t);
-
-  useEffect(() => {
-    showMochiRef.current = showMochi;
-  }, [showMochi]);
-
-  useEffect(() => {
-    tRef.current = t;
-  }, [t]);
-
-  const handleInteraction = () => {
-    lastInteractionRef.current = Date.now();
-    checkInShownRef.current = false;
-  };
-
-  useEffect(() => {
-    if (!settings.showMochiInGames) {
-      return;
-    }
-
-    const interval = setInterval(() => {
-      if (checkInShownRef.current) {
-        return;
-      }
-
-      if (Date.now() - lastInteractionRef.current >= 15000) {
-        checkInShownRef.current = true;
-        const phrases = tRef.current('mascot.glitterPhrases', { returnObjects: true }) as string[];
-        const phrase = phrases[Math.floor(Math.random() * phrases.length)];
-        showMochiRef.current(phrase, 'happy');
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [settings.showMochiInGames]);
+  const translate = t as unknown as (key: string) => string;
+  const config = resolveGlitterSettings(getGameSettings(settings, 'glitter-fall'));
+  const [selectedPreset, setSelectedPreset] = useState<GlitterPreset>(config.preset);
 
   const globeSize = useMemo(() => {
     const { width, height } = calculateGameBoardSize(viewport, {
       horizontalPadding: Space.base * 2,
-      verticalReserve: 192,
+      verticalReserve: 276,
       compactMinHeight: 180,
       maxHeightRatio: 0.58,
     });
     return Math.min(width, height);
   }, [viewport]);
+
+  const savePreset = (preset: GlitterPreset) => {
+    setSelectedPreset(preset);
+    void updateGameSettings('glitter-fall', GLITTER_PRESETS[preset]);
+  };
+
+  const addGlitter = () => {
+    globeRef.current?.addGlitter(6);
+    if (config.sound) void playBubblePopSound(settings);
+  };
 
   return (
     <AppScreen scroll onLayout={onLayout} testID='glitter-screen'>
@@ -83,26 +65,64 @@ export const GlitterScreen: React.FC = () => {
         </Text>
 
         <View style={styles.globeWrap}>
-          <GlitterGlobe ref={globeRef} width={globeSize} height={globeSize} onInteraction={handleInteraction} motionEnabled={motionEnabled} />
+          <GlitterGlobe
+            ref={globeRef}
+            width={globeSize}
+            height={globeSize}
+            config={config}
+            maxParticles={GLITTER_PARTICLE_COUNTS.dense + 20}
+            reducedMotion={reducedMotion}
+            motionEnabled={motionEnabled}
+          />
+        </View>
+
+        <View style={styles.profile}>
+          <Text style={styles.profileTitle} accessibilityRole='header'>
+            {translate('games.glitterFall.profileTitle')}
+          </Text>
+          <View style={styles.presetRow} accessibilityRole='radiogroup'>
+            {PRESETS.map((preset) => (
+              <AppButton
+                key={preset}
+                label={translate(`games.glitterFall.preset.${preset}`)}
+                variant={selectedPreset === preset ? 'primary' : 'ghost'}
+                size='sm'
+                onPress={() => savePreset(preset)}
+                accessibilityRole='radio'
+                accessibilityState={{ selected: selectedPreset === preset }}
+                testID={`glitter-preset-${preset}`}
+                style={styles.presetButton}
+              />
+            ))}
+          </View>
         </View>
 
         <View style={styles.controls} testID='glitter-controls'>
+          <View testID='glitter-add-button' style={styles.controlWrapper}>
+            <AppButton
+              label={translate('games.glitterFall.controls.addFew')}
+              variant='secondary'
+              onPress={addGlitter}
+              testID='glitter-add-few-button'
+              style={styles.controlButton}
+            />
+          </View>
           <AppButton
-            label={t('games.glitterFall.clearGlitter')}
-            variant='secondary'
-            onPress={() => globeRef.current?.clearGlitter()}
-            accessibilityHint={t('games.glitterFall.clearGlitterHint')}
-            testID='glitter-clear-button'
-            style={{ flex: 1 }}
-          />
-          <AppButton
-            label={t('games.glitterFall.addGlitter')}
+            label={translate('games.glitterFall.controls.swirl')}
             variant='primary'
-            onPress={() => globeRef.current?.addGlitter(12)}
-            accessibilityHint={t('games.glitterFall.addGlitterHint')}
-            testID='glitter-add-button'
-            style={{ flex: 1 }}
+            onPress={() => globeRef.current?.swirl()}
+            testID='glitter-swirl-button'
+            style={styles.controlButton}
           />
+          <View testID='glitter-clear-button' style={styles.controlWrapper}>
+            <AppButton
+              label={translate('games.glitterFall.controls.settle')}
+              variant='ghost'
+              onPress={() => globeRef.current?.settle()}
+              testID='glitter-settle-button'
+              style={styles.controlButton}
+            />
+          </View>
         </View>
       </View>
     </AppScreen>
@@ -127,12 +147,40 @@ const createStyles = (colors: ThemeColors) =>
     globeWrap: {
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: Space.lg,
+      marginBottom: Space.md,
+    },
+    profile: {
+      width: '100%',
+      alignItems: 'center',
+      marginBottom: Space.md,
+    },
+    profileTitle: {
+      ...TypeStyle.label,
+      color: colors.text,
+      marginBottom: Space.sm,
+    },
+    presetRow: {
+      width: '100%',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: Space.sm,
+    },
+    presetButton: {
+      flexGrow: 1,
+      minWidth: '22%',
     },
     controls: {
-      width: '90%',
+      width: '100%',
       flexDirection: 'row',
       justifyContent: 'center',
       gap: Space.sm,
+    },
+    controlButton: {
+      flex: 1,
+      paddingHorizontal: Space.sm,
+    },
+    controlWrapper: {
+      flex: 1,
     },
   });

@@ -3,6 +3,7 @@ import { act, render, waitFor } from '@testing-library/react-native';
 import { PanResponder, View } from 'react-native';
 import { Circle, Polygon, Rect } from 'react-native-svg';
 import { GlitterGlobe, GlitterGlobeRef, resolveParticleCollisions } from './GlitterGlobe';
+import { GLITTER_PRESETS } from '../games/glitterSettings';
 
 const mockIsAvailableAsync = jest.fn<Promise<boolean>, []>();
 const mockSetUpdateInterval = jest.fn();
@@ -108,7 +109,9 @@ describe('GlitterGlobe', () => {
     mockIsAvailableAsync.mockResolvedValue(true);
     mockAddListener.mockReturnValue({ remove: removeListener });
 
-    const screen = render(<GlitterGlobe width={220} height={220} initialCount={0} />);
+    const screen = render(
+      <GlitterGlobe width={220} height={220} initialCount={0} config={GLITTER_PRESETS.full} />,
+    );
 
     await waitFor(() => {
       expect(mockAddListener).toHaveBeenCalledTimes(1);
@@ -121,7 +124,9 @@ describe('GlitterGlobe', () => {
   });
 
   it('skips accelerometer setup when the sensor is unavailable', async () => {
-    const screen = render(<GlitterGlobe width={220} height={220} initialCount={0} />);
+    const screen = render(
+      <GlitterGlobe width={220} height={220} initialCount={0} config={GLITTER_PRESETS.full} />,
+    );
 
     await waitFor(() => {
       expect(mockIsAvailableAsync).toHaveBeenCalledTimes(1);
@@ -131,12 +136,45 @@ describe('GlitterGlobe', () => {
     screen.unmount();
   });
 
+  it('uses preset density and color count while reduced motion keeps particles active', () => {
+    Math.random = jest.fn(() => 0.9);
+    const settleScreen = render(
+      <GlitterGlobe width={220} height={220} config={GLITTER_PRESETS.settle} />,
+    );
+
+    expect(getParticleNodes(settleScreen)).toHaveLength(10);
+    expect(getParticleNodes(settleScreen)[0].props.fill).toBe('#FF5D8F');
+    settleScreen.unmount();
+
+    const fullScreen = render(
+      <GlitterGlobe
+        width={220}
+        height={220}
+        config={GLITTER_PRESETS.full}
+        reducedMotion
+        motionEnabled={false}
+      />,
+    );
+
+    expect(getParticleNodes(fullScreen)).toHaveLength(68);
+    expect(getParticleNodes(fullScreen)[0].props.fill).toBe('#FF9E5E');
+    fullScreen.unmount();
+  });
+
   it('keeps imperative add/clear controls and wake ripples working after updates publish together', async () => {
     const ref = createRef<GlitterGlobeRef>();
     const nowSpy = jest.spyOn(Date, 'now');
     nowSpy.mockReturnValueOnce(1000).mockReturnValueOnce(1060);
 
-    const screen = render(<GlitterGlobe width={220} height={220} initialCount={0} ref={ref} />);
+    const screen = render(
+      <GlitterGlobe
+        width={220}
+        height={220}
+        initialCount={0}
+        ref={ref}
+        config={GLITTER_PRESETS.explore}
+      />,
+    );
 
     await waitFor(() => {
       expect(ref.current).toBeTruthy();
@@ -187,6 +225,16 @@ describe('GlitterGlobe', () => {
 
     expect(getParticleNodes(screen)).toHaveLength(0);
     expect(getWakeRipples(screen)).toHaveLength(0);
+  });
+
+  it('does not subscribe to shake sensors when the preset disables shake response', async () => {
+    render(
+      <GlitterGlobe width={220} height={220} initialCount={0} config={GLITTER_PRESETS.settle} />,
+    );
+
+    await waitFor(() => {
+      expect(mockIsAvailableAsync).not.toHaveBeenCalled();
+    });
   });
 });
 

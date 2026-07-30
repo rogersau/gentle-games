@@ -2,6 +2,7 @@ import { PASTEL_COLORS } from '../types';
 import type { AppRouteName } from '../types/navigation';
 import { APP_ROUTES } from '../types/navigation';
 import type { TranslationKey } from '../i18n/types';
+import { GAME_OUTCOMES, GameOutcomeDefinition } from './outcomes';
 
 export type GameId =
   | 'memory-snap'
@@ -29,6 +30,7 @@ export interface GameDefinition {
   accentColor: string;
   isUnfinished: boolean;
   launchMode: GameLaunchMode;
+  outcome: GameOutcomeDefinition;
 }
 
 export const GAME_REGISTRY: readonly GameDefinition[] = [
@@ -41,6 +43,7 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     accentColor: PASTEL_COLORS.primary,
     isUnfinished: false,
     launchMode: 'difficulty-select',
+    outcome: GAME_OUTCOMES['memory-snap'],
   },
   {
     id: 'drawing',
@@ -51,6 +54,7 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     accentColor: PASTEL_COLORS.secondary,
     isUnfinished: false,
     launchMode: 'direct',
+    outcome: GAME_OUTCOMES.drawing,
   },
   {
     id: 'glitter-fall',
@@ -61,6 +65,7 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     accentColor: PASTEL_COLORS.accent,
     isUnfinished: false,
     launchMode: 'direct',
+    outcome: GAME_OUTCOMES['glitter-fall'],
   },
   {
     id: 'bubble-pop',
@@ -71,6 +76,7 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     accentColor: PASTEL_COLORS.success,
     isUnfinished: false,
     launchMode: 'direct',
+    outcome: GAME_OUTCOMES['bubble-pop'],
   },
   {
     id: 'category-match',
@@ -81,6 +87,7 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     accentColor: PASTEL_COLORS.cardBack,
     isUnfinished: false,
     launchMode: 'direct',
+    outcome: GAME_OUTCOMES['category-match'],
   },
   {
     id: 'keepy-uppy',
@@ -91,6 +98,7 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     accentColor: PASTEL_COLORS.secondary,
     isUnfinished: false,
     launchMode: 'direct',
+    outcome: GAME_OUTCOMES['keepy-uppy'],
   },
   {
     id: 'breathing-garden',
@@ -101,6 +109,7 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     accentColor: PASTEL_COLORS.accent,
     isUnfinished: false,
     launchMode: 'direct',
+    outcome: GAME_OUTCOMES['breathing-garden'],
   },
   {
     id: 'pattern-train',
@@ -111,6 +120,7 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     accentColor: PASTEL_COLORS.primary,
     isUnfinished: false,
     launchMode: 'direct',
+    outcome: GAME_OUTCOMES['pattern-train'],
   },
   {
     id: 'number-picnic',
@@ -121,6 +131,7 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     accentColor: PASTEL_COLORS.success,
     isUnfinished: true,
     launchMode: 'direct',
+    outcome: GAME_OUTCOMES['number-picnic'],
   },
 ] as const;
 

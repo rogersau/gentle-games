@@ -29,7 +29,7 @@ describe('useSymmetry', () => {
   it('updates offsets when symmetry mode changes', () => {
     const { result, rerender } = renderHook(
       ({ mode }: { mode: 'none' | 'half' | 'quarter' }) => useSymmetry(mode),
-      { initialProps: { mode: 'none' as const } }
+      { initialProps: { mode: 'none' as const } },
     );
     expect(result.current.getSymmetryOffsets()).toHaveLength(1);
 

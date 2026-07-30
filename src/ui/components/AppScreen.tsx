@@ -63,14 +63,18 @@ export const AppScreen: React.FC<AppScreenProps> = ({
   if (isWeb) {
     return (
       <View style={containerStyle} testID={testID}>
-        <View style={styles.inner} onLayout={onLayout}>{children}</View>
+        <View style={styles.inner} onLayout={onLayout}>
+          {children}
+        </View>
       </View>
     );
   }
 
   return (
     <SafeAreaView style={containerStyle} edges={edges} testID={testID}>
-      <View style={styles.inner} onLayout={onLayout}>{children}</View>
+      <View style={styles.inner} onLayout={onLayout}>
+        {children}
+      </View>
     </SafeAreaView>
   );
 };

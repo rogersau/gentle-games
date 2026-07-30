@@ -6,7 +6,9 @@ export interface GamePresentationPolicy {
   showMilestoneCelebrations: boolean;
 }
 
-export const getGamePresentationPolicy = (settings: Pick<Settings, 'pressureFreeMode'>): GamePresentationPolicy => ({
+export const getGamePresentationPolicy = (
+  settings: Pick<Settings, 'pressureFreeMode'>,
+): GamePresentationPolicy => ({
   showPressureMetrics: settings.pressureFreeMode !== true,
   showMilestoneCelebrations: settings.pressureFreeMode !== true,
 });

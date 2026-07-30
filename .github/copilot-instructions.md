@@ -71,7 +71,7 @@ When handling persisted settings, always go through `sanitizeSettings()` in `Set
 
 ## Extending the App
 
-**Add animals or shapes** (Memory Snap tile pool): append to `ANIMALS` or `SHAPES` arrays in `src/types/index.ts`:
+**Add animals or familiar objects** (Memory Snap tile pool): append to `ANIMALS` or `MEMORY_SNAP_OBJECTS` arrays in `src/types/index.ts`:
 
 ```typescript
 { emoji: '🦁', name: 'lion', color: '#F0E68C' }

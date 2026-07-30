@@ -34,6 +34,7 @@ export interface ThemeColors {
 }
 
 export interface Settings {
+  settingsVersion?: number;
   animationsEnabled: boolean;
   soundEnabled: boolean;
   soundVolume: number;
@@ -51,6 +52,8 @@ export interface Settings {
   showMochiInGames: boolean;
   /** When enabled, hide non-essential scores, counters, and milestone celebrations in games. */
   pressureFreeMode?: boolean;
+  /** Independently persisted challenge and assistance controls for each game. */
+  gameSettings?: import('../games/settings').GameSettingsMap;
 }
 
 export type BreathingGardenPhase = 'inhale' | 'exhale';
@@ -75,33 +78,77 @@ export interface TrainPatternType {
   patternLabel: string;
 }
 
+export type NumberPicnicStage = '1-3' | '1-5' | '6-10';
+
+export type NumberPicnicMode =
+  | 'make-amount'
+  | 'find-amount'
+  | 'match-numeral'
+  | 'more-fewer'
+  | 'add-one-more';
+
+export interface NumberPicnicRepresentation {
+  quantity: number;
+  numeral: number;
+  frameCapacity: 5 | 10;
+  filledSlots: number[];
+  dots: string[];
+}
+
+export interface NumberPicnicChoice {
+  id: string;
+  quantity: number;
+  numeral: number;
+  representation: NumberPicnicRepresentation;
+}
+
+export interface NumberPicnicGroup {
+  id: 'left' | 'right';
+  quantity: number;
+  representation: NumberPicnicRepresentation;
+}
+
 export interface NumberPicnicPrompt {
   itemEmoji: string;
   itemName: string;
   targetCount: number;
   visualDots: string[];
+  stage: NumberPicnicStage;
+  mode: NumberPicnicMode;
+  representation: NumberPicnicRepresentation;
+  choices: NumberPicnicChoice[];
+  groups: NumberPicnicGroup[];
+  comparison: 'more' | 'fewer' | null;
 }
 
-export type CategoryMatchCategory = 'sky' | 'land' | 'ocean';
+export type CategoryMatchCategory = 'food' | 'toys' | 'clothes';
+export type CategoryMatchCategoryCount = 2 | 3;
 
 export interface CategoryMatchCategoryConfig {
   id: CategoryMatchCategory;
-  label: string;
   icon: string;
 }
 
 export interface CategoryMatchItem {
+  id: string;
   emoji: string;
   name: string;
   color: string;
   category: CategoryMatchCategory;
 }
 
-export const CATEGORY_MATCH_CATEGORIES: CategoryMatchCategoryConfig[] = [
-  { id: 'sky', label: 'Sky', icon: '☁️' },
-  { id: 'land', label: 'Land', icon: '🌱' },
-  { id: 'ocean', label: 'Ocean', icon: '🌊' },
+export const CATEGORY_MATCH_CATEGORIES_2: CategoryMatchCategoryConfig[] = [
+  { id: 'food', icon: '🍎' },
+  { id: 'toys', icon: '🧸' },
 ];
+
+export const CATEGORY_MATCH_CATEGORIES_3: CategoryMatchCategoryConfig[] = [
+  ...CATEGORY_MATCH_CATEGORIES_2,
+  { id: 'clothes', icon: '👕' },
+];
+
+// The starter rule is deliberately limited to two concrete, familiar groups.
+export const CATEGORY_MATCH_CATEGORIES = CATEGORY_MATCH_CATEGORIES_2;
 
 export const ANIMALS = [
   { emoji: '🐰', name: 'bunny', color: '#FFB6C1' },
@@ -155,8 +202,8 @@ export const ANIMALS = [
   { emoji: '🐿️', name: 'chipmunk', color: '#D2691E' },
 ];
 
-// Legacy name: this is the Memory Snap non-animal icon pool used by "shapes" and "mixed" themes.
-export const SHAPES = [
+// Memory Snap's non-animal pool contains familiar places, objects, food, and nature.
+export const MEMORY_SNAP_OBJECTS = [
   { emoji: '🏠', name: 'house', color: '#FFE4C4' },
   { emoji: '🏫', name: 'school', color: '#F5DEB3' },
   { emoji: '🏰', name: 'castle', color: '#E6E6FA' },
@@ -197,55 +244,37 @@ export const SHAPES = [
   { emoji: '❄️', name: 'snowflake', color: '#E0FFFF' },
 ];
 
-export const CATEGORY_MATCH_SKY: CategoryMatchItem[] = [
-  { emoji: '☀️', name: 'sun', color: '#FFFACD', category: 'sky' },
-  { emoji: '☁️', name: 'cloud', color: '#F0F8FF', category: 'sky' },
-  { emoji: '🌙', name: 'moon', color: '#E6E6FA', category: 'sky' },
-  { emoji: '🌈', name: 'rainbow', color: '#E6E6FA', category: 'sky' },
-  { emoji: '🪁', name: 'kite', color: '#FFB6C1', category: 'sky' },
-  { emoji: '✈️', name: 'airplane', color: '#ADD8E6', category: 'sky' },
-  { emoji: '🐦', name: 'bird', color: '#87CEEB', category: 'sky' },
-  { emoji: '🎈', name: 'balloon', color: '#FFC0CB', category: 'sky' },
-  { emoji: '⭐', name: 'star', color: '#FFFACD', category: 'sky' },
-  { emoji: '⚡', name: 'lightning', color: '#FFFACD', category: 'sky' },
-  { emoji: '🛸', name: 'ufo', color: '#D3D3D3', category: 'sky' },
-  { emoji: '🚁', name: 'helicopter', color: '#C0C0C0', category: 'sky' },
+export const CATEGORY_MATCH_FOOD: CategoryMatchItem[] = [
+  { id: 'apple', emoji: '🍎', name: 'apple', color: '#FFB6C1', category: 'food' },
+  { id: 'banana', emoji: '🍌', name: 'banana', color: '#FFFACD', category: 'food' },
+  { id: 'carrot', emoji: '🥕', name: 'carrot', color: '#FFA07A', category: 'food' },
+  { id: 'bread', emoji: '🍞', name: 'bread', color: '#DEB887', category: 'food' },
+  { id: 'cheese', emoji: '🧀', name: 'cheese', color: '#FFD700', category: 'food' },
+  { id: 'cookie', emoji: '🍪', name: 'cookie', color: '#D2B48C', category: 'food' },
 ];
 
-export const CATEGORY_MATCH_OCEAN: CategoryMatchItem[] = [
-  { emoji: '🐠', name: 'fish', color: '#87CEEB', category: 'ocean' },
-  { emoji: '🐬', name: 'dolphin', color: '#00CED1', category: 'ocean' },
-  { emoji: '🐳', name: 'whale', color: '#4169E1', category: 'ocean' },
-  { emoji: '🐙', name: 'octopus', color: '#DDA0DD', category: 'ocean' },
-  { emoji: '🦀', name: 'crab', color: '#FF6347', category: 'ocean' },
-  { emoji: '🦞', name: 'lobster', color: '#CD5C5C', category: 'ocean' },
-  { emoji: '🦑', name: 'squid', color: '#E6E6FA', category: 'ocean' },
-  { emoji: '🦐', name: 'shrimp', color: '#FFA07A', category: 'ocean' },
-  { emoji: '🪼', name: 'jellyfish', color: '#E0FFFF', category: 'ocean' },
-  { emoji: '🪸', name: 'coral', color: '#FFC0CB', category: 'ocean' },
-  { emoji: '🐚', name: 'shell', color: '#F5DEB3', category: 'ocean' },
-  { emoji: '🌊', name: 'wave', color: '#ADD8E6', category: 'ocean' },
+export const CATEGORY_MATCH_TOYS: CategoryMatchItem[] = [
+  { id: 'teddy', emoji: '🧸', name: 'teddy', color: '#DEB887', category: 'toys' },
+  { id: 'ball', emoji: '⚽', name: 'ball', color: '#F5F5F5', category: 'toys' },
+  { id: 'puzzle', emoji: '🧩', name: 'puzzle', color: '#FFDAB9', category: 'toys' },
+  { id: 'kite', emoji: '🪁', name: 'kite', color: '#E6E6FA', category: 'toys' },
+  { id: 'yo-yo', emoji: '🪀', name: 'yo-yo', color: '#DDA0DD', category: 'toys' },
+  { id: 'game', emoji: '🎮', name: 'game', color: '#B0C4DE', category: 'toys' },
 ];
 
-export const CATEGORY_MATCH_LAND: CategoryMatchItem[] = [
-  { emoji: '🌳', name: 'tree', color: '#90EE90', category: 'land' },
-  { emoji: '🌻', name: 'flower', color: '#FFFACD', category: 'land' },
-  { emoji: '🏠', name: 'house', color: '#FFE4C4', category: 'land' },
-  { emoji: '🚗', name: 'car', color: '#ADD8E6', category: 'land' },
-  { emoji: '🚌', name: 'bus', color: '#FFDAB9', category: 'land' },
-  { emoji: '🚜', name: 'tractor', color: '#F0E68C', category: 'land' },
-  { emoji: '🍎', name: 'apple', color: '#FFB6C1', category: 'land' },
-  { emoji: '🍌', name: 'banana', color: '#FFFACD', category: 'land' },
-  { emoji: '🍓', name: 'strawberry', color: '#FFC0CB', category: 'land' },
-  { emoji: '🥕', name: 'carrot', color: '#FFA07A', category: 'land' },
-  { emoji: '🌽', name: 'corn', color: '#FFFFE0', category: 'land' },
-  { emoji: '🥦', name: 'broccoli', color: '#98FB98', category: 'land' },
+export const CATEGORY_MATCH_CLOTHES: CategoryMatchItem[] = [
+  { id: 'shirt', emoji: '👕', name: 'shirt', color: '#87CEEB', category: 'clothes' },
+  { id: 'sock', emoji: '🧦', name: 'sock', color: '#F0F8FF', category: 'clothes' },
+  { id: 'hat', emoji: '🧢', name: 'hat', color: '#98FB98', category: 'clothes' },
+  { id: 'shoe', emoji: '👟', name: 'shoe', color: '#D3D3D3', category: 'clothes' },
+  { id: 'dress', emoji: '👗', name: 'dress', color: '#FFB6C1', category: 'clothes' },
+  { id: 'coat', emoji: '🧥', name: 'coat', color: '#D2B48C', category: 'clothes' },
 ];
 
 export const CATEGORY_MATCH_ITEMS: CategoryMatchItem[] = [
-  ...CATEGORY_MATCH_SKY,
-  ...CATEGORY_MATCH_LAND,
-  ...CATEGORY_MATCH_OCEAN,
+  ...CATEGORY_MATCH_FOOD,
+  ...CATEGORY_MATCH_TOYS,
+  ...CATEGORY_MATCH_CLOTHES,
 ];
 
 export const PATTERN_TRAIN_EMOJIS = ['🚂', '🌟', '🌈', '🌸', '☁️', '🫧', '🍓', '🧸'];

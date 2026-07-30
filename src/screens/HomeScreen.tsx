@@ -4,7 +4,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
-import { Difficulty, ThemeColors } from '../types';
+import { ThemeColors } from '../types';
 import { APP_ROUTES, AppStackParamList } from '../types/navigation';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { openExternalUrl } from '../utils/externalLinks';
@@ -14,10 +14,12 @@ import { GameDefinition, getGameRoute, getVisibleGames } from '../games/registry
 import { useGameSelection } from '../hooks/useGameSelection';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useLayout } from '../ui/useLayout';
+import { getGameSettings, MemorySnapPairCount, pairCountToDifficulty } from '../games/settings';
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<AppStackParamList>>();
-  const { settings, updateSettings } = useSettings();
+  const { settings, updateGameSettings } = useSettings();
+  const memorySettings = getGameSettings(settings, 'memory-snap');
   const { colors, resolvedMode } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const { contentWidth, isTablet } = useLayout();
@@ -54,22 +56,37 @@ export const HomeScreen: React.FC = () => {
   }, [showMochi]);
 
   const difficultyOptions: {
-    value: Difficulty;
+    value: MemorySnapPairCount;
     label: string;
     description: string;
   }[] = [
     {
-      value: 'easy',
+      value: 2,
+      label: t('settings.memorySnap.pairs.two'),
+      description: t('settings.memorySnap.pairs.twoDescription'),
+    },
+    {
+      value: 3,
+      label: t('settings.memorySnap.pairs.three'),
+      description: t('settings.memorySnap.pairs.threeDescription'),
+    },
+    {
+      value: 4,
+      label: t('settings.memorySnap.pairs.four'),
+      description: t('settings.memorySnap.pairs.fourDescription'),
+    },
+    {
+      value: 6,
       label: t('difficulty.easy.label'),
       description: t('difficulty.easy.description'),
     },
     {
-      value: 'medium',
+      value: 10,
       label: t('difficulty.medium.label'),
       description: t('difficulty.medium.description'),
     },
     {
-      value: 'hard',
+      value: 15,
       label: t('difficulty.hard.label'),
       description: t('difficulty.hard.description'),
     },
@@ -111,7 +128,7 @@ export const HomeScreen: React.FC = () => {
     }
   };
 
-  const handleDifficultySelect = async (difficulty: Difficulty) => {
+  const handleDifficultySelect = async (pairCount: MemorySnapPairCount) => {
     if (!isMountedRef.current || isLaunchingRef.current) {
       return;
     }
@@ -121,12 +138,12 @@ export const HomeScreen: React.FC = () => {
     setIsLaunching(true);
 
     try {
-      await updateSettings({ difficulty });
+      await updateGameSettings('memory-snap', { pairCount });
       if (!isMountedRef.current) {
         return;
       }
 
-      await onDifficultySelect(difficulty);
+      await onDifficultySelect(pairCountToDifficulty(pairCount));
       if (!isMountedRef.current) {
         return;
       }
@@ -154,9 +171,9 @@ export const HomeScreen: React.FC = () => {
     }
   };
 
-  const getDifficultyLabel = (difficulty: Difficulty) => {
-    const option = difficultyOptions.find((opt) => opt.value === difficulty);
-    return option?.label || difficulty;
+  const getDifficultyLabel = (pairCount: MemorySnapPairCount) => {
+    const option = difficultyOptions.find((opt) => opt.value === pairCount);
+    return option?.label || String(pairCount);
   };
 
   return (
@@ -247,15 +264,14 @@ export const HomeScreen: React.FC = () => {
       >
         <Text style={styles.modalSubtitle}>
           {t('difficulty.title')}
-          {settings.difficulty &&
-            ` (${t('games.memorySnap.lastUsed')}: ${getDifficultyLabel(settings.difficulty)})`}
+          {` (${t('games.memorySnap.lastUsed')}: ${getDifficultyLabel(memorySettings.pairCount)})`}
         </Text>
         <View style={styles.optionsList}>
           {difficultyOptions.map(({ value, label, description }) => (
             <AppButton
               key={value}
               label={t('difficulty.optionLabel', { label, description })}
-              variant={settings.difficulty === value ? 'primary' : 'ghost'}
+              variant={memorySettings.pairCount === value ? 'primary' : 'ghost'}
               size='md'
               fullWidth
               onPress={() => handleDifficultySelect(value)}

@@ -125,7 +125,9 @@ describe('KeepyUppyScreen', () => {
   });
 
   it('hides score, balloon, and popped counters in pressure-free mode', () => {
-    const settingsModule = jest.requireMock('../context/SettingsContext') as { useSettings: () => { settings: { pressureFreeMode: boolean } } };
+    const settingsModule = jest.requireMock('../context/SettingsContext') as {
+      useSettings: () => { settings: { pressureFreeMode: boolean } };
+    };
     settingsModule.useSettings().settings.pressureFreeMode = true;
     const screen = render(<KeepyUppyScreen />);
     expect(screen.queryByText('Taps: 0')).toBeNull();

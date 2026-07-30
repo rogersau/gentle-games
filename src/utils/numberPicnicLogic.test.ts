@@ -1,285 +1,290 @@
-import { renderHook, act } from '@testing-library/react-native';
+import { act, renderHook } from '@testing-library/react-native';
 import {
+  createNumberPicnicState,
+  createNumberPicnicRepresentation,
   generateNumberPicnicPrompt,
+  getNumberPicnicRange,
   getNumberPicnicMaxCount,
+  getNumberPicnicPoolSize,
+  isNumberPicnicModeAvailable,
   isNumberPicnicPromptComplete,
-  updateNumberPicnicCount,
+  numberPicnicReducer,
   useNumberPicnicGame,
 } from './numberPicnicLogic';
 
+const addAndUnlock = (result: { current: ReturnType<typeof useNumberPicnicGame> }, id: number) => {
+  act(() => result.current.handleItemDrop(id));
+  act(() => jest.advanceTimersByTime(300));
+};
+
 describe('numberPicnicLogic', () => {
-  describe('utility functions', () => {
-    it('returns max count bands by difficulty', () => {
-      expect(getNumberPicnicMaxCount('easy')).toBe(5);
-      expect(getNumberPicnicMaxCount('medium')).toBe(8);
-      expect(getNumberPicnicMaxCount('hard')).toBe(10);
-    });
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
 
-    it('generates prompt count inside difficulty range', () => {
-      const prompt = generateNumberPicnicPrompt('medium', () => 0.5);
-      expect(prompt.targetCount).toBeGreaterThanOrEqual(1);
-      expect(prompt.targetCount).toBeLessThanOrEqual(8);
-    });
+  it('keeps target quantities manageable and the source pool deliberately small', () => {
+    expect(getNumberPicnicMaxCount('easy')).toBe(5);
+    expect(getNumberPicnicMaxCount('medium')).toBe(8);
+    expect(getNumberPicnicMaxCount('hard')).toBe(10);
 
-    it('updates basket count with clamping and completion check', () => {
-      expect(updateNumberPicnicCount(0, -1)).toBe(0);
-      expect(updateNumberPicnicCount(11, 4)).toBe(12);
-      const prompt = {
-        itemEmoji: '🍎',
-        itemName: 'apples',
-        targetCount: 4,
-        visualDots: ['🟢', '🟢', '🟢', '🟢'],
-      };
-      expect(isNumberPicnicPromptComplete(4, prompt)).toBe(true);
-      expect(isNumberPicnicPromptComplete(3, prompt)).toBe(false);
-    });
+    for (let target = 1; target <= 10; target += 1) {
+      expect(getNumberPicnicPoolSize(target)).toBe(target + 2);
+    }
   });
 
-  describe('useNumberPicnicGame', () => {
-    beforeEach(() => {
-      jest.useFakeTimers();
-    });
+  it('keeps all stage boundaries inclusive and exact', () => {
+    expect(getNumberPicnicRange('1-3')).toEqual({ min: 1, max: 3 });
+    expect(getNumberPicnicRange('1-5')).toEqual({ min: 1, max: 5 });
+    expect(getNumberPicnicRange('6-10')).toEqual({ min: 6, max: 10 });
 
-    afterEach(() => {
-      jest.useRealTimers();
-    });
+    expect(generateNumberPicnicPrompt('1-3', () => 0).targetCount).toBe(1);
+    expect(generateNumberPicnicPrompt('1-3', () => 0.999999).targetCount).toBe(3);
+    expect(generateNumberPicnicPrompt('1-5', () => 0).targetCount).toBe(1);
+    expect(generateNumberPicnicPrompt('1-5', () => 0.999999).targetCount).toBe(5);
+    expect(generateNumberPicnicPrompt('6-10', () => 0).targetCount).toBe(6);
+    expect(generateNumberPicnicPrompt('6-10', () => 0.999999).targetCount).toBe(10);
+  });
 
-    it('initializes with correct state', () => {
-      const { result } = renderHook(() => useNumberPicnicGame('easy'));
+  it('generates exact visual dots and validates exact completion', () => {
+    const prompt = generateNumberPicnicPrompt('1-5', () => 0.5);
+    expect(prompt.targetCount).toBe(3);
+    expect(prompt.visualDots).toHaveLength(3);
+    expect(isNumberPicnicPromptComplete(3, prompt)).toBe(true);
+    expect(isNumberPicnicPromptComplete(4, prompt)).toBe(false);
+  });
 
-      expect(result.current.basketCount).toBe(0);
-      expect(result.current.completedPicnics).toBe(0);
-      expect(result.current.isSuccess).toBe(false);
-      expect(result.current.isProcessing).toBe(false);
-      expect(result.current.basketItems).toEqual([]);
-      expect(result.current.prompt.targetCount).toBeGreaterThanOrEqual(1);
-      expect(result.current.prompt.targetCount).toBeLessThanOrEqual(5);
-    });
+  it('keeps numeral, dots, and frame occupancy equal for every quantity', () => {
+    for (let quantity = 1; quantity <= 10; quantity += 1) {
+      const representation = createNumberPicnicRepresentation(quantity);
+      expect(representation.quantity).toBe(quantity);
+      expect(representation.numeral).toBe(quantity);
+      expect(representation.dots).toHaveLength(quantity);
+      expect(representation.filledSlots).toHaveLength(quantity);
+      expect(representation.frameCapacity).toBe(quantity <= 5 ? 5 : 10);
+    }
+  });
 
-    it('adds item to basket when dropped', () => {
-      const { result } = renderHook(() => useNumberPicnicGame('easy'));
-      const initialCount = result.current.blanketItemCount;
+  it('generates every mode with a precise target and deterministic output', () => {
+    const modes = [
+      'make-amount',
+      'find-amount',
+      'match-numeral',
+      'more-fewer',
+      'add-one-more',
+    ] as const;
 
-      act(() => {
-        result.current.handleItemDrop(0);
-      });
-
-      act(() => {
-        jest.advanceTimersByTime(300);
-      });
-
-      expect(result.current.basketCount).toBe(1);
-      expect(result.current.blanketItemCount).toBe(initialCount - 1);
-    });
-
-    it('ignores drop when processing', () => {
-      const { result } = renderHook(() => useNumberPicnicGame('easy'));
-
-      // First drop starts processing
-      act(() => {
-        result.current.handleItemDrop(0);
-      });
-
-      // Second drop should be ignored while processing
-      act(() => {
-        result.current.handleItemDrop(1);
-      });
-
-      // Only first item should be added
-      expect(result.current.basketCount).toBe(1);
-    });
-
-    it('ignores drop when basket is full', () => {
-      const { result } = renderHook(() => useNumberPicnicGame('easy'));
-      const maxCount = getNumberPicnicMaxCount('easy');
-
-      // Fill the basket
-      for (let i = 0; i < maxCount; i++) {
-        act(() => {
-          result.current.handleItemDrop(i);
-        });
-        act(() => {
-          jest.advanceTimersByTime(300);
-        });
+    for (const mode of modes) {
+      const first = generateNumberPicnicPrompt('6-10', () => 0.25, mode);
+      const second = generateNumberPicnicPrompt('6-10', () => 0.25, mode);
+      expect(second).toEqual(first);
+      expect(first.mode).toBe(mode);
+      if (mode === 'more-fewer') {
+        expect(first.groups).toHaveLength(2);
+        expect(first.groups[0].quantity).not.toBe(first.groups[1].quantity);
+        expect(first.comparison).toMatch(/more|fewer/);
+      } else if (mode === 'add-one-more') {
+        expect(first.targetCount).toBeGreaterThan(6);
+        expect(first.targetCount).toBeLessThanOrEqual(10);
+      } else if (mode === 'find-amount' || mode === 'match-numeral') {
+        expect(first.choices.map((choice) => choice.quantity)).toContain(first.targetCount);
       }
+    }
 
-      expect(result.current.basketCount).toBe(maxCount);
+    expect(isNumberPicnicModeAvailable('1-5', 'add-one-more')).toBe(false);
+    expect(generateNumberPicnicPrompt('1-5', () => 0, 'add-one-more').mode).toBe('make-amount');
+  });
 
-      // Try to add one more - should be ignored
-      act(() => {
-        result.current.handleItemDrop(maxCount);
-      });
+  it('does not expose the guided answer through a fixed first position', () => {
+    for (const mode of ['find-amount', 'match-numeral'] as const) {
+      const prompt = generateNumberPicnicPrompt('6-10', () => 0.25, mode);
+      expect(prompt.choices[0].quantity).not.toBe(prompt.targetCount);
+      expect(prompt.choices.map((choice) => choice.quantity)).toContain(prompt.targetCount);
+    }
+  });
 
-      expect(result.current.basketCount).toBe(maxCount);
+  it('starts add-one-more with the initial quantity placed and one action remaining', () => {
+    const prompt = generateNumberPicnicPrompt('6-10', () => 0, 'add-one-more');
+    const initial = createNumberPicnicState(prompt);
+
+    expect(initial.placedItemIds).toHaveLength(prompt.targetCount - 1);
+    expect(initial.poolItemIds).toHaveLength(3);
+
+    const fixedItemId = initial.placedItemIds[0];
+    expect(numberPicnicReducer(initial, { type: 'remove', itemId: fixedItemId })).toBe(initial);
+
+    const added = numberPicnicReducer(initial, { type: 'add', itemId: initial.poolItemIds[0] });
+    expect(added.placedItemIds).toHaveLength(prompt.targetCount);
+    expect(numberPicnicReducer(added, { type: 'undo' }).placedItemIds).toEqual(
+      initial.placedItemIds,
+    );
+  });
+
+  it('atomically adds, removes, undoes, and resets the same round', () => {
+    const prompt = {
+      itemEmoji: '🍎',
+      itemName: 'apples',
+      targetCount: 2,
+      visualDots: ['🟢', '🟢'],
+      stage: '1-3' as const,
+      mode: 'make-amount' as const,
+      representation: {
+        quantity: 2,
+        numeral: 2,
+        frameCapacity: 5 as const,
+        filledSlots: [1, 3],
+        dots: ['🟢', '🟢'],
+      },
+      choices: [],
+      groups: [],
+      comparison: null,
+    };
+    const initial = createNumberPicnicState(prompt);
+    const added = numberPicnicReducer(initial, { type: 'add', itemId: 0 });
+    expect(added.placedItemIds).toEqual([0]);
+    expect(added.poolItemIds).not.toContain(0);
+
+    const removed = numberPicnicReducer(added, { type: 'remove', itemId: 0 });
+    expect(removed.placedItemIds).toEqual([]);
+    expect(removed.poolItemIds).toEqual(initial.poolItemIds);
+    expect(numberPicnicReducer(added, { type: 'undo' }).placedItemIds).toEqual([]);
+
+    const reset = numberPicnicReducer(added, { type: 'reset' });
+    expect(reset.prompt).toEqual(prompt);
+    expect(reset.round).toBe(initial.round);
+    expect(reset.placedItemIds).toEqual([]);
+    expect(reset.poolItemIds).toEqual(initial.poolItemIds);
+  });
+
+  it('shares add semantics between tap and drag paths', () => {
+    const { result } = renderHook(() => useNumberPicnicGame('1-3'));
+    const firstId = result.current.blanketItemIds[0];
+
+    act(() => result.current.handleDropStart());
+    act(() => result.current.handleDragOverBasket(true));
+    addAndUnlock(result, firstId);
+
+    expect(result.current.basketItemIds).toEqual([firstId]);
+    expect(result.current.isDragging).toBe(false);
+    expect(result.current.isOverBasket).toBe(false);
+  });
+
+  it('ignores rapid duplicate input and never overshoots the target', () => {
+    const { result } = renderHook(() => useNumberPicnicGame('6-10'));
+    const target = result.current.prompt.targetCount;
+    const ids = [...result.current.blanketItemIds];
+
+    act(() => {
+      result.current.handleItemDrop(ids[0]);
+      result.current.handleItemDrop(ids[0]);
     });
+    expect(result.current.basketCount).toBe(1);
+    act(() => jest.advanceTimersByTime(300));
 
-    it('marks success when target count is reached', () => {
-      const { result } = renderHook(() => useNumberPicnicGame('easy'));
-      const targetCount = result.current.prompt.targetCount;
+    for (let index = 1; index < ids.length; index += 1) {
+      addAndUnlock(result, ids[index]);
+    }
 
-      // Add items until target is reached
-      for (let i = 0; i < targetCount; i++) {
-        act(() => {
-          result.current.handleItemDrop(i);
-        });
-        act(() => {
-          jest.advanceTimersByTime(300);
-        });
-      }
+    expect(result.current.basketCount).toBe(target);
+    expect(result.current.isComplete).toBe(true);
+  });
 
-      expect(result.current.isComplete).toBe(true);
-      expect(result.current.isSuccess).toBe(true);
-    });
+  it('announces completion once and requires deliberate Next', () => {
+    const { result } = renderHook(() => useNumberPicnicGame('1-3'));
+    const ids = [...result.current.blanketItemIds];
 
-    it('starts new round correctly', () => {
-      const { result } = renderHook(() => useNumberPicnicGame('easy'));
-      const initialBlanketCount = result.current.blanketItemCount;
+    for (let index = 0; index < result.current.prompt.targetCount; index += 1) {
+      addAndUnlock(result, ids[index]);
+    }
 
-      // Add some items
-      act(() => {
-        result.current.handleItemDrop(0);
-      });
-      act(() => {
-        jest.advanceTimersByTime(300);
-      });
+    expect(result.current.hasCompletionAnnouncement).toBe(true);
+    const completedRound = result.current.completedPicnics;
+    const prompt = result.current.prompt;
+    act(() => result.current.startNewRound());
+    expect(result.current.completedPicnics).toBe(completedRound + 1);
+    expect(result.current.prompt).not.toBe(prompt);
+    expect(result.current.basketCount).toBe(0);
 
-      expect(result.current.basketCount).toBe(1);
-      expect(result.current.completedPicnics).toBe(0);
+    act(() => result.current.startNewRound());
+    expect(result.current.completedPicnics).toBe(completedRound + 1);
+  });
 
-      // Start new round
-      act(() => {
-        result.current.startNewRound();
-      });
+  it('supports safe reversal after completion and preserves count on rerender', () => {
+    const { result, rerender, unmount } = renderHook(() => useNumberPicnicGame('1-3'));
+    const ids = [...result.current.blanketItemIds];
 
-      expect(result.current.basketCount).toBe(0);
-      expect(result.current.completedPicnics).toBe(1);
-      expect(result.current.isSuccess).toBe(false);
-      expect(result.current.blanketItemCount).toBe(initialBlanketCount);
-      // Prompt should be regenerated (may be same by chance, so just verify it exists)
-      expect(result.current.prompt).toBeDefined();
-      expect(result.current.prompt.itemName).toBeDefined();
-    });
+    for (let index = 0; index < result.current.prompt.targetCount; index += 1) {
+      addAndUnlock(result, ids[index]);
+    }
+    const completedPrompt = result.current.prompt;
+    act(() => result.current.handleBasketItemPress(ids[0]));
+    expect(result.current.basketCount).toBe(completedPrompt.targetCount - 1);
+    expect(result.current.isComplete).toBe(false);
 
-    it('clears pending processing reset before a new round starts', () => {
-      const { result } = renderHook(() => useNumberPicnicGame('easy'));
+    addAndUnlock(result, ids[0]);
+    const countBeforeRerender = result.current.basketCount;
+    rerender(undefined);
+    expect(result.current.basketCount).toBe(countBeforeRerender);
+    expect(result.current.prompt.targetCount).toBe(completedPrompt.targetCount);
+    unmount();
+  });
 
-      act(() => {
-        result.current.handleItemDrop(0);
-      });
+  it('uses the shared guided sequence and requires corrected response before transfer', () => {
+    const { result } = renderHook(() =>
+      useNumberPicnicGame('1-5', { mode: 'find-amount', rng: () => 0.5 }),
+    );
+    const correctChoice = result.current.prompt.choices.find(
+      (choice) => choice.quantity === result.current.prompt.targetCount,
+    );
+    const wrongChoice = result.current.prompt.choices.find(
+      (choice) => choice.quantity !== result.current.prompt.targetCount,
+    );
+    expect(correctChoice).toBeDefined();
+    expect(wrongChoice).toBeDefined();
 
-      expect(result.current.isProcessing).toBe(true);
+    act(() => result.current.handleChoice(wrongChoice!.id));
+    expect(result.current.guidedRound.phase).toBe('hinted');
+    act(() => result.current.handleChoice(wrongChoice!.id));
+    expect(result.current.guidedRound.phase).toBe('modelled');
+    act(() => result.current.handleChoice(correctChoice!.id));
+    expect(result.current.guidedRound.phase).toBe('corrected');
+    expect(result.current.isComplete).toBe(true);
+    const oldExample = result.current.guidedRound.exampleNumber;
+    act(() => result.current.startNewRound());
+    expect(result.current.guidedRound.exampleNumber).toBe(oldExample + 1);
+    expect(result.current.guidedRound.phase).toBe('independent');
+  });
 
-      act(() => {
-        jest.advanceTimersByTime(100);
-        result.current.startNewRound();
-      });
+  it('narrates placements only when per-game narration and global sound are enabled', () => {
+    const narrate = jest.fn();
+    const enabled = renderHook(() =>
+      useNumberPicnicGame('1-3', {
+        rng: () => 0,
+        spokenCounting: true,
+        settings: { soundEnabled: true },
+        narrateCount: narrate,
+      }),
+    );
+    act(() => enabled.result.current.handleItemDrop(enabled.result.current.blanketItemIds[0]));
+    expect(narrate).toHaveBeenCalledWith(1);
+    enabled.unmount();
 
-      act(() => {
-        result.current.handleItemDrop(0);
-      });
+    const mutedNarrate = jest.fn();
+    const muted = renderHook(() =>
+      useNumberPicnicGame('1-3', {
+        rng: () => 0,
+        spokenCounting: true,
+        settings: { soundEnabled: false },
+        narrateCount: mutedNarrate,
+      }),
+    );
+    act(() => muted.result.current.handleItemDrop(muted.result.current.blanketItemIds[0]));
+    expect(mutedNarrate).not.toHaveBeenCalled();
+  });
 
-      expect(result.current.completedPicnics).toBe(1);
-      expect(result.current.basketCount).toBe(1);
-      expect(result.current.isProcessing).toBe(true);
-
-      act(() => {
-        jest.advanceTimersByTime(200);
-      });
-
-      expect(result.current.isProcessing).toBe(true);
-
-      act(() => {
-        jest.advanceTimersByTime(100);
-      });
-
-      expect(result.current.isProcessing).toBe(false);
-    });
-
-    it('cleans up pending processing reset timeout on unmount', () => {
-      const { result, unmount } = renderHook(() => useNumberPicnicGame('easy'));
-
-      act(() => {
-        result.current.handleItemDrop(0);
-      });
-
-      expect(result.current.isProcessing).toBe(true);
-      expect(jest.getTimerCount()).toBe(1);
-
-      unmount();
-
-      expect(jest.getTimerCount()).toBe(0);
-    });
-
-    it('updates dragging state', () => {
-      const { result } = renderHook(() => useNumberPicnicGame('easy'));
-
-      expect(result.current.isDragging).toBe(false);
-      expect(result.current.isOverBasket).toBe(false);
-
-      act(() => {
-        result.current.handleDropStart();
-      });
-
-      expect(result.current.isDragging).toBe(true);
-      expect(result.current.isOverBasket).toBe(false);
-
-      act(() => {
-        result.current.handleDragOverBasket(true);
-      });
-
-      expect(result.current.isDragging).toBe(true);
-      expect(result.current.isOverBasket).toBe(true);
-
-      act(() => {
-        result.current.handleDropEnd();
-      });
-
-      expect(result.current.isDragging).toBe(false);
-      expect(result.current.isOverBasket).toBe(false);
-      expect(result.current.basketCount).toBe(0);
-    });
-
-    it('cleans up transient drag state after a successful drop', () => {
-      const { result } = renderHook(() => useNumberPicnicGame('easy'));
-
-      act(() => {
-        result.current.handleDropStart();
-        result.current.handleDragOverBasket(true);
-        result.current.handleDropEnd();
-        result.current.handleItemDrop(0);
-      });
-
-      act(() => {
-        jest.advanceTimersByTime(300);
-      });
-
-      expect(result.current.basketCount).toBe(1);
-      expect(result.current.isDragging).toBe(false);
-      expect(result.current.isOverBasket).toBe(false);
-    });
-
-    it('generates basket items based on count', () => {
-      const { result } = renderHook(() => useNumberPicnicGame('easy'));
-
-      expect(result.current.basketItems).toEqual([]);
-
-      act(() => {
-        result.current.handleItemDrop(0);
-      });
-      act(() => {
-        jest.advanceTimersByTime(300);
-      });
-
-      expect(result.current.basketItems).toHaveLength(1);
-      expect(result.current.basketItems[0]).toBe(result.current.prompt.itemEmoji);
-    });
-
-    it('respects different difficulty levels', () => {
-      const { result: easyResult } = renderHook(() => useNumberPicnicGame('easy'));
-      const { result: hardResult } = renderHook(() => useNumberPicnicGame('hard'));
-
-      expect(easyResult.current.prompt.targetCount).toBeLessThanOrEqual(5);
-      expect(hardResult.current.prompt.targetCount).toBeLessThanOrEqual(10);
-    });
+  it('cancels its input unlock timer during teardown', () => {
+    const { result, unmount } = renderHook(() => useNumberPicnicGame('1-3'));
+    act(() => result.current.handleItemDrop(result.current.blanketItemIds[0]));
+    expect(jest.getTimerCount()).toBe(1);
+    unmount();
+    expect(jest.getTimerCount()).toBe(0);
   });
 });

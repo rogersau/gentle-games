@@ -6,10 +6,7 @@ interface UseDrawingHistoryOptions {
   onHistoryChange?: (history: HistoryEntry[]) => void;
 }
 
-export function useDrawingHistory({
-  initialHistory,
-  onHistoryChange,
-}: UseDrawingHistoryOptions) {
+export function useDrawingHistory({ initialHistory, onHistoryChange }: UseDrawingHistoryOptions) {
   const [history, setHistory] = useState<HistoryEntry[]>(initialHistory);
   const historyRef = useRef(history);
   const nextActionIdRef = useRef(0);

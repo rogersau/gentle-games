@@ -3,6 +3,8 @@ import { render, fireEvent, act } from '@testing-library/react-native';
 import { NumberPicnicScreen } from './NumberPicnicScreen';
 
 const mockGoBack = jest.fn();
+let mockPicnicMode = 'make-amount';
+let mockPicnicStage = '1-5';
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
@@ -43,6 +45,14 @@ jest.mock('../context/SettingsContext', () => ({
       reducedMotionEnabled: false,
       difficulty: 'easy',
       showMochiInGames: true,
+      gameSettings: {
+        'number-picnic': {
+          maxQuantity: mockPicnicStage === '1-5' ? 5 : 10,
+          stage: mockPicnicStage,
+          mode: mockPicnicMode,
+          spokenCounting: false,
+        },
+      },
     },
   }),
 }));
@@ -63,6 +73,40 @@ jest.mock('react-i18next', () => ({
         'games.numberPicnic.title': 'Number Picnic',
         'games.numberPicnic.subtitle': 'Drag items from the blanket to the basket',
         'games.numberPicnic.place': 'Place',
+        'games.numberPicnic.modes.makeAmount.instruction': 'Make {{count}} {{item}} in the basket',
+        'games.numberPicnic.modes.findAmount.instruction': 'Find the group with {{count}} {{item}}',
+        'games.numberPicnic.modes.matchNumeral.instruction': 'Which numeral matches this group?',
+        'games.numberPicnic.modes.moreFewer.instruction':
+          'Choose the group with {{comparison}} items',
+        'games.numberPicnic.modes.addOneMore.instruction':
+          'There are {{count}} {{item}}. Add one more to make {{target}}',
+        'games.numberPicnic.comparison.more': 'more',
+        'games.numberPicnic.comparison.fewer': 'fewer',
+        'games.numberPicnic.guidance.neutral':
+          'That choice does not show {{target}} {{item}}. You can try again.',
+        'games.numberPicnic.guidance.comparisonNeutral':
+          'That group does not have {{comparison}} items. You can try again.',
+        'games.numberPicnic.guidance.findAmountHint':
+          'Count the filled spaces in each frame. Look for {{target}}.',
+        'games.numberPicnic.guidance.matchNumeralHint':
+          'Count the filled spaces, then choose that numeral.',
+        'games.numberPicnic.guidance.comparisonHint':
+          'Compare the frames. Look for the group with {{comparison}} filled spaces.',
+        'games.numberPicnic.guidance.hintButton': 'Show a hint',
+        'games.numberPicnic.guidance.replay': 'Hear the instruction again',
+        'games.numberPicnic.guidance.skip': 'Try a new example',
+        'games.numberPicnic.transfer': 'Try a new example',
+        'games.numberPicnic.transferHint': 'Try the same idea with new items',
+        'games.numberPicnic.choiceAccessibilityLabel': 'Group showing {{count}} items',
+        'games.numberPicnic.numeralChoiceAccessibilityLabel': 'Numeral {{numeral}}',
+        'games.numberPicnic.choiceHint': 'Choose this group',
+        'games.numberPicnic.representation.accessibilityLabel':
+          '{{count}} items shown as a numeral, dots, and a frame',
+        'games.numberPicnic.representation.quantityAccessibilityLabel':
+          '{{count}} items shown as dots and a frame',
+        'games.numberPicnic.groupAccessibilityLabel': '{{group}} group showing {{count}} items',
+        'games.numberPicnic.groups.left': 'Left group',
+        'games.numberPicnic.groups.right': 'Right group',
         'games.numberPicnic.feedback.complete': 'Great counting!',
         'games.numberPicnic.feedback.incomplete': 'Keep adding items',
         'games.numberPicnic.completed': 'Completed picnics',
@@ -81,10 +125,41 @@ jest.mock('../components/numberpicnic', () => {
   const { View, Text, Pressable } = require('react-native');
 
   return {
+    NumberPicnicRepresentation: ({
+      representation,
+      showNumeral = true,
+      testID,
+    }: {
+      representation: { dots: string[]; numeral: number };
+      showNumeral?: boolean;
+      testID?: string;
+    }) => (
+      <View testID={testID}>
+        {showNumeral && <Text>{representation.numeral}</Text>}
+        <Text>{representation.dots.join(' ')}</Text>
+      </View>
+    ),
+    NumberPicnicChoice: ({
+      choice,
+      display,
+      onPress,
+      testID,
+    }: {
+      choice: { quantity: number };
+      display: 'quantity' | 'numeral';
+      onPress: () => void;
+      testID?: string;
+    }) => (
+      <Pressable testID={testID} onPress={onPress}>
+        <Text>{display === 'numeral' ? choice.quantity : 'quantity pattern'}</Text>
+      </Pressable>
+    ),
     PicnicBasket: ({
       isDropTarget,
       items,
+      itemIds,
       targetCount,
+      onItemPress,
       onAnimationComplete,
       accessibilityLabel,
       accessibilityHint,
@@ -97,12 +172,21 @@ jest.mock('../components/numberpicnic', () => {
       accessibilityLabel?: string;
       accessibilityHint?: string;
       testID?: string;
+      itemIds?: number[];
+      onItemPress?: (itemId: number) => void;
     }) => (
       <View testID={testID}>
         <Text>{`drop-target:${isDropTarget ? 'yes' : 'no'}`}</Text>
         <Text>{`basket-items:${items.length}/${targetCount}`}</Text>
         <Text>{accessibilityLabel}</Text>
         <Text>{accessibilityHint}</Text>
+        {items.map((item, index) => (
+          <Pressable
+            key={itemIds?.[index] ?? index}
+            testID={`picnic-placed-item-${itemIds?.[index] ?? index}`}
+            onPress={() => onItemPress?.(itemIds?.[index] ?? index)}
+          />
+        ))}
         <Pressable testID='basket-next-round' onPress={() => onAnimationComplete?.()} />
       </View>
     ),
@@ -150,6 +234,8 @@ jest.mock('../components/numberpicnic', () => {
 describe('NumberPicnicScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockPicnicMode = 'make-amount';
+    mockPicnicStage = '1-5';
     jest.useFakeTimers();
   });
 
@@ -161,7 +247,7 @@ describe('NumberPicnicScreen', () => {
     const { getAllByText, getByText } = render(<NumberPicnicScreen />);
 
     // Should show prompt with target count and item name
-    expect(getByText(/Place/)).toBeTruthy();
+    expect(getByText(/Make/)).toBeTruthy();
     expect(getAllByText(/translated picnic item/).length).toBeGreaterThan(0);
     expect(getByText(/translated basket 0 translated picnic item/)).toBeTruthy();
     expect(getByText('translated basket hint')).toBeTruthy();
@@ -172,6 +258,46 @@ describe('NumberPicnicScreen', () => {
 
     // Visual dots should be present
     expect(getByText(/🟢/)).toBeTruthy();
+  });
+
+  it('renders a guided choice mode without requiring drag input', () => {
+    mockPicnicMode = 'find-amount';
+    const { getByTestId, getByText } = render(<NumberPicnicScreen />);
+
+    expect(getByTestId('number-picnic-choices')).toBeTruthy();
+    expect(getByText('Show a hint')).toBeTruthy();
+    expect(getByText('Hear the instruction again')).toBeTruthy();
+    expect(getByText('Try a new example')).toBeTruthy();
+  });
+
+  it('presents match-numeral as a quantity source with numeral-only choices', () => {
+    mockPicnicMode = 'match-numeral';
+    const { getByTestId, getAllByText, getByText } = render(<NumberPicnicScreen />);
+
+    expect(getByText('Which numeral matches this group?')).toBeTruthy();
+    expect(getByTestId('number-picnic-match-quantity')).toBeTruthy();
+    expect(getAllByText(/^\d+$/).length).toBeGreaterThan(0);
+    expect(() => getByText('quantity pattern')).toThrow();
+  });
+
+  it('makes add-one-more a placement round with the starting quantity already in the basket', () => {
+    mockPicnicMode = 'add-one-more';
+    mockPicnicStage = '6-10';
+    const { getByTestId, getByText, queryByTestId } = render(<NumberPicnicScreen />);
+
+    expect(getByText(/Add one more/)).toBeTruthy();
+    expect(getByText(/basket-items:\d+\/\d+/)).toBeTruthy();
+    expect(getByTestId('picnic-blanket')).toBeTruthy();
+    expect(queryByTestId('number-picnic-choices')).toBeNull();
+  });
+
+  it('keeps More/fewer groups separate and exposes both non-drag choices', () => {
+    mockPicnicMode = 'more-fewer';
+    const { getByTestId } = render(<NumberPicnicScreen />);
+
+    expect(getByTestId('number-picnic-groups')).toBeTruthy();
+    expect(getByTestId('number-picnic-choice-left')).toBeTruthy();
+    expect(getByTestId('number-picnic-choice-right')).toBeTruthy();
   });
 
   it('shows items on the blanket', () => {
@@ -264,17 +390,31 @@ describe('NumberPicnicScreen', () => {
     expect(getByTestId('picnic-item-0')).toBeTruthy();
   });
 
-  it('clears basket hover state when a new round starts', () => {
+  it('clears basket hover state when reset is pressed', () => {
     const { getByTestId, getByText } = render(<NumberPicnicScreen />);
 
     fireEvent.press(getByTestId('blanket-start-drag'));
     fireEvent.press(getByTestId('blanket-hover-on'));
     expect(getByText('drop-target:yes')).toBeTruthy();
 
-    fireEvent.press(getByTestId('basket-next-round'));
+    fireEvent.press(getByTestId('number-picnic-reset'));
 
     expect(getByText('drop-target:no')).toBeTruthy();
     expect(getByTestId('number-picnic-scroll').props.scrollEnabled).toBe(true);
+  });
+
+  it('exposes deliberate undo and reset controls', () => {
+    const { getByTestId, getByText } = render(<NumberPicnicScreen />);
+
+    fireEvent.press(getByTestId('blanket-drop'));
+    act(() => jest.advanceTimersByTime(300));
+    expect(getByText(/basket-items:1\//)).toBeTruthy();
+
+    fireEvent.press(getByTestId('number-picnic-undo'));
+    expect(getByText(/basket-items:0\//)).toBeTruthy();
+
+    fireEvent.press(getByTestId('number-picnic-reset'));
+    expect(getByText(/basket-items:0\//)).toBeTruthy();
   });
 });
 

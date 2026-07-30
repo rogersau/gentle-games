@@ -481,7 +481,9 @@ describe('DrawingScreen', () => {
       latestProps.onHistoryChange(historyA);
       jest.advanceTimersByTime(DRAWING_SAVE_DEBOUNCE_MS);
     });
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+    });
     expect(mockClearCanvas).not.toHaveBeenCalled();
     expect(screen.getByTestId('drawing-save-notice')).toBeTruthy();
 
@@ -495,5 +497,4 @@ describe('DrawingScreen', () => {
     });
     expect(screen.queryByTestId('drawing-save-notice')).toBeNull();
   });
-
 });

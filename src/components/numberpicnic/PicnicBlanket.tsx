@@ -50,6 +50,29 @@ export const doesNumberPicnicRectOverlap = (
   );
 };
 
+export const isNumberPicnicDropValid = (
+  itemLayout: WindowRect | null,
+  dropZoneLayout: WindowRect | null | undefined,
+  gesture: { dx: number; dy: number; moveX?: number; moveY?: number },
+): boolean => {
+  if (itemLayout) {
+    return doesNumberPicnicRectOverlap(
+      translateNumberPicnicRect(itemLayout, gesture.dx, gesture.dy),
+      dropZoneLayout,
+    );
+  }
+
+  return Boolean(
+    dropZoneLayout &&
+    typeof gesture.moveX === 'number' &&
+    typeof gesture.moveY === 'number' &&
+    gesture.moveX >= dropZoneLayout.x &&
+    gesture.moveX <= dropZoneLayout.x + dropZoneLayout.width &&
+    gesture.moveY >= dropZoneLayout.y &&
+    gesture.moveY <= dropZoneLayout.y + dropZoneLayout.height,
+  );
+};
+
 interface DraggableItem {
   id: number;
   emoji: string;
@@ -69,6 +92,7 @@ interface MeasurableNode {
 interface PicnicBlanketProps {
   itemEmoji: string;
   itemCount: number;
+  itemIds?: number[];
   targetCount: number;
   onItemDrop: (index: number) => void;
   onDropStart?: () => void;
@@ -78,11 +102,16 @@ interface PicnicBlanketProps {
   isProcessing?: boolean;
   style?: ViewStyle;
   testID?: string;
+  measureItemInWindow?: (
+    itemId: number,
+    callback: (x: number, y: number, width: number, height: number) => void,
+  ) => void;
 }
 
 export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
   itemEmoji,
   itemCount,
+  itemIds,
   targetCount,
   onItemDrop,
   onDropStart,
@@ -92,6 +121,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
   isProcessing = false,
   style,
   testID,
+  measureItemInWindow,
 }) => {
   const { colors } = useThemeColors();
   const { width: screenWidth } = useWindowDimensions();
@@ -99,9 +129,10 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  // Calculate how many items to show on the blanket
-  const maxItems = Math.max(12, targetCount + 3);
-  const visibleItems = Math.min(itemCount, maxItems);
+  // Keep source identities stable so a rerender cannot change what is placed.
+  const availableItemIds = itemIds ?? Array.from({ length: itemCount }, (_, index) => index);
+  const maxItems = Math.max(targetCount + 3, ...availableItemIds, 0);
+  const availableIds = useMemo(() => new Set(availableItemIds), [availableItemIds]);
 
   // Track which item is currently being dragged
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
@@ -115,16 +146,16 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
   // Track the current emoji to detect changes
   const prevEmojiRef = useRef(itemEmoji);
 
-  // Initialize items if not already done OR if emoji changed (new round)
-  if (draggableItemsRef.current.length === 0 || prevEmojiRef.current !== itemEmoji) {
+  // Rebuild only for a new round or a changed pool shape, never for layout changes.
+  if (draggableItemsRef.current.length !== maxItems || prevEmojiRef.current !== itemEmoji) {
     prevEmojiRef.current = itemEmoji;
     draggableItemsRef.current = Array.from({ length: maxItems }, (_, index) => ({
       id: index,
       emoji: itemEmoji,
       position: new Animated.ValueXY({ x: 0, y: 0 }),
       scale: new Animated.Value(1),
-      opacity: new Animated.Value(index < visibleItems ? 1 : 0.3),
-      isAvailable: index < visibleItems,
+      opacity: new Animated.Value(availableIds.has(index) ? 1 : 0.3),
+      isAvailable: availableIds.has(index),
       isDragging: false,
     }));
   }
@@ -132,7 +163,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
   // Update availability when itemCount changes - animate opacity instead of recreating
   useEffect(() => {
     draggableItemsRef.current.forEach((item, index) => {
-      const shouldBeAvailable = index < visibleItems;
+      const shouldBeAvailable = availableIds.has(index);
       item.isAvailable = shouldBeAvailable;
 
       // Animate opacity change
@@ -146,7 +177,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
         item.opacity.setValue(shouldBeAvailable ? 1 : 0.3);
       }
     });
-  }, [visibleItems, animationsEnabled]);
+  }, [availableIds, animationsEnabled]);
 
   const setDragOverlap = useCallback(
     (isOver: boolean) => {
@@ -162,19 +193,24 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
 
   const measureItemLayout = useCallback(
     (index: number, onMeasured: (layout: WindowRect | null) => void) => {
+      const saveMeasurement = (x: number, y: number, width: number, height: number) => {
+        const layout = { x, y, width, height };
+        itemLayoutsRef.current[index] = layout;
+        onMeasured(layout);
+      };
+      if (measureItemInWindow) {
+        measureItemInWindow(index, saveMeasurement);
+        return;
+      }
       const itemRef = itemRefs.current[index];
       if (!itemRef?.measureInWindow) {
         onMeasured(itemLayoutsRef.current[index] ?? null);
         return;
       }
 
-      itemRef.measureInWindow((x, y, width, height) => {
-        const layout = { x, y, width, height };
-        itemLayoutsRef.current[index] = layout;
-        onMeasured(layout);
-      });
+      itemRef.measureInWindow(saveMeasurement);
     },
-    [],
+    [measureItemInWindow],
   );
 
   const updateDragOverlap = useCallback(
@@ -200,6 +236,18 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
       return evaluateOverlap(cachedLayout);
     },
     [dropZoneLayout, measureItemLayout, setDragOverlap],
+  );
+
+  const isPointOverBasket = useCallback(
+    (x: number, y: number) =>
+      Boolean(
+        dropZoneLayout &&
+        x >= dropZoneLayout.x &&
+        x <= dropZoneLayout.x + dropZoneLayout.width &&
+        y >= dropZoneLayout.y &&
+        y <= dropZoneLayout.y + dropZoneLayout.height,
+      ),
+    [dropZoneLayout],
   );
 
   // Create PanResponder for an item
@@ -230,48 +278,44 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
             y: gestureState.dy,
           });
 
-          updateDragOverlap(index, gestureState.dx, gestureState.dy);
+          const hasMeasuredItem = Boolean(itemLayoutsRef.current[index]);
+          if (hasMeasuredItem) {
+            updateDragOverlap(index, gestureState.dx, gestureState.dy);
+          } else if (Number.isFinite(gestureState.moveX) && Number.isFinite(gestureState.moveY)) {
+            setDragOverlap(isPointOverBasket(gestureState.moveX, gestureState.moveY));
+          }
         },
         onPanResponderRelease: (_, gestureState) => {
-          const hasCachedLayout = Boolean(itemLayoutsRef.current[index]);
-          const isValidDrop = updateDragOverlap(
-            index,
-            gestureState.dx,
-            gestureState.dy,
-            hasCachedLayout ? undefined : { forceMeasure: true },
-          );
+          const finishRelease = (layout: WindowRect | null) => {
+            const isValidDrop = isNumberPicnicDropValid(layout, dropZoneLayout, gestureState);
 
-          setDraggingIndex(null);
-          setDragOverlap(false);
-          onDropEnd?.();
+            setDraggingIndex(null);
+            setDragOverlap(false);
+            onDropEnd?.();
 
-          // Scale back down
-          if (animationsEnabled) {
-            Animated.timing(item.scale, {
-              toValue: 1,
-              duration: 200,
-              useNativeDriver: Platform.OS !== 'web',
-            }).start();
-          }
-
-          if (isValidDrop) {
-            onItemDrop(index);
-
-            // Fade out the item
             if (animationsEnabled) {
-              Animated.timing(item.opacity, {
-                toValue: 0,
+              Animated.timing(item.scale, {
+                toValue: 1,
                 duration: 200,
                 useNativeDriver: Platform.OS !== 'web',
-              }).start(() => {
-                item.position.setValue({ x: 0, y: 0 });
-              });
-            } else {
-              item.opacity.setValue(0);
-              item.position.setValue({ x: 0, y: 0 });
+              }).start();
             }
-          } else {
-            // Reset position (not dropped to basket)
+
+            if (isValidDrop) {
+              onItemDrop(index);
+              if (animationsEnabled) {
+                Animated.timing(item.opacity, {
+                  toValue: 0,
+                  duration: 200,
+                  useNativeDriver: Platform.OS !== 'web',
+                }).start(() => item.position.setValue({ x: 0, y: 0 }));
+              } else {
+                item.opacity.setValue(0);
+                item.position.setValue({ x: 0, y: 0 });
+              }
+              return;
+            }
+
             if (animationsEnabled) {
               Animated.spring(item.position, {
                 toValue: { x: 0, y: 0 },
@@ -281,12 +325,16 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
             } else {
               item.position.setValue({ x: 0, y: 0 });
             }
-          }
+          };
+
+          measureItemLayout(index, finishRelease);
         },
         onPanResponderTerminate: () => {
           setDraggingIndex(null);
           setDragOverlap(false);
           onDropEnd?.();
+          item.position.setValue({ x: 0, y: 0 });
+          item.scale.setValue(1);
         },
       });
     },
@@ -297,6 +345,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
       onDropEnd,
       onItemDrop,
       measureItemLayout,
+      isPointOverBasket,
       setDragOverlap,
       updateDragOverlap,
     ],
@@ -354,18 +403,6 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
               >
                 {item.isAvailable ? (
                   <Pressable
-                    ref={(node) => {
-                      itemRefs.current[index] = node as MeasurableNode | null;
-                    }}
-                    onLayout={(event) => {
-                      const { layout } = event.nativeEvent;
-                      itemLayoutsRef.current[index] = {
-                        x: layout.x,
-                        y: layout.y,
-                        width: layout.width,
-                        height: layout.height,
-                      };
-                    }}
                     {...panResponder.panHandlers}
                     onPress={() => {
                       if (!isProcessing && item.isAvailable) {
@@ -381,7 +418,13 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
                     accessibilityRole='button'
                     testID={`picnic-item-${index}`}
                   >
-                    <Animated.View style={[styles.draggableItem, animatedStyle]}>
+                    <Animated.View
+                      ref={(node) => {
+                        itemRefs.current[index] = node as MeasurableNode | null;
+                      }}
+                      onLayout={() => measureItemLayout(index, () => undefined)}
+                      style={[styles.draggableItem, animatedStyle]}
+                    >
                       <Text style={styles.emoji} selectable={false}>
                         {item.emoji}
                       </Text>

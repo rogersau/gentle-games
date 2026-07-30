@@ -1,110 +1,69 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import {
-  CATEGORY_MATCH_LAND,
-  CATEGORY_MATCH_CATEGORIES,
-  CATEGORY_MATCH_OCEAN,
-  CATEGORY_MATCH_SKY,
-  CategoryMatchCategory,
-  CategoryMatchItem,
-  ThemeColors,
-} from '../types';
+import type { ThemeColors } from '../types';
 import { CategoryMatchBoard } from '../components/CategoryMatchBoard';
 import { useThemeColors } from '../utils/theme';
 import { useSettings } from '../context/SettingsContext';
-import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 import { AppScreen, AppHeader, AppButton, AppCard } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
+import { getGameSettings } from '../games/settings';
+import { getCategoryMatchItems } from '../utils/categoryMatchLogic';
 
 export const CategoryMatchScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useThemeColors();
   const { settings } = useSettings();
-  const { showPressureMetrics } = getGamePresentationPolicy(settings);
   const { t } = useTranslation();
-  const translate = t as unknown as (key: string, options?: Record<string, unknown>) => string;
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [streakCount, setStreakCount] = useState(0);
-  const [showPreview, setShowPreview] = useState(true);
+  const categorySettings = getGameSettings(settings, 'category-match');
+  const [showPreview, setShowPreview] = useState(categorySettings.showPreview);
   const { viewport, onLayout } = useMeasuredGameViewport();
 
-  const boardSize = useMemo(() => {
-    return calculateGameBoardSize(viewport, {
-      horizontalPadding: Space.md * 2,
-      verticalReserve: 214,
-      compactMinHeight: 240,
-      maxHeightRatio: 0.7,
-    });
-  }, [viewport]);
-
-  const categoryExamples = useMemo(
-    () => ({
-      sky: CATEGORY_MATCH_SKY.slice(0, 2)
-        .map((item) => item.emoji)
-        .join(' '),
-      land: CATEGORY_MATCH_LAND.slice(0, 2)
-        .map((item) => item.emoji)
-        .join(' '),
-      ocean: CATEGORY_MATCH_OCEAN.slice(0, 2)
-        .map((item) => item.emoji)
-        .join(' '),
-    }),
-    [],
+  const boardSize = useMemo(
+    () =>
+      calculateGameBoardSize(viewport, {
+        horizontalPadding: Space.md * 2,
+        verticalReserve: 214,
+        compactMinHeight: 540,
+        maxHeightRatio: 0.7,
+      }),
+    [viewport],
   );
 
-  const handleCorrectMatch = useCallback(
-    (_item: CategoryMatchItem, _category: CategoryMatchCategory) => {
-      setCorrectCount((count) => count + 1);
-      setStreakCount((current) => current + 1);
-    },
-    [],
+  const categories = useMemo(
+    () =>
+      categorySettings.categoryCount === 3
+        ? (['food', 'toys', 'clothes'] as const)
+        : (['food', 'toys'] as const),
+    [categorySettings.categoryCount],
   );
-
-  const handleIncorrectMatch = useCallback(() => {
-    setStreakCount(0);
-  }, []);
+  const examples = useMemo(() => {
+    const items = getCategoryMatchItems(categorySettings.categoryCount);
+    return categories.map((category) => ({
+      category,
+      example: items.find((item) => item.category === category)?.emoji ?? '',
+    }));
+  }, [categories, categorySettings.categoryCount]);
 
   return (
     <AppScreen scroll onLayout={onLayout} testID='category-match-screen'>
       <AppHeader title={t('games.categoryMatch.title')} onBack={() => navigation.goBack()} />
-
       <View style={styles.content}>
-        <Text style={styles.subtitle} accessibilityRole='text'>
-          {t('games.categoryMatch.subtitle')}
-        </Text>
-        {showPressureMetrics ? (
-          <Text
-          style={styles.counter}
-          accessibilityLabel={`${correctCount} ${t('games.categoryMatch.correct')}`}
-        >
-          {t('games.categoryMatch.correct')}: {correctCount}
-          </Text>
-        ) : null}
-        {showPressureMetrics && streakCount >= 3 ? (
-          <Text
-            style={styles.encouragement}
-            accessibilityLabel={t('games.categoryMatch.greatStreak')}
-          >
-            {t('games.categoryMatch.streakMessage')} ✨
-          </Text>
-        ) : null}
-
         {showPreview ? (
           <AppCard variant='outlined' style={styles.previewCard}>
             <Text style={styles.previewTitle} accessibilityRole='header'>
               {t('games.categoryMatch.quickPreview')}
             </Text>
-            <Text style={styles.previewText}>{t('games.categoryMatch.dragInstruction')}</Text>
-            {CATEGORY_MATCH_CATEGORIES.map((category) => (
-              <View key={category.id} style={styles.previewRow}>
+            <Text style={styles.previewText}>{t('games.categoryMatch.previewInstruction')}</Text>
+            {examples.map(({ category, example }) => (
+              <View key={category} style={styles.previewRow}>
                 <Text style={styles.previewCategoryLabel}>
-                  {category.icon} {translate('games.categoryMatch.categories.' + category.id)}
+                  {t(`games.categoryMatch.categories.${category}`)}
                 </Text>
-                <Text style={styles.previewExamples}>{categoryExamples[category.id]}</Text>
+                <Text style={styles.previewExamples}>{example}</Text>
               </View>
             ))}
             <AppButton
@@ -120,8 +79,7 @@ export const CategoryMatchScreen: React.FC = () => {
             <CategoryMatchBoard
               width={boardSize.width}
               height={boardSize.height}
-              onCorrectMatch={handleCorrectMatch}
-              onIncorrectMatch={handleIncorrectMatch}
+              categoryCount={categorySettings.categoryCount}
             />
           </View>
         )}
@@ -139,35 +97,9 @@ const createStyles = (colors: ThemeColors) =>
       paddingTop: Space.base,
       paddingBottom: Space.md,
     },
-    subtitle: {
-      ...TypeStyle.bodySm,
-      color: colors.textLight,
-      textAlign: 'center',
-      marginBottom: Space.sm,
-    },
-    counter: {
-      ...TypeStyle.label,
-      color: colors.text,
-      marginBottom: Space.md,
-    },
-    encouragement: {
-      ...TypeStyle.bodyMedium,
-      color: colors.success,
-      marginBottom: Space.md,
-    },
-    boardWrap: {
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    previewCard: {
-      width: '95%',
-      gap: Space.sm,
-    },
-    previewTitle: {
-      ...TypeStyle.h4,
-      color: colors.text,
-      textAlign: 'center',
-    },
+    boardWrap: { alignItems: 'center', justifyContent: 'center' },
+    previewCard: { width: '95%', gap: Space.sm },
+    previewTitle: { ...TypeStyle.h4, color: colors.text, textAlign: 'center' },
     previewText: {
       ...TypeStyle.bodySm,
       color: colors.textLight,
@@ -180,12 +112,6 @@ const createStyles = (colors: ThemeColors) =>
       alignItems: 'center',
       paddingVertical: Space.xs,
     },
-    previewCategoryLabel: {
-      ...TypeStyle.bodyMedium,
-      color: colors.text,
-    },
-    previewExamples: {
-      fontSize: 20,
-      color: colors.text,
-    },
+    previewCategoryLabel: { ...TypeStyle.bodyMedium, color: colors.text },
+    previewExamples: { fontSize: 20, color: colors.text },
   });

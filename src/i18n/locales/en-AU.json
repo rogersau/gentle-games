@@ -44,7 +44,8 @@
       "description": "Find matching pairs",
       "title": "Memory Snap",
       "wellDone": "Well Done! 🎉",
-      "completed": "You finished the game!",
+      "completedTitle": "All pairs are together",
+      "completed": "All pairs are together.",
       "completedIn": "You finished in {{time}}!",
       "tileMatched": "{{value}}, matched",
       "tileFaceUp": "{{value}}, face up",
@@ -155,6 +156,13 @@
       "playAgainHint": "Start a new game",
       "selectDifficulty": "Select difficulty",
       "lastUsed": "last",
+      "notStarted": "—",
+      "previewShowing": "Take a quiet look at the cards",
+      "previewUntilReady": "Look at the cards until you feel ready",
+      "ready": "Ready",
+      "readyHint": "Hide the preview and begin",
+      "hint": "Show one card",
+      "hintHint": "Reveal one card you have seen before without making a move",
       "timeLabel": "Time {{time}}",
       "moves": "Moves: {{count}}",
       "goHome": "Home",
@@ -257,7 +265,19 @@
       "clearGlitter": "Clear Glitter",
       "clearGlitterHint": "Remove all glitter from the globe",
       "accessibility": "Glitter globe. Swipe or shake to move glitter particles.",
-      "subtitle": "Shake or swipe to make the glitter sparkle"
+      "subtitle": "Watch quietly or choose how the glitter moves",
+      "profileTitle": "Glitter feeling",
+      "preset": {
+        "settle": "Settle",
+        "watch": "Watch",
+        "explore": "Explore",
+        "full": "Full"
+      },
+      "controls": {
+        "addFew": "Add a few",
+        "swirl": "Swirl",
+        "settle": "Let them settle"
+      }
     },
     "bubblePop": {
       "name": "Bubble Pop",
@@ -280,66 +300,50 @@
       "name": "Category Match",
       "description": "Sort pictures into groups",
       "title": "Category Match",
-      "subtitle": "Sort items into their correct categories",
-      "greatStreak": "Great streak!",
+      "subtitle": "Sort each item by what it is",
       "startSorting": "Start Sorting",
       "startSortingHint": "Begin the category sorting game",
-      "dragToMatchingCategory": "Drag to the matching category",
       "accessibilityLabel": "Category matching game",
-      "greatMatch": "Great match!",
-      "tryDifferent": "Try a different category",
-      "correct": "Correct",
-      "streakMessage": "You're on a roll!",
       "quickPreview": "Quick Preview",
-      "dragInstruction": "Drag each item to the correct category box",
-      "interactionInstruction": "Drag the item, or tap it to select it and choose a category",
+      "previewInstruction": "The sorting rule is item type. Choose the matching group.",
+      "sortingInstruction": "Sorting rule: item type. Choose {{categories}}.",
+      "interactionInstruction": "Tap the item, then tap a group. You can also drag the item.",
+      "hint": "Look at the item type, then choose its group.",
       "itemAccessibilityLabel": "{{item}} item",
-      "selectItemHint": "Tap to select this item, then choose a category",
-      "itemSelected": "{{item}} selected. Choose a category",
+      "selectItemHint": "Tap to select this item, then activate a category",
       "selectItemFirst": "Select the item before choosing a category",
       "categoryAccessibilityLabel": "{{category}} category",
       "categoryActivationHint": "Activate to place the selected item here",
-      "selectedItemHint": "Item selected. Choose a category",
-      "categorySelectFirstHint": "Select the item first, then activate this category",
-      "selectionInstruction": "Item selected. Activate a category to place it",
-      "categories": { "sky": "Sky", "land": "Land", "ocean": "Ocean" },
+      "correctFeedback": "{{item}} belongs in {{category}}.",
+      "incorrectFeedback": "{{item}} does not belong in {{chosenCategory}}. It belongs in {{correctCategory}}.",
+      "model": "Model: {{item}} belongs in {{category}}. Now place it there.",
+      "modelAccessibilityLabel": "Model: {{item}} belongs in {{category}}.",
+      "showHint": "Show a hint",
+      "replay": "Hear the rule again",
+      "skip": "Skip",
+      "skippedFeedback": "{{item}} was skipped. Choose Next when you are ready.",
+      "next": "Next item",
+      "nextHint": "Show a new item using the same sorting rule",
+      "categories": { "food": "Food", "toys": "Toys", "clothes": "Clothes" },
       "items": {
-        "sun": "sun",
-        "cloud": "cloud",
-        "moon": "moon",
-        "rainbow": "rainbow",
-        "kite": "kite",
-        "airplane": "airplane",
-        "bird": "bird",
-        "balloon": "balloon",
-        "star": "star",
-        "lightning": "lightning",
-        "ufo": "UFO",
-        "helicopter": "helicopter",
-        "fish": "fish",
-        "dolphin": "dolphin",
-        "whale": "whale",
-        "octopus": "octopus",
-        "crab": "crab",
-        "lobster": "lobster",
-        "squid": "squid",
-        "shrimp": "shrimp",
-        "jellyfish": "jellyfish",
-        "coral": "coral",
-        "shell": "shell",
-        "wave": "wave",
-        "tree": "tree",
-        "flower": "flower",
-        "house": "house",
-        "car": "car",
-        "bus": "bus",
-        "tractor": "tractor",
         "apple": "apple",
         "banana": "banana",
-        "strawberry": "strawberry",
         "carrot": "carrot",
-        "corn": "corn",
-        "broccoli": "broccoli"
+        "bread": "bread",
+        "cheese": "cheese",
+        "cookie": "cookie",
+        "teddy": "teddy bear",
+        "ball": "ball",
+        "puzzle": "puzzle",
+        "kite": "kite",
+        "yo-yo": "yo-yo",
+        "game": "video game",
+        "shirt": "shirt",
+        "sock": "sock",
+        "hat": "hat",
+        "shoe": "shoe",
+        "dress": "dress",
+        "coat": "coat"
       }
     },
     "keepyUppy": {
@@ -366,7 +370,30 @@
       "changeColor": "Change Colour",
       "breaths": "Breaths: {{count}}",
       "musicOn": "Turn Music On 🔊",
-      "musicOff": "Turn Music Off 🔇"
+      "musicOff": "Turn Music Off 🔇",
+      "comfortMessage": "Breathe comfortably. You can stop at any time.",
+      "start": "Start",
+      "watchFirst": "Watch first",
+      "breatheNormally": "Breathe normally",
+      "exit": "Exit",
+      "pause": "Pause",
+      "resume": "Resume",
+      "stop": "Stop and finish",
+      "soundOn": "Sound on",
+      "soundOff": "Sound off",
+      "visualOn": "Show visual cue",
+      "visualOff": "Hide visual cue",
+      "watching": "Just watching. This breath will not be counted.",
+      "normalMessage": "Breathe in your own comfortable way. There is no pace to follow.",
+      "cueOffMessage": "The visual cue is off. Breathe comfortably.",
+      "finished": "Finished for now. You can start again or leave.",
+      "startAgain": "Start again",
+      "sessionProgress": "Breathing session progress",
+      "session": {
+        "title": "Choose a session",
+        "breaths": "{{count}} breaths",
+        "openEnded": "Open-ended"
+      }
     },
     "patternTrain": {
       "name": "Pattern Train",
@@ -394,46 +421,54 @@
       },
       "carriage": {
         "accessibilityLabel": "Carriage with {{emoji}}",
-        "accessibilityHint": "Drag to the train or double tap to select, then tap the train to attach"
+        "accessibilityHint": "Activate to place this carriage, or drag it to the missing place"
       },
-      "instructions": "Drag a carriage to the train or tap to select, then tap the train",
+      "instructions": "Tap a carriage to place it, or drag it to the missing place.",
+      "repeatUnit": "Repeat {{unit}} for the {{rule}}.",
+      "repeatUnitAccessibilityLabel": "Repeat unit: {{unit}}. Rule: {{rule}}.",
+      "rules": {
+        "ab": "AB pattern",
+        "abc": "ABC pattern",
+        "aab": "AAB pattern",
+        "abb": "ABB pattern",
+        "aabb": "AABB pattern",
+        "abba": "ABBA pattern",
+        "abcb": "ABCB pattern"
+      },
       "feedback": {
-        "initial": "Drag the right carriage to complete the train!",
-        "correct": "Well done!",
-        "correctAnnouncement": "{{message}} Train complete!",
-        "incorrectAnnouncement": "{{message}} Try again!",
-        "revealAnnouncement": "{{message}} Train leaving.",
-        "correctOptions": [
-          "Well done!",
-          "Great job!",
-          "Excellent!",
-          "You're getting it!",
-          "Perfect!",
-          "Fantastic!",
-          "Amazing!",
-          "You did it!"
-        ],
-        "incorrect": "Try again!",
-        "incorrectOptions": [
-          "Try again!",
-          "Not quite, give it another go!",
-          "Keep trying!",
-          "Almost! Try again!",
-          "Give it another try!"
-        ],
-        "reveal": "The answer was {{answer}}"
+        "initial": "Find the missing carriage.",
+        "correct": "Correct.",
+        "correctAnnouncement": "Correct.",
+        "incorrectAnnouncement": "Try again.",
+        "revealAnnouncement": "The pattern is shown.",
+        "correctOptions": ["Correct.", "That matches."],
+        "incorrect": "Try again.",
+        "incorrectOptions": ["Try again.", "That does not match. Try again."],
+        "reveal": "The pattern is shown."
+      },
+      "guidance": {
+        "instruction": "Choose the carriage that continues the pattern.",
+        "showPatternButton": "Show the pattern",
+        "showPattern": "Show the pattern: {{unit}} repeats.",
+        "model": "Model: {{sequence}}. Now choose the missing carriage.",
+        "modelAccessibilityLabel": "Complete pattern: {{sequence}}.",
+        "replay": "Hear instructions again",
+        "skip": "Skip",
+        "next": "Next",
+        "nextHint": "Show the next pattern with the same rule and new symbols",
+        "modelledFeedback": "Watch the model, then choose the missing carriage."
       },
       "difficulty": {
         "easy": {
-          "label": "Easy",
+          "label": "Starter",
           "description": "Simple AB patterns (3 carriages)"
         },
         "medium": {
-          "label": "Medium",
+          "label": "Growing",
           "description": "ABC and AAB patterns (4 carriages)"
         },
         "hard": {
-          "label": "Hard",
+          "label": "Challenge",
           "description": "AABB and complex patterns (5 carriages)"
         }
       },
@@ -464,6 +499,10 @@
       "basket": "Basket",
       "remove": "Remove",
       "add": "Add",
+      "undo": "Undo",
+      "undoHint": "Remove the last item you placed",
+      "reset": "Reset",
+      "resetHint": "Clear this picnic and keep the same target",
       "completed": "Completed picnics",
       "instruction": "Tap an item or drag it up to the basket",
       "emptyBasket": "Add items here!",
@@ -472,6 +511,8 @@
       "itemAccessibilityHint": "Tap to add this item, or drag it to the picnic basket",
       "basketAccessibilityLabel": "Basket with {{count}} {{item}}",
       "basketAccessibilityHint": "Add items from the blanket to fill the basket",
+      "removeItemAccessibilityLabel": "Remove {{item}} {{index}} from the basket",
+      "removeItemAccessibilityHint": "Tap to return this item to the blanket",
       "items": {
         "berries": "berries",
         "apples": "apples",
@@ -482,23 +523,73 @@
       "feedback": {
         "complete": "Great counting!",
         "incomplete": "Keep adding items"
+      },
+      "representation": {
+        "accessibilityLabel": "{{count}} items shown as a numeral, dots, and a frame",
+        "quantityAccessibilityLabel": "{{count}} items shown as dots and a frame"
+      },
+      "choiceAccessibilityLabel": "Group showing {{count}} items",
+      "numeralChoiceAccessibilityLabel": "Numeral {{numeral}}",
+      "choiceHint": "Choose this group",
+      "groupAccessibilityLabel": "{{group}} group showing {{count}} items",
+      "groups": {
+        "left": "Left group",
+        "right": "Right group"
+      },
+      "comparison": {
+        "more": "more",
+        "fewer": "fewer"
+      },
+      "transfer": "Try a new example",
+      "transferHint": "Try the same idea with new items",
+      "guidance": {
+        "neutral": "That choice does not show {{target}} {{item}}. You can try again.",
+        "comparisonNeutral": "That group does not have {{comparison}} items. You can try again.",
+        "findAmountHint": "Count the filled spaces in each frame. Look for {{target}}.",
+        "matchNumeralHint": "Count the filled spaces, then choose that numeral.",
+        "comparisonHint": "Compare the frames. Look for the group with {{comparison}} filled spaces.",
+        "hintButton": "Show a hint",
+        "replay": "Hear the instruction again",
+        "skip": "Try a new example"
+      },
+      "modes": {
+        "makeAmount": {
+          "label": "Make the amount",
+          "instruction": "Make {{count}} {{item}} in the basket"
+        },
+        "findAmount": {
+          "label": "Find the amount",
+          "instruction": "Find the group with {{count}} {{item}}"
+        },
+        "matchNumeral": {
+          "label": "Match numeral and amount",
+          "instruction": "Which numeral matches this group?"
+        },
+        "moreFewer": {
+          "label": "More or fewer",
+          "instruction": "Choose the group with {{comparison}} items"
+        },
+        "addOneMore": {
+          "label": "Add one more",
+          "instruction": "There are {{count}} {{item}}. Add one more to make {{target}}"
+        }
       }
     }
   },
   "difficulty": {
-    "title": "Select Difficulty",
+    "title": "Choose a board size",
     "optionLabel": "{{label}} · {{description}}",
     "accessibilityLabel": "{{label}} difficulty",
     "easy": {
-      "label": "Easy",
+      "label": "6 pairs",
       "description": "3×4 grid (12 cards)"
     },
     "medium": {
-      "label": "Medium",
+      "label": "10 pairs",
       "description": "4×5 grid (20 cards)"
     },
     "hard": {
-      "label": "Hard",
+      "label": "15 pairs",
       "description": "5×6 grid (30 cards)"
     }
   },
@@ -520,6 +611,53 @@
       "label": "Show Card Preview",
       "description": "Show all cards for 2 seconds before the game starts"
     },
+    "memorySnap": {
+      "title": "Memory Snap",
+      "pairs": {
+        "title": "Pairs",
+        "description": "Choose a board that feels comfortable",
+        "two": "2 pairs · 2×2",
+        "three": "3 pairs · 2×3",
+        "four": "4 pairs · 2×4",
+        "six": "6 pairs · 3×4",
+        "ten": "10 pairs · 4×5",
+        "fifteen": "15 pairs · 5×6",
+        "twoDescription": "A small 2×2 board",
+        "threeDescription": "A calm 2×3 board",
+        "fourDescription": "A gentle 2×4 board",
+        "sixDescription": "A 3×4 board",
+        "tenDescription": "A 4×5 board",
+        "fifteenDescription": "A 5×6 board"
+      },
+      "preview": {
+        "title": "Preview",
+        "description": "Choose whether to see the cards before you begin",
+        "none": "None",
+        "untilReady": "Until ready",
+        "fourSeconds": "4 seconds",
+        "eightSeconds": "8 seconds"
+      },
+      "mismatch": {
+        "title": "Mismatched cards",
+        "description": "Choose how long mismatched cards stay visible",
+        "oneSecond": "1 second",
+        "twoSeconds": "2 seconds",
+        "threeSeconds": "3 seconds"
+      },
+      "hint": {
+        "label": "One-card hint",
+        "description": "Allow a quiet look at one card you have seen before"
+      }
+    },
+    "categoryMatch": {
+      "title": "Category Match",
+      "categories": {
+        "title": "Number of groups",
+        "two": "2 groups: Food and Toys",
+        "three": "3 groups: Food, Toys, and Clothes",
+        "description": "Start with two clear groups. Three groups adds Clothes for later practice."
+      }
+    },
     "animations": {
       "label": "Animations",
       "description": "Allow decorative card flips and UI animations"
@@ -531,6 +669,77 @@
     "keepyUppyEasyMode": {
       "label": "Keepy Uppy Easy Mode",
       "description": "Any tap gives a gentle lift while good taps still go higher"
+    },
+    "bubblePop": {
+      "title": "Bubble Pop",
+      "moving": {
+        "label": "Moving bubbles",
+        "description": "Let bubbles drift across the play area"
+      },
+      "fullField": {
+        "label": "More bubbles",
+        "description": "Show a fuller field of bubbles"
+      }
+    },
+    "glitterFall": {
+      "title": "Glitter Fall",
+      "density": {
+        "title": "Particle density",
+        "verySparse": "Very sparse",
+        "sparse": "Sparse",
+        "medium": "Medium",
+        "dense": "Dense"
+      },
+      "speed": {
+        "title": "Fall speed",
+        "verySlow": "Very slow",
+        "slow": "Slow",
+        "normal": "Normal"
+      },
+      "colors": {
+        "title": "Colour variety",
+        "one": "One",
+        "three": "Three",
+        "six": "Six"
+      },
+      "ripples": "Touch ripples",
+      "shakeResponse": "Respond to shaking",
+      "backgroundMotion": "Background motion",
+      "sound": "Glitter sounds",
+      "soundDescription": "Sounds only play when the main Sound setting is also on",
+      "resetPreset": "Reset individual choices to selected preset"
+    },
+    "numberPicnic": {
+      "title": "Number Picnic",
+      "stage": {
+        "title": "Number stage",
+        "description": "Choose a calm range of numbers to explore",
+        "oneToThree": "1–3",
+        "oneToFive": "1–5",
+        "sixToTen": "6–10"
+      },
+      "mode": {
+        "title": "Learning mode",
+        "description": "Choose one clear idea to practise"
+      },
+      "modes": {
+        "makeAmount": "Make the amount",
+        "findAmount": "Find the amount",
+        "matchNumeral": "Match numeral and amount",
+        "moreFewer": "More or fewer",
+        "addOneMore": "Add one more"
+      },
+      "spokenCounting": {
+        "label": "Speak each count",
+        "description": "Speak the new count after each item is placed. Sound must also be on."
+      },
+      "maximumQuantity": {
+        "title": "Largest number",
+        "description": "Choose the largest target number. Each picnic has only a few extra items.",
+        "five": "Up to 5",
+        "eight": "Up to 8",
+        "ten": "Up to 10"
+      }
     },
     "unfinishedGames": {
       "label": "Enable Unfinished Games",

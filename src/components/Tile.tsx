@@ -25,7 +25,8 @@ const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
   const maxEmojiSize = 60;
   const finalEmojiSize = Math.max(minEmojiSize, Math.min(maxEmojiSize, emojiSize));
 
-  const [showFront, setShowFront] = React.useState(!tile.isFlipped);
+  const isFaceUp = tile.isFlipped || tile.isMatched;
+  const [showFront, setShowFront] = React.useState(!isFaceUp);
 
   React.useEffect(() => {
     if (animationsEnabled) {
@@ -34,7 +35,7 @@ const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
         duration: 120,
         useNativeDriver: Platform.OS !== 'web',
       }).start(() => {
-        setShowFront(!tile.isFlipped);
+        setShowFront(!isFaceUp);
         Animated.timing(scaleAnim, {
           toValue: 1,
           duration: 120,
@@ -42,10 +43,10 @@ const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
         }).start();
       });
     } else {
-      setShowFront(!tile.isFlipped);
+      setShowFront(!isFaceUp);
       scaleAnim.setValue(1);
     }
-  }, [tile.isFlipped, animationsEnabled]);
+  }, [isFaceUp, animationsEnabled]);
 
   const tileStyle = tile.isMatched
     ? styles.tileMatched

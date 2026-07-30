@@ -182,7 +182,12 @@ export const DrawingScreen: React.FC = () => {
 
       <View style={styles.content}>
         {showSaveNotice && (
-          <Text testID='drawing-save-notice' accessibilityRole='alert' accessibilityLiveRegion='polite' style={styles.saveNotice}>
+          <Text
+            testID='drawing-save-notice'
+            accessibilityRole='alert'
+            accessibilityLiveRegion='polite'
+            style={styles.saveNotice}
+          >
             {t('games.drawing.saveError')}
           </Text>
         )}

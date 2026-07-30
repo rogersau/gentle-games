@@ -91,7 +91,7 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
     }, [elapsedMs]);
 
     const ballSize = useMemo(() => {
-      if (reducedMotion) return phase === 'inhale' ? expandSize : baseSize;
+      if (reducedMotion) return baseSize + (expandSize - baseSize) / 2;
       const sizeMultiplier = phase === 'inhale' ? phaseProgress : 1 - phaseProgress;
       return baseSize + sizeMultiplier * (expandSize - baseSize);
     }, [phase, phaseProgress, baseSize, expandSize, reducedMotion]);
@@ -225,14 +225,16 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
         style={[styles.container, { width: size, height: size }]}
         accessible={true}
         accessibilityRole='progressbar'
-        accessibilityLabel={showCycleCount
-          ? translate('games.breathingGarden.progressLabel', {
-              phase: translate('games.breathingGarden.' + phase),
-              count: cycleCount,
-            })
-          : translate('games.breathingGarden.phaseProgressLabel', {
-              phase: translate('games.breathingGarden.' + phase),
-            })}
+        accessibilityLabel={
+          showCycleCount
+            ? translate('games.breathingGarden.progressLabel', {
+                phase: translate('games.breathingGarden.' + phase),
+                count: cycleCount,
+              })
+            : translate('games.breathingGarden.phaseProgressLabel', {
+                phase: translate('games.breathingGarden.' + phase),
+              })
+        }
         accessibilityValue={{ min: 0, max: 100, now: Math.round(phaseProgress * 100) }}
       >
         <Svg width={size} height={size}>

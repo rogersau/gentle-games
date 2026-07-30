@@ -45,7 +45,17 @@ const MIN_FLICK_DISTANCE = 8;
 const MAX_FLICK_DURATION_MS = 500;
 
 export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>(
-  ({ bounds, onScoreChange, onBalloonCountChange, onPoppedChange, easyMode = false, motionEnabled = true }, ref) => {
+  (
+    {
+      bounds,
+      onScoreChange,
+      onBalloonCountChange,
+      onPoppedChange,
+      easyMode = false,
+      motionEnabled = true,
+    },
+    ref,
+  ) => {
     const { colors, resolvedMode } = useThemeColors();
     const { t } = useTranslation();
     const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);

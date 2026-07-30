@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, StyleSheet, Text, useWindowDimensions } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { ThemeColors, Tile as TileType } from '../types';
 import {
-  generateTiles,
-  checkMatch,
   checkGameComplete,
+  checkMatch,
+  calculateMemorySnapBoardSize,
   formatTime,
-  calculateGridDimensions,
+  generateTiles,
 } from '../utils/gameLogic';
-import { playFlipSound, playMatchSound, playCompleteSound } from '../utils/sounds';
+import { playCompleteSound, playFlipSound, playMatchSound } from '../utils/sounds';
 import { Tile } from './Tile';
 import { useSettings } from '../context/SettingsContext';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
@@ -16,6 +16,7 @@ import { AppButton, AppModal } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useTranslation } from 'react-i18next';
 import { useTrackedTimeouts } from '../utils/useTrackedTimeouts';
+import { getGameSettings, MemorySnapPreviewMode } from '../games/settings';
 
 interface GameBoardProps {
   onGameComplete: (time: number) => void;
@@ -24,6 +25,12 @@ interface GameBoardProps {
   renderStats?: (stats: { time: string; moves: number }) => React.ReactNode;
   onPositiveEvent?: () => void;
 }
+
+const previewDuration = (mode: MemorySnapPreviewMode): number | null => {
+  if (mode === '4-seconds') return 4000;
+  if (mode === '8-seconds') return 8000;
+  return null;
+};
 
 export const GameBoard: React.FC<GameBoardProps> = ({
   onGameComplete,
@@ -37,277 +44,351 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const { colors, resolvedMode } = useThemeColors();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
+  const memorySettings = useMemo(
+    () => getGameSettings(settings, 'memory-snap'),
+    [settings.difficulty, settings.gameSettings, settings.showCardPreview],
+  );
+  const { queueTimeout, clearAllTimeouts } = useTrackedTimeouts();
+
   const [tiles, setTiles] = useState<TileType[]>([]);
   const [selectedTiles, setSelectedTiles] = useState<string[]>([]);
+  const [seenTileIds, setSeenTileIds] = useState<string[]>([]);
+  const [hintedTileId, setHintedTileId] = useState<string | null>(null);
   const [isGameComplete, setIsGameComplete] = useState(false);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [endTime, setEndTime] = useState<number | null>(null);
   const [moves, setMoves] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [currentTime, setCurrentTime] = useState<number>(Date.now());
+  const [currentTime, setCurrentTime] = useState(Date.now());
   const [isPreviewPhase, setIsPreviewPhase] = useState(false);
-  const { queueTimeout, clearAllTimeouts } = useTrackedTimeouts();
 
-  const padding = Space.base;
-  const headerHeight = 60;
-  const tileMargin = 4;
+  const selectedTilesRef = useRef(selectedTiles);
+  const isProcessingRef = useRef(isProcessing);
+  const hintedTileIdRef = useRef(hintedTileId);
+  selectedTilesRef.current = selectedTiles;
+  isProcessingRef.current = isProcessing;
+  hintedTileIdRef.current = hintedTileId;
 
-  const { boardWidth, boardHeight, tileSize } = useMemo(() => {
-    const { cols, rows } = calculateGridDimensions(settings.difficulty, screenWidth, screenHeight);
+  const boardSize = useMemo(
+    () =>
+      calculateMemorySnapBoardSize(
+        { width: screenWidth, height: screenHeight },
+        memorySettings.pairCount,
+        bottomInset,
+      ),
+    [bottomInset, memorySettings.pairCount, screenHeight, screenWidth],
+  );
+  const { tileSize, width: boardWidth, height: boardHeight } = boardSize;
 
-    const maxBoardWidth = screenWidth - padding * 2;
-    const maxBoardHeight = screenHeight - padding * 2 - headerHeight - 40 - bottomInset;
-
-    const widthLimitedTileSize = Math.floor((maxBoardWidth - tileMargin * 2 * cols) / cols);
-    const heightLimitedTileSize = Math.floor((maxBoardHeight - tileMargin * 2 * rows) / rows);
-    const calculatedTileSize = Math.max(1, Math.min(widthLimitedTileSize, heightLimitedTileSize));
-
-    const boardWidth = cols * (calculatedTileSize + tileMargin * 2);
-    const boardHeight = rows * (calculatedTileSize + tileMargin * 2);
-
-    return { cols, boardWidth, boardHeight, tileSize: calculatedTileSize };
-  }, [bottomInset, screenWidth, screenHeight, settings.difficulty]);
-
-  // Timer effect - updates every second while game is active
   useEffect(() => {
     if (!startTime || isGameComplete || endTime) return;
-
-    const interval = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 1000);
-
+    const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
     return () => clearInterval(interval);
-  }, [startTime, isGameComplete, endTime]);
+  }, [endTime, isGameComplete, startTime]);
+
+  const finishPreview = useCallback(() => {
+    setTiles((current) => current.map((tile) => ({ ...tile, isFlipped: false })));
+    setIsPreviewPhase(false);
+  }, []);
 
   const startNewGame = useCallback(() => {
     clearAllTimeouts();
-    const newTiles = generateTiles(settings.difficulty, settings.theme);
+    const newTiles = generateTiles(memorySettings.pairCount, settings.theme);
+    setTiles(newTiles);
     setSelectedTiles([]);
+    selectedTilesRef.current = [];
+    setSeenTileIds([]);
+    setHintedTileId(null);
     setIsGameComplete(false);
     setStartTime(null);
     setEndTime(null);
     setMoves(0);
     setIsProcessing(false);
+    isProcessingRef.current = false;
     setCurrentTime(Date.now());
 
-    if (settings.showCardPreview) {
+    if (memorySettings.previewMode !== 'none') {
       setTiles(newTiles.map((tile) => ({ ...tile, isFlipped: true })));
       setIsPreviewPhase(true);
-      queueTimeout(() => {
-        setTiles(newTiles);
-        setIsPreviewPhase(false);
-      }, 2000);
+      const duration = previewDuration(memorySettings.previewMode);
+      if (duration !== null) queueTimeout(finishPreview, duration);
     } else {
-      setTiles(newTiles);
       setIsPreviewPhase(false);
     }
-  }, [
-    clearAllTimeouts,
-    queueTimeout,
-    settings.difficulty,
-    settings.showCardPreview,
-    settings.theme,
-  ]);
+  }, [clearAllTimeouts, finishPreview, memorySettings, queueTimeout, settings.theme]);
 
   useEffect(() => {
     startNewGame();
-  }, [startNewGame]);
+    return () => clearAllTimeouts();
+  }, [clearAllTimeouts, startNewGame]);
 
-  useEffect(() => {
-    return () => {
-      clearAllTimeouts();
-    };
-  }, [clearAllTimeouts]);
+  const handleReady = useCallback(() => {
+    if (isPreviewPhase && memorySettings.previewMode === 'until-ready') finishPreview();
+  }, [finishPreview, isPreviewPhase, memorySettings.previewMode]);
+
+  const handleHint = useCallback(() => {
+    if (
+      !memorySettings.hintEnabled ||
+      isPreviewPhase ||
+      isProcessing ||
+      selectedTiles.length > 0 ||
+      hintedTileId
+    ) {
+      return;
+    }
+
+    const candidate = tiles.find(
+      (tile) => seenTileIds.includes(tile.id) && !tile.isMatched && !tile.isFlipped,
+    );
+    if (!candidate) return;
+
+    setHintedTileId(candidate.id);
+    setTiles((current) =>
+      current.map((tile) => (tile.id === candidate.id ? { ...tile, isFlipped: true } : tile)),
+    );
+    queueTimeout(() => {
+      if (
+        hintedTileIdRef.current !== candidate.id ||
+        selectedTilesRef.current.includes(candidate.id)
+      ) {
+        return;
+      }
+      setTiles((current) =>
+        current.map((tile) =>
+          tile.id === candidate.id && !tile.isMatched ? { ...tile, isFlipped: false } : tile,
+        ),
+      );
+      setHintedTileId(null);
+    }, memorySettings.mismatchDuration);
+  }, [
+    isPreviewPhase,
+    isProcessing,
+    memorySettings.hintEnabled,
+    memorySettings.mismatchDuration,
+    hintedTileId,
+    queueTimeout,
+    seenTileIds,
+    selectedTiles,
+    tiles,
+  ]);
 
   const handleTilePress = useCallback(
-    async (tileId: string) => {
-      if (isPreviewPhase || isProcessing || selectedTiles.length >= 2) return;
-      if (selectedTiles.includes(tileId)) return;
-
-      await playFlipSound(settings);
-
-      // Start timer on first flip
-      if (!startTime) {
-        const now = Date.now();
-        setStartTime(now);
-        setCurrentTime(now); // Ensure currentTime is synchronized to prevent negative timer
+    (tileId: string) => {
+      const currentSelection = selectedTilesRef.current;
+      if (isPreviewPhase || isProcessingRef.current || currentSelection.length >= 2) return;
+      const tile = tiles.find((item) => item.id === tileId);
+      if (
+        !tile ||
+        tile.isFlipped ||
+        tile.isMatched ||
+        hintedTileId === tileId ||
+        currentSelection.includes(tileId)
+      ) {
+        return;
       }
 
-      const newSelected = [...selectedTiles, tileId];
-      setSelectedTiles(newSelected);
+      void playFlipSound(settings);
+      const now = Date.now();
+      if (!startTime) {
+        setStartTime(now);
+        setCurrentTime(now);
+      }
 
-      setTiles((prev) =>
-        prev.map((tile) => (tile.id === tileId ? { ...tile, isFlipped: true } : tile)),
+      const newSelected = [...currentSelection, tileId];
+      selectedTilesRef.current = newSelected;
+      setSelectedTiles(newSelected);
+      setSeenTileIds((current) => (current.includes(tileId) ? current : [...current, tileId]));
+      setTiles((current) =>
+        current.map((item) => (item.id === tileId ? { ...item, isFlipped: true } : item)),
       );
 
-      if (newSelected.length === 2) {
-        setIsProcessing(true);
-        setMoves((prev) => prev + 1);
+      if (newSelected.length !== 2) return;
 
-        // Use functional updater to read latest tiles, avoiding stale closure
-        setTiles((prev) => {
-          const isMatch = checkMatch(prev, newSelected);
+      setIsProcessing(true);
+      isProcessingRef.current = true;
+      setMoves((current) => current + 1);
+      const matched = checkMatch(tiles, newSelected);
 
-          if (isMatch) {
-            playMatchSound(settings);
-            onPositiveEvent?.();
+      if (matched) {
+        playMatchSound(settings);
+        onPositiveEvent?.();
+        const updatedTiles = tiles.map((item) =>
+          newSelected.includes(item.id) ? { ...item, isFlipped: true, isMatched: true } : item,
+        );
+        setTiles(updatedTiles);
+        setSelectedTiles([]);
+        selectedTilesRef.current = [];
+        setIsProcessing(false);
+        isProcessingRef.current = false;
 
-            const updatedTiles = prev.map((tile) =>
-              newSelected.includes(tile.id) ? { ...tile, isMatched: true } : tile,
-            );
-
-            queueTimeout(() => {
-              setTiles(updatedTiles);
-              setSelectedTiles([]);
-              setIsProcessing(false);
-
-              if (checkGameComplete(updatedTiles)) {
-                const end = Date.now();
-                setEndTime(end);
-                setIsGameComplete(true);
-                playCompleteSound(settings);
-                setStartTime((st) => {
-                  onGameComplete(end - (st || end));
-                  return st;
-                });
-              }
-            }, 500);
-          } else {
-            queueTimeout(() => {
-              setTiles((p) =>
-                p.map((tile) =>
-                  newSelected.includes(tile.id) ? { ...tile, isFlipped: false } : tile,
-                ),
-              );
-              setSelectedTiles([]);
-              setIsProcessing(false);
-            }, 1000);
-          }
-
-          // Return prev unchanged here — the real update happens in the setTimeout
-          return prev;
-        });
+        if (checkGameComplete(updatedTiles)) {
+          const end = Date.now();
+          setEndTime(end);
+          setIsGameComplete(true);
+          playCompleteSound(settings);
+          onGameComplete(end - (startTime ?? end));
+        }
+        return;
       }
+
+      queueTimeout(() => {
+        setTiles((current) =>
+          current.map((item) =>
+            newSelected.includes(item.id) && !item.isMatched ? { ...item, isFlipped: false } : item,
+          ),
+        );
+        setSelectedTiles([]);
+        selectedTilesRef.current = [];
+        setIsProcessing(false);
+        isProcessingRef.current = false;
+      }, memorySettings.mismatchDuration);
     },
     [
-      selectedTiles,
-      isProcessing,
+      hintedTileId,
       isPreviewPhase,
-      settings,
-      startTime,
+      isProcessing,
+      memorySettings.mismatchDuration,
       onGameComplete,
       onPositiveEvent,
       queueTimeout,
+      settings,
+      startTime,
+      tiles,
     ],
   );
 
-  const elapsed = endTime ? endTime - (startTime || 0) : startTime ? currentTime - startTime : 0;
-
-  const timeString = startTime ? formatTime(elapsed) : '—';
-
-  const defaultRenderStats = ({ time, moves }: { time: string; moves: number }) => (
+  const elapsed = endTime
+    ? endTime - (startTime ?? endTime)
+    : startTime
+      ? Math.max(0, currentTime - startTime)
+      : 0;
+  const timeString = startTime ? formatTime(elapsed) : t('games.memorySnap.notStarted');
+  const defaultStats = ({ time, moves: moveCount }: { time: string; moves: number }) => (
     <View style={styles.headerInfo}>
       <Text
         style={styles.timerText}
-        accessibilityLabel={
-          startTime ? t('games.memorySnap.timeLabel', { time }) : t('common.timerNotStarted')
-        }
+        accessibilityLabel={t('games.memorySnap.timeLabel', { time })}
+        testID='memory-snap-timer'
       >
         {time}
       </Text>
       <Text
         style={styles.movesText}
-        accessibilityLabel={t('games.memorySnap.moves', { count: moves })}
+        accessibilityLabel={t('games.memorySnap.moves', { count: moveCount })}
+        testID='memory-snap-moves'
       >
-        {t('games.memorySnap.moves', { count: moves })}
+        {t('games.memorySnap.moves', { count: moveCount })}
       </Text>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      {(renderStats ?? defaultRenderStats)({ time: timeString, moves })}
-
-      <View style={styles.inner}>
-        <View
-          testID='memory-board'
-          style={[
-            styles.board,
-            {
-              width: boardWidth,
-              height: boardHeight,
-            },
-          ]}
-        >
-          {tiles.map((tile) => (
-            <Tile
-              key={tile.id}
-              tile={tile}
-              onPress={() => handleTilePress(tile.id)}
-              size={tileSize}
-            />
-          ))}
-        </View>
-
-        <AppModal
-          visible={isGameComplete}
-          title={t('games.memorySnap.wellDone')}
-          onClose={() => undefined}
-          showClose={false}
-          dismissOnBackdropPress={false}
-        >
-          <Text style={styles.completeText} accessibilityRole='text'>
-            {settings.pressureFreeMode
-              ? t('games.memorySnap.completed')
-              : t('games.memorySnap.completedIn', { time: formatTime(elapsed) })}
-          </Text>
-          <View style={styles.buttonRow}>
-            <AppButton
-              label={t('games.memorySnap.goHome')}
-              variant='secondary'
-              onPress={() => onBackPress?.()}
-              accessibilityHint={t('games.memorySnap.goHomeHint')}
-            />
-            <View style={{ width: Space.md }} />
-            <AppButton
-              label={t('games.memorySnap.playAgain')}
-              variant='primary'
-              onPress={startNewGame}
-              accessibilityHint={t('games.memorySnap.playAgainHint')}
-            />
-          </View>
-        </AppModal>
+      {renderStats
+        ? renderStats({ time: timeString, moves })
+        : !settings.pressureFreeMode
+          ? defaultStats({ time: timeString, moves })
+          : null}
+      {isPreviewPhase ? (
+        <Text style={styles.previewStatus} accessibilityRole='text'>
+          {t(
+            memorySettings.previewMode === 'until-ready'
+              ? 'games.memorySnap.previewUntilReady'
+              : 'games.memorySnap.previewShowing',
+          )}
+        </Text>
+      ) : null}
+      <View
+        style={[styles.board, { width: boardWidth, height: boardHeight }]}
+        testID='memory-board'
+      >
+        {tiles.map((tile) => (
+          <Tile
+            key={tile.id}
+            tile={tile}
+            onPress={() => handleTilePress(tile.id)}
+            size={tileSize}
+          />
+        ))}
       </View>
+      <View style={styles.controls}>
+        {isPreviewPhase && memorySettings.previewMode === 'until-ready' ? (
+          <AppButton
+            label={t('games.memorySnap.ready')}
+            onPress={handleReady}
+            accessibilityHint={t('games.memorySnap.readyHint')}
+            testID='memory-snap-ready'
+          />
+        ) : null}
+        {!isPreviewPhase && memorySettings.hintEnabled ? (
+          <AppButton
+            label={t('games.memorySnap.hint')}
+            variant='ghost'
+            onPress={handleHint}
+            disabled={
+              !seenTileIds.some((id) =>
+                tiles.some((tile) => tile.id === id && !tile.isMatched && !tile.isFlipped),
+              )
+            }
+            accessibilityHint={t('games.memorySnap.hintHint')}
+            testID='memory-snap-hint'
+          />
+        ) : null}
+      </View>
+
+      <AppModal
+        visible={isGameComplete}
+        title={t(
+          settings.pressureFreeMode
+            ? 'games.memorySnap.completedTitle'
+            : 'games.memorySnap.wellDone',
+        )}
+        onClose={() => undefined}
+        showClose={false}
+        dismissOnBackdropPress={false}
+      >
+        <Text style={styles.completeText} accessibilityRole='text'>
+          {settings.pressureFreeMode
+            ? t('games.memorySnap.completed')
+            : t('games.memorySnap.completedIn', { time: formatTime(elapsed) })}
+        </Text>
+        <View style={styles.buttonRow}>
+          <AppButton
+            label={t('games.memorySnap.goHome')}
+            variant='secondary'
+            onPress={() => onBackPress?.()}
+            accessibilityHint={t('games.memorySnap.goHomeHint')}
+          />
+          <View style={{ width: Space.md }} />
+          <AppButton
+            label={t('games.memorySnap.playAgain')}
+            onPress={startNewGame}
+            accessibilityHint={t('games.memorySnap.playAgainHint')}
+          />
+        </View>
+      </AppModal>
     </View>
   );
 };
 
 const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-      alignItems: 'center',
-    },
-    headerInfo: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Space.md,
-    },
-    timerText: {
-      ...TypeStyle.h3,
-      color: colors.text,
-      textAlign: 'center',
-    },
-    movesText: {
-      ...TypeStyle.body,
-      color: colors.textLight,
-      textAlign: 'right',
-    },
+    container: { flex: 1, alignItems: 'center' },
+    headerInfo: { flexDirection: 'row', alignItems: 'center', gap: Space.md },
+    timerText: { ...TypeStyle.h3, color: colors.text, textAlign: 'center' },
+    movesText: { ...TypeStyle.body, color: colors.textLight, textAlign: 'right' },
+    previewStatus: { ...TypeStyle.bodySm, color: colors.textLight, marginVertical: Space.sm },
     board: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    controls: {
+      minHeight: 60,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingTop: Space.sm,
     },
     completeText: {
       ...TypeStyle.body,
@@ -315,15 +396,5 @@ const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
       textAlign: 'center',
       marginBottom: Space.lg,
     },
-    inner: {
-      flex: 1,
-      alignItems: 'center',
-      paddingHorizontal: Space.base,
-      paddingTop: Space.base,
-    },
-    buttonRow: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
+    buttonRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
   });

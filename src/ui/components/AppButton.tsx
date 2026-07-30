@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import {
   AccessibilityState,
+  AccessibilityRole,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -31,6 +32,7 @@ interface AppButtonProps {
   accessibilityLabel?: string;
   accessibilityHint?: string;
   accessibilityState?: AccessibilityState;
+  accessibilityRole?: AccessibilityRole;
   testID?: string;
 }
 
@@ -46,6 +48,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
   accessibilityLabel,
   accessibilityHint,
   accessibilityState,
+  accessibilityRole = 'button',
   testID,
 }) => {
   const { colors, resolvedMode } = useThemeColors();
@@ -67,7 +70,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
         hitSlop={BUTTON_TOUCH_SLOP}
         pressRetentionOffset={BUTTON_PRESS_RETENTION}
         accessibilityLabel={accessibilityLabel ?? label}
-        accessibilityRole='button'
+        accessibilityRole={accessibilityRole}
         accessibilityHint={accessibilityHint}
         accessibilityState={{ ...accessibilityState, disabled }}
         testID={testID}

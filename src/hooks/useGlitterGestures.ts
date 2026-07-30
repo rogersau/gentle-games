@@ -21,12 +21,13 @@ export function useGlitterGestures({ onShake, onWake, enabled = true }: UseGlitt
   }, [onShake, onWake]);
 
   const handleShake = useCallback(() => {
+    if (!enabled) return;
     const now = Date.now();
     if (now - lastShakeTime.current > 500) {
       lastShakeTime.current = now;
       onShakeRef.current();
     }
-  }, []);
+  }, [enabled]);
 
   const handleWake = useCallback(() => {
     onWakeRef.current();
