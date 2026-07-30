@@ -45,6 +45,7 @@ jest.mock('react-i18next', () => ({
         'games.patternTrain.repeatUnit': 'Repeat {{unit}} for the {{rule}}.',
         'games.patternTrain.repeatUnitAccessibilityLabel': 'Repeat {{unit}}. Rule {{rule}}.',
         'games.patternTrain.rules.ab': 'AB pattern',
+        'games.patternTrain.missingCarriage': 'missing carriage',
         'games.patternTrain.feedback.correct': 'Correct.',
         'games.patternTrain.feedback.incorrect': 'Try again.',
         'games.patternTrain.feedback.correctAnnouncement': 'Correct.',
@@ -278,6 +279,20 @@ describe('PatternTrainScreen', () => {
     expect(draggable.props.onStartShouldSetResponder()).toBe(false);
     expect(draggable.props.onMoveShouldSetResponder({}, { dx: 0, dy: 0 })).toBe(false);
     expect(screen.getAllByLabelText('Carriage with 🌈')[0].props.hitSlop).toBe(8);
+  });
+
+  it('keeps the missing carriage label from overflowing across the train', async () => {
+    const screen = render(<PatternTrainScreen />);
+    fireEvent.press(screen.getByText('Easy'));
+
+    await waitFor(() => expect(screen.queryByText('missing carriage')).toBeNull());
+
+    const carriageMock = jest.requireMock('../components/train').Carriage as jest.Mock;
+    expect(
+      carriageMock.mock.calls.some(
+        ([props]) => props.content === '?' && props.isMissing === true && props.size === 56,
+      ),
+    ).toBe(true);
   });
 
   it('submits a choice through the accessible tap path and exposes child-controlled Next', async () => {

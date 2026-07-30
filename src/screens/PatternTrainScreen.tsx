@@ -271,15 +271,14 @@ export const PatternTrainScreen: React.FC = () => {
                     const displayedEmoji = carriage.isMissing
                       ? state.attachedCarriage
                       : carriage.emoji;
+                    const isOpenSlot = carriage.isMissing && !state.attachedCarriage;
                     return (
                       <View key={`${carriage.emoji}-${index}`} style={styles.trainPart}>
                         <Carriage
                           size={56}
-                          isMissing={carriage.isMissing && !state.attachedCarriage}
+                          isMissing={isOpenSlot}
+                          content={displayedEmoji ?? '?'}
                         />
-                        <Text style={styles.emojiText}>
-                          {displayedEmoji ?? t('games.patternTrain.missingCarriage')}
-                        </Text>
                       </View>
                     );
                   })}
@@ -452,7 +451,6 @@ const createStyles = (colors: ThemeColors) =>
     },
     trainContainer: { flexDirection: 'row', alignItems: 'center' },
     trainPart: { flexDirection: 'row', alignItems: 'center', position: 'relative' },
-    emojiText: { ...TypeStyle.body, position: 'absolute', alignSelf: 'center', top: 16 },
     modelText: {
       ...TypeStyle.bodySm,
       color: colors.text,
