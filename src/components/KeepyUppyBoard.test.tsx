@@ -130,10 +130,14 @@ describe('KeepyUppyBoard', () => {
 
     fireEvent(balloon, 'pressIn', {
       nativeEvent: {
-        locationX: 50,
-        locationY: 50,
         pageX: 100,
         pageY: 100,
+      },
+    });
+    fireEvent.press(balloon, {
+      nativeEvent: {
+        locationX: 50,
+        locationY: 50,
       },
     });
 

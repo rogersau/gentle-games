@@ -89,7 +89,8 @@ export const GlitterScreen: React.FC = () => {
                 size='sm'
                 onPress={() => savePreset(preset)}
                 accessibilityRole='radio'
-                accessibilityState={{ selected: selectedPreset === preset }}
+                accessibilityState={{ checked: selectedPreset === preset }}
+                aria-checked={selectedPreset === preset}
                 testID={`glitter-preset-${preset}`}
                 style={styles.presetButton}
               />
@@ -103,22 +104,27 @@ export const GlitterScreen: React.FC = () => {
               label={translate('games.glitterFall.controls.addFew')}
               variant='secondary'
               onPress={addGlitter}
+              fullWidth
               testID='glitter-add-few-button'
               style={styles.controlButton}
             />
           </View>
-          <AppButton
-            label={translate('games.glitterFall.controls.swirl')}
-            variant='primary'
-            onPress={() => globeRef.current?.swirl()}
-            testID='glitter-swirl-button'
-            style={styles.controlButton}
-          />
+          <View style={styles.controlWrapper}>
+            <AppButton
+              label={translate('games.glitterFall.controls.swirl')}
+              variant='primary'
+              onPress={() => globeRef.current?.swirl()}
+              fullWidth
+              testID='glitter-swirl-button'
+              style={styles.controlButton}
+            />
+          </View>
           <View testID='glitter-clear-button' style={styles.controlWrapper}>
             <AppButton
               label={translate('games.glitterFall.controls.settle')}
               variant='ghost'
               onPress={() => globeRef.current?.settle()}
+              fullWidth
               testID='glitter-settle-button'
               style={styles.controlButton}
             />
@@ -164,7 +170,7 @@ const createStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'center',
-      gap: Space.sm,
+      gap: Space.xs,
     },
     presetButton: {
       flexGrow: 1,
@@ -177,7 +183,7 @@ const createStyles = (colors: ThemeColors) =>
       gap: Space.sm,
     },
     controlButton: {
-      flex: 1,
+      minHeight: 68,
       paddingHorizontal: Space.sm,
     },
     controlWrapper: {

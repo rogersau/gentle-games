@@ -281,11 +281,13 @@ describe('UI Components', () => {
     ];
 
     it('renders options', () => {
-      const { getByText } = render(
+      const { getByText, getByRole } = render(
         <SegmentedControl options={mockOptions} value='a' onValueChange={jest.fn()} />,
       );
       expect(getByText('Option A')).toBeTruthy();
       expect(getByText('Option B')).toBeTruthy();
+      const selected = getByRole('radio', { name: 'Option A' });
+      expect(selected.props.accessibilityState.checked).toBe(true);
     });
 
     it('calls onValueChange when option pressed', () => {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import type { NumberPicnicRepresentation as Representation } from '../../types';
 import { Space, TypeStyle } from '../../ui/tokens';
 import { useThemeColors } from '../../utils/theme';
@@ -20,14 +21,22 @@ export const NumberPicnicRepresentation: React.FC<NumberPicnicRepresentationProp
   testID,
 }) => {
   const { colors } = useThemeColors();
+  const { t } = useTranslation();
   const filled = new Set(representation.filledSlots);
+  const frameAccessibilityLabel = t('games.numberPicnic.representation.frameAccessibilityLabel', {
+    capacity: representation.frameCapacity,
+    count: representation.quantity,
+    spaceWord: t(
+      `games.numberPicnic.representation.spaceCount.${representation.quantity === 1 ? 'one' : 'other'}`,
+    ),
+  });
 
   return (
     <View
       style={[styles.container, style]}
       accessible
       accessibilityRole='image'
-      accessibilityLabel={`${accessibilityLabel}; ${representation.frameCapacity}-frame with ${representation.quantity} filled spaces`}
+      accessibilityLabel={`${accessibilityLabel}; ${frameAccessibilityLabel}`}
       testID={testID}
     >
       {showNumeral && (
@@ -53,9 +62,6 @@ export const NumberPicnicRepresentation: React.FC<NumberPicnicRepresentationProp
           </View>
         ))}
       </View>
-      <Text style={[styles.dotText, { color: colors.textLight }]}>
-        {representation.dots.join(' ')}
-      </Text>
     </View>
   );
 };
@@ -76,5 +82,4 @@ const styles = StyleSheet.create({
   },
   dot: { width: 12, height: 12, borderRadius: 6 },
   emptyDot: { opacity: 0 },
-  dotText: { ...TypeStyle.body, minHeight: 24 },
 });

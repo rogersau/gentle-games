@@ -77,10 +77,10 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   const zoneHeight = Math.max(90, Math.min(130, Math.floor(height * 0.29)));
   const tokenSize = Math.max(72, Math.min(104, Math.floor(width * 0.24)));
   const tokenStartX = (width - tokenSize) / 2;
-  const tokenStartY = Math.min(250, Math.max(160, height - zoneHeight - tokenSize - Space['2xl']));
+  const zoneTop = height - zoneHeight - boardPadding;
+  const tokenStartY = Math.min(286, Math.max(190, zoneTop - tokenSize - Space.lg));
   const tokenCenterX = tokenStartX + tokenSize / 2;
   const tokenCenterY = tokenStartY + tokenSize / 2;
-  const zoneTop = height - zoneHeight - boardPadding;
   const zoneWidth = (width - boardPadding * 2 - zoneGap * (categoryCount - 1)) / categoryCount;
 
   const zones: DropZone[] = useMemo(

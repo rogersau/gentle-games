@@ -72,5 +72,11 @@ const styles = StyleSheet.create({
   feedback: { ...TypeStyle.bodySm, marginTop: Space.xs, textAlign: 'center' },
   support: { ...TypeStyle.body, marginTop: Space.sm, textAlign: 'center' },
   model: { marginTop: Space.sm, alignItems: 'center' },
-  actions: { marginTop: Space.base, gap: Space.sm },
+  actions: {
+    marginTop: Space.base,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: Space.sm,
+  },
 });

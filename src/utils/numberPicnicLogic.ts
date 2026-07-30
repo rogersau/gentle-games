@@ -69,7 +69,6 @@ export const createNumberPicnicRepresentation = (quantity: number) => {
     numeral: safeQuantity,
     frameCapacity,
     filledSlots: getDotSlots(safeQuantity, frameCapacity),
-    dots: Array.from({ length: safeQuantity }, () => '🟢'),
   };
 };
 
@@ -145,7 +144,6 @@ export const generateNumberPicnicPrompt = (
     itemEmoji: item.emoji,
     itemName: item.name,
     targetCount,
-    visualDots: representation.dots,
     stage,
     mode,
     representation,

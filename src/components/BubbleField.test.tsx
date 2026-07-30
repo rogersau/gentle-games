@@ -1,6 +1,6 @@
 import React, { Profiler } from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { AccessibilityInfo, PanResponder, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, PanResponder, Platform, StyleSheet, View } from 'react-native';
 import { Circle, Text as SvgText } from 'react-native-svg';
 import { BubbleField } from './BubbleField';
 
@@ -205,6 +205,30 @@ describe('BubbleField', () => {
         (node: any) => typeof node.props.onPanResponderRelease === 'function',
       ),
     ).toHaveLength(0);
+  });
+
+  it('does not force stationary mode from React Native Web screen-reader detection', async () => {
+    const originalPlatform = Platform.OS;
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
+    const screenReaderCheck = jest
+      .spyOn(AccessibilityInfo, 'isScreenReaderEnabled')
+      .mockResolvedValue(true);
+
+    try {
+      const screen = render(
+        <BubbleField width={240} height={220} minActiveBubbles={1} maxActiveBubbles={2} />,
+      );
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(screenReaderCheck).not.toHaveBeenCalled();
+      expect(screen.queryAllByTestId(/^bubble-button-/)).toHaveLength(0);
+      expect(screen.getByTestId('bubble-accessible-mode-toggle')).toBeTruthy();
+      screen.unmount();
+    } finally {
+      Object.defineProperty(Platform, 'OS', { configurable: true, value: originalPlatform });
+    }
   });
 
   it('keeps reduced-motion bubbles visible, stationary, and replenished', () => {

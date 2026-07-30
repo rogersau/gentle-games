@@ -266,12 +266,12 @@
       "clearGlitterHint": "Remove all glitter from the globe",
       "accessibility": "Glitter globe. Swipe or shake to move glitter particles.",
       "subtitle": "Watch quietly or choose how the glitter moves",
-      "profileTitle": "Glitter feeling",
+      "profileTitle": "Choose a style",
       "preset": {
         "settle": "Settle",
         "watch": "Watch",
         "explore": "Explore",
-        "full": "Full"
+        "full": "Lots"
       },
       "controls": {
         "addFew": "Add a few",
@@ -283,7 +283,7 @@
       "name": "Bubble Pop",
       "description": "Pop bubbles slowly",
       "title": "Bubble Pop",
-      "subtitle": "Tap the falling bubbles to pop them.",
+      "subtitle": "Tap a bubble to pop it.",
       "popped": "Popped: {{count}}",
       "pop": "Pop!",
       "accessibility": "Bubble field, tap bubbles to pop them",
@@ -305,19 +305,19 @@
       "startSortingHint": "Begin the category sorting game",
       "accessibilityLabel": "Category matching game",
       "quickPreview": "Quick Preview",
-      "previewInstruction": "The sorting rule is item type. Choose the matching group.",
-      "sortingInstruction": "Sorting rule: item type. Choose {{categories}}.",
-      "interactionInstruction": "Tap the item, then tap a group. You can also drag the item.",
-      "hint": "Look at the item type, then choose its group.",
+      "previewInstruction": "Put each picture with the group it belongs to.",
+      "sortingInstruction": "Where does this picture belong?",
+      "interactionInstruction": "Tap the picture, then tap its group. You can also drag it.",
+      "hint": "Think about what the picture is. Which group matches?",
       "itemAccessibilityLabel": "{{item}} item",
       "selectItemHint": "Tap to select this item, then activate a category",
       "selectItemFirst": "Select the item before choosing a category",
       "categoryAccessibilityLabel": "{{category}} category",
       "categoryActivationHint": "Activate to place the selected item here",
-      "correctFeedback": "{{item}} belongs in {{category}}.",
-      "incorrectFeedback": "{{item}} does not belong in {{chosenCategory}}. It belongs in {{correctCategory}}.",
-      "model": "Model: {{item}} belongs in {{category}}. Now place it there.",
-      "modelAccessibilityLabel": "Model: {{item}} belongs in {{category}}.",
+      "correctFeedback": "{{item}} goes with {{category}}.",
+      "incorrectFeedback": "Not quite. {{item}} goes with {{correctCategory}}.",
+      "model": "Here is one: {{item}} goes with {{category}}. Now you try.",
+      "modelAccessibilityLabel": "{{item}} goes with {{category}}.",
       "showHint": "Show a hint",
       "replay": "Hear the rule again",
       "skip": "Skip",
@@ -403,6 +403,7 @@
       "title": "Pattern Train",
       "nextPattern": "Next Pattern",
       "subtitle": "Complete the train pattern",
+      "chooseDifficulty": "Choose a level",
       "mode": "Mode",
       "completedRounds": "Completed rounds",
       "roundsAccessibilityLabel": "Completed rounds: {{count}}",
@@ -520,18 +521,34 @@
         "stars": "stars",
         "flowers": "flowers"
       },
+      "itemsSingular": {
+        "berries": "berry",
+        "apples": "apple",
+        "carrots": "carrot",
+        "stars": "star",
+        "flowers": "flower"
+      },
+      "itemCount": {
+        "one": "item",
+        "other": "items"
+      },
       "feedback": {
         "complete": "Great counting!",
         "incomplete": "Keep adding items"
       },
       "representation": {
-        "accessibilityLabel": "{{count}} items shown as a numeral, dots, and a frame",
-        "quantityAccessibilityLabel": "{{count}} items shown as dots and a frame"
+        "accessibilityLabel": "{{count}} {{itemWord}} shown as a numeral and a frame",
+        "quantityAccessibilityLabel": "{{count}} {{itemWord}} shown in a frame",
+        "frameAccessibilityLabel": "{{capacity}}-frame with {{count}} filled {{spaceWord}}",
+        "spaceCount": {
+          "one": "space",
+          "other": "spaces"
+        }
       },
-      "choiceAccessibilityLabel": "Group showing {{count}} items",
+      "choiceAccessibilityLabel": "Group showing {{count}} {{itemWord}}",
       "numeralChoiceAccessibilityLabel": "Numeral {{numeral}}",
       "choiceHint": "Choose this group",
-      "groupAccessibilityLabel": "{{group}} group showing {{count}} items",
+      "groupAccessibilityLabel": "{{group}} group showing {{count}} {{itemWord}}",
       "groups": {
         "left": "Left group",
         "right": "Right group"

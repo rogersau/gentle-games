@@ -61,21 +61,6 @@ export const HomeScreen: React.FC = () => {
     description: string;
   }[] = [
     {
-      value: 2,
-      label: t('settings.memorySnap.pairs.two'),
-      description: t('settings.memorySnap.pairs.twoDescription'),
-    },
-    {
-      value: 3,
-      label: t('settings.memorySnap.pairs.three'),
-      description: t('settings.memorySnap.pairs.threeDescription'),
-    },
-    {
-      value: 4,
-      label: t('settings.memorySnap.pairs.four'),
-      description: t('settings.memorySnap.pairs.fourDescription'),
-    },
-    {
       value: 6,
       label: t('difficulty.easy.label'),
       description: t('difficulty.easy.description'),
@@ -171,11 +156,6 @@ export const HomeScreen: React.FC = () => {
     }
   };
 
-  const getDifficultyLabel = (pairCount: MemorySnapPairCount) => {
-    const option = difficultyOptions.find((opt) => opt.value === pairCount);
-    return option?.label || String(pairCount);
-  };
-
   return (
     <AppScreen testID='home-screen'>
       <View
@@ -262,10 +242,7 @@ export const HomeScreen: React.FC = () => {
         showClose
         closeLabel={t('common.cancel')}
       >
-        <Text style={styles.modalSubtitle}>
-          {t('difficulty.title')}
-          {` (${t('games.memorySnap.lastUsed')}: ${getDifficultyLabel(memorySettings.pairCount)})`}
-        </Text>
+        <Text style={styles.modalSubtitle}>{t('difficulty.title')}</Text>
         <View style={styles.optionsList}>
           {difficultyOptions.map(({ value, label, description }) => (
             <AppButton

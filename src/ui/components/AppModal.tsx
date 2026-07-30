@@ -5,6 +5,7 @@ import {
   View,
   Text,
   Modal,
+  ScrollView,
   TouchableOpacity,
   ViewStyle,
 } from 'react-native';
@@ -74,7 +75,15 @@ export const AppModal: React.FC<AppModalProps> = ({
               {title}
             </Text>
           )}
-          {children}
+          <ScrollView
+            style={styles.body}
+            contentContainerStyle={styles.bodyContent}
+            showsVerticalScrollIndicator
+            keyboardShouldPersistTaps='handled'
+            bounces={false}
+          >
+            {children}
+          </ScrollView>
           {showClose && (
             <TouchableOpacity
               style={[styles.closeButton, disabled && styles.disabled]}
@@ -108,7 +117,15 @@ const createStyles = (colors: ThemeColors) =>
       padding: Space.xl,
       width: '100%',
       maxWidth: 420,
+      maxHeight: '100%',
       ...Shadow.lg,
+    },
+    body: {
+      flexShrink: 1,
+      minHeight: 0,
+    },
+    bodyContent: {
+      flexGrow: 0,
     },
     title: {
       ...TypeStyle.h3,

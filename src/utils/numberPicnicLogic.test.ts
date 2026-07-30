@@ -44,20 +44,19 @@ describe('numberPicnicLogic', () => {
     expect(generateNumberPicnicPrompt('6-10', () => 0.999999).targetCount).toBe(10);
   });
 
-  it('generates exact visual dots and validates exact completion', () => {
+  it('generates an exact frame representation and validates exact completion', () => {
     const prompt = generateNumberPicnicPrompt('1-5', () => 0.5);
     expect(prompt.targetCount).toBe(3);
-    expect(prompt.visualDots).toHaveLength(3);
+    expect(prompt.representation.filledSlots).toHaveLength(3);
     expect(isNumberPicnicPromptComplete(3, prompt)).toBe(true);
     expect(isNumberPicnicPromptComplete(4, prompt)).toBe(false);
   });
 
-  it('keeps numeral, dots, and frame occupancy equal for every quantity', () => {
+  it('keeps numeral and frame occupancy equal for every quantity', () => {
     for (let quantity = 1; quantity <= 10; quantity += 1) {
       const representation = createNumberPicnicRepresentation(quantity);
       expect(representation.quantity).toBe(quantity);
       expect(representation.numeral).toBe(quantity);
-      expect(representation.dots).toHaveLength(quantity);
       expect(representation.filledSlots).toHaveLength(quantity);
       expect(representation.frameCapacity).toBe(quantity <= 5 ? 5 : 10);
     }
@@ -93,6 +92,48 @@ describe('numberPicnicLogic', () => {
     expect(generateNumberPicnicPrompt('1-5', () => 0, 'add-one-more').mode).toBe('make-amount');
   });
 
+  it('keeps every generated numeral, frame, choice, and group aligned with its quantity', () => {
+    const samples = [0, 0.1, 0.25, 0.5, 0.75, 0.999999];
+    const stages = ['1-3', '1-5', '6-10'] as const;
+    const modes = [
+      'make-amount',
+      'find-amount',
+      'match-numeral',
+      'more-fewer',
+      'add-one-more',
+    ] as const;
+
+    for (const stage of stages) {
+      for (const mode of modes) {
+        if (!isNumberPicnicModeAvailable(stage, mode)) continue;
+
+        for (const sample of samples) {
+          const prompt = generateNumberPicnicPrompt(stage, () => sample, mode);
+          expect(prompt.representation.quantity).toBe(prompt.targetCount);
+          expect(prompt.representation.numeral).toBe(prompt.targetCount);
+          expect(prompt.representation.filledSlots).toHaveLength(prompt.targetCount);
+
+          for (const choice of prompt.choices) {
+            expect(choice.numeral).toBe(choice.quantity);
+            expect(choice.representation.quantity).toBe(choice.quantity);
+            expect(choice.representation.filledSlots).toHaveLength(choice.quantity);
+          }
+
+          for (const group of prompt.groups) {
+            expect(group.representation.quantity).toBe(group.quantity);
+            expect(group.representation.filledSlots).toHaveLength(group.quantity);
+          }
+
+          if (mode === 'find-amount' || mode === 'match-numeral') {
+            expect(
+              prompt.choices.filter(({ quantity }) => quantity === prompt.targetCount),
+            ).toHaveLength(1);
+          }
+        }
+      }
+    }
+  });
+
   it('does not expose the guided answer through a fixed first position', () => {
     for (const mode of ['find-amount', 'match-numeral'] as const) {
       const prompt = generateNumberPicnicPrompt('6-10', () => 0.25, mode);
@@ -123,7 +164,6 @@ describe('numberPicnicLogic', () => {
       itemEmoji: '🍎',
       itemName: 'apples',
       targetCount: 2,
-      visualDots: ['🟢', '🟢'],
       stage: '1-3' as const,
       mode: 'make-amount' as const,
       representation: {
@@ -131,7 +171,6 @@ describe('numberPicnicLogic', () => {
         numeral: 2,
         frameCapacity: 5 as const,
         filledSlots: [1, 3],
-        dots: ['🟢', '🟢'],
       },
       choices: [],
       groups: [],

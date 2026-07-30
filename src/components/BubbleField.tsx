@@ -3,6 +3,7 @@ import {
   AccessibilityInfo,
   AppState,
   PanResponder,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -118,6 +119,14 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
     accessibleMode === true || manualAccessibleMode || screenReaderEnabled || !motionEnabled;
 
   useEffect(() => {
+    // React Native Web currently reports screen-reader support as enabled for
+    // every browser, so using that value would make moving mode impossible.
+    // Web players can still choose the explicit stationary button mode below.
+    if (Platform.OS === 'web') {
+      setScreenReaderEnabled(false);
+      return;
+    }
+
     let mounted = true;
     void AccessibilityInfo.isScreenReaderEnabled()
       .then((enabled) => {
