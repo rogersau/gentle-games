@@ -25,6 +25,7 @@ import { useTranslation } from 'react-i18next';
 import { createGuidedRoundController, GuidedRoundState } from '../guided-practice/controller';
 import { GuidedPracticePrompt } from '../ui/components/GuidedPracticePrompt';
 import { AppButton } from '../ui/components';
+import type { PracticeResponse, PracticeResult } from '../utils/practiceHistory';
 
 interface CategoryMatchBoardProps {
   width: number;
@@ -32,6 +33,7 @@ interface CategoryMatchBoardProps {
   categoryCount?: CategoryMatchCategoryCount;
   onCorrectMatch?: (item: CategoryMatchItem, category: CategoryMatchCategory) => void;
   onIncorrectMatch?: () => void;
+  onPracticeResult?: (result: PracticeResult) => void;
 }
 
 interface DropZone {
@@ -50,6 +52,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   categoryCount = 2,
   onCorrectMatch,
   onIncorrectMatch,
+  onPracticeResult,
 }) => {
   const { settings } = useSettings();
   const animationsEnabled = useAnimationEnabled();
@@ -173,12 +176,28 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
       answerLockRef.current = true;
 
       const isCorrect = isCategoryMatchCorrect(round.item, category);
+      const previousState = controllerRef.current.getState();
       const nextState = controllerRef.current.attempt(isCorrect);
       setGuidedRound(nextState);
       setIsTokenSelected(false);
       dragPosition.setValue({ x: 0, y: 0 });
 
       if (isCorrect) {
+        const response: PracticeResponse =
+          previousState.phase === 'modelled'
+            ? 'after-model'
+            : previousState.phase === 'hinted'
+              ? 'after-visual-hint'
+              : 'independent';
+        onPracticeResult?.({
+          game: 'category-match',
+          targetSkill: 'sort-by-stated-category',
+          level: `${categoryCount}-groups`,
+          response,
+          attempts: previousState.incorrectAttempts + 1,
+          occurredAt: new Date().toISOString(),
+          selectedConfiguration: `category-match:${categoryCount}-groups`,
+        });
         announce(
           t('games.categoryMatch.correctFeedback', {
             item: itemLabel,
@@ -208,8 +227,10 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
       itemLabel,
       onCorrectMatch,
       onIncorrectMatch,
+      onPracticeResult,
       pulseToken,
       round.item,
+      categoryCount,
       settings,
       springTokenBack,
       t,
@@ -244,12 +265,23 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   }, [announce, instruction]);
 
   const handleSkip = useCallback(() => {
+    if (guidedRound.phase === 'corrected' || guidedRound.phase === 'skipped') return;
+    const previousState = controllerRef.current.getState();
     const nextState = controllerRef.current.skip();
     setGuidedRound(nextState);
     setIsTokenSelected(false);
     announce(t('games.categoryMatch.skippedFeedback', { item: itemLabel }));
+    onPracticeResult?.({
+      game: 'category-match',
+      targetSkill: 'sort-by-stated-category',
+      level: `${categoryCount}-groups`,
+      response: 'skipped',
+      attempts: previousState.incorrectAttempts,
+      occurredAt: new Date().toISOString(),
+      selectedConfiguration: `category-match:${categoryCount}-groups`,
+    });
     springTokenBack();
-  }, [announce, itemLabel, springTokenBack, t]);
+  }, [announce, categoryCount, guidedRound.phase, itemLabel, onPracticeResult, springTokenBack, t]);
 
   const panResponder = useMemo(
     () =>

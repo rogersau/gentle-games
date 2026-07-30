@@ -111,7 +111,7 @@ describe('prepare-pwa', () => {
       expect(manifest.orientation).toBe('portrait');
       expect(manifest.background_color).toBe('#FFFEF7');
       expect(manifest.theme_color).toBe('#FFFEF7');
-      expect(manifest.categories).toEqual(['games', 'kids', 'education']);
+      expect(manifest.categories).toEqual(['games', 'kids']);
       expect(manifest.prefer_related_applications).toBe(false);
       expect(manifest.icons).toHaveLength(5);
     });

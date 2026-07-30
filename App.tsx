@@ -10,6 +10,7 @@ import { PostHogProvider } from 'posthog-react-native';
 import './src/i18n';
 import { SettingsProvider, useSettings } from './src/context/SettingsContext';
 import { ParentTimerProvider } from './src/context/ParentTimerContext';
+import { PracticeHistoryProvider } from './src/context/PracticeHistoryContext';
 import { MochiProvider } from './src/context/MochiContext';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { GameScreen } from './src/screens/GameScreen';
@@ -22,6 +23,7 @@ import { KeepyUppyScreen } from './src/screens/KeepyUppyScreen';
 import { BreathingGardenScreen } from './src/screens/BreathingGardenScreen';
 import { PatternTrainScreen } from './src/screens/PatternTrainScreen';
 import { NumberPicnicScreen } from './src/screens/NumberPicnicScreen';
+import { PracticeHistoryScreen } from './src/screens/PracticeHistoryScreen';
 import { initializeSounds, unloadSounds } from './src/utils/sounds';
 import { installPwaBackNavigationGuard } from './src/utils/pwaBackGuard';
 import { getPostHogClient, trackScreenView } from './src/utils/analytics';
@@ -142,6 +144,13 @@ const AppNavigator: React.FC = () => {
                 </GentleErrorBoundary>
               )}
             </Stack.Screen>
+            <Stack.Screen name={APP_ROUTES.PracticeHistory}>
+              {() => (
+                <GentleErrorBoundary screenName={APP_ROUTES.PracticeHistory}>
+                  <PracticeHistoryScreen />
+                </GentleErrorBoundary>
+              )}
+            </Stack.Screen>
             <Stack.Screen name={APP_ROUTES.Drawing}>
               {() => (
                 <GentleErrorBoundary screenName={APP_ROUTES.Drawing}>
@@ -231,11 +240,13 @@ export const AppContent: React.FC = () => {
   }
 
   return (
-    <ParentTimerProvider>
-      <MochiProvider>
-        <AppNavigator />
-      </MochiProvider>
-    </ParentTimerProvider>
+    <PracticeHistoryProvider>
+      <ParentTimerProvider>
+        <MochiProvider>
+          <AppNavigator />
+        </MochiProvider>
+      </ParentTimerProvider>
+    </PracticeHistoryProvider>
   );
 };
 

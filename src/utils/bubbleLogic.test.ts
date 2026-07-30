@@ -4,6 +4,11 @@ import {
   spawnBubbles,
   Bubble,
   createBubble,
+  createGuidedRound,
+  evaluateGuidedResponse,
+  getBubbleDirection,
+  getBubbleSize,
+  resolveBubbleSensoryConfig,
 } from './bubbleLogic';
 
 const sequenceRng = (values: number[]) => {
@@ -16,6 +21,88 @@ const sequenceRng = (values: number[]) => {
 };
 
 describe('bubbleLogic', () => {
+  const guidedBubble = (overrides: Partial<Bubble> = {}): Bubble => ({
+    id: 'guided',
+    x: 40,
+    y: 80,
+    radius: 24,
+    targetRadius: 24,
+    growthPerSecond: 0,
+    speed: 20,
+    color: '#A8D8EA',
+    opacity: 0.5,
+    ...overrides,
+  });
+
+  it('resolves a complete local sensory profile without shared settings', () => {
+    expect(
+      resolveBubbleSensoryConfig({ motion: 'floating', speed: 'fast', size: 'large' }),
+    ).toEqual({
+      motion: 'floating',
+      speed: 'fast',
+      density: 'sparse',
+      size: 'large',
+    });
+  });
+
+  it('creates deterministic colour, size, and direction prompts from bubbles', () => {
+    const bubbles = [
+      guidedBubble({ id: 'left-small', x: 40, targetRadius: 24 }),
+      guidedBubble({ id: 'right-large', x: 260, targetRadius: 44, color: '#FFB6C1' }),
+    ];
+
+    expect(createGuidedRound('colour', bubbles, 300, () => 0).targetColour).toBe('#A8D8EA');
+    expect(createGuidedRound('size', bubbles, 300, () => 0.75)).toMatchObject({
+      targetSize: 'large',
+      targetSizeGoal: 'biggest',
+      targetRadius: 44,
+    });
+    expect(createGuidedRound('direction', bubbles, 300, () => 0.75).targetDirection).toBe('right');
+    expect(getBubbleSize(bubbles[0])).toBe('small');
+    expect(getBubbleDirection(bubbles[1], 300)).toBe('right');
+  });
+
+  it('rejects wrong guided responses neutrally without changing the round', () => {
+    const round = { concept: 'colour' as const, targetColour: '#A8D8EA', fieldWidth: 300 };
+    const response = evaluateGuidedResponse(round, guidedBubble({ color: '#FFB6C1' }), 0);
+
+    expect(response).toEqual({ accepted: false, completed: false, reason: 'wrong', nextCount: 0 });
+  });
+
+  it('accepts the matching response for colour, size, and left/right concepts', () => {
+    const bubble = guidedBubble({ x: 240, targetRadius: 44, color: '#FFB6C1' });
+
+    expect(
+      evaluateGuidedResponse(
+        { concept: 'colour', targetColour: '#FFB6C1', fieldWidth: 300 },
+        bubble,
+        0,
+      ).accepted,
+    ).toBe(true);
+    expect(
+      evaluateGuidedResponse({ concept: 'size', targetSize: 'large', fieldWidth: 300 }, bubble, 0)
+        .accepted,
+    ).toBe(true);
+    expect(
+      evaluateGuidedResponse(
+        { concept: 'direction', targetDirection: 'right', fieldWidth: 300 },
+        bubble,
+        0,
+      ).accepted,
+    ).toBe(true);
+  });
+
+  it('locks an exact count after the target and never resets the count', () => {
+    const round = { concept: 'count' as const, targetCount: 2, fieldWidth: 300 };
+    const first = evaluateGuidedResponse(round, guidedBubble(), 0);
+    const second = evaluateGuidedResponse(round, guidedBubble({ id: 'second' }), first.nextCount);
+    const locked = evaluateGuidedResponse(round, guidedBubble({ id: 'third' }), second.nextCount);
+
+    expect(first.accepted).toBe(true);
+    expect(second).toMatchObject({ accepted: true, completed: true, nextCount: 2 });
+    expect(locked).toEqual({ accepted: false, completed: true, reason: 'locked', nextCount: 2 });
+  });
+
   it('ensures at least the minimum number of bubbles', () => {
     const bubbles = ensureMinimumBubbles([], 2, 300, 400, 10, sequenceRng([0.2, 0.4, 0.6]));
     expect(bubbles).toHaveLength(2);

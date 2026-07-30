@@ -141,4 +141,67 @@ describe('KeepyUppyBoard', () => {
     expect(mockOnBalloonCountChange).toHaveBeenLastCalledWith(MAX_BALLOONS);
     expect(mockOnScoreChange).toHaveBeenLastCalledWith(1);
   });
+
+  it('provides focusable keyboard and switch-access controls for tap-anywhere', () => {
+    const { getByRole } = render(
+      <KeepyUppyBoard
+        bounds={defaultBounds}
+        config={{ profile: 'tap-anywhere' }}
+        onScoreChange={mockOnScoreChange}
+      />,
+    );
+
+    const control = getByRole('button', { name: 'Tap anywhere to lift a balloon' });
+    fireEvent.press(control);
+
+    expect(mockOnScoreChange).toHaveBeenLastCalledWith(1);
+  });
+
+  it('exposes distinct target-zone and left/right controls', () => {
+    const targetZones = render(
+      <KeepyUppyBoard bounds={defaultBounds} config={{ profile: 'target-zones' }} />,
+    );
+    expect(targetZones.getByTestId('keepy-uppy-target-zone-left')).toBeTruthy();
+    expect(targetZones.getByTestId('keepy-uppy-target-zone-right')).toBeTruthy();
+    targetZones.unmount();
+
+    const leftAndRight = render(
+      <KeepyUppyBoard bounds={defaultBounds} config={{ profile: 'left-and-right' }} />,
+    );
+    expect(leftAndRight.getByTestId('keepy-uppy-left-control')).toBeTruthy();
+    expect(leftAndRight.getByTestId('keepy-uppy-right-control')).toBeTruthy();
+  });
+
+  it('keeps a grounded balloon visible and lets a focused activation lift it again', () => {
+    const { getAllByTestId, getByText } = render(
+      <KeepyUppyBoard
+        bounds={defaultBounds}
+        config={{ profile: 'large-and-slow' }}
+        onScoreChange={mockOnScoreChange}
+      />,
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(15000);
+    });
+
+    expect(getByText('Lift it again')).toBeTruthy();
+    fireEvent.press(getAllByTestId(/balloon-/)[0]);
+    expect(mockOnScoreChange).toHaveBeenLastCalledWith(1);
+  });
+
+  it('continues stepping in reduced motion instead of disabling play', () => {
+    const { getAllByTestId } = render(
+      <KeepyUppyBoard
+        bounds={defaultBounds}
+        config={{ profile: 'large-and-slow', reducedMotion: true }}
+      />,
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(70);
+    });
+
+    expect(getAllByTestId(/balloon-/)).toHaveLength(1);
+  });
 });

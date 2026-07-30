@@ -42,10 +42,9 @@ describe('analytics consent-aware wrappers', () => {
     }));
   });
 
-  it('keeps capture and screen tracking as safe no-ops until telemetry is enabled', async () => {
+  it('keeps screen tracking as a safe no-op until telemetry is enabled', async () => {
     const analytics = require('./analytics');
 
-    analytics.trackEvent('game completed', { game: 'Memory Snap' });
     analytics.trackScreenView('Home');
 
     expect(mockCapture).not.toHaveBeenCalled();
@@ -57,26 +56,14 @@ describe('analytics consent-aware wrappers', () => {
     expect(mockOptOut).not.toHaveBeenCalled();
   });
 
-  it('only forwards allowlisted flat diagnostic properties and preserves manual screen tracking', async () => {
+  it('tracks screen navigation without child performance events or properties', async () => {
     const analytics = require('./analytics');
 
     await analytics.reconcileAnalyticsConsent(true);
-    analytics.trackEvent('game completed', {
-      game: 'Memory Snap',
-      duration_ms: 1200,
-      score: 4,
-      debug_note: 'drop me',
-      nested: { bad: true },
-      rawMessage: 'drop me too',
-    });
     analytics.trackScreenView('Home');
 
     expect(mockOptIn).toHaveBeenCalledTimes(1);
-    expect(mockCapture).toHaveBeenCalledWith('game completed', {
-      game: 'Memory Snap',
-      duration_ms: 1200,
-      score: 4,
-    });
+    expect(mockCapture).not.toHaveBeenCalled();
     expect(mockScreen).toHaveBeenCalledWith('Home');
   });
 

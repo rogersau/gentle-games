@@ -96,9 +96,8 @@ export const HomeScreen: React.FC = () => {
     () =>
       getVisibleGames({
         hiddenGames: settings.hiddenGames,
-        enableUnfinishedGames: settings.enableUnfinishedGames,
       }),
-    [settings.hiddenGames, settings.enableUnfinishedGames],
+    [settings.hiddenGames],
   );
 
   const handleGameSelect = (game: GameDefinition) => {

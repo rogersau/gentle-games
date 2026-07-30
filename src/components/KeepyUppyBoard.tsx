@@ -7,13 +7,17 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
   addBalloon,
-  createBalloon,
+  createInitialBalloons,
   flickBalloon,
+  isBalloonResting,
   KeepyUppyBalloon,
   KeepyUppyBounds,
+  KeepyUppyConfig,
+  MAX_BALLOONS,
+  resolveKeepyUppyConfig,
   stepBalloons,
   tapBalloon,
 } from '../utils/keepyUppyLogic';
@@ -27,13 +31,16 @@ export interface KeepyUppyBoardRef {
   getBalloonCount: () => number;
 }
 
-interface KeepyUppyBoardProps {
+export interface KeepyUppyBoardProps {
   bounds: KeepyUppyBounds;
   onScoreChange?: (score: number) => void;
   onBalloonCountChange?: (count: number) => void;
   onPoppedChange?: (popped: number) => void;
   easyMode?: boolean;
+  /** Kept for the shared screen contract. Reduced motion remains playable. */
   motionEnabled?: boolean;
+  reducedMotion?: boolean;
+  config?: Partial<KeepyUppyConfig>;
 }
 
 const STEP_MS = 1000 / 30;
@@ -53,20 +60,35 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
       onPoppedChange,
       easyMode = false,
       motionEnabled = true,
+      reducedMotion = false,
+      config,
     },
     ref,
   ) => {
     const { colors, resolvedMode } = useThemeColors();
     const { t } = useTranslation();
+    const resolvedConfig = useMemo(
+      () =>
+        resolveKeepyUppyConfig({
+          ...config,
+          reducedMotion: config?.reducedMotion || reducedMotion || !motionEnabled,
+        }),
+      [config, motionEnabled, reducedMotion],
+    );
     const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
-    const createBoardBalloon = useCallback(
-      () => createBalloon(bounds, { colors, resolvedMode }),
-      [bounds, colors, resolvedMode],
+    const createOptions = useMemo(
+      () => ({ colors, resolvedMode, config: resolvedConfig }),
+      [colors, resolvedConfig, resolvedMode],
+    );
+    const createBoardBalloons = useCallback(
+      () => createInitialBalloons(bounds, createOptions),
+      [bounds, createOptions],
     );
     const [score, setScore] = useState(0);
     const [popped, setPopped] = useState(0);
+    const [balloons, setBalloons] = useState<KeepyUppyBalloon[]>(createBoardBalloons);
     const touchStartRef = useRef<Record<string, { x: number; y: number; startedAt: number }>>({});
-    const [balloons, setBalloons] = useState<KeepyUppyBalloon[]>(() => [createBoardBalloon()]);
+    const activatedOnPressInRef = useRef<Record<string, boolean>>({});
     const onBalloonCountChangeRef = useRef(onBalloonCountChange);
     const onScoreChangeRef = useRef(onScoreChange);
     const onPoppedChangeRef = useRef(onPoppedChange);
@@ -76,16 +98,11 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
     onPoppedChangeRef.current = onPoppedChange;
 
     useEffect(() => {
-      if (balloons.length === 0) {
-        setBalloons([createBoardBalloon()]);
-        return;
-      }
-    }, [balloons.length, createBoardBalloon]);
+      if (balloons.length === 0) setBalloons(createBoardBalloons());
+    }, [balloons.length, createBoardBalloons]);
 
     useEffect(() => {
-      if (balloons.length > 0) {
-        onBalloonCountChangeRef.current?.(balloons.length);
-      }
+      onBalloonCountChangeRef.current?.(balloons.length);
     }, [balloons.length]);
 
     useEffect(() => {
@@ -97,30 +114,36 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
     }, [popped]);
 
     useEffect(() => {
-      if (!motionEnabled) return;
-      const timer = setInterval(() => {
-        const now = Date.now();
-        setBalloons((previous) => {
-          const stepped = stepBalloons(previous, bounds, STEP_MS / 1000, now);
-          if (stepped.popped > 0) {
-            setPopped((currentPopped) => currentPopped + stepped.popped);
-          }
-          return stepped.balloons;
-        });
-      }, STEP_MS);
+      const timer = setInterval(
+        () => {
+          const now = Date.now();
+          setBalloons((previous) => {
+            const stepped = stepBalloons(previous, bounds, STEP_MS / 1000, now, resolvedConfig);
+            // Ground contact is a resting state, never a failure.
+            if (stepped.popped > 0) setPopped((currentPopped) => currentPopped + stepped.popped);
+            return stepped.balloons;
+          });
+        },
+        STEP_MS * (resolvedConfig.reducedMotion ? 2 : 1),
+      );
 
       return () => clearInterval(timer);
-    }, [bounds, motionEnabled]);
+    }, [bounds, resolvedConfig]);
 
     const resetBoard = useCallback(() => {
-      setBalloons([createBoardBalloon()]);
+      setBalloons(createBoardBalloons());
       setScore(0);
       setPopped(0);
-    }, [createBoardBalloon]);
+    }, [createBoardBalloons]);
 
     const addBoardBalloon = useCallback(() => {
-      setBalloons((previous) => addBalloon(previous, bounds, { colors, resolvedMode }));
-    }, [bounds, colors, resolvedMode]);
+      setBalloons((previous) =>
+        addBalloon(previous, bounds, {
+          ...createOptions,
+          config: config ? resolvedConfig : { ...resolvedConfig, balloonCount: MAX_BALLOONS },
+        }),
+      );
+    }, [bounds, config, createOptions, resolvedConfig]);
 
     useImperativeHandle(
       ref,
@@ -136,49 +159,86 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
       (balloon: KeepyUppyBalloon, locationX: number, locationY: number) => {
         const balloonW = balloon.radius * BALLOON_WIDTH_RATIO;
         const balloonH = balloon.radius * BALLOON_HEIGHT_RATIO;
-        return {
-          x: balloon.x - balloonW / 2 + locationX,
-          y: balloon.y - balloonH / 2 + locationY,
-        };
+        return { x: balloon.x - balloonW / 2 + locationX, y: balloon.y - balloonH / 2 + locationY };
       },
       [],
+    );
+
+    const liftBalloon = useCallback(
+      (balloonId: string | undefined, pointX: number, pointY: number) => {
+        setBalloons((previous) => {
+          let target = balloonId ? previous.find((balloon) => balloon.id === balloonId) : undefined;
+          if (!target) {
+            const candidates = previous.filter((balloon) => {
+              const targetRadius = balloon.radius * resolvedConfig.targetSize;
+              return Math.hypot(balloon.x - pointX, balloon.y - pointY) <= targetRadius;
+            });
+            target = candidates.sort(
+              (first, second) => Number(isBalloonResting(second)) - Number(isBalloonResting(first)),
+            )[0];
+          }
+          if (!target && resolvedConfig.interaction !== 'direct-touch') {
+            target = [...previous].sort(
+              (first, second) => Number(isBalloonResting(second)) - Number(isBalloonResting(first)),
+            )[0];
+          }
+          if (!target) return previous;
+          setScore((currentScore) => currentScore + 1);
+          const tapX =
+            resolvedConfig.interaction === 'target-zones' ? target.x * 2 - pointX : pointX;
+          return previous.map((balloon) =>
+            balloon.id === target?.id
+              ? tapBalloon(balloon, tapX, pointY, easyMode, resolvedConfig)
+              : balloon,
+          );
+        });
+      },
+      [easyMode, resolvedConfig],
     );
 
     const handleBalloonPress = useCallback(
       (balloon: KeepyUppyBalloon, locationX: number, locationY: number) => {
         const tapPoint = toBoardPoint(balloon, locationX, locationY);
-        setScore((currentScore) => currentScore + 1);
-        setBalloons((previous) =>
-          previous.map((current) =>
-            current.id === balloon.id
-              ? tapBalloon(current, tapPoint.x, tapPoint.y, easyMode)
-              : current,
-          ),
-        );
+        liftBalloon(balloon.id, tapPoint.x, tapPoint.y);
       },
-      [easyMode, toBoardPoint],
+      [liftBalloon, toBoardPoint],
     );
 
     const handleBalloonRelease = useCallback(
       (balloon: KeepyUppyBalloon, pageX: number, pageY: number) => {
         const touchStart = touchStartRef.current[balloon.id];
         delete touchStartRef.current[balloon.id];
-        if (!touchStart) {
-          return;
-        }
+        if (!touchStart) return;
         const deltaX = pageX - touchStart.x;
         const deltaY = pageY - touchStart.y;
         const durationMs = Math.max(1, Date.now() - touchStart.startedAt);
-        if (Math.hypot(deltaX, deltaY) < MIN_FLICK_DISTANCE || durationMs > MAX_FLICK_DURATION_MS) {
+        if (Math.hypot(deltaX, deltaY) < MIN_FLICK_DISTANCE || durationMs > MAX_FLICK_DURATION_MS)
           return;
-        }
         setBalloons((previous) =>
           previous.map((current) =>
-            current.id === balloon.id ? flickBalloon(current, deltaX, deltaY, durationMs) : current,
+            current.id === balloon.id
+              ? flickBalloon(current, deltaX, deltaY, durationMs, resolvedConfig)
+              : current,
           ),
         );
       },
-      [],
+      [resolvedConfig],
+    );
+
+    const handleInputOverlay = useCallback(
+      (pointX: number, pointY: number) => liftBalloon(undefined, pointX, pointY),
+      [liftBalloon],
+    );
+    const centerX = bounds.width / 2;
+    const centerY = bounds.height / 2;
+    const textOrFallback = (key: string, fallback: string) => {
+      const translated = t(key, { defaultValue: fallback });
+      return translated === key ? fallback : translated;
+    };
+    const recoveryLabel = textOrFallback('games.keepyUppy.liftAgain', 'Lift it again');
+    const activationLabel = textOrFallback(
+      'games.keepyUppy.tapAnywhere',
+      'Tap anywhere to lift a balloon',
     );
 
     return (
@@ -190,14 +250,87 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
         <View style={styles.ground}>
           <View style={styles.grassStripe} />
         </View>
+        {resolvedConfig.interaction === 'tap-anywhere' ? (
+          <TouchableOpacity
+            accessibilityRole='button'
+            accessibilityLabel={activationLabel}
+            testID='keepy-uppy-tap-anywhere'
+            style={styles.inputOverlay}
+            onPress={(event) =>
+              handleInputOverlay(
+                event?.nativeEvent?.locationX ?? centerX,
+                event?.nativeEvent?.locationY ?? centerY,
+              )
+            }
+            onAccessibilityTap={() => handleInputOverlay(centerX, centerY)}
+          />
+        ) : null}
+        {resolvedConfig.interaction === 'target-zones' ? (
+          <View style={styles.zoneRow} pointerEvents='box-none'>
+            {[0, 1].map((zone) => (
+              <TouchableOpacity
+                key={zone}
+                accessibilityRole='button'
+                accessibilityLabel={
+                  zone === 0
+                    ? textOrFallback('games.keepyUppy.leftTargetZone', 'Left target zone')
+                    : textOrFallback('games.keepyUppy.rightTargetZone', 'Right target zone')
+                }
+                testID={`keepy-uppy-target-zone-${zone === 0 ? 'left' : 'right'}`}
+                style={styles.targetZone}
+                onPress={() =>
+                  handleInputOverlay(
+                    zone === 0 ? bounds.width * 0.25 : bounds.width * 0.75,
+                    centerY,
+                  )
+                }
+                onAccessibilityTap={() =>
+                  handleInputOverlay(
+                    zone === 0 ? bounds.width * 0.25 : bounds.width * 0.75,
+                    centerY,
+                  )
+                }
+              />
+            ))}
+          </View>
+        ) : null}
+        {resolvedConfig.interaction === 'left-and-right' ? (
+          <View style={styles.zoneRow} pointerEvents='box-none'>
+            {[0, 1].map((zone) => (
+              <TouchableOpacity
+                key={zone}
+                accessibilityRole='button'
+                accessibilityLabel={
+                  zone === 0
+                    ? textOrFallback('games.keepyUppy.leftSide', 'Left side')
+                    : textOrFallback('games.keepyUppy.rightSide', 'Right side')
+                }
+                testID={`keepy-uppy-${zone === 0 ? 'left' : 'right'}-control`}
+                style={styles.sideControl}
+                onPress={() => handleInputOverlay(zone === 0 ? 0 : bounds.width, centerY)}
+                onAccessibilityTap={() =>
+                  handleInputOverlay(zone === 0 ? 0 : bounds.width, centerY)
+                }
+              />
+            ))}
+          </View>
+        ) : null}
         {balloons.map((balloon) => {
           const balloonW = balloon.radius * BALLOON_WIDTH_RATIO;
           const balloonH = balloon.radius * BALLOON_HEIGHT_RATIO;
+          const resting = isBalloonResting(balloon);
           return (
             <TouchableOpacity
               key={balloon.id}
+              accessible
               accessibilityRole='button'
-              accessibilityLabel={t('games.keepyUppy.balloonAccessibility')}
+              accessibilityLabel={
+                resting
+                  ? t('games.keepyUppy.restingBalloonAccessibility', {
+                      defaultValue: `Balloon resting. ${recoveryLabel}`,
+                    })
+                  : t('games.keepyUppy.balloonAccessibility')
+              }
               testID={`balloon-${balloon.id}`}
               onPressIn={(event) => {
                 touchStartRef.current[balloon.id] = {
@@ -205,23 +338,36 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
                   y: event.nativeEvent.pageY,
                   startedAt: Date.now(),
                 };
+                activatedOnPressInRef.current[balloon.id] = true;
                 handleBalloonPress(
                   balloon,
                   event.nativeEvent.locationX,
                   event.nativeEvent.locationY,
                 );
               }}
-              onPressOut={(event) =>
-                handleBalloonRelease(balloon, event.nativeEvent.pageX, event.nativeEvent.pageY)
-              }
+              onPress={() => {
+                if (activatedOnPressInRef.current[balloon.id]) {
+                  delete activatedOnPressInRef.current[balloon.id];
+                  return;
+                }
+                handleBalloonPress(balloon, balloonW / 2, balloonH / 2);
+              }}
+              onAccessibilityTap={() => handleBalloonPress(balloon, balloonW / 2, balloonH / 2)}
+              onPressOut={(event) => {
+                delete activatedOnPressInRef.current[balloon.id];
+                handleBalloonRelease(balloon, event.nativeEvent.pageX, event.nativeEvent.pageY);
+              }}
               style={[
                 styles.balloonHitArea,
                 {
                   left: balloon.x - balloonW / 2,
                   top: balloon.y - balloonH / 2,
-                  width: balloonW,
-                  height: balloonH + BALLOON_KNOT_HEIGHT + BALLOON_STRING_HEIGHT,
-                  opacity: balloon.groundedAt === null ? 1 : 0.72,
+                  width: balloonW * resolvedConfig.targetSize,
+                  height:
+                    (balloonH + BALLOON_KNOT_HEIGHT + BALLOON_STRING_HEIGHT) *
+                    resolvedConfig.targetSize,
+                  marginLeft: (balloonW - balloonW * resolvedConfig.targetSize) / 2,
+                  opacity: resting ? 0.82 : 1,
                 },
               ]}
             >
@@ -237,6 +383,7 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
                 ]}
               >
                 <View style={styles.balloonShine} />
+                {resting ? <Text style={styles.recoveryLabel}>{recoveryLabel}</Text> : null}
               </View>
               <View style={[styles.balloonKnot, { borderTopColor: balloon.color }]} />
               <View style={styles.balloonString} />
@@ -273,24 +420,9 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       backgroundColor: `${colors.cardFront}${resolvedMode === 'dark' ? '30' : 'B3'}`,
       borderRadius: 20,
     },
-    cloud1: {
-      width: 70,
-      height: 28,
-      top: 22,
-      left: 24,
-    },
-    cloud2: {
-      width: 56,
-      height: 22,
-      top: 56,
-      right: 60,
-    },
-    cloud3: {
-      width: 64,
-      height: 24,
-      top: 90,
-      left: 80,
-    },
+    cloud1: { width: 70, height: 28, top: 22, left: 24 },
+    cloud2: { width: 56, height: 22, top: 56, right: 60 },
+    cloud3: { width: 64, height: 24, top: 90, left: 80 },
     ground: {
       position: 'absolute',
       left: 0,
@@ -309,10 +441,17 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       height: 8,
       backgroundColor: `${colors.cardFront}40`,
     },
-    balloonHitArea: {
-      position: 'absolute',
-      alignItems: 'center',
+    inputOverlay: { ...StyleSheet.absoluteFillObject, zIndex: 1, opacity: 0 },
+    zoneRow: { ...StyleSheet.absoluteFillObject, flexDirection: 'row', zIndex: 1 },
+    targetZone: {
+      flex: 1,
+      margin: 24,
+      borderWidth: 2,
+      borderColor: `${colors.cardFront}25`,
+      borderRadius: 18,
     },
+    sideControl: { flex: 1 },
+    balloonHitArea: { position: 'absolute', alignItems: 'center', zIndex: 2 },
     balloonBody: {
       alignItems: 'center',
       justifyContent: 'center',
@@ -337,9 +476,15 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       borderLeftColor: 'transparent',
       borderRightColor: 'transparent',
     },
-    balloonString: {
-      width: 1.5,
-      height: BALLOON_STRING_HEIGHT,
-      backgroundColor: colors.matched,
+    balloonString: { width: 1.5, height: BALLOON_STRING_HEIGHT, backgroundColor: colors.matched },
+    recoveryLabel: {
+      position: 'absolute',
+      left: 4,
+      right: 4,
+      top: '40%',
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: '600',
+      textAlign: 'center',
     },
   });

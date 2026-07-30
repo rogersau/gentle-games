@@ -102,14 +102,31 @@ describe('CategoryMatchBoard', () => {
 
   it('uses the same answer path for tap activation and drag release', () => {
     const onCorrectMatch = jest.fn();
+    const onPracticeResult = jest.fn();
     const screen = render(
-      <CategoryMatchBoard width={360} height={480} onCorrectMatch={onCorrectMatch} />,
+      <CategoryMatchBoard
+        width={360}
+        height={480}
+        onCorrectMatch={onCorrectMatch}
+        onPracticeResult={onPracticeResult}
+      />,
     );
     const token = screen.getByTestId('category-draggable-token');
     fireEvent.press(token);
     fireEvent.press(screen.getByTestId('category-zone-food'));
     expect(onCorrectMatch).toHaveBeenCalledTimes(1);
     expect(mockPlayMatchSound).toHaveBeenCalledTimes(1);
+    expect(onPracticeResult).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        game: 'category-match',
+        targetSkill: 'sort-by-stated-category',
+        level: '2-groups',
+        response: 'independent',
+        attempts: 1,
+        selectedConfiguration: 'category-match:2-groups',
+      }),
+    );
 
     fireEvent.press(screen.getByTestId('category-match-next'));
     const nextToken = screen.getByTestId('category-draggable-token');
@@ -121,7 +138,10 @@ describe('CategoryMatchBoard', () => {
   });
 
   it('progresses independent, hinted, modelled, and corrected stages with explanatory feedback', () => {
-    const screen = render(<CategoryMatchBoard width={360} height={480} />);
+    const onPracticeResult = jest.fn();
+    const screen = render(
+      <CategoryMatchBoard width={360} height={480} onPracticeResult={onPracticeResult} />,
+    );
     const choose = (testID: string) => {
       fireEvent.press(screen.getByTestId('category-draggable-token'));
       fireEvent.press(screen.getByTestId(testID));
@@ -137,6 +157,9 @@ describe('CategoryMatchBoard', () => {
     expect(screen.getByTestId('category-match-feedback').props.children).toBe(
       'apple belongs in Food.',
     );
+    expect(onPracticeResult).toHaveBeenCalledWith(
+      expect.objectContaining({ response: 'after-model', attempts: 3 }),
+    );
     expect(screen.getByTestId('category-match-next')).toBeTruthy();
   });
 
@@ -147,10 +170,16 @@ describe('CategoryMatchBoard', () => {
   });
 
   it('allows Skip and Next without scoring, streaks, or item elimination', () => {
-    const screen = render(<CategoryMatchBoard width={360} height={480} />);
+    const onPracticeResult = jest.fn();
+    const screen = render(
+      <CategoryMatchBoard width={360} height={480} onPracticeResult={onPracticeResult} />,
+    );
     fireEvent.press(screen.getByText('Skip'));
     expect(screen.getByTestId('category-match-feedback').props.children).toContain(
       'apple was skipped',
+    );
+    expect(onPracticeResult).toHaveBeenCalledWith(
+      expect.objectContaining({ response: 'skipped', attempts: 0 }),
     );
     fireEvent.press(screen.getByTestId('category-match-next'));
     expect(screen.queryByText(/streak/i)).toBeNull();

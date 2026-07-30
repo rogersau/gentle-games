@@ -75,7 +75,7 @@ const writeManifest = () => {
   const manifest = {
     name: 'Gentle Games',
     short_name: 'Gentle Games',
-    description: 'Calm, sensory-friendly games for kids.',
+    description: 'Adjustable, pressure-free games for kids.',
     lang: 'en',
     dir: 'ltr',
     start_url: './',
@@ -84,7 +84,7 @@ const writeManifest = () => {
     orientation: 'portrait',
     background_color: '#FFFEF7',
     theme_color: '#FFFEF7',
-    categories: ['games', 'kids', 'education'],
+    categories: ['games', 'kids'],
     prefer_related_applications: false,
     icons: manifestIcons,
   };

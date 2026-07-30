@@ -244,4 +244,92 @@ describe('DrawingCanvas', () => {
 
     expect(eraseRef.current?.getHistory()).toHaveLength(0);
   });
+
+  it('commits an interrupted stroke instead of discarding it', () => {
+    const ref = React.createRef<DrawingCanvasRef>();
+    const screen = render(<DrawingCanvas ref={ref} width={320} height={280} initialHistory={[]} />);
+    const touchLayer = findTouchLayer(screen);
+
+    act(() => {
+      touchLayer?.props.onPanResponderGrant?.({
+        nativeEvent: { locationX: 30, locationY: 40 },
+      });
+      touchLayer?.props.onPanResponderMove?.({
+        nativeEvent: { locationX: 80, locationY: 90 },
+      });
+      touchLayer?.props.onPanResponderTerminate?.();
+    });
+
+    expect(ref.current?.getHistory()).toHaveLength(1);
+    const interruptedStroke = ref.current?.getHistory()[0];
+    expect(interruptedStroke?.kind).toBe('stroke');
+    expect(interruptedStroke?.kind === 'stroke' ? interruptedStroke.points : []).toHaveLength(2);
+  });
+
+  it('supports stamp undo and redo as one predictable action', () => {
+    const ref = React.createRef<DrawingCanvasRef>();
+    const screen = render(<DrawingCanvas ref={ref} width={320} height={280} initialHistory={[]} />);
+    fireEvent.press(screen.getByLabelText('games.drawing.stampTool'));
+    drawGesture(screen, { x: 100, y: 100 });
+
+    expect(ref.current?.getHistory()[0].kind).toBe('stamp');
+    fireEvent.press(screen.getByLabelText('games.drawing.undo'));
+    expect(ref.current?.getHistory()).toHaveLength(0);
+    fireEvent.press(screen.getByLabelText('games.drawing.redo'));
+    expect(ref.current?.getHistory()[0].kind).toBe('stamp');
+  });
+
+  it('keeps guided progress after leaving the wide path and supports accessible tap cells', () => {
+    const onGuidedAttemptChange = jest.fn();
+    const screen = render(
+      <DrawingCanvas
+        width={320}
+        height={280}
+        mode='gentle-trails'
+        guidedConfig={{ tolerance: 30, widePath: 60 }}
+        onGuidedAttemptChange={onGuidedAttemptChange}
+        initialHistory={[]}
+      />,
+    );
+
+    expect(screen.getByTestId('drawing-guided-cell-0').props.accessibilityRole).toBe('button');
+    const touchLayer = findTouchLayer(screen);
+    act(() => {
+      touchLayer?.props.onPanResponderGrant?.({
+        nativeEvent: { locationX: 40, locationY: 140 },
+      });
+      touchLayer?.props.onPanResponderMove?.({
+        nativeEvent: { locationX: 80, locationY: 140 },
+      });
+      touchLayer?.props.onPanResponderMove?.({
+        nativeEvent: { locationX: 5, locationY: 5 },
+      });
+      touchLayer?.props.onPanResponderTerminate?.();
+    });
+
+    const latestAttempt = onGuidedAttemptChange.mock.calls.at(-1)?.[0];
+    expect(latestAttempt.progress).toBeGreaterThan(0);
+    expect(screen.getByTestId('drawing-guided-feedback').props.children).not.toContain('failed');
+  });
+
+  it('reports stroke-width and smoothing choices for persistence', () => {
+    const onStrokeWidthChange = jest.fn();
+    const onSmoothingChange = jest.fn();
+    const screen = render(
+      <DrawingCanvas
+        width={320}
+        height={280}
+        initialHistory={[]}
+        onStrokeWidthChange={onStrokeWidthChange}
+        onSmoothingChange={onSmoothingChange}
+      />,
+    );
+
+    fireEvent.press(screen.getByTestId('drawing-width-8'));
+    fireEvent.press(screen.getByTestId('drawing-smoothing-0'));
+
+    expect(onStrokeWidthChange).toHaveBeenCalledWith(8);
+    expect(onSmoothingChange).toHaveBeenCalledWith(false);
+    expect(screen.queryByTestId('drawing-width-12')).toBeNull();
+  });
 });

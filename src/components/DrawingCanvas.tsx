@@ -19,6 +19,16 @@ import {
   decimateDrawingPoints,
   DRAWING_HISTORY_MAX_POINTS_PER_ENTRY,
 } from '../utils/drawingPersistence';
+import {
+  advanceGuidedProgress,
+  createDrawingGuidedConfig,
+  createCopyAndContinueGuide,
+  createGuidedPath,
+  isGuidedPathComplete,
+  type DrawingGuidedConfig,
+  type DrawingMode,
+  type GuidedAttempt,
+} from '../utils/drawingGuidedModes';
 
 export interface Point {
   x: number;
@@ -32,6 +42,7 @@ export interface Stroke {
   points: Point[];
   color: string;
   width: number;
+  smoothing?: number;
 }
 
 export interface Shape {
@@ -39,6 +50,16 @@ export interface Shape {
   id: string;
   actionId?: string;
   type: 'circle' | 'square' | 'triangle';
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+}
+
+export interface Stamp {
+  kind: 'stamp';
+  id: string;
+  actionId?: string;
   x: number;
   y: number;
   size: number;
@@ -54,9 +75,9 @@ export interface ErasedRegion {
 }
 
 // A history entry is a drawable action
-export type HistoryEntry = Stroke | Shape | ErasedRegion;
+export type HistoryEntry = Stroke | Shape | Stamp | ErasedRegion;
 
-type Tool = 'pen' | 'eraser' | 'shape';
+type Tool = 'pen' | 'eraser' | 'shape' | 'stamp';
 type ShapeType = 'circle' | 'square' | 'triangle';
 type SymmetryMode = 'none' | 'half' | 'quarter';
 
@@ -117,13 +138,21 @@ const PRESET_COLORS = [
   '#5F9EA0',
 ];
 
-interface DrawingCanvasProps {
+export interface DrawingCanvasProps {
   width: number;
   height: number;
   bottomInset?: number;
   initialHistory?: HistoryEntry[];
   onHistoryChange?: (history: HistoryEntry[]) => void;
   canvasBackgroundColor?: string;
+  mode?: DrawingMode;
+  guidedConfig?: Partial<DrawingGuidedConfig>;
+  reducedMotion?: boolean;
+  onGuidedAttemptChange?: (attempt: GuidedAttempt) => void;
+  initialStrokeWidth?: number;
+  initialSmoothing?: number;
+  onStrokeWidthChange?: (strokeWidth: 3 | 5 | 8) => void;
+  onSmoothingChange?: (enabled: boolean) => void;
 }
 
 export interface DrawingCanvasRef {
@@ -135,10 +164,10 @@ export interface DrawingCanvasRef {
  * Convert an array of points into a smooth SVG path using quadratic Bézier
  * curves through the midpoints between consecutive points.
  */
-const pointsToSmoothPath = (points: Point[]): string => {
+const pointsToSmoothPath = (points: Point[], smoothing = 1): string => {
   if (points.length === 0) return '';
   if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
-  if (points.length === 2) {
+  if (points.length === 2 || smoothing <= 0) {
     return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
   }
 
@@ -146,7 +175,9 @@ const pointsToSmoothPath = (points: Point[]): string => {
   for (let i = 1; i < points.length - 1; i++) {
     const midX = (points[i].x + points[i + 1].x) / 2;
     const midY = (points[i].y + points[i + 1].y) / 2;
-    path += ` Q ${points[i].x} ${points[i].y} ${midX} ${midY}`;
+    const controlX = points[i].x * smoothing + midX * (1 - smoothing);
+    const controlY = points[i].y * smoothing + midY * (1 - smoothing);
+    path += ` Q ${controlX} ${controlY} ${midX} ${midY}`;
   }
   // Line to last point
   const last = points[points.length - 1];
@@ -204,18 +235,43 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
       initialHistory = [],
       onHistoryChange,
       canvasBackgroundColor = '#FFFFFF',
+      mode = 'free-draw',
+      guidedConfig,
+      reducedMotion = false,
+      onGuidedAttemptChange,
+      initialStrokeWidth = 5,
+      initialSmoothing = 0.7,
+      onStrokeWidthChange,
+      onSmoothingChange,
     },
     ref,
   ) => {
     const { colors } = useThemeColors();
     const { t } = useTranslation();
     const themedStyles = useMemo(() => createThemedStyles(colors), [colors]);
+    const activeGuidedConfig = useMemo(
+      () => createDrawingGuidedConfig(mode, guidedConfig),
+      [guidedConfig, mode],
+    );
+    const copyGuide = useMemo(
+      () =>
+        createCopyAndContinueGuide(activeGuidedConfig.copyActivity ?? 'copy-line', width, height),
+      [activeGuidedConfig.copyActivity, height, width],
+    );
+    const guidedPath = useMemo(() => {
+      if (mode === 'free-draw' || mode === 'prompted-drawing') return [];
+      if (mode === 'copy-and-continue') return copyGuide.continuation;
+      return createGuidedPath(activeGuidedConfig.pattern ?? 'straight', width, height);
+    }, [activeGuidedConfig.pattern, copyGuide.continuation, height, mode, width]);
     // Unified ordered history — preserves exact draw order for correct undo
     const [history, setHistory] = useState<HistoryEntry[]>(() =>
       compactDrawingHistory(initialHistory),
     );
     // Current strokes being drawn (one per symmetry copy)
     const [currentStrokes, setCurrentStrokes] = useState<Array<Omit<Stroke, 'kind' | 'id'>>>([]);
+    const [redoStack, setRedoStack] = useState<HistoryEntry[][]>([]);
+    const [guidedProgress, setGuidedProgress] = useState(0);
+    const [guidedStatus, setGuidedStatus] = useState('');
 
     // Update history when initialHistory prop changes (e.g., when loading saved drawing)
     useEffect(() => {
@@ -227,6 +283,8 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     const [shapeType, setShapeType] = useState<ShapeType>('circle');
     const [shapeSize, setShapeSize] = useState(50);
     const [symmetryMode, setSymmetryMode] = useState<SymmetryMode>('none');
+    const [strokeWidth, setStrokeWidth] = useState(initialStrokeWidth);
+    const [smoothing, setSmoothing] = useState(initialSmoothing);
     const [showClearConfirm, setShowClearConfirm] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
     const [showShapePicker, setShowShapePicker] = useState(false);
@@ -240,8 +298,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     const shapeTypeRef = useRef(shapeType);
     const shapeSizeRef = useRef(shapeSize);
     const symmetryModeRef = useRef(symmetryMode);
+    const strokeWidthRef = useRef(initialStrokeWidth);
+    const smoothingRef = useRef(initialSmoothing);
     const historyRef = useRef(history);
     const nextActionIdRef = useRef(0);
+    const guidedProgressRef = useRef(0);
+    const guidedConfigRef = useRef(activeGuidedConfig);
 
     useEffect(() => {
       selectedColorRef.current = selectedColor;
@@ -259,8 +321,38 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
       symmetryModeRef.current = symmetryMode;
     }, [symmetryMode]);
     useEffect(() => {
+      strokeWidthRef.current = strokeWidth;
+    }, [strokeWidth]);
+    useEffect(() => {
+      smoothingRef.current = smoothing;
+    }, [smoothing]);
+    useEffect(() => {
       historyRef.current = history;
     }, [history]);
+
+    useEffect(() => {
+      guidedProgressRef.current = guidedProgress;
+      if (mode !== 'free-draw') {
+        onGuidedAttemptChange?.({
+          mode,
+          progress: guidedProgress,
+          completed:
+            mode !== 'prompted-drawing' && isGuidedPathComplete(guidedPath, guidedProgress),
+          history,
+        });
+      }
+    }, [guidedPath, guidedProgress, history, mode, onGuidedAttemptChange]);
+
+    useEffect(() => {
+      guidedConfigRef.current = activeGuidedConfig;
+    }, [activeGuidedConfig]);
+
+    useEffect(() => {
+      guidedProgressRef.current = 0;
+      setGuidedProgress(0);
+      setGuidedStatus('');
+      setCurrentStrokes([]);
+    }, [activeGuidedConfig.copyActivity, activeGuidedConfig.pattern, height, mode, width]);
 
     // Notify parent of history changes
     useEffect(() => {
@@ -270,12 +362,68 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     const clearCanvas = () => {
       setHistory([]);
       setCurrentStrokes([]);
+      setRedoStack([]);
     };
 
     const createActionId = () => {
       const actionId = `action-${Date.now()}-${nextActionIdRef.current}`;
       nextActionIdRef.current += 1;
       return actionId;
+    };
+
+    const appendHistory = (entries: HistoryEntry[]) => {
+      if (entries.length === 0) return;
+      setHistory((prev) => compactDrawingHistory([...prev, ...entries]));
+      setRedoStack([]);
+    };
+
+    const updateGuidedProgress = (points: Point[]) => {
+      if (mode === 'free-draw' || guidedPath.length === 0) return;
+      const next = advanceGuidedProgress(
+        guidedPath,
+        guidedProgressRef.current,
+        points,
+        guidedConfigRef.current.tolerance,
+      );
+      if (next === guidedProgressRef.current) return;
+      guidedProgressRef.current = next;
+      setGuidedProgress(next);
+      if (isGuidedPathComplete(guidedPath, next)) {
+        setGuidedStatus(t('games.drawing.guided.complete'));
+      } else {
+        setGuidedStatus(t('games.drawing.guided.inProgress'));
+      }
+    };
+
+    const finishCurrentStroke = () => {
+      if (toolRef.current === 'shape' || toolRef.current === 'stamp') return;
+      setCurrentStrokes((strokes) => {
+        if (strokes.length === 0) return [];
+        if (toolRef.current === 'eraser') {
+          appendHistory(
+            strokes.map((stroke, idx) => ({
+              kind: 'erase' as const,
+              id: `erase-${Date.now()}-${idx}`,
+              actionId: stroke.actionId,
+              points: stroke.points,
+              width: stroke.width,
+            })),
+          );
+        } else {
+          appendHistory(
+            strokes.map((stroke, idx) => ({
+              kind: 'stroke' as const,
+              id: `stroke-${Date.now()}-${idx}`,
+              actionId: stroke.actionId,
+              points: stroke.points,
+              color: stroke.color,
+              width: stroke.width,
+              smoothing: smoothingRef.current,
+            })),
+          );
+        }
+        return [];
+      });
     };
 
     // Expose imperative methods
@@ -292,26 +440,38 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           const { locationX, locationY } = evt.nativeEvent;
           const mode = symmetryModeRef.current;
 
-          if (toolRef.current === 'shape') {
+          if (toolRef.current === 'shape' || toolRef.current === 'stamp') {
             // Create shapes with symmetry
             const offsets = getSymmetryOffsets(mode);
             const actionId = createActionId();
-            const newShapes: Shape[] = offsets.map(([xMult, yMult], idx) => {
+            const newShapes: Array<Shape | Stamp> = offsets.map(([xMult, yMult], idx) => {
               const pt = applySymmetry({ x: locationX, y: locationY }, width, height, xMult, yMult);
-              return {
-                kind: 'shape' as const,
-                id: `shape-${Date.now()}-${idx}`,
-                actionId,
-                type: shapeTypeRef.current,
-                x: pt.x,
-                y: pt.y,
-                size: shapeSizeRef.current,
-                color: selectedColorRef.current,
-              };
+              return toolRef.current === 'stamp'
+                ? {
+                    kind: 'stamp' as const,
+                    id: `stamp-${Date.now()}-${idx}`,
+                    actionId,
+                    x: pt.x,
+                    y: pt.y,
+                    size: Math.max(8, strokeWidthRef.current * 3),
+                    color: selectedColorRef.current,
+                  }
+                : {
+                    kind: 'shape' as const,
+                    id: `shape-${Date.now()}-${idx}`,
+                    actionId,
+                    type: shapeTypeRef.current,
+                    x: pt.x,
+                    y: pt.y,
+                    size: shapeSizeRef.current,
+                    color: selectedColorRef.current,
+                  };
             });
-            setHistory((prev) => compactDrawingHistory([...prev, ...newShapes]));
+            appendHistory(newShapes);
+            updateGuidedProgress([{ x: locationX, y: locationY }]);
           } else {
-            const strokeWidth = toolRef.current === 'eraser' ? 30 : 5;
+            const activeStrokeWidth =
+              toolRef.current === 'eraser' ? strokeWidthRef.current * 3 : strokeWidthRef.current;
             const offsets = getSymmetryOffsets(mode);
             const actionId = createActionId();
             // Create one stroke for each symmetry copy with properly mirrored initial points
@@ -327,14 +487,15 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                 actionId,
                 points: [mirroredPt],
                 color: selectedColorRef.current,
-                width: strokeWidth,
+                width: activeStrokeWidth,
               };
             });
             setCurrentStrokes(newStrokes);
+            updateGuidedProgress([{ x: locationX, y: locationY }]);
           }
         },
         onPanResponderMove: (evt) => {
-          if (toolRef.current === 'shape') return;
+          if (toolRef.current === 'shape' || toolRef.current === 'stamp') return;
           const { locationX, locationY } = evt.nativeEvent;
           const mode = symmetryModeRef.current;
 
@@ -366,39 +527,16 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                 ),
               };
             });
+            if (changed) updateGuidedProgress([{ x: locationX, y: locationY }]);
             return changed ? next : prevStrokes;
           });
         },
         onPanResponderRelease: () => {
-          if (toolRef.current === 'shape') return;
-
-          setCurrentStrokes((strokes) => {
-            if (strokes.length === 0) return [];
-
-            if (toolRef.current === 'eraser') {
-              // Create erase entries for each symmetry copy
-              const eraseEntries: ErasedRegion[] = strokes.map((stroke, idx) => ({
-                kind: 'erase',
-                id: `erase-${Date.now()}-${idx}`,
-                actionId: stroke.actionId,
-                points: stroke.points,
-                width: stroke.width,
-              }));
-              setHistory((h) => compactDrawingHistory([...h, ...eraseEntries]));
-            } else {
-              // Create stroke entries for each symmetry copy
-              const strokeEntries: Stroke[] = strokes.map((stroke, idx) => ({
-                kind: 'stroke',
-                id: `stroke-${Date.now()}-${idx}`,
-                actionId: stroke.actionId,
-                points: stroke.points,
-                color: stroke.color,
-                width: stroke.width,
-              }));
-              setHistory((h) => compactDrawingHistory([...h, ...strokeEntries]));
-            }
-            return [];
-          });
+          finishCurrentStroke();
+        },
+        onPanResponderTerminate: () => {
+          // A cancelled touch still keeps the points already travelled.
+          finishCurrentStroke();
         },
       }),
     ).current;
@@ -424,6 +562,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
         const lastEntry = prev[prev.length - 1];
         if (!lastEntry.actionId) {
+          setRedoStack((stack) => [...stack, [lastEntry]]);
           return prev.slice(0, -1);
         }
 
@@ -432,8 +571,38 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           cutoffIndex -= 1;
         }
 
+        const removed = prev.slice(cutoffIndex + 1);
+        setRedoStack((stack) => [...stack, removed]);
         return prev.slice(0, cutoffIndex + 1);
       });
+    };
+
+    const handleRedo = () => {
+      setRedoStack((stack) => {
+        const group = stack[stack.length - 1];
+        if (!group) return stack;
+        setHistory((prev) => compactDrawingHistory([...prev, ...group]));
+        return stack.slice(0, -1);
+      });
+    };
+
+    const handleGuidedCellTap = (cell: number) => {
+      if (mode !== 'gentle-trails') return;
+      const pathIndex = Math.round((cell / 8) * Math.max(0, guidedPath.length - 1));
+      const point = guidedPath[pathIndex] ?? guidedPath[0];
+      if (!point) return;
+      appendHistory([
+        {
+          kind: 'stamp',
+          id: `guided-stamp-${Date.now()}-${cell}`,
+          actionId: createActionId(),
+          x: point.x,
+          y: point.y,
+          size: Math.max(12, strokeWidthRef.current * 3),
+          color: selectedColorRef.current,
+        },
+      ]);
+      updateGuidedProgress([point]);
     };
 
     const handleColorSelect = (color: string) => {
@@ -506,7 +675,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
         return (
           <Path
             key={entry.id}
-            d={pointsToSmoothPath(entry.points)}
+            d={pointsToSmoothPath(entry.points, entry.smoothing ?? smoothing)}
             stroke={entry.color}
             strokeWidth={entry.width}
             strokeLinecap='round'
@@ -520,7 +689,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
         return (
           <Path
             key={entry.id}
-            d={pointsToSmoothPath(entry.points)}
+            d={pointsToSmoothPath(entry.points, smoothing)}
             stroke={canvasBackgroundColor}
             strokeWidth={entry.width}
             strokeLinecap='round'
@@ -554,6 +723,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           }
         }
       }
+
+      if (entry.kind === 'stamp') {
+        return (
+          <Circle key={entry.id} cx={entry.x} cy={entry.y} r={entry.size / 2} fill={entry.color} />
+        );
+      }
     };
 
     const canUndo = history.length > 0;
@@ -561,8 +736,64 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     // Path construction is memoized so pointer movement only renders the live preview.
     const renderedHistory = useMemo(
       () => history.map((entry) => renderHistoryEntry(entry)),
-      [history, canvasBackgroundColor],
+      [history, canvasBackgroundColor, smoothing],
     );
+
+    const renderedGuidedPath =
+      mode === 'free-draw' || mode === 'prompted-drawing' ? null : (
+        <>
+          {mode === 'copy-and-continue' ? (
+            <Path
+              d={pointsToSmoothPath(copyGuide.model, activeGuidedConfig.smoothing)}
+              stroke='#79B8C8'
+              strokeWidth={Math.max(5, activeGuidedConfig.widePath / 5)}
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              fill='none'
+              opacity={0.9}
+            />
+          ) : null}
+          <Path
+            d={pointsToSmoothPath(guidedPath, activeGuidedConfig.smoothing)}
+            stroke='#B8DDE5'
+            strokeWidth={activeGuidedConfig.widePath}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            fill='none'
+            opacity={0.28}
+          />
+          <Path
+            d={pointsToSmoothPath(
+              guidedPath.slice(0, Math.max(1, guidedProgress + 1)),
+              activeGuidedConfig.smoothing,
+            )}
+            stroke='#79B8C8'
+            strokeWidth={Math.max(4, activeGuidedConfig.widePath / 4)}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            fill='none'
+            opacity={reducedMotion ? 0.9 : 0.82}
+          />
+          {guidedPath.length > 1 ? (
+            <>
+              <Circle
+                cx={guidedPath[0].x}
+                cy={guidedPath[0].y}
+                r={Math.max(20, activeGuidedConfig.widePath / 2)}
+                fill='#B8DDE5'
+                opacity={0.45}
+              />
+              <Circle
+                cx={guidedPath[guidedPath.length - 1].x}
+                cy={guidedPath[guidedPath.length - 1].y}
+                r={Math.max(20, activeGuidedConfig.widePath / 2)}
+                fill='#79B8C8'
+                opacity={0.45}
+              />
+            </>
+          ) : null}
+        </>
+      );
 
     // Render symmetry guide lines
     const renderSymmetryGuides = () => {
@@ -631,6 +862,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             {/* Canvas background */}
             <Path d={`M 0 0 H ${width} V ${height} H 0 Z`} fill={canvasBackgroundColor} />
 
+            {renderedGuidedPath}
             {renderedHistory}
 
             {/* Symmetry guide lines */}
@@ -640,7 +872,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             {currentStrokes.map((stroke, idx) => (
               <Path
                 key={`preview-${idx}`}
-                d={pointsToSmoothPath(stroke.points)}
+                d={pointsToSmoothPath(stroke.points, smoothing)}
                 stroke={tool === 'eraser' ? canvasBackgroundColor : stroke.color}
                 strokeWidth={stroke.width}
                 strokeLinecap='round'
@@ -651,7 +883,43 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           </Svg>
 
           <View style={styles.touchOverlay} {...panResponder.panHandlers} />
+          {mode === 'gentle-trails' && (
+            <View style={styles.accessibleGrid}>
+              {Array.from({ length: 9 }, (_, cell) => (
+                <TouchableOpacity
+                  key={cell}
+                  testID={`drawing-guided-cell-${cell}`}
+                  style={styles.accessibleGridCell}
+                  onPress={() => handleGuidedCellTap(cell)}
+                  accessibilityRole='button'
+                  accessibilityLabel={t('games.drawing.guided.cellLabel', {
+                    current: cell + 1,
+                    total: 9,
+                  })}
+                  accessibilityHint={t('games.drawing.guided.cellHint')}
+                >
+                  <Text style={styles.accessibleGridCellText}>{cell + 1}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
+
+        {mode !== 'free-draw' && (
+          <Text
+            testID='drawing-guided-feedback'
+            accessibilityRole='text'
+            accessibilityLiveRegion='polite'
+            style={styles.guidedFeedback}
+          >
+            {guidedStatus ||
+              (mode === 'prompted-drawing'
+                ? t('games.drawing.guided.prompt')
+                : mode === 'copy-and-continue'
+                  ? t('games.drawing.guided.copyInstruction')
+                  : t('games.drawing.guided.trailInstruction'))}
+          </Text>
+        )}
 
         {/* Toolbar */}
         <View style={[styles.toolbar, { paddingBottom: Math.max(8, bottomInset) }]}>
@@ -729,6 +997,19 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             <TouchableOpacity
               style={[
                 styles.toolButton,
+                tool === 'stamp' ? themedStyles.toolButtonActive : undefined,
+              ]}
+              onPress={() => handleToolSelect('stamp')}
+              accessibilityRole='button'
+              accessibilityLabel={t('games.drawing.stampTool')}
+              accessibilityState={{ selected: tool === 'stamp' }}
+            >
+              <Text style={styles.toolButtonText}>•</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.toolButton,
                 symmetryMode !== 'none' ? themedStyles.toolButtonActive : undefined,
               ]}
               onPress={cycleSymmetryMode}
@@ -772,6 +1053,27 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             </TouchableOpacity>
 
             <TouchableOpacity
+              style={[
+                styles.toolButton,
+                redoStack.length === 0 ? styles.toolButtonDisabled : undefined,
+              ]}
+              onPress={handleRedo}
+              disabled={redoStack.length === 0}
+              accessibilityRole='button'
+              accessibilityLabel={t('games.drawing.redo')}
+              accessibilityState={{ disabled: redoStack.length === 0 }}
+            >
+              <Text
+                style={[
+                  styles.toolButtonText,
+                  redoStack.length === 0 ? styles.disabledText : undefined,
+                ]}
+              >
+                ↪
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               testID='clear-drawing-button'
               style={styles.toolButton}
               onPress={handleClear}
@@ -781,6 +1083,53 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             >
               <Text style={styles.toolButtonText}>🗑️</Text>
             </TouchableOpacity>
+          </View>
+
+          <View style={styles.adjustmentControls}>
+            <Text style={styles.adjustmentLabel}>{t('games.drawing.strokeWidth')}</Text>
+            {([3, 5, 8] as const).map((value) => (
+              <TouchableOpacity
+                key={value}
+                testID={`drawing-width-${value}`}
+                style={[
+                  styles.adjustmentButton,
+                  strokeWidth === value ? themedStyles.toolButtonActive : undefined,
+                ]}
+                onPress={() => {
+                  setStrokeWidth(value);
+                  onStrokeWidthChange?.(value);
+                }}
+                accessibilityRole='button'
+                accessibilityLabel={t('games.drawing.strokeWidthValue', { value })}
+                accessibilityState={{ selected: strokeWidth === value }}
+              >
+                <Text style={styles.adjustmentButtonText}>{value}</Text>
+              </TouchableOpacity>
+            ))}
+            <Text style={styles.adjustmentLabel}>{t('games.drawing.smoothing')}</Text>
+            {([0, 0.7] as const).map((value) => (
+              <TouchableOpacity
+                key={value}
+                testID={`drawing-smoothing-${value}`}
+                style={[
+                  styles.adjustmentButton,
+                  smoothing === value ? themedStyles.toolButtonActive : undefined,
+                ]}
+                onPress={() => {
+                  setSmoothing(value);
+                  onSmoothingChange?.(value > 0);
+                }}
+                accessibilityRole='button'
+                accessibilityLabel={
+                  value > 0 ? t('games.drawing.smoothingOn') : t('games.drawing.smoothingOff')
+                }
+                accessibilityState={{ selected: smoothing === value }}
+              >
+                <Text style={styles.adjustmentButtonText}>
+                  {value > 0 ? t('common.on') : t('common.off')}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
         <Text
@@ -972,6 +1321,40 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
+  accessibleGrid: {
+    position: 'absolute',
+    left: '18%',
+    right: '18%',
+    top: '18%',
+    bottom: '18%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignContent: 'space-between',
+    justifyContent: 'space-between',
+  },
+  accessibleGridCell: {
+    width: '30%',
+    height: '30%',
+    minWidth: 42,
+    minHeight: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(121, 184, 200, 0.35)',
+    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+  },
+  accessibleGridCellText: {
+    color: '#5A5A5A',
+    fontSize: 13,
+  },
+  guidedFeedback: {
+    minHeight: 22,
+    marginTop: 4,
+    color: '#5A5A5A',
+    fontSize: 13,
+    textAlign: 'center',
+  },
   toolbar: {
     marginTop: Space.xs,
     width: '100%',
@@ -1011,6 +1394,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     marginTop: 8,
+  },
+  adjustmentControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 5,
+    marginTop: 6,
+  },
+  adjustmentLabel: {
+    color: '#5A5A5A',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  adjustmentButton: {
+    minWidth: 28,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    borderColor: '#E8E4E1',
+    alignItems: 'center',
+  },
+  adjustmentButtonText: {
+    color: '#5A5A5A',
+    fontSize: 12,
   },
   toolButton: {
     backgroundColor: '#FFFFFF',

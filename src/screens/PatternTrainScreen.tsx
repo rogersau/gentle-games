@@ -31,6 +31,7 @@ import { useAnimationEnabled } from '../ui/animations';
 import { TrainEngine, Carriage } from '../components/train';
 import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 import { usePatternTrainGame, DraggableCarriage } from './usePatternTrainGame';
+import { usePracticeHistory } from '../context/PracticeHistoryContext';
 
 export const PatternTrainScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -44,6 +45,7 @@ export const PatternTrainScreen: React.FC = () => {
       : settings.animationsEnabled !== false;
   const { colors } = useThemeColors();
   const { t } = useTranslation();
+  const { recordResult } = usePracticeHistory();
   const translate = t as unknown as (key: string) => string;
   const { width: windowWidth } = useWindowDimensions();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -51,6 +53,7 @@ export const PatternTrainScreen: React.FC = () => {
     difficulty,
     t: t as (key: string, options?: Record<string, unknown>) => string,
     showMilestones: showMilestoneCelebrations,
+    onPracticeResult: (result) => void recordResult(result),
   });
   const {
     pattern,

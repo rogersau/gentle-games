@@ -41,7 +41,7 @@
   "games": {
     "memorySnap": {
       "name": "Memory Snap",
-      "description": "Find matching pairs",
+      "description": "Remember and find matching pictures on this board",
       "title": "Memory Snap",
       "wellDone": "Well Done! 🎉",
       "completedTitle": "All pairs are together",
@@ -254,7 +254,47 @@
         "darkCyan": "Dark cyan",
         "cadetBlue": "Cadet blue"
       },
-      "saveError": "Your drawing is still here, but could not be saved. Please try again later."
+      "saveError": "Your drawing is still here, but could not be saved. Please try again later.",
+      "stampTool": "Stamp dot tool",
+      "redo": "Redo",
+      "strokeWidth": "Stroke width",
+      "strokeWidthValue": "Stroke width {{value}}",
+      "smoothing": "Smoothing",
+      "smoothingOn": "Smoothing on",
+      "smoothingOff": "Smoothing off",
+      "guided": {
+        "chooseMode": "Choose a calm drawing space",
+        "modes": {
+          "freeDraw": "Free Draw",
+          "gentleTrails": "Gentle Trails",
+          "copyContinue": "Copy and Continue",
+          "prompted": "Prompted Drawing"
+        },
+        "patterns": {
+          "straight": "Straight",
+          "wave": "Wave",
+          "spiral": "Spiral",
+          "zigzag": "Zigzag",
+          "shape": "Shape",
+          "road": "Road"
+        },
+        "copyActivities": {
+          "copy-line": "Copy a line",
+          "complete-picture": "Complete a picture",
+          "continue-pattern": "Continue a pattern"
+        },
+        "pathWidth": "Wide path",
+        "pathWidthValue": "Wide path {{value}}",
+        "tolerance": "Tolerance",
+        "toleranceValue": "Tolerance {{value}}",
+        "trailInstruction": "Follow the wide path at your own pace.",
+        "copyInstruction": "Look at the first marks, then add your own beside them.",
+        "prompt": "Add somewhere Mochi could rest. There is no right answer.",
+        "inProgress": "A calm path is waiting. Take your time.",
+        "complete": "Path complete. You can stop whenever you like.",
+        "cellLabel": "Trail step {{current}} of {{total}}",
+        "cellHint": "Activate to place a dot along the calm path"
+      }
     },
     "glitterFall": {
       "name": "Glitter Fall",
@@ -281,7 +321,7 @@
     },
     "bubblePop": {
       "name": "Bubble Pop",
-      "description": "Pop bubbles slowly",
+      "description": "Activate bubbles and see what happens",
       "title": "Bubble Pop",
       "subtitle": "Tap the falling bubbles to pop them.",
       "popped": "Popped: {{count}}",
@@ -294,11 +334,62 @@
       "movingMode": "Moving mode",
       "useAccessibleMode": "Use stationary bubble buttons",
       "useMovingMode": "Use moving bubbles",
-      "modeToggleHint": "Switch between moving bubbles and stationary buttons"
+      "modeToggleHint": "Switch between moving bubbles and stationary buttons",
+      "freePlay": "Free play",
+      "freePlayTitle": "Free play",
+      "freePlayDescription": "Pop any bubble. There is no score, timer, or finish line.",
+      "freePlaySelected": "Free play. Choose any bubble.",
+      "sensory": {
+        "title": "Sensory profile",
+        "description": "Choose a calm way to play. You can change it at any time.",
+        "motion": "Motion",
+        "still": "Still",
+        "floating": "Floating",
+        "reducedMotion": "Still is recommended for reduced motion. Floating is still available if you choose it.",
+        "speed": "Speed",
+        "density": "Bubbles",
+        "size": "Bubble size",
+        "slow": "Slow",
+        "medium": "Medium",
+        "fast": "Fast",
+        "sparse": "Sparse",
+        "full": "Full",
+        "small": "Small",
+        "large": "Large",
+        "sound": "Bubble sounds",
+        "soundDescription": "Play a gentle sound when a bubble is popped."
+      },
+      "guided": {
+        "title": "Try this",
+        "tryAgain": "That was okay. Try again when you are ready.",
+        "correct": "Yes. Keep going when you are ready.",
+        "next": "A new round is ready. Take your time.",
+        "nextRound": "Next round",
+        "exit": "Exit guided play",
+        "colour": {
+          "label": "Colour",
+          "prompt": "Pop bubbles matching the colour shown."
+        },
+        "size": {
+          "label": "Biggest or smallest",
+          "prompt": "Pop bubbles matching the size shown."
+        },
+        "count": {
+          "label": "Exact count",
+          "prompt": "Pop exactly three bubbles, then stop.",
+          "locked": "That count is complete. Choose Next round or Exit.",
+          "complete": "You counted exactly {{count}} bubbles.",
+          "progress": "{{current}} of {{target}}"
+        },
+        "direction": {
+          "label": "Left or right",
+          "prompt": "Pop bubbles on the side shown by the arrow."
+        }
+      }
     },
     "categoryMatch": {
       "name": "Category Match",
-      "description": "Sort pictures into groups",
+      "description": "Sort an item by the stated group",
       "title": "Category Match",
       "subtitle": "Sort each item by what it is",
       "startSorting": "Start Sorting",
@@ -356,11 +447,29 @@
       "taps": "Taps: {{count}}",
       "balloons": "Balloons: {{count}}",
       "popped": "Popped: {{count}}",
-      "balloonAccessibility": "Balloon, tap to keep it up"
+      "balloonAccessibility": "Balloon, tap to keep it up",
+      "liftAgain": "Lift it again",
+      "restingBalloonAccessibility": "Balloon resting. Lift it again",
+      "tapAnywhere": "Tap anywhere to lift a balloon",
+      "leftTargetZone": "Left target zone",
+      "rightTargetZone": "Right target zone",
+      "leftSide": "Left side",
+      "rightSide": "Right side",
+      "restart": "Start again",
+      "restartHint": "Start with a fresh balloon. Nothing is lost when a balloon rests.",
+      "profile": {
+        "title": "Choose how to play",
+        "large-and-slow": "Large and slow",
+        "tap-anywhere": "Tap anywhere",
+        "direct-touch": "Direct touch",
+        "target-zones": "Target zones",
+        "left-and-right": "Left and right",
+        "more-balloons": "More balloons"
+      }
     },
     "breathingGarden": {
       "name": "Breathing Garden",
-      "description": "Follow a calm breathing rhythm",
+      "description": "Use an optional visual breathing rhythm",
       "title": "Breathing Garden",
       "progressLabel": "Breathing ball. Current phase: {{phase}}. {{count}} cycles completed.",
       "phaseProgressLabel": "Breathing ball. Current phase: {{phase}}.",
@@ -397,7 +506,7 @@
     },
     "patternTrain": {
       "name": "Pattern Train",
-      "description": "Complete cosy patterns",
+      "description": "Continue the repeating pattern",
       "missingCarriage": "missing carriage",
       "difficultyAccessibilityLabel": "{{label}} difficulty",
       "title": "Pattern Train",
@@ -473,16 +582,9 @@
         }
       },
       "milestone": {
-        "title": "Amazing! 🌟 {{count}} Trains Completed!",
-        "default": "You're a train conductor!",
-        "messages": [
-          "You're a train conductor!",
-          "Fantastic work!",
-          "You're doing brilliantly!",
-          "Keep up the great work!",
-          "You're amazing at patterns!",
-          "Wonderful job!"
-        ],
+        "title": "{{count}} trains completed",
+        "default": "The train is ready.",
+        "messages": ["The pattern matches.", "The train is ready.", "That pattern is complete."],
         "rounds": "You've completed {{count}} trains",
         "continue": "Keep Going!",
         "continueHint": "Continue playing Pattern Train"
@@ -521,7 +623,7 @@
         "flowers": "flowers"
       },
       "feedback": {
-        "complete": "Great counting!",
+        "complete": "The basket matches.",
         "incomplete": "Keep adding items"
       },
       "representation": {
@@ -670,6 +772,57 @@
       "label": "Keepy Uppy Easy Mode",
       "description": "Any tap gives a gentle lift while good taps still go higher"
     },
+    "drawing": {
+      "title": "Drawing Pad",
+      "mode": { "title": "Starting mode" },
+      "modes": {
+        "freeDraw": "Free Draw",
+        "gentleTrails": "Gentle Trails",
+        "copyContinue": "Copy and Continue",
+        "prompted": "Prompted Drawing"
+      },
+      "strokeWidth": {
+        "title": "Stroke width",
+        "thin": "Thin",
+        "medium": "Medium",
+        "wide": "Wide"
+      },
+      "smoothing": {
+        "label": "Smooth strokes",
+        "description": "Gently soften drawn lines"
+      }
+    },
+    "keepyUppy": {
+      "title": "Keepy Uppy",
+      "profile": { "title": "Motor profile" },
+      "profiles": {
+        "large-and-slow": "Large and slow",
+        "tap-anywhere": "Tap anywhere",
+        "direct-touch": "Direct touch",
+        "target-zones": "Target zones",
+        "left-and-right": "Left and right",
+        "more-balloons": "More balloons"
+      },
+      "balloonSize": {
+        "title": "Balloon size",
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large"
+      },
+      "gravity": {
+        "title": "Gravity",
+        "low": "Low",
+        "gentle": "Gentle",
+        "standard": "Standard"
+      },
+      "targetSize": {
+        "title": "Touch target size",
+        "direct": "Direct",
+        "large": "Large",
+        "extraLarge": "Extra large"
+      },
+      "balloonCount": { "title": "Number of balloons" }
+    },
     "bubblePop": {
       "title": "Bubble Pop",
       "moving": {
@@ -679,6 +832,22 @@
       "fullField": {
         "label": "More bubbles",
         "description": "Show a fuller field of bubbles"
+      },
+      "speed": {
+        "title": "Speed",
+        "slow": "Slow",
+        "medium": "Medium",
+        "fast": "Fast"
+      },
+      "size": {
+        "title": "Bubble size",
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large"
+      },
+      "sound": {
+        "label": "Bubble sounds",
+        "description": "Sounds only play when the main Sound setting is also on"
       }
     },
     "glitterFall": {
@@ -766,6 +935,11 @@
       "duration_other": "{{count}} min",
       "description": "After the set time, a maths question pauses play until a grown-up answers"
     },
+    "practiceHistory": {
+      "title": "Practice summaries",
+      "description": "Optional local summaries for caregivers. A caregiver check protects the details.",
+      "open": "Open practice summaries"
+    },
     "language": {
       "title": "Language",
       "description": "Choose your preferred language"
@@ -790,6 +964,65 @@
     "answerPlaceholder": "Answer",
     "error": "Not quite — try again!",
     "continue": "Continue Playing"
+  },
+  "practiceHistory": {
+    "title": "Practice summaries",
+    "description": "These optional caregiver-only summaries stay on this device. They describe support used in guided practice and are not scores, diagnostic assessments, therapy records, or measures of development.",
+    "gate": {
+      "title": "Caregiver check",
+      "description": "Solve this grown-up question to view or change practice summaries.",
+      "answerLabel": "Answer to caregiver question",
+      "error": "That answer did not match. Try the new question.",
+      "continue": "View summaries"
+    },
+    "enable": {
+      "label": "Keep local practice summaries",
+      "description": "Off by default. Only guided Pattern Train and Category Match examples are recorded."
+    },
+    "retention": {
+      "title": "Keep summaries for",
+      "days": "{{count}} days"
+    },
+    "persistenceError": "Practice summaries could not be saved. No information was sent anywhere.",
+    "summary": { "title": "Support summary" },
+    "responses": {
+      "independent": "Independent",
+      "after-visual-hint": "After a visual hint",
+      "after-model": "After a model",
+      "corrected": "Corrected",
+      "skipped": "Skipped"
+    },
+    "recent": {
+      "title": "Recent guided practice",
+      "empty": "No guided-practice summaries are stored."
+    },
+    "games": {
+      "pattern-train": "Pattern Train",
+      "category-match": "Category Match",
+      "number-picnic": "Number Picnic"
+    },
+    "skills": {
+      "continue-repeating-pattern": "Continue a repeating pattern",
+      "sort-by-stated-category": "Sort by a stated category"
+    },
+    "configurations": {
+      "patternTrain": {
+        "easy": "Easy patterns",
+        "medium": "Medium patterns",
+        "hard": "Hard patterns"
+      },
+      "categoryMatch": {
+        "twoGroups": "2 groups",
+        "threeGroups": "3 groups"
+      }
+    },
+    "attempts": "Attempts: {{count}}",
+    "deleteAll": "Delete all practice summaries",
+    "deleteConfirm": {
+      "title": "Delete all summaries?",
+      "description": "This removes every stored practice summary from this device. The history setting will not change.",
+      "action": "Delete all"
+    }
   },
   "accessibility": {
     "gameCardHint": "Double tap to play this game"
@@ -841,6 +1074,11 @@
       "Brilliant!"
     ],
     "drawingWelcomePhrases": ["So happy to see you!", "Your drawing awaits!", "Missed you!"],
-    "glitterPhrases": ["This is beautiful!", "You're so creative!", "Sparkly!", "Magnificent!"]
+    "glitterPhrases": [
+      "The glitter is moving.",
+      "The colours changed.",
+      "Sparkly!",
+      "You chose this view."
+    ]
   }
 }

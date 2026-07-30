@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Gentle Games** is a sensory-friendly Expo (React Native) app for children ages 4–10. It includes six mini-games — Memory Snap (tile-matching), Drawing Pad (freehand SVG canvas), Glitter Fall (snow-globe glitter), Bubble Pop (tap floating bubbles), Category Match (drag-to-sort), and Keepy Uppy (balloon tap) — all built with calm pastels, gentle audio, and optional animations.
+**Gentle Games** is an adjustable, pressure-free Expo (React Native) app for children ages 4–10. The released catalogue is defined by `src/games/registry.ts`; Number Picnic remains unfinished and hidden until its validation gate is complete. Activities use soft palettes, optional audio, reduced-motion controls, and child-controlled exits. Product copy must describe immediate in-game experiences only and must not claim therapy or developmental improvement.
 
 > **Note to the agent:** always consult the source code in the workspace first when implementing or explaining features. The instructions in this document are secondary and may lag behind the actual code.
 

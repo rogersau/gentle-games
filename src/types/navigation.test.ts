@@ -8,6 +8,7 @@ describe('navigation contract', () => {
       Home: 'Home',
       Game: 'Game',
       Settings: 'Settings',
+      PracticeHistory: 'PracticeHistory',
       Drawing: 'Drawing',
       Glitter: 'Glitter',
       Bubble: 'Bubble',

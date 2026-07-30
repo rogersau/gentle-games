@@ -22,6 +22,10 @@ jest.mock('./src/context/SettingsContext', () => ({
   useSettings: jest.fn(),
 }));
 
+jest.mock('./src/context/PracticeHistoryContext', () => ({
+  PracticeHistoryProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 jest.mock('./src/context/ParentTimerContext', () => ({
   ParentTimerProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
@@ -109,6 +113,13 @@ jest.mock('./src/screens/SettingsScreen', () => ({
   SettingsScreen: () => {
     const ReactNative = require('react-native');
     return <ReactNative.Text>Settings</ReactNative.Text>;
+  },
+}));
+
+jest.mock('./src/screens/PracticeHistoryScreen', () => ({
+  PracticeHistoryScreen: () => {
+    const ReactNative = require('react-native');
+    return <ReactNative.Text>PracticeHistory</ReactNative.Text>;
   },
 }));
 

@@ -91,8 +91,7 @@ describe('Analytics Fallbacks & robust initialization', () => {
 
     await analytics.initAnalytics(); // Fails gracefully
 
-    // Tracking functions shouldn't throw when client is null
-    expect(() => analytics.trackEvent('test')).not.toThrow();
+    // Screen tracking should not throw when the client is null.
     expect(() => analytics.trackScreenView('Home')).not.toThrow();
   });
 });

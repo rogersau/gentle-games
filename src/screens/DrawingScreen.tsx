@@ -1,5 +1,12 @@
 import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions, BackHandler } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  useWindowDimensions,
+  BackHandler,
+  TouchableOpacity,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +23,13 @@ import {
 import { useMochi } from '../hooks/useMochi';
 import { useSettings } from '../context/SettingsContext';
 import { sanitizeDrawingHistory } from '../utils/drawingPersistence';
+import {
+  createDrawingGuidedConfig,
+  type CopyContinueActivity,
+  type DrawingMode,
+  type GentleTrailPattern,
+} from '../utils/drawingGuidedModes';
+import { getGameSettings } from '../games/settings';
 
 const DRAWING_STORAGE_KEY = '@gentle_match_saved_drawing';
 export const DRAWING_HEADER_HEIGHT = 60;
@@ -34,8 +48,10 @@ export const DrawingScreen: React.FC = () => {
   const allowNextBeforeRemoveRef = useRef(false);
   const hasShownWelcomeMochiRef = useRef(false);
   const hasStartedSavedCheckRef = useRef(false);
+  const latestFreeHistoryRef = useRef<HistoryEntry[]>([]);
 
-  const { settings } = useSettings();
+  const { settings, updateGameSettings } = useSettings();
+  const drawingSettings = getGameSettings(settings, 'drawing');
   const { showMochi } = useMochi();
 
   const [savedHistory, setSavedHistory] = useState<HistoryEntry[]>([]);
@@ -43,6 +59,15 @@ export const DrawingScreen: React.FC = () => {
   const [hasCheckedSaved, setHasCheckedSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showSaveNotice, setShowSaveNotice] = useState(false);
+  const [drawingMode, setDrawingMode] = useState<DrawingMode>(drawingSettings.mode);
+  const [trailPattern, setTrailPattern] = useState<GentleTrailPattern>(
+    drawingSettings.trailPattern,
+  );
+  const [guidedTolerance, setGuidedTolerance] = useState(drawingSettings.tolerance);
+  const [guidedWidePath, setGuidedWidePath] = useState(drawingSettings.pathWidth);
+  const [copyActivity, setCopyActivity] = useState<CopyContinueActivity>(
+    drawingSettings.copyActivity,
+  );
 
   const canvasDimensions = useMemo(() => {
     const availableWidth = screenWidth - DRAWING_LAYOUT_PADDING;
@@ -76,6 +101,7 @@ export const DrawingScreen: React.FC = () => {
             await AsyncStorage.removeItem(DRAWING_STORAGE_KEY);
           } else if (parsed.length > 0) {
             setSavedHistory(parsed);
+            latestFreeHistoryRef.current = parsed;
             setShowContinueModal(true);
             if (settings.showMochiInGames && !hasShownWelcomeMochiRef.current) {
               hasShownWelcomeMochiRef.current = true;
@@ -116,10 +142,13 @@ export const DrawingScreen: React.FC = () => {
   });
 
   const flushLatestHistory = useCallback(async () => {
-    const latestHistory = canvasRef.current?.getHistory() ?? [];
+    const latestHistory =
+      drawingMode === 'free-draw'
+        ? (canvasRef.current?.getHistory() ?? [])
+        : latestFreeHistoryRef.current;
     scheduleSave(latestHistory);
     await flushPendingSave();
-  }, [flushPendingSave, scheduleSave]);
+  }, [drawingMode, flushPendingSave, scheduleSave]);
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => false);
@@ -147,6 +176,7 @@ export const DrawingScreen: React.FC = () => {
     try {
       await AsyncStorage.removeItem(DRAWING_STORAGE_KEY);
       setSavedHistory([]);
+      latestFreeHistoryRef.current = [];
       canvasRef.current?.clear();
     } catch (error) {
       console.warn('Error clearing saved drawing:', error);
@@ -156,10 +186,23 @@ export const DrawingScreen: React.FC = () => {
 
   const handleHistoryChange = useCallback(
     (history: HistoryEntry[]) => {
+      if (drawingMode !== 'free-draw') return;
+      latestFreeHistoryRef.current = history;
       scheduleSave(history);
     },
-    [scheduleSave],
+    [drawingMode, scheduleSave],
   );
+
+  const handleModeChange = (mode: DrawingMode) => {
+    if (mode === 'free-draw') {
+      setSavedHistory([...latestFreeHistoryRef.current]);
+    }
+    setDrawingMode(mode);
+    void updateGameSettings('drawing', { mode });
+  };
+
+  const textOrFallback = (key: string, fallback: string) =>
+    String(t(key as never, { defaultValue: fallback } as never));
 
   const handleBackPress = async () => {
     await flushLatestHistory();
@@ -181,6 +224,148 @@ export const DrawingScreen: React.FC = () => {
       <AppHeader title={t('games.drawing.title')} onBack={handleBackPress} />
 
       <View style={styles.content}>
+        <View style={styles.modeSection} accessibilityRole='tablist'>
+          <Text style={styles.modeHeading}>
+            {textOrFallback('games.drawing.guided.chooseMode', 'Choose a calm drawing space')}
+          </Text>
+          <View style={styles.modeButtons}>
+            {(
+              [
+                ['free-draw', textOrFallback('games.drawing.guided.modes.freeDraw', 'Free Draw')],
+                [
+                  'gentle-trails',
+                  textOrFallback('games.drawing.guided.modes.gentleTrails', 'Gentle Trails'),
+                ],
+                [
+                  'copy-and-continue',
+                  textOrFallback('games.drawing.guided.modes.copyContinue', 'Copy and Continue'),
+                ],
+                [
+                  'prompted-drawing',
+                  textOrFallback('games.drawing.guided.modes.prompted', 'Prompted Drawing'),
+                ],
+              ] as Array<[DrawingMode, string]>
+            ).map(([mode, label]) => (
+              <TouchableOpacity
+                key={mode}
+                testID={`drawing-mode-${mode}`}
+                style={[
+                  styles.modeButton,
+                  drawingMode === mode ? styles.modeButtonActive : undefined,
+                ]}
+                onPress={() => handleModeChange(mode)}
+                accessibilityRole='button'
+                accessibilityLabel={label}
+                accessibilityState={{ selected: drawingMode === mode }}
+              >
+                <Text style={styles.modeButtonText}>{label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {drawingMode === 'gentle-trails' && (
+            <View style={styles.patternButtons}>
+              {(
+                ['straight', 'wave', 'spiral', 'zigzag', 'shape', 'road'] as GentleTrailPattern[]
+              ).map((pattern) => (
+                <TouchableOpacity
+                  key={pattern}
+                  testID={`drawing-trail-${pattern}`}
+                  style={[
+                    styles.patternButton,
+                    trailPattern === pattern ? styles.modeButtonActive : undefined,
+                  ]}
+                  onPress={() => {
+                    setTrailPattern(pattern);
+                    void updateGameSettings('drawing', { trailPattern: pattern });
+                  }}
+                  accessibilityRole='button'
+                  accessibilityLabel={textOrFallback(
+                    `games.drawing.guided.patterns.${pattern}`,
+                    `${pattern} trail`,
+                  )}
+                  accessibilityState={{ selected: trailPattern === pattern }}
+                >
+                  <Text style={styles.patternButtonText}>
+                    {textOrFallback(`games.drawing.guided.patterns.${pattern}`, pattern)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+          {drawingMode === 'copy-and-continue' && (
+            <View style={styles.patternButtons}>
+              {(['copy-line', 'complete-picture', 'continue-pattern'] as const).map((activity) => (
+                <TouchableOpacity
+                  key={activity}
+                  testID={`drawing-copy-${activity}`}
+                  style={[
+                    styles.patternButton,
+                    copyActivity === activity ? styles.modeButtonActive : undefined,
+                  ]}
+                  onPress={() => {
+                    setCopyActivity(activity);
+                    void updateGameSettings('drawing', { copyActivity: activity });
+                  }}
+                  accessibilityRole='button'
+                  accessibilityLabel={t(`games.drawing.guided.copyActivities.${activity}` as never)}
+                  accessibilityState={{ selected: copyActivity === activity }}
+                >
+                  <Text style={styles.patternButtonText}>
+                    {t(`games.drawing.guided.copyActivities.${activity}` as never)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+          {drawingMode !== 'free-draw' && drawingMode !== 'prompted-drawing' && (
+            <View style={styles.guidedSettings}>
+              <Text style={styles.guidedSettingsLabel}>
+                {textOrFallback('games.drawing.guided.pathWidth', 'Wide path')}
+              </Text>
+              {([48, 68, 88] as const).map((value) => (
+                <TouchableOpacity
+                  key={`wide-${value}`}
+                  testID={`drawing-wide-path-${value}`}
+                  style={[
+                    styles.settingButton,
+                    guidedWidePath === value ? styles.modeButtonActive : undefined,
+                  ]}
+                  onPress={() => {
+                    setGuidedWidePath(value);
+                    void updateGameSettings('drawing', { pathWidth: value });
+                  }}
+                  accessibilityRole='button'
+                  accessibilityLabel={t('games.drawing.guided.pathWidthValue', { value })}
+                  accessibilityState={{ selected: guidedWidePath === value }}
+                >
+                  <Text style={styles.settingButtonText}>{value}</Text>
+                </TouchableOpacity>
+              ))}
+              <Text style={styles.guidedSettingsLabel}>
+                {textOrFallback('games.drawing.guided.tolerance', 'Tolerance')}
+              </Text>
+              {([24, 40, 56] as const).map((value) => (
+                <TouchableOpacity
+                  key={`tolerance-${value}`}
+                  testID={`drawing-tolerance-${value}`}
+                  style={[
+                    styles.settingButton,
+                    guidedTolerance === value ? styles.modeButtonActive : undefined,
+                  ]}
+                  onPress={() => {
+                    setGuidedTolerance(value);
+                    void updateGameSettings('drawing', { tolerance: value });
+                  }}
+                  accessibilityRole='button'
+                  accessibilityLabel={t('games.drawing.guided.toleranceValue', { value })}
+                  accessibilityState={{ selected: guidedTolerance === value }}
+                >
+                  <Text style={styles.settingButtonText}>{value}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
         {showSaveNotice && (
           <Text
             testID='drawing-save-notice'
@@ -193,14 +378,28 @@ export const DrawingScreen: React.FC = () => {
         )}
         {hasCheckedSaved && (
           <DrawingCanvas
-            key={`canvas-${savedHistory.length}`}
+            key={`canvas-${drawingMode}-${trailPattern}-${copyActivity}-${savedHistory.length}`}
             ref={canvasRef}
             width={canvasDimensions.width}
             height={canvasDimensions.height}
             canvasBackgroundColor={colors.surfaceGame}
             bottomInset={insets.bottom}
-            initialHistory={savedHistory}
+            initialHistory={drawingMode === 'free-draw' ? savedHistory : []}
             onHistoryChange={handleHistoryChange}
+            mode={drawingMode}
+            guidedConfig={createDrawingGuidedConfig(drawingMode, {
+              pattern: trailPattern,
+              copyActivity,
+              tolerance: guidedTolerance,
+              widePath: guidedWidePath,
+            })}
+            reducedMotion={settings.reducedMotionEnabled || !settings.animationsEnabled}
+            initialStrokeWidth={drawingSettings.strokeWidth}
+            initialSmoothing={drawingSettings.smoothing ? 0.7 : 0}
+            onStrokeWidthChange={(strokeWidth) =>
+              void updateGameSettings('drawing', { strokeWidth })
+            }
+            onSmoothingChange={(smoothing) => void updateGameSettings('drawing', { smoothing })}
           />
         )}
       </View>
@@ -250,6 +449,83 @@ const createStyles = (colors: ThemeColors) =>
       justifyContent: 'flex-start',
       paddingHorizontal: Space.base,
       paddingTop: Space.base,
+    },
+    modeSection: {
+      width: '100%',
+      marginBottom: Space.sm,
+    },
+    modeHeading: {
+      ...TypeStyle.body,
+      color: colors.text,
+      textAlign: 'center',
+      marginBottom: Space.xs,
+    },
+    modeButtons: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: Space.xs,
+    },
+    modeButton: {
+      borderWidth: 1,
+      borderColor: colors.cardBack,
+      borderRadius: 18,
+      paddingHorizontal: Space.sm,
+      paddingVertical: 6,
+      backgroundColor: colors.surfaceGame,
+    },
+    modeButtonActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    modeButtonText: {
+      ...TypeStyle.caption,
+      color: colors.text,
+    },
+    patternButtons: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: Space.xs,
+      marginTop: Space.xs,
+    },
+    patternButton: {
+      borderWidth: 1,
+      borderColor: colors.cardBack,
+      borderRadius: 14,
+      paddingHorizontal: Space.sm,
+      paddingVertical: 4,
+    },
+    patternButtonText: {
+      ...TypeStyle.caption,
+      color: colors.text,
+      textTransform: 'capitalize',
+    },
+    guidedSettings: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: Space.xs,
+      marginTop: Space.xs,
+    },
+    guidedSettingsLabel: {
+      ...TypeStyle.caption,
+      color: colors.textLight,
+      marginLeft: Space.xs,
+    },
+    settingButton: {
+      minWidth: 32,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.cardBack,
+      borderRadius: 14,
+      paddingHorizontal: Space.xs,
+      paddingVertical: 4,
+    },
+    settingButtonText: {
+      ...TypeStyle.caption,
+      color: colors.text,
     },
     modalText: {
       ...TypeStyle.body,

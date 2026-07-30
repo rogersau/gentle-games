@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../context/SettingsContext';
 import {
@@ -27,6 +28,7 @@ import { Space, TypeStyle } from '../ui/tokens';
 import { useLayout } from '../ui/useLayout';
 import {
   getGameSettings,
+  KeepyUppyProfile,
   MemorySnapMismatchDuration,
   MemorySnapPairCount,
   MemorySnapPreviewMode,
@@ -38,9 +40,11 @@ import {
   GlitterFallSpeed,
   GlitterParticleDensity,
 } from '../games/glitterSettings';
+import { KEEPY_UPPY_PROFILES } from '../utils/keepyUppyLogic';
+import { APP_ROUTES, AppStackParamList } from '../types/navigation';
 
 export const SettingsScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<StackNavigationProp<AppStackParamList>>();
   const { settings, updateSettings, updateGameSettings, isSaving, persistenceError } =
     useSettings();
   const { colors, resolvedMode } = useThemeColors();
@@ -51,6 +55,9 @@ export const SettingsScreen: React.FC = () => {
   const memorySettings = getGameSettings(settings, 'memory-snap');
   const categorySettings = getGameSettings(settings, 'category-match');
   const numberPicnicSettings = getGameSettings(settings, 'number-picnic');
+  const bubbleSettings = getGameSettings(settings, 'bubble-pop');
+  const drawingSettings = getGameSettings(settings, 'drawing');
+  const keepySettings = getGameSettings(settings, 'keepy-uppy');
 
   const memoryPairOptions: { value: MemorySnapPairCount; label: string }[] = [
     { value: 2, label: t('settings.memorySnap.pairs.two') },
@@ -87,6 +94,17 @@ export const SettingsScreen: React.FC = () => {
     { value: 'more-fewer', label: t('settings.numberPicnic.modes.moreFewer') },
     { value: 'add-one-more', label: t('settings.numberPicnic.modes.addOneMore') },
   ];
+  const keepyProfileOptions: { value: KeepyUppyProfile; label: string }[] = [
+    'large-and-slow',
+    'tap-anywhere',
+    'direct-touch',
+    'target-zones',
+    'left-and-right',
+    'more-balloons',
+  ].map((value) => ({
+    value: value as KeepyUppyProfile,
+    label: t(`settings.keepyUppy.profiles.${value}` as any),
+  }));
 
   const glitterDensityOptions: { value: GlitterParticleDensity; label: string }[] = [
     { value: 'very-sparse', label: t('settings.glitterFall.density.verySparse') },
@@ -153,6 +171,48 @@ export const SettingsScreen: React.FC = () => {
             onValueChange={(value) => updateSettings({ language: value })}
           />
           <Text style={styles.description}>{t('settings.language.description')}</Text>
+        </View>
+
+        {/* Drawing Pad */}
+        <View style={styles.section}>
+          <SectionHeader title={t('settings.drawing.title' as any)} />
+          <Text style={styles.controlLabel}>{t('settings.drawing.mode.title' as any)}</Text>
+          <SegmentedControl
+            options={[
+              { value: 'free-draw' as const, label: t('settings.drawing.modes.freeDraw' as any) },
+              {
+                value: 'gentle-trails' as const,
+                label: t('settings.drawing.modes.gentleTrails' as any),
+              },
+              {
+                value: 'copy-and-continue' as const,
+                label: t('settings.drawing.modes.copyContinue' as any),
+              },
+              {
+                value: 'prompted-drawing' as const,
+                label: t('settings.drawing.modes.prompted' as any),
+              },
+            ]}
+            value={drawingSettings.mode}
+            onValueChange={(mode) => updateGameSettings('drawing', { mode })}
+            wrap
+          />
+          <Text style={styles.controlLabel}>{t('settings.drawing.strokeWidth.title' as any)}</Text>
+          <SegmentedControl
+            options={[
+              { value: 3 as const, label: t('settings.drawing.strokeWidth.thin' as any) },
+              { value: 5 as const, label: t('settings.drawing.strokeWidth.medium' as any) },
+              { value: 8 as const, label: t('settings.drawing.strokeWidth.wide' as any) },
+            ]}
+            value={drawingSettings.strokeWidth}
+            onValueChange={(strokeWidth) => updateGameSettings('drawing', { strokeWidth })}
+          />
+          <SettingToggle
+            label={t('settings.drawing.smoothing.label' as any)}
+            description={t('settings.drawing.smoothing.description' as any)}
+            value={drawingSettings.smoothing}
+            onValueChange={(smoothing) => updateGameSettings('drawing', { smoothing })}
+          />
         </View>
 
         {/* Appearance */}
@@ -248,47 +308,49 @@ export const SettingsScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* Number Picnic */}
-        <View style={styles.section}>
-          <SectionHeader title={t('settings.numberPicnic.title')} />
-          <Text style={styles.controlLabel}>{t('settings.numberPicnic.stage.title')}</Text>
-          <SegmentedControl
-            options={numberPicnicStageOptions}
-            value={numberPicnicSettings.stage}
-            onValueChange={(stage) =>
-              updateGameSettings('number-picnic', {
-                stage,
-                maxQuantity: stageToMaxQuantity(stage),
-                mode:
-                  stage === '6-10'
-                    ? numberPicnicSettings.mode
-                    : numberPicnicSettings.mode === 'add-one-more'
-                      ? 'make-amount'
-                      : numberPicnicSettings.mode,
-              })
-            }
-            wrap
-          />
-          <Text style={styles.description}>{t('settings.numberPicnic.stage.description')}</Text>
-          <Text style={styles.controlLabel}>{t('settings.numberPicnic.mode.title')}</Text>
-          <SegmentedControl
-            options={numberPicnicModeOptions.filter(
-              (option) => option.value !== 'add-one-more' || numberPicnicSettings.stage === '6-10',
-            )}
-            value={numberPicnicSettings.mode}
-            onValueChange={(mode) => updateGameSettings('number-picnic', { mode })}
-            wrap
-          />
-          <Text style={styles.description}>{t('settings.numberPicnic.mode.description')}</Text>
-          <SettingToggle
-            label={t('settings.numberPicnic.spokenCounting.label')}
-            description={t('settings.numberPicnic.spokenCounting.description')}
-            value={numberPicnicSettings.spokenCounting}
-            onValueChange={(spokenCounting) =>
-              updateGameSettings('number-picnic', { spokenCounting })
-            }
-          />
-        </View>
+        {GAME_REGISTRY.some((game) => game.id === 'number-picnic' && !game.isUnfinished) ? (
+          <View style={styles.section}>
+            <SectionHeader title={t('settings.numberPicnic.title')} />
+            <Text style={styles.controlLabel}>{t('settings.numberPicnic.stage.title')}</Text>
+            <SegmentedControl
+              options={numberPicnicStageOptions}
+              value={numberPicnicSettings.stage}
+              onValueChange={(stage) =>
+                updateGameSettings('number-picnic', {
+                  stage,
+                  maxQuantity: stageToMaxQuantity(stage),
+                  mode:
+                    stage === '6-10'
+                      ? numberPicnicSettings.mode
+                      : numberPicnicSettings.mode === 'add-one-more'
+                        ? 'make-amount'
+                        : numberPicnicSettings.mode,
+                })
+              }
+              wrap
+            />
+            <Text style={styles.description}>{t('settings.numberPicnic.stage.description')}</Text>
+            <Text style={styles.controlLabel}>{t('settings.numberPicnic.mode.title')}</Text>
+            <SegmentedControl
+              options={numberPicnicModeOptions.filter(
+                (option) =>
+                  option.value !== 'add-one-more' || numberPicnicSettings.stage === '6-10',
+              )}
+              value={numberPicnicSettings.mode}
+              onValueChange={(mode) => updateGameSettings('number-picnic', { mode })}
+              wrap
+            />
+            <Text style={styles.description}>{t('settings.numberPicnic.mode.description')}</Text>
+            <SettingToggle
+              label={t('settings.numberPicnic.spokenCounting.label')}
+              description={t('settings.numberPicnic.spokenCounting.description')}
+              value={numberPicnicSettings.spokenCounting}
+              onValueChange={(spokenCounting) =>
+                updateGameSettings('number-picnic', { spokenCounting })
+              }
+            />
+          </View>
+        ) : null}
 
         {/* Animations */}
         <View style={styles.section}>
@@ -300,15 +362,68 @@ export const SettingsScreen: React.FC = () => {
           />
         </View>
 
-        {/* Keepy Uppy Easy Mode */}
+        {/* Keepy Uppy */}
         <View style={styles.section}>
-          <SettingToggle
-            label={t('settings.keepyUppyEasyMode.label')}
-            description={t('settings.keepyUppyEasyMode.description')}
-            value={getGameSettings(settings, 'keepy-uppy').liftMode === 'gentle'}
-            onValueChange={(value) =>
-              updateGameSettings('keepy-uppy', { liftMode: value ? 'gentle' : 'precise' })
-            }
+          <SectionHeader title={t('settings.keepyUppy.title' as any)} />
+          <Text style={styles.controlLabel}>{t('settings.keepyUppy.profile.title' as any)}</Text>
+          <SegmentedControl
+            options={keepyProfileOptions}
+            value={keepySettings.profile}
+            onValueChange={(profile) => {
+              const profileSettings = KEEPY_UPPY_PROFILES[profile];
+              updateGameSettings('keepy-uppy', {
+                profile,
+                balloonSize: profileSettings.balloonSize,
+                gravity: profileSettings.gravity,
+                targetSize: profileSettings.targetSize,
+                balloonCount: Math.min(3, profileSettings.balloonCount) as 1 | 2 | 3,
+              });
+            }}
+            wrap
+          />
+          <Text style={styles.controlLabel}>
+            {t('settings.keepyUppy.balloonSize.title' as any)}
+          </Text>
+          <SegmentedControl
+            options={[
+              { value: 29, label: t('settings.keepyUppy.balloonSize.small' as any) },
+              { value: 34, label: t('settings.keepyUppy.balloonSize.medium' as any) },
+              { value: 46, label: t('settings.keepyUppy.balloonSize.large' as any) },
+            ]}
+            value={keepySettings.balloonSize}
+            onValueChange={(balloonSize) => updateGameSettings('keepy-uppy', { balloonSize })}
+          />
+          <Text style={styles.controlLabel}>{t('settings.keepyUppy.gravity.title' as any)}</Text>
+          <SegmentedControl
+            options={[
+              { value: 82, label: t('settings.keepyUppy.gravity.low' as any) },
+              { value: 175, label: t('settings.keepyUppy.gravity.gentle' as any) },
+              { value: 220, label: t('settings.keepyUppy.gravity.standard' as any) },
+            ]}
+            value={keepySettings.gravity}
+            onValueChange={(gravity) => updateGameSettings('keepy-uppy', { gravity })}
+          />
+          <Text style={styles.controlLabel}>{t('settings.keepyUppy.targetSize.title' as any)}</Text>
+          <SegmentedControl
+            options={[
+              { value: 1, label: t('settings.keepyUppy.targetSize.direct' as any) },
+              { value: 1.8, label: t('settings.keepyUppy.targetSize.large' as any) },
+              { value: 2.6, label: t('settings.keepyUppy.targetSize.extraLarge' as any) },
+            ]}
+            value={keepySettings.targetSize}
+            onValueChange={(targetSize) => updateGameSettings('keepy-uppy', { targetSize })}
+          />
+          <Text style={styles.controlLabel}>
+            {t('settings.keepyUppy.balloonCount.title' as any)}
+          </Text>
+          <SegmentedControl
+            options={[
+              { value: 1 as const, label: '1' },
+              { value: 2 as const, label: '2' },
+              { value: 3 as const, label: '3' },
+            ]}
+            value={keepySettings.balloonCount}
+            onValueChange={(balloonCount) => updateGameSettings('keepy-uppy', { balloonCount })}
           />
         </View>
 
@@ -318,7 +433,7 @@ export const SettingsScreen: React.FC = () => {
           <SettingToggle
             label={t('settings.bubblePop.moving.label')}
             description={t('settings.bubblePop.moving.description')}
-            value={getGameSettings(settings, 'bubble-pop').motion === 'moving'}
+            value={bubbleSettings.motion === 'moving'}
             onValueChange={(value) =>
               updateGameSettings('bubble-pop', { motion: value ? 'moving' : 'still' })
             }
@@ -326,10 +441,36 @@ export const SettingsScreen: React.FC = () => {
           <SettingToggle
             label={t('settings.bubblePop.fullField.label')}
             description={t('settings.bubblePop.fullField.description')}
-            value={getGameSettings(settings, 'bubble-pop').density === 'full'}
+            value={bubbleSettings.density === 'full'}
             onValueChange={(value) =>
               updateGameSettings('bubble-pop', { density: value ? 'full' : 'sparse' })
             }
+          />
+          <Text style={styles.controlLabel}>{t('settings.bubblePop.speed.title' as any)}</Text>
+          <SegmentedControl
+            options={[
+              { value: 'slow' as const, label: t('settings.bubblePop.speed.slow' as any) },
+              { value: 'medium' as const, label: t('settings.bubblePop.speed.medium' as any) },
+              { value: 'fast' as const, label: t('settings.bubblePop.speed.fast' as any) },
+            ]}
+            value={bubbleSettings.speed}
+            onValueChange={(speed) => updateGameSettings('bubble-pop', { speed })}
+          />
+          <Text style={styles.controlLabel}>{t('settings.bubblePop.size.title' as any)}</Text>
+          <SegmentedControl
+            options={[
+              { value: 'small' as const, label: t('settings.bubblePop.size.small' as any) },
+              { value: 'medium' as const, label: t('settings.bubblePop.size.medium' as any) },
+              { value: 'large' as const, label: t('settings.bubblePop.size.large' as any) },
+            ]}
+            value={bubbleSettings.size}
+            onValueChange={(size) => updateGameSettings('bubble-pop', { size })}
+          />
+          <SettingToggle
+            label={t('settings.bubblePop.sound.label' as any)}
+            description={t('settings.bubblePop.sound.description' as any)}
+            value={bubbleSettings.sound}
+            onValueChange={(sound) => updateGameSettings('bubble-pop', { sound })}
           />
         </View>
 
@@ -389,16 +530,6 @@ export const SettingsScreen: React.FC = () => {
           />
         </View>
 
-        {/* Enable Unfinished Games */}
-        <View style={styles.section}>
-          <SettingToggle
-            label={t('settings.unfinishedGames.label')}
-            description={t('settings.unfinishedGames.description')}
-            value={!!settings.enableUnfinishedGames}
-            onValueChange={(value) => updateSettings({ enableUnfinishedGames: value })}
-          />
-        </View>
-
         {/* Sound */}
         <View style={styles.section}>
           <SettingToggle
@@ -424,24 +555,22 @@ export const SettingsScreen: React.FC = () => {
         {/* Games on Home Screen */}
         <View style={styles.section}>
           <SectionHeader title={t('settings.gamesOnHomeScreen.title')} />
-          {GAME_REGISTRY.filter((game) => settings.enableUnfinishedGames || !game.isUnfinished).map(
-            (game) => {
-              const isVisible = !settings.hiddenGames.includes(game.id);
-              return (
-                <SettingToggle
-                  key={game.id}
-                  label={`${game.icon}  ${t(game.nameKey)}`}
-                  value={isVisible}
-                  onValueChange={(value) => {
-                    const updated = value
-                      ? settings.hiddenGames.filter((id) => id !== game.id)
-                      : [...settings.hiddenGames, game.id];
-                    updateSettings({ hiddenGames: updated });
-                  }}
-                />
-              );
-            },
-          )}
+          {GAME_REGISTRY.filter((game) => !game.isUnfinished).map((game) => {
+            const isVisible = !settings.hiddenGames.includes(game.id);
+            return (
+              <SettingToggle
+                key={game.id}
+                label={`${game.icon}  ${t(game.nameKey)}`}
+                value={isVisible}
+                onValueChange={(value) => {
+                  const updated = value
+                    ? settings.hiddenGames.filter((id) => id !== game.id)
+                    : [...settings.hiddenGames, game.id];
+                  updateSettings({ hiddenGames: updated });
+                }}
+              />
+            );
+          })}
           <Text style={styles.description}>{t('settings.gamesOnHomeScreen.description')}</Text>
         </View>
 
@@ -455,6 +584,16 @@ export const SettingsScreen: React.FC = () => {
             wrap
           />
           <Text style={styles.description}>{t('settings.parentTimer.description')}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title={t('settings.practiceHistory.title')} />
+          <Text style={styles.description}>{t('settings.practiceHistory.description')}</Text>
+          <AppButton
+            label={t('settings.practiceHistory.open')}
+            variant='secondary'
+            onPress={() => navigation.navigate(APP_ROUTES.PracticeHistory)}
+          />
         </View>
 
         {/* Telemetry */}

@@ -18,7 +18,6 @@ export type GameLaunchMode = 'direct' | 'difficulty-select';
 
 export interface VisibleGamesOptions {
   hiddenGames: readonly GameId[];
-  enableUnfinishedGames: boolean;
 }
 
 export interface GameDefinition {
@@ -139,16 +138,9 @@ const GAME_REGISTRY_BY_ID = new Map<GameId, GameDefinition>(
   GAME_REGISTRY.map((game) => [game.id, game]),
 );
 
-export function getVisibleGames({
-  hiddenGames,
-  enableUnfinishedGames,
-}: VisibleGamesOptions): readonly GameDefinition[] {
+export function getVisibleGames({ hiddenGames }: VisibleGamesOptions): readonly GameDefinition[] {
   return GAME_REGISTRY.filter((game) => {
-    if (hiddenGames.includes(game.id)) {
-      return false;
-    }
-
-    if (!enableUnfinishedGames && game.isUnfinished) {
+    if (game.isUnfinished || hiddenGames.includes(game.id)) {
       return false;
     }
 

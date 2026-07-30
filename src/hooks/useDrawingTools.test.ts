@@ -50,4 +50,14 @@ describe('useDrawingTools', () => {
     });
     expect(result.current.symmetryMode).toBe('half');
   });
+
+  it('changes stroke width and smoothing independently', () => {
+    const { result } = renderHook(() => useDrawingTools());
+    act(() => {
+      result.current.setStrokeWidth(12);
+      result.current.setSmoothing(0);
+    });
+    expect(result.current.strokeWidth).toBe(12);
+    expect(result.current.smoothing).toBe(0);
+  });
 });

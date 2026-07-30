@@ -19,6 +19,7 @@ jest.mock('../games/registry', () => {
 });
 
 const mockGoBack = jest.fn();
+const mockNavigate = jest.fn();
 const mockUpdateSettings = jest.fn();
 let mockIsSaving = false;
 let mockPersistenceError: string | null = null;
@@ -49,6 +50,7 @@ const TranslationProbe = ({ translationKey }: { translationKey: TranslationKey }
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     goBack: mockGoBack,
+    navigate: mockNavigate,
   }),
 }));
 
@@ -148,12 +150,20 @@ describe('SettingsScreen', () => {
     expect(screen.queryByText('Difficulty')).toBeNull();
   });
 
-  it('toggles Keepy Uppy easy mode setting', () => {
+  it('persists a Keepy Uppy motor profile with its explicit controls', () => {
+    mockSettings.gameSettings = { ...DEFAULT_GAME_SETTINGS };
     const screen = render(React.createElement(SettingsScreen));
-    const keepyUppySwitch = screen.getByRole('switch', { name: /Keepy Uppy Easy Mode/i });
-    fireEvent(keepyUppySwitch, 'valueChange', false);
+    fireEvent.press(
+      screen.getByRole('radio', { name: 'settings.keepyUppy.profiles.direct-touch' }),
+    );
 
-    expect(mockUpdateSettings).toHaveBeenCalledWith('keepy-uppy', { liftMode: 'precise' });
+    expect(mockUpdateSettings).toHaveBeenCalledWith('keepy-uppy', {
+      profile: 'direct-touch',
+      balloonSize: 34,
+      gravity: 220,
+      targetSize: 1,
+      balloonCount: 1,
+    });
   });
 
   it('persists individual Glitter Fall overrides', () => {
@@ -190,6 +200,14 @@ describe('SettingsScreen', () => {
 
     fireEvent.press(screen.getByText('← Back'));
     expect(mockGoBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens caregiver practice summaries from settings', () => {
+    const screen = render(<SettingsScreen />);
+
+    fireEvent.press(screen.getByText('settings.practiceHistory.open'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('PracticeHistory');
   });
 
   it('shows accessible autosave status without announcing every update', () => {
@@ -229,6 +247,12 @@ describe('SettingsScreen', () => {
     const screen = render(React.createElement(SettingsScreen));
 
     expect(screen.getByRole('switch', { name: /Number Picnic/i })).toBeTruthy();
+  });
+
+  it('does not expose a caregiver override for unfinished release gates', () => {
+    const screen = render(<SettingsScreen />);
+
+    expect(screen.queryByText('settings.unfinishedGames.label')).toBeNull();
   });
 
   it('removes a game from hidden games when re-enabled', () => {

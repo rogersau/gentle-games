@@ -11,10 +11,7 @@ const ALLOWED_DIAGNOSTIC_KEYS = new Set([
   'action',
   'boundary',
   'category',
-  'difficulty',
-  'duration_ms',
   'game',
-  'score',
   'screen',
   'setting',
   'status',
@@ -117,24 +114,34 @@ function sanitizeEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent | null {
   }
 
   return {
-    ...event,
-    message: undefined,
+    event_id: event.event_id,
+    type: event.type,
+    timestamp: event.timestamp,
+    platform: event.platform,
+    level: event.level,
+    release: event.release,
+    environment: event.environment,
+    dist: event.dist,
     user: event.user?.id ? { id: event.user.id } : undefined,
     tags: sanitizeTags(event.tags as Record<string, unknown> | undefined),
-    contexts: undefined,
-    extra: undefined,
     breadcrumbs: event.breadcrumbs
       ?.map((breadcrumb) => sanitizeBreadcrumb(breadcrumb))
       .filter((breadcrumb): breadcrumb is Sentry.Breadcrumb => breadcrumb !== null),
     exception: event.exception?.values
       ? {
-          ...event.exception,
           values: event.exception.values.map((value) => ({
-            ...value,
-            value: undefined,
+            type: value.type,
+            stacktrace: value.stacktrace,
+            mechanism: value.mechanism
+              ? {
+                  type: value.mechanism.type,
+                  handled: value.mechanism.handled,
+                  synthetic: value.mechanism.synthetic,
+                }
+              : undefined,
           })),
         }
-      : event.exception,
+      : undefined,
   };
 }
 
@@ -195,7 +202,7 @@ export function isSentryInitialized(): boolean {
   return telemetryEnabled && sentryInitialized && !!SENTRY_DSN;
 }
 
-export function setGameContext(gameName: string, difficulty?: string): void {
+export function setGameContext(gameName: string): void {
   if (!isSentryInitialized()) {
     return;
   }
@@ -204,13 +211,11 @@ export function setGameContext(gameName: string, difficulty?: string): void {
     'game',
     sanitizeDiagnosticData({
       game: gameName,
-      difficulty: difficulty || 'not_set',
     }) ?? null,
   );
 
   addActionBreadcrumb('game_started', 'navigation', {
     game: gameName,
-    difficulty: difficulty || 'not_set',
   });
 }
 

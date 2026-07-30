@@ -71,6 +71,25 @@ describe('useDrawingHistory', () => {
     expect(result.current.history).toEqual([mockEntry, entry2]);
   });
 
+  it('redoes the latest logical action and clears redo after a new action', () => {
+    const entry2: HistoryEntry = { ...mockEntry, id: 'test-2', actionId: 'action-2' };
+    const entry3: HistoryEntry = { ...mockEntry, id: 'test-3', actionId: 'action-3' };
+    const { result } = renderHook(() => useDrawingHistory({ initialHistory: [mockEntry, entry2] }));
+
+    act(() => result.current.undo());
+    expect(result.current.history).toEqual([mockEntry]);
+    expect(result.current.canRedo).toBe(true);
+
+    act(() => result.current.redo());
+    expect(result.current.history).toEqual([mockEntry, entry2]);
+
+    act(() => {
+      result.current.undo();
+      result.current.addToHistory(entry3);
+    });
+    expect(result.current.canRedo).toBe(false);
+  });
+
   it('clears all history', () => {
     const { result } = renderHook(() =>
       useDrawingHistory({

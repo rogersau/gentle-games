@@ -288,6 +288,28 @@ describe('BubbleField', () => {
     expect(screen.getByLabelText('games.bubblePop.newBubbleAnnouncement')).toBeTruthy();
   });
 
+  it('keeps a wrong accessible response in place and announces neutral feedback', () => {
+    const onBubblePop = jest.fn(() => false);
+    const screen = render(
+      <BubbleField
+        width={240}
+        height={220}
+        minActiveBubbles={1}
+        maxActiveBubbles={1}
+        motionEnabled={false}
+        accessibleMode
+        onBubblePop={onBubblePop}
+      />,
+    );
+
+    const button = screen.getAllByRole('button')[0];
+    fireEvent.press(button);
+
+    expect(onBubblePop).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.getByLabelText('games.bubblePop.tryAgain')).toBeTruthy();
+  });
+
   it('does not commit a React render for every animation frame', () => {
     const commits: Array<string> = [];
     const screen = render(
