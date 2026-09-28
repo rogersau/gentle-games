@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   View,
+  ViewStyle,
 } from 'react-native';
 import type {
   CategoryMatchCategory,
@@ -256,7 +257,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
       PanResponder.create({
         onStartShouldSetPanResponder: () => false,
         onMoveShouldSetPanResponder: (_, gestureState) =>
-          Math.abs(gestureState.dx) > 8 || Math.abs(gestureState.dy) > 8,
+          !roundFinished && (Math.abs(gestureState.dx) > 8 || Math.abs(gestureState.dy) > 8),
         onPanResponderMove: (_, gestureState) => {
           dragPosition.setValue({ x: gestureState.dx, y: gestureState.dy });
           const hoveredZone = getDropTarget(
@@ -288,7 +289,15 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
           springTokenBack();
         },
       }),
-    [answerCategory, dragPosition, getDropTarget, springTokenBack, tokenCenterX, tokenCenterY],
+    [
+      answerCategory,
+      dragPosition,
+      getDropTarget,
+      roundFinished,
+      springTokenBack,
+      tokenCenterX,
+      tokenCenterY,
+    ],
   );
 
   return (
@@ -328,41 +337,47 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
         </Text>
       ) : null}
 
-      <Pressable
-        testID='category-draggable-token'
-        accessibilityRole='button'
-        accessibilityLabel={t('games.categoryMatch.itemAccessibilityLabel', { item: itemLabel })}
-        accessibilityHint={t('games.categoryMatch.selectItemHint')}
-        accessibilityState={{
-          selected: isTokenSelected,
-          disabled: roundFinished,
-        }}
-        disabled={roundFinished}
-        onPress={() => setIsTokenSelected(true)}
+      <View
+        testID='category-drag-surface'
         style={{
           position: 'absolute',
           left: tokenStartX,
           top: tokenStartY,
           width: tokenSize,
           height: tokenSize,
+          ...(Platform.OS === 'web' ? ({ touchAction: 'none' } as ViewStyle) : {}),
         }}
         {...panResponder.panHandlers}
       >
-        <Animated.View
-          style={[
-            styles.draggableToken,
-            {
-              width: '100%',
-              height: '100%',
-              transform: [...dragPosition.getTranslateTransform(), { scale: tokenScale }],
-            },
-          ]}
+        <Pressable
+          testID='category-draggable-token'
+          accessibilityRole='button'
+          accessibilityLabel={t('games.categoryMatch.itemAccessibilityLabel', { item: itemLabel })}
+          accessibilityHint={t('games.categoryMatch.selectItemHint')}
+          accessibilityState={{
+            selected: isTokenSelected,
+            disabled: roundFinished,
+          }}
+          disabled={roundFinished}
+          onPress={() => setIsTokenSelected(true)}
+          style={{ width: '100%', height: '100%' }}
         >
-          <Text style={[styles.emojiText, { fontSize: Math.floor(tokenSize * 0.5) }]}>
-            {round.item.emoji}
-          </Text>
-        </Animated.View>
-      </Pressable>
+          <Animated.View
+            style={[
+              styles.draggableToken,
+              {
+                width: '100%',
+                height: '100%',
+                transform: [...dragPosition.getTranslateTransform(), { scale: tokenScale }],
+              },
+            ]}
+          >
+            <Text style={[styles.emojiText, { fontSize: Math.floor(tokenSize * 0.5) }]}>
+              {round.item.emoji}
+            </Text>
+          </Animated.View>
+        </Pressable>
+      </View>
 
       {!roundFinished ? (
         <View style={[styles.zoneRow, { top: zoneTop, left: boardPadding, right: boardPadding }]}>

@@ -110,9 +110,16 @@ describe('CategoryMatchBoard', () => {
     fireEvent.press(screen.getByTestId('category-zone-food'));
     expect(onCorrectMatch).toHaveBeenCalledTimes(1);
     expect(mockPlayMatchSound).toHaveBeenCalledTimes(1);
+    expect(
+      screen
+        .getByTestId('category-drag-surface')
+        .props.onMoveShouldSetPanResponder({}, { dx: 12, dy: 0 }),
+    ).toBe(false);
 
     fireEvent.press(screen.getByTestId('category-match-next'));
-    const nextToken = screen.getByTestId('category-draggable-token');
+    const nextToken = screen.getByTestId('category-drag-surface');
+    expect(screen.getByTestId('category-draggable-token').props.onPanResponderMove).toBeUndefined();
+    expect(nextToken.props.onMoveShouldSetPanResponder({}, { dx: 12, dy: 0 })).toBe(true);
     act(() => {
       nextToken.props.onPanResponderMove({}, { dx: -86, dy: 128 });
       nextToken.props.onPanResponderRelease({}, { dx: -86, dy: 128 });
