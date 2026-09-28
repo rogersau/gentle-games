@@ -83,6 +83,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   const tokenCenterX = tokenStartX + tokenSize / 2;
   const tokenCenterY = tokenStartY + tokenSize / 2;
   const zoneWidth = (width - boardPadding * 2 - zoneGap * (categoryCount - 1)) / categoryCount;
+  const nextButtonWidth = Math.min(320, width - Space.md * 2);
 
   const zones: DropZone[] = useMemo(
     () =>
@@ -339,14 +340,16 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
 
       <View
         testID='category-drag-surface'
-        style={{
-          position: 'absolute',
-          left: tokenStartX,
-          top: tokenStartY,
-          width: tokenSize,
-          height: tokenSize,
-          ...(Platform.OS === 'web' ? ({ touchAction: 'none' } as ViewStyle) : {}),
-        }}
+        style={[
+          styles.dragSurface,
+          {
+            left: tokenStartX,
+            top: tokenStartY,
+            width: tokenSize,
+            height: tokenSize,
+            ...(Platform.OS === 'web' ? ({ touchAction: 'none' } as ViewStyle) : {}),
+          },
+        ]}
         {...panResponder.panHandlers}
       >
         <Pressable
@@ -413,14 +416,25 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
       ) : null}
 
       {roundFinished ? (
-        <AppButton
-          label={t('games.categoryMatch.next')}
-          onPress={handleNextRound}
-          testID='category-match-next'
-          accessibilityHint={t('games.categoryMatch.nextHint')}
-          fullWidth
-          style={styles.nextButton}
-        />
+        <View
+          testID='category-match-next-wrap'
+          style={[
+            styles.nextButtonWrap,
+            {
+              left: (width - nextButtonWidth) / 2,
+              top: tokenStartY + tokenSize + Space.lg,
+              width: nextButtonWidth,
+            },
+          ]}
+        >
+          <AppButton
+            label={t('games.categoryMatch.next')}
+            onPress={handleNextRound}
+            testID='category-match-next'
+            accessibilityHint={t('games.categoryMatch.nextHint')}
+            fullWidth
+          />
+        </View>
       ) : null}
     </View>
   );
@@ -453,6 +467,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       textAlign: 'center',
       marginTop: Space.xs,
     },
+    dragSurface: { position: 'absolute', zIndex: 3, elevation: 3 },
     draggableToken: {
       borderRadius: Radius.xl,
       backgroundColor: colors.cardFront,
@@ -488,5 +503,5 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       ...TypeStyle.button,
       textAlign: 'center',
     },
-    nextButton: { position: 'absolute', left: Space.md, right: Space.md, bottom: Space.sm },
+    nextButtonWrap: { position: 'absolute' },
   });
