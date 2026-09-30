@@ -13,6 +13,7 @@ import { useThemeColors } from '../../utils/theme';
 import { Space, Radius, Shadow, TypeStyle, HitTarget } from '../tokens';
 import { ThemeColors } from '../../types';
 import { useTranslation } from 'react-i18next';
+import { useAnimationEnabled } from '../animations';
 
 interface AppModalProps {
   visible: boolean;
@@ -46,12 +47,16 @@ export const AppModal: React.FC<AppModalProps> = ({
   const { colors } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { t } = useTranslation();
+  const animationsEnabled = useAnimationEnabled();
 
   const displayedCloseLabel = closeLabel ?? t('common.close');
 
+  // Do not leave an invisible portal/focus trap waiting for a CSS animation-end event.
+  if (!visible) return null;
+
   return (
     <Modal
-      animationType='fade'
+      animationType={animationsEnabled ? 'fade' : 'none'}
       transparent
       visible={visible}
       onRequestClose={disabled ? () => undefined : onClose}

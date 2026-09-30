@@ -3,6 +3,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { PicnicBasket } from './PicnicBasket';
 
 jest.mock('../../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
       surface: '#FFFFFF',

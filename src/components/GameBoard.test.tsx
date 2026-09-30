@@ -197,6 +197,17 @@ describe('GameBoard', () => {
     }
   });
 
+  it('preserves turned cards when sound settings change', () => {
+    const screen = render(<GameBoard onGameComplete={jest.fn()} />);
+    fireEvent.press(screen.getByTestId('tile-1a'));
+    expect(screen.getByText('🐰')).toBeTruthy();
+    mockSettings.soundEnabled = !mockSettings.soundEnabled;
+    mockSettings.gameSettings = { 'memory-snap': { ...mockSettings.gameSettings['memory-snap'] } };
+    screen.rerender(<GameBoard onGameComplete={jest.fn()} />);
+    expect(screen.getByText('🐰')).toBeTruthy();
+    expect(mockedGenerateTiles).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps full tile grid height within the board bounds', () => {
     mockedCalculateGridDimensions.mockReturnValue({ cols: 3, rows: 4 });
     mockSettings.gameSettings['memory-snap'].pairCount = 6;
@@ -224,6 +235,12 @@ describe('GameBoard', () => {
     });
 
     expect(screen.getByText('All pairs are together.')).toBeTruthy();
+    expect(screen.getByTestId('memory-complete')).toBeTruthy();
+    expect(screen.getByTestId('memory-board')).toBeTruthy();
+    expect(screen.queryByTestId('memory-snap-hint')).toBeNull();
+    fireEvent.press(screen.getByText('games.memorySnap.playAgain'));
+    expect(screen.queryByTestId('memory-complete')).toBeNull();
+    expect(screen.getAllByText('?')).toHaveLength(2);
     expect(screen.queryByText(/games\.memorySnap\.completedIn/)).toBeNull();
     screen.unmount();
     jest.runOnlyPendingTimers();
@@ -307,7 +324,7 @@ describe('GameBoard', () => {
         jest.advanceTimersByTime(1000);
       });
 
-      mockSettings.difficulty = 'medium';
+      mockSettings.gameSettings['memory-snap'].pairCount = 3;
       mockSettings.gameSettings = {
         ...mockSettings.gameSettings,
         'memory-snap': { ...mockSettings.gameSettings['memory-snap'] },
@@ -360,7 +377,7 @@ describe('GameBoard', () => {
       });
 
       mockSettings.gameSettings['memory-snap'].previewMode = '4-seconds';
-      mockSettings.difficulty = 'medium';
+      mockSettings.gameSettings['memory-snap'].pairCount = 3;
       mockSettings.gameSettings = {
         ...mockSettings.gameSettings,
         'memory-snap': { ...mockSettings.gameSettings['memory-snap'] },
@@ -500,6 +517,12 @@ describe('GameBoard', () => {
 
     expect(onGameComplete).toHaveBeenCalledTimes(1);
     expect(screen.getByText('All pairs are together.')).toBeTruthy();
+    expect(screen.getByTestId('memory-complete')).toBeTruthy();
+    expect(screen.getByTestId('memory-board')).toBeTruthy();
+    expect(screen.queryByTestId('memory-snap-hint')).toBeNull();
+    fireEvent.press(screen.getByText('games.memorySnap.playAgain'));
+    expect(screen.queryByTestId('memory-complete')).toBeNull();
+    expect(screen.getAllByText('?')).toHaveLength(2);
     expect(screen.queryByText(/moves/i)).toBeNull();
     screen.unmount();
     mockSettings.pressureFreeMode = false;

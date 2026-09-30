@@ -8,12 +8,14 @@ import { KeepyUppyBoard, KeepyUppyBoardRef } from '../components/KeepyUppyBoard'
 import { KeepyUppyBounds, MAX_BALLOONS } from '../utils/keepyUppyLogic';
 import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
-import { AppScreen, AppHeader, AppButton } from '../ui/components';
+import { AppScreen, GameHeader, AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useAnimationEnabled } from '../ui/animations';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
 import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 import { getGameSettings } from '../games/settings';
+
+const MILESTONES = [10, 25, 50];
 
 export const KeepyUppyScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -21,6 +23,7 @@ export const KeepyUppyScreen: React.FC = () => {
   const { showPressureMetrics, showMilestoneCelebrations } = getGamePresentationPolicy(settings);
   const { colors } = useThemeColors();
   const motionEnabled = useAnimationEnabled();
+  const [paused, setPaused] = useState(false);
   const { t } = useTranslation();
   const { showMochi } = useMochi();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -31,8 +34,6 @@ export const KeepyUppyScreen: React.FC = () => {
   const [popped, setPopped] = useState(0);
   const tapCountRef = useRef(0);
   const lastPhraseIndexRef = useRef(-1);
-
-  const MILESTONES = [10, 25, 50];
 
   const pickPhrase = (phrases: string[], lastIndex: number): { phrase: string; index: number } => {
     let idx: number;
@@ -61,7 +62,7 @@ export const KeepyUppyScreen: React.FC = () => {
   const bounds = useMemo<KeepyUppyBounds>(() => {
     return calculateGameBoardSize(viewport, {
       horizontalPadding: Space.md * 2,
-      verticalReserve: 208,
+      verticalReserve: 148,
       compactMinHeight: 220,
       maxHeightRatio: 0.68,
     });
@@ -72,9 +73,12 @@ export const KeepyUppyScreen: React.FC = () => {
   };
 
   return (
-    <AppScreen scroll onLayout={onLayout} testID='keepy-uppy-screen'>
-      <AppHeader title={t('games.keepyUppy.title')} onBack={() => navigation.goBack()} />
-
+    <AppScreen
+      scroll
+      onLayout={onLayout}
+      testID='keepy-uppy-screen'
+      header={<GameHeader title={t('games.keepyUppy.title')} onBack={() => navigation.goBack()} />}
+    >
       <View style={styles.content}>
         <Text style={styles.subtitle} accessibilityRole='text'>
           {t('games.keepyUppy.subtitle')}
@@ -101,15 +105,27 @@ export const KeepyUppyScreen: React.FC = () => {
             </Text>
           </View>
         ) : null}
-        <AppButton
-          label={t('games.keepyUppy.addBalloon')}
-          variant='secondary'
-          size='sm'
-          onPress={handleAddBalloon}
-          disabled={balloonCount >= MAX_BALLOONS}
-          accessibilityHint={t('games.keepyUppy.addBalloonHint')}
-          style={{ marginBottom: Space.sm }}
-        />
+        <View style={styles.controls}>
+          <AppButton
+            icon='add'
+            label={t('games.keepyUppy.addBalloon')}
+            variant='secondary'
+            size='sm'
+            onPress={handleAddBalloon}
+            disabled={balloonCount >= MAX_BALLOONS}
+            accessibilityHint={t('games.keepyUppy.addBalloonHint')}
+            style={{ marginBottom: Space.sm }}
+          />
+          {motionEnabled ? (
+            <AppButton
+              icon={paused ? 'play' : 'pause'}
+              label={t(paused ? 'common.resumeMovement' : 'common.pauseMovement')}
+              variant='ghost'
+              size='sm'
+              onPress={() => setPaused((current) => !current)}
+            />
+          ) : null}
+        </View>
 
         <KeepyUppyBoard
           ref={boardRef}
@@ -118,7 +134,7 @@ export const KeepyUppyScreen: React.FC = () => {
           onBalloonCountChange={setBalloonCount}
           onPoppedChange={setPopped}
           easyMode={getGameSettings(settings, 'keepy-uppy').liftMode === 'gentle'}
-          motionEnabled={motionEnabled}
+          motionEnabled={motionEnabled && !paused}
         />
       </View>
     </AppScreen>
@@ -128,6 +144,9 @@ export const KeepyUppyScreen: React.FC = () => {
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     content: {
+      width: '100%',
+      maxWidth: 760,
+      alignSelf: 'center',
       flex: 1,
       alignItems: 'center',
       paddingHorizontal: Space.md,
@@ -138,6 +157,13 @@ const createStyles = (colors: ThemeColors) =>
       ...TypeStyle.bodySm,
       color: colors.textLight,
       textAlign: 'center',
+      marginBottom: Space.sm,
+    },
+    controls: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: Space.sm,
       marginBottom: Space.sm,
     },
     statsRow: {

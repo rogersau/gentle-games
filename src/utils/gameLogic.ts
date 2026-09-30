@@ -44,7 +44,7 @@ export const calculateMemorySnapBoardSize = (
   const height = Math.max(viewport.height - 220 - bottomInset, 1);
   const tileSize = Math.max(
     1,
-    Math.floor(Math.min((width - cols * 8) / cols, (height - rows * 8) / rows)),
+    Math.floor(Math.min((width - cols * 8) / cols, Math.max(48, (height - rows * 8) / rows))),
   );
 
   return {

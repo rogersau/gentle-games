@@ -11,9 +11,10 @@ import {
 } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
 import { useScalePress } from '../animations';
-import { Space, Radius, TypeStyle, HitTarget } from '../tokens';
+import { Space, Radius, TypeStyle, HitTarget, ON_ACCENT_TEXT } from '../tokens';
 import { ThemeColors } from '../../types';
 import { ResolvedThemeMode } from '../../utils/theme';
+import { ControlIcon, ControlIconName } from './ControlIcon';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -22,6 +23,7 @@ const BUTTON_PRESS_RETENTION = { top: 12, bottom: 12, left: 12, right: 12 };
 
 interface AppButtonProps {
   label: string;
+  icon?: ControlIconName;
   onPress: () => void;
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -39,6 +41,7 @@ interface AppButtonProps {
 
 export const AppButton: React.FC<AppButtonProps> = ({
   label,
+  icon,
   onPress,
   variant = 'primary',
   size = 'md',
@@ -78,6 +81,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
         aria-checked={ariaChecked}
         testID={testID}
       >
+        {icon ? <ControlIcon name={icon} color={styles.label.color} /> : null}
         <Text style={[styles.label, textStyle]}>{label}</Text>
       </TouchableOpacity>
     </Animated.View>
@@ -85,7 +89,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
 };
 
 const sizeMap = {
-  sm: { paddingVertical: Space.base, paddingHorizontal: Space.base, minHeight: HitTarget.min - 4 },
+  sm: { paddingVertical: Space.sm, paddingHorizontal: Space.md, minHeight: HitTarget.min },
   md: { paddingVertical: Space.md, paddingHorizontal: Space.xl, minHeight: HitTarget.min },
   lg: {
     paddingVertical: Space.base,
@@ -103,14 +107,14 @@ const createStyles = (
   const sizeValues = sizeMap[size];
 
   const variantStyles: Record<ButtonVariant, { bg: string; text: string; border: string }> = {
-    primary: { bg: colors.primary, text: colors.surface, border: colors.primary },
-    secondary: { bg: colors.secondary, text: colors.surface, border: colors.secondary },
+    primary: { bg: colors.primary, text: ON_ACCENT_TEXT, border: colors.primary },
+    secondary: { bg: colors.secondary, text: ON_ACCENT_TEXT, border: colors.secondary },
     ghost: {
       bg: 'transparent',
       text: resolvedMode === 'dark' ? colors.text : colors.text,
       border: colors.border,
     },
-    danger: { bg: colors.danger, text: colors.surface, border: colors.danger },
+    danger: { bg: colors.danger, text: ON_ACCENT_TEXT, border: colors.danger },
   };
 
   const v = variantStyles[variant];
@@ -121,6 +125,8 @@ const createStyles = (
       borderRadius: Radius.full,
       borderWidth: variant === 'ghost' ? 2 : 0,
       borderColor: v.border,
+      flexDirection: 'row',
+      gap: Space.sm,
       alignItems: 'center',
       justifyContent: 'center',
       ...sizeValues,
@@ -128,6 +134,8 @@ const createStyles = (
     label: {
       ...(size === 'sm' ? TypeStyle.buttonSm : TypeStyle.button),
       color: v.text,
+      textAlign: 'center',
+      flexShrink: 1,
     },
     disabled: {
       opacity: 0.5,

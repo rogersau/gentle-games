@@ -7,13 +7,8 @@ const supportsNativeDriver = Platform.OS !== 'web';
 
 /** Returns the effective decorative-motion policy (app setting plus OS reduced motion). */
 export const useAnimationEnabled = (): boolean => {
-  let settings: { animationsEnabled?: boolean };
-  try {
-    settings = useSettings().settings;
-  } catch {
-    settings = { animationsEnabled: true };
-  }
-  const reducedMotion = typeof useReducedMotion === 'function' ? useReducedMotion() : false;
+  const { settings } = useSettings();
+  const reducedMotion = useReducedMotion();
   return settings.animationsEnabled !== false && !reducedMotion;
 };
 

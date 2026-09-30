@@ -78,6 +78,13 @@ describe('gameLogic', () => {
     });
   });
 
+  it('keeps cards tappable in landscape and lets the screen scroll vertically', () => {
+    const board = calculateMemorySnapBoardSize({ width: 568, height: 320 }, 15);
+    expect(board.tileSize).toBeGreaterThanOrEqual(48);
+    expect(board.width).toBeLessThanOrEqual(536);
+    expect(board.height).toBeGreaterThan(320 - 220);
+  });
+
   it('prioritizes animals in mixed theme', () => {
     const tiles = generateTiles('medium', 'mixed');
     const animalTiles = tiles.filter((tile) => tile.type === 'animal').length;

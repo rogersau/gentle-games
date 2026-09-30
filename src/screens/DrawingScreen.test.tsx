@@ -49,6 +49,7 @@ jest.mock('../components/DrawingCanvas', () => {
 });
 
 jest.mock('../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
       background: '#FFFEF7',
@@ -152,7 +153,7 @@ describe('DrawingScreen', () => {
     const latestProps = getLatestCanvasProps();
     const screenHeight = Dimensions.get('window').height;
     const expectedRemainingHeight = Math.max(
-      0,
+      160,
       screenHeight -
         500 -
         500 -
@@ -178,7 +179,7 @@ describe('DrawingScreen', () => {
     const latestProps = getLatestCanvasProps();
     const screenHeight = Dimensions.get('window').height;
     const expectedRemainingHeight = Math.max(
-      0,
+      160,
       screenHeight -
         44 -
         34 -
@@ -197,75 +198,23 @@ describe('DrawingScreen', () => {
     expect(getByText('common.loading')).toBeTruthy();
   });
 
-  it('loads saved drawing and shows continue modal', async () => {
-    const savedDrawing = historyA;
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(savedDrawing));
-
-    const { getByText } = render(React.createElement(DrawingScreen));
-
-    await waitFor(() => {
-      expect(getByText('Welcome Back')).toBeTruthy();
-      expect(getByText('Continue where you left off?')).toBeTruthy();
-    });
+  it('reopens the saved drawing without a blocking dialog', async () => {
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(historyA));
+    const screen = render(<DrawingScreen />);
+    await waitFor(() => expect(getLatestCanvasProps().initialHistory).toEqual(historyA));
+    expect(screen.queryByText('Welcome Back')).toBeNull();
+    expect(AsyncStorage.removeItem).not.toHaveBeenCalled();
+    screen.rerender(<DrawingScreen />);
+    expect(getLatestCanvasProps().initialHistory).toEqual(historyA);
   });
 
-  it('continues with saved drawing when continue button pressed', async () => {
-    const savedDrawing = historyA;
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(savedDrawing));
-
-    const { getByText, queryByText } = render(React.createElement(DrawingScreen));
-
-    await waitFor(() => {
-      expect(getByText('Continue')).toBeTruthy();
-    });
-
-    fireEvent.press(getByText('Continue'));
-
-    await waitFor(() => {
-      expect(queryByText('Welcome Back')).toBeNull();
-    });
-  });
-
-  it('does not reopen the continue modal when the screen rerenders after continuing', async () => {
-    const savedDrawing = historyA;
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(savedDrawing));
-
-    const { getByText, queryByText, rerender } = render(React.createElement(DrawingScreen));
-
-    await waitFor(() => {
-      expect(getByText('Continue')).toBeTruthy();
-    });
-
-    fireEvent.press(getByText('Continue'));
-
-    await waitFor(() => {
-      expect(queryByText('Welcome Back')).toBeNull();
-    });
-
-    await act(async () => {
-      rerender(React.createElement(DrawingScreen));
-      await Promise.resolve();
-    });
-
-    expect(queryByText('Welcome Back')).toBeNull();
-  });
-
-  it('starts new drawing when new button pressed', async () => {
-    const savedDrawing = historyA;
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(savedDrawing));
-
-    const { getByText } = render(React.createElement(DrawingScreen));
-
-    await waitFor(() => {
-      expect(getByText('New Drawing')).toBeTruthy();
-    });
-
-    fireEvent.press(getByText('New Drawing'));
-
-    await waitFor(() => {
-      expect(AsyncStorage.removeItem).toHaveBeenCalledWith('@gentle_match_saved_drawing');
-    });
-    expect(mockClearCanvas).toHaveBeenCalled();
+  it('keeps low marks in an existing drawing reachable below the larger toolbar', async () => {
+    const saved = [
+      { kind: 'shape', id: 'low-mark', type: 'circle', x: 80, y: 700, size: 60, color: '#FF6B6B' },
+    ];
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(saved));
+    render(<DrawingScreen />);
+    await waitFor(() => expect(getLatestCanvasProps().height).toBeGreaterThanOrEqual(730));
   });
 
   it('handles no saved drawing gracefully', async () => {
@@ -365,11 +314,11 @@ describe('DrawingScreen', () => {
   it('flushes the latest history before navigating back', async () => {
     jest.useFakeTimers();
     mockCanvasHistory = historyB;
-    const { getByLabelText } = render(React.createElement(DrawingScreen));
+    const { getByTestId } = render(React.createElement(DrawingScreen));
 
     await waitFor(() => {
       expect(mockDrawingCanvas).toHaveBeenCalled();
-      expect(getByLabelText('← Back')).toBeTruthy();
+      expect(getByTestId('game-home')).toBeTruthy();
     });
 
     const latestProps = getLatestCanvasProps();
@@ -382,7 +331,7 @@ describe('DrawingScreen', () => {
     expect(AsyncStorage.setItem).not.toHaveBeenCalled();
 
     await act(async () => {
-      fireEvent.press(getByLabelText('← Back'));
+      fireEvent.press(getByTestId('game-home'));
       await Promise.resolve();
     });
 

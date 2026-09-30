@@ -1,141 +1,60 @@
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import { initializeSounds, playFlipSound, unloadSounds } from './sounds';
 import { Settings } from '../types';
 
-// Mock the sounds module
-jest.mock('./sounds', () => ({
-  initializeSounds: jest.fn(() => Promise.resolve()),
-  playFlipSound: jest.fn(() => Promise.resolve()),
-  playMatchSound: jest.fn(() => Promise.resolve()),
-  playCompleteSound: jest.fn(() => Promise.resolve()),
-  playBubblePopSound: jest.fn(() => Promise.resolve()),
-  unloadSounds: jest.fn(() => Promise.resolve()),
-}));
+jest.unmock('./sounds');
 
-// Import the mocked module
-import {
-  initializeSounds,
-  playFlipSound,
-  playMatchSound,
-  playCompleteSound,
-  playBubblePopSound,
-  unloadSounds,
-} from './sounds';
+const settings = { soundEnabled: true, soundVolume: 0.7 } as Settings;
 
-describe('sounds (mocked)', () => {
-  beforeEach(() => {
+describe('real sound effect lifecycle', () => {
+  beforeEach(async () => {
+    await unloadSounds();
     jest.clearAllMocks();
   });
+  afterEach(() => unloadSounds());
 
-  describe('initializeSounds', () => {
-    it('can be called without errors', async () => {
-      await initializeSounds();
-      expect(initializeSounds).toHaveBeenCalled();
+  it('respects the device silent switch and does not recreate loaded players', async () => {
+    await initializeSounds();
+    await initializeSounds();
+    expect(setAudioModeAsync).toHaveBeenCalledWith({
+      playsInSilentMode: false,
+      shouldPlayInBackground: false,
     });
+    expect(createAudioPlayer).toHaveBeenCalledTimes(4);
   });
 
-  describe('playFlipSound', () => {
-    it('can be called with settings', async () => {
-      const settings: Settings = {
-        difficulty: 'medium',
-        theme: 'animals',
-        soundEnabled: true,
-        soundVolume: 0.7,
-        animationsEnabled: true,
-        colorMode: 'light',
-        showCardPreview: false,
-        keepyUppyEasyMode: true,
-        hiddenGames: [],
-        parentTimerMinutes: 0,
-        language: 'en-AU',
-        enableUnfinishedGames: false,
-        reducedMotionEnabled: false,
-        telemetryEnabled: false,
-        showMochiInGames: true,
-      };
-
-      await playFlipSound(settings);
-      expect(playFlipSound).toHaveBeenCalledWith(settings);
-    });
+  it('does not play muted effects and caps playback volume', async () => {
+    await initializeSounds();
+    const player = jest.mocked(createAudioPlayer).mock.results[0].value;
+    await playFlipSound({ ...settings, soundEnabled: false });
+    expect(player.play).not.toHaveBeenCalled();
+    await playFlipSound(settings);
+    expect(player.volume).toBeCloseTo(0.7 * 0.5 * 0.6);
+    expect(player.seekTo).toHaveBeenCalledWith(0);
+    expect(player.play).toHaveBeenCalledTimes(1);
   });
 
-  describe('playMatchSound', () => {
-    it('can be called with settings', async () => {
-      const settings: Settings = {
-        difficulty: 'medium',
-        theme: 'animals',
-        soundEnabled: true,
-        soundVolume: 0.7,
-        animationsEnabled: true,
-        colorMode: 'light',
-        showCardPreview: false,
-        keepyUppyEasyMode: true,
-        hiddenGames: [],
-        parentTimerMinutes: 0,
-        language: 'en-AU',
-        enableUnfinishedGames: false,
-        reducedMotionEnabled: false,
-        telemetryEnabled: false,
-        showMochiInGames: true,
-      };
-
-      await playMatchSound(settings);
-      expect(playMatchSound).toHaveBeenCalledWith(settings);
-    });
+  it('cancels player creation if sounds are disabled while audio mode setup is pending', async () => {
+    let finishSetup!: () => void;
+    jest.mocked(setAudioModeAsync).mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishSetup = resolve;
+        }),
+    );
+    const initialize = initializeSounds();
+    await unloadSounds();
+    finishSetup();
+    await initialize;
+    expect(createAudioPlayer).not.toHaveBeenCalled();
   });
 
-  describe('playCompleteSound', () => {
-    it('can be called with settings', async () => {
-      const settings: Settings = {
-        difficulty: 'medium',
-        theme: 'animals',
-        soundEnabled: true,
-        soundVolume: 0.7,
-        animationsEnabled: true,
-        colorMode: 'light',
-        showCardPreview: false,
-        keepyUppyEasyMode: true,
-        hiddenGames: [],
-        parentTimerMinutes: 0,
-        language: 'en-AU',
-        enableUnfinishedGames: false,
-        reducedMotionEnabled: false,
-        telemetryEnabled: false,
-        showMochiInGames: true,
-      };
-
-      await playCompleteSound(settings);
-      expect(playCompleteSound).toHaveBeenCalledWith(settings);
-    });
-  });
-
-  describe('playBubblePopSound', () => {
-    it('can be called with settings', async () => {
-      const settings: Settings = {
-        difficulty: 'medium',
-        theme: 'animals',
-        soundEnabled: true,
-        soundVolume: 0.7,
-        animationsEnabled: true,
-        colorMode: 'light',
-        showCardPreview: false,
-        keepyUppyEasyMode: true,
-        hiddenGames: [],
-        parentTimerMinutes: 0,
-        language: 'en-AU',
-        enableUnfinishedGames: false,
-        reducedMotionEnabled: false,
-        telemetryEnabled: false,
-        showMochiInGames: true,
-      };
-
-      await playBubblePopSound(settings);
-      expect(playBubblePopSound).toHaveBeenCalledWith(settings);
-    });
-  });
-
-  describe('unloadSounds', () => {
-    it('can be called without errors', async () => {
-      await unloadSounds();
-      expect(unloadSounds).toHaveBeenCalled();
-    });
+  it('removes loaded players and stops future playback on unload', async () => {
+    await initializeSounds();
+    const players = jest.mocked(createAudioPlayer).mock.results.map(({ value }) => value);
+    await unloadSounds();
+    for (const player of players) expect(player.remove).toHaveBeenCalledTimes(1);
+    await playFlipSound(settings);
+    for (const player of players) expect(player.play).not.toHaveBeenCalled();
   });
 });

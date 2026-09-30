@@ -8,11 +8,13 @@ import { useSettings } from '../context/SettingsContext';
 import { useMochi } from '../hooks/useMochi';
 import { playBubblePopSound } from '../utils/sounds';
 import { useReducedMotion, useThemeColors } from '../utils/theme';
-import { AppScreen, AppHeader } from '../ui/components';
+import { AppScreen, GameHeader, AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
 import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 import { getGameSettings } from '../games/settings';
+
+const MILESTONES = [10, 25, 50];
 
 export const BubbleScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -31,6 +33,7 @@ export const BubbleScreen: React.FC = () => {
   const { t } = useTranslation();
   const motionEnabled = !useReducedMotion();
   const bubbleSettings = getGameSettings(settings, 'bubble-pop');
+  const [stillBubbles, setStillBubbles] = useState(bubbleSettings.motion === 'still');
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [poppedCount, setPoppedCount] = useState(0);
   const popCountRef = useRef(0);
@@ -55,8 +58,6 @@ export const BubbleScreen: React.FC = () => {
     return { phrase: phrases[idx], index: idx };
   };
 
-  const MILESTONES = [10, 25, 50];
-
   const handleBubblePop = useCallback(() => {
     setPoppedCount((count) => count + 1);
     popCountRef.current += 1;
@@ -76,13 +77,29 @@ export const BubbleScreen: React.FC = () => {
   }, [settings, showMilestoneCelebrations, showMochi, t]);
 
   return (
-    <AppScreen scroll onLayout={onLayout} testID='bubble-screen'>
-      <AppHeader title={t('games.bubblePop.title')} onBack={() => navigation.goBack()} />
-
+    <AppScreen
+      scroll
+      onLayout={onLayout}
+      testID='bubble-screen'
+      header={<GameHeader title={t('games.bubblePop.title')} onBack={() => navigation.goBack()} />}
+    >
       <View style={styles.content}>
         <Text style={styles.subtitle} accessibilityRole='text'>
           {t('games.bubblePop.subtitle')}
         </Text>
+        {motionEnabled ? (
+          <AppButton
+            icon={stillBubbles ? 'play' : 'pause'}
+            label={t(
+              stillBubbles ? 'games.bubblePop.movingBubbles' : 'games.bubblePop.stillBubbles',
+            )}
+            variant='ghost'
+            size='sm'
+            testID='bubble-motion-toggle'
+            onPress={() => setStillBubbles((current) => !current)}
+            style={{ marginBottom: Space.sm }}
+          />
+        ) : null}
         {showPressureMetrics ? (
           <Text
             style={styles.counter}
@@ -101,7 +118,8 @@ export const BubbleScreen: React.FC = () => {
             minActiveBubbles={bubbleSettings.density === 'sparse' ? 1 : 2}
             maxActiveBubbles={bubbleSettings.density === 'sparse' ? 4 : 12}
             onBubblePop={handleBubblePop}
-            motionEnabled={motionEnabled && bubbleSettings.motion === 'moving'}
+            motionEnabled={motionEnabled && !stillBubbles}
+            showModeToggle={false}
             isFocused={isFocused}
           />
         </View>
@@ -113,6 +131,9 @@ export const BubbleScreen: React.FC = () => {
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     content: {
+      width: '100%',
+      maxWidth: 760,
+      alignSelf: 'center',
       flex: 1,
       alignItems: 'center',
       paddingHorizontal: Space.md,

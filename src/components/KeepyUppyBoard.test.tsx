@@ -8,6 +8,7 @@ const mockOnBalloonCountChange = jest.fn();
 const mockOnPoppedChange = jest.fn();
 
 jest.mock('../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
       background: '#FFFEF7',

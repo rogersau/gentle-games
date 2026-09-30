@@ -35,6 +35,7 @@ const DRAG = 0.988;
 const MAX_SPEED = 65;
 const GLOBE_PADDING = 10;
 const BOUNCE = 0.4;
+const FRAME_INTERVAL_MS = 1000 / 30;
 const PARTICLE_COLORS = ['#FF5D8F', '#6BCBFF', '#FFD166', '#B8F559', '#C792EA', '#FF9E5E'];
 const PARTICLE_SHAPES: GlitterParticle['shape'][] = ['circle', 'square', 'diamond', 'star'];
 const FALL_SPEED_GRAVITY: Record<GlitterFallSpeed, number> = {
@@ -75,13 +76,19 @@ export function useGlitterParticles({
   const rafRef = useRef<number | null>(null);
   const particlesRef = useRef<GlitterParticle[]>([]);
   const initializedRef = useRef(false);
+  const lastFrameTimeRef = useRef<number | null>(null);
+  const previousBoundsRef = useRef({
+    centerX: canvasWidth / 2,
+    centerY: canvasHeight / 2,
+    radius: Math.max(0, Math.min(canvasWidth, canvasHeight) / 2 - GLOBE_PADDING),
+  });
   const stepParticlesRef = useRef<
     (currentParticles: GlitterParticle[], dt: number) => GlitterParticle[]
   >(() => []);
 
   const centerX = canvasWidth / 2;
   const centerY = canvasHeight / 2;
-  const globeRadius = Math.min(canvasWidth, canvasHeight) / 2 - GLOBE_PADDING;
+  const globeRadius = Math.max(0, Math.min(canvasWidth, canvasHeight) / 2 - GLOBE_PADDING);
 
   const stepParticles = useCallback(
     (currentParticles: GlitterParticle[], dt: number): GlitterParticle[] => {
@@ -129,10 +136,19 @@ export function useGlitterParticles({
 
   const startAnimation = useCallback(() => {
     if (rafRef.current !== null) return;
-    const animate = () => {
-      const updated = stepParticlesRef.current(particlesRef.current, 1 / 60);
-      particlesRef.current = updated;
-      setParticles(updated);
+    lastFrameTimeRef.current = null;
+    const animate = (timestamp: number) => {
+      const previousTime = lastFrameTimeRef.current;
+      if (previousTime === null) lastFrameTimeRef.current = timestamp;
+      else if (timestamp - previousTime >= FRAME_INTERVAL_MS - 0.5) {
+        // Bound both physics work and SVG/React updates. Use elapsed time so
+        // motion keeps the same speed on displays with different refresh rates.
+        const dt = Math.min((timestamp - previousTime) / 1000, 0.1);
+        lastFrameTimeRef.current = timestamp;
+        const updated = stepParticlesRef.current(particlesRef.current, dt);
+        particlesRef.current = updated;
+        setParticles(updated);
+      }
       rafRef.current = requestAnimationFrame(animate);
     };
     rafRef.current = requestAnimationFrame(animate);
@@ -142,6 +158,7 @@ export function useGlitterParticles({
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
+      lastFrameTimeRef.current = null;
     }
   }, []);
 
@@ -166,7 +183,23 @@ export function useGlitterParticles({
   useEffect(() => {
     if (!initializedRef.current) return;
 
-    const nextParticles = [...particlesRef.current];
+    const previousBounds = previousBoundsRef.current;
+    const resized =
+      previousBounds.centerX !== centerX ||
+      previousBounds.centerY !== centerY ||
+      previousBounds.radius !== globeRadius;
+    const nextParticles = particlesRef.current.map((particle) => {
+      if (!resized) return particle;
+      const oldRadius = Math.max(1, previousBounds.radius - particle.radius);
+      const newRadius = Math.max(0, globeRadius - particle.radius);
+      const scale = newRadius / oldRadius;
+      return {
+        ...particle,
+        x: centerX + (particle.x - previousBounds.centerX) * scale,
+        y: centerY + (particle.y - previousBounds.centerY) * scale,
+      };
+    });
+    previousBoundsRef.current = { centerX, centerY, radius: globeRadius };
     if (nextParticles.length < particleCount) {
       nextParticles.push(
         ...Array.from({ length: particleCount - nextParticles.length }, (_, index) =>
@@ -179,7 +212,7 @@ export function useGlitterParticles({
 
     particlesRef.current = nextParticles;
     setParticles(nextParticles);
-  }, [centerX, centerY, colorCount, particleCount]);
+  }, [centerX, centerY, colorCount, globeRadius, particleCount]);
 
   const syncParticles = useCallback((particles: GlitterParticle[]) => {
     particlesRef.current = particles;

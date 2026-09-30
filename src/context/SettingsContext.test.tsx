@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Override the global mock — this test exercises the real SettingsContext
 jest.unmock('./SettingsContext');
-import { SettingsProvider, useSettings } from './SettingsContext';
+import { defaultSettings, SettingsProvider, useSettings } from './SettingsContext';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   getItem: jest.fn(),
@@ -166,6 +166,8 @@ describe('SettingsContext', () => {
     await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
 
     expect(screen.getByTestId('telemetry').props.children).toBe('false');
+    expect(screen.getByTestId('sound').props.children).toBe('false');
+    expect(defaultSettings.showMochiInGames).toBe(false);
     expect(screen.getByTestId('pressure-free').props.children).toBe('true');
     expect(screen.getByTestId('difficulty').props.children).toBe('easy');
     expect(screen.getByTestId('memory-pairs').props.children).toBe('2');
@@ -607,7 +609,9 @@ describe('SettingsContext', () => {
   });
 
   it('merges rapid updates and serialises delayed writes', async () => {
-    storage.getItem.mockResolvedValueOnce(null);
+    storage.getItem.mockResolvedValueOnce(
+      JSON.stringify({ ...defaultSettings, soundEnabled: true }),
+    );
     const pending: Array<{ value: string; resolve: () => void }> = [];
     storage.setItem.mockImplementation((_key: string, value: string) => {
       return new Promise<void>((resolve) => pending.push({ value, resolve }));

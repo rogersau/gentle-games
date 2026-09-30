@@ -104,9 +104,18 @@ describe('BubbleScreen', () => {
     expect(mockBubbleProps.motionEnabled).toBe(false);
   });
 
+  it('switches to still bubbles and back without leaving the game', () => {
+    const screen = render(<BubbleScreen />);
+    fireEvent.press(screen.getByTestId('bubble-motion-toggle'));
+    expect(mockBubbleProps.motionEnabled).toBe(false);
+    fireEvent.press(screen.getByTestId('bubble-motion-toggle'));
+    expect(mockBubbleProps.motionEnabled).toBe(true);
+    expect(mockGoBack).not.toHaveBeenCalled();
+  });
+
   it('goes back when the back button is pressed', () => {
     const screen = render(<BubbleScreen />);
-    fireEvent.press(screen.getByText('← Back'));
+    fireEvent.press(screen.getByTestId('game-home'));
 
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });

@@ -6,6 +6,7 @@ import { TrainEngine } from './TrainEngine';
 import { TrainTrack } from './TrainTrack';
 
 jest.mock('../../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
       primary: '#A8D8EA',

@@ -35,6 +35,7 @@ jest.mock('react-i18next', () => ({
 }));
 
 jest.mock('../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
       background: '#FFFFFF',

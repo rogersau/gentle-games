@@ -46,7 +46,7 @@ const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
       setShowFront(!isFaceUp);
       scaleAnim.setValue(1);
     }
-  }, [isFaceUp, animationsEnabled]);
+  }, [isFaceUp, animationsEnabled, scaleAnim]);
 
   const tileStyle = tile.isMatched
     ? styles.tileMatched

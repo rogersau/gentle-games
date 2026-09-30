@@ -18,6 +18,7 @@ jest.mock('expo-sensors', () => ({
 }));
 
 jest.mock('../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
       background: '#FFFEF7',

@@ -47,7 +47,10 @@ export const Mochi: React.FC<MochiProps> = ({
   const sparkle1 = useRef(new Animated.Value(0)).current;
   const sparkle2 = useRef(new Animated.Value(0)).current;
   const sparkle3 = useRef(new Animated.Value(0)).current;
-  const sparkles = [sparkle1, sparkle2, sparkle3];
+  const sparkles = React.useMemo(
+    () => [sparkle1, sparkle2, sparkle3],
+    [sparkle1, sparkle2, sparkle3],
+  );
   const sparkleAnimRefs = useRef<Animated.CompositeAnimation[]>([]);
   const eyeOpenAnim = useRef(new Animated.Value(0)).current;
   const prevBreathingPhase = useRef<typeof breathingPhase>(null);
@@ -161,7 +164,7 @@ export const Mochi: React.FC<MochiProps> = ({
         sparkleAnimRefs.current = [];
       };
     }
-  }, [variant, animate, floatAnim, scaleAnim, bounceAnim, sparkle1, sparkle2, sparkle3]);
+  }, [variant, animate, isBreathing, floatAnim, scaleAnim, bounceAnim, sparkles]);
 
   const animatedStyle = {
     transform: [{ translateY: floatAnim }, { scale: scaleAnim }, { translateY: bounceAnim }],

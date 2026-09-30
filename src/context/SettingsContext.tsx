@@ -37,7 +37,7 @@ interface SettingsContextType {
 export const defaultSettings: Settings = {
   settingsVersion: SETTINGS_VERSION,
   animationsEnabled: true,
-  soundEnabled: true,
+  soundEnabled: false,
   soundVolume: 0.5,
   difficulty: 'easy',
   theme: 'mixed',
@@ -50,7 +50,7 @@ export const defaultSettings: Settings = {
   language: DEFAULT_LANGUAGE,
   reducedMotionEnabled: false,
   telemetryEnabled: false,
-  showMochiInGames: true,
+  showMochiInGames: false,
   pressureFreeMode: true,
   gameSettings: DEFAULT_GAME_SETTINGS,
 };

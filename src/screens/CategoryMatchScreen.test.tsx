@@ -9,6 +9,7 @@ let mockSettings: any = {
 };
 
 jest.mock('../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
       background: '#FFFEF7',
@@ -93,7 +94,7 @@ describe('CategoryMatchScreen', () => {
     fireEvent.press(screen.getByText('Start Sorting'));
     expect(screen.getByTestId('category-board')).toBeTruthy();
     expect(screen.getByText('category-count-2')).toBeTruthy();
-    fireEvent.press(screen.getByText('← Back'));
+    fireEvent.press(screen.getByTestId('game-home'));
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 

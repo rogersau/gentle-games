@@ -12,40 +12,43 @@ export function usePicnicDrag({ onDrop, dropZoneBounds }: UsePicnicDragOptions) 
   const [isOverBasket, setIsOverBasket] = useState(false);
 
   const dragItemIdRef = useRef<string | null>(null);
+  const isOverBasketRef = useRef(false);
 
   const panResponder = useMemo(
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
-        onPanResponderGrant: (evt) => {},
         onPanResponderMove: (evt) => {
           const { pageX, pageY } = evt.nativeEvent;
           setDragPosition({ x: pageX, y: pageY });
 
-          if (dropZoneBounds) {
-            const over =
-              pageX >= dropZoneBounds.x &&
-              pageX <= dropZoneBounds.x + dropZoneBounds.width &&
-              pageY >= dropZoneBounds.y &&
-              pageY <= dropZoneBounds.y + dropZoneBounds.height;
-            setIsOverBasket(over);
-          }
+          const over = Boolean(
+            dropZoneBounds &&
+            pageX >= dropZoneBounds.x &&
+            pageX <= dropZoneBounds.x + dropZoneBounds.width &&
+            pageY >= dropZoneBounds.y &&
+            pageY <= dropZoneBounds.y + dropZoneBounds.height,
+          );
+          isOverBasketRef.current = over;
+          setIsOverBasket(over);
         },
         onPanResponderRelease: () => {
           if (dragItemIdRef.current) {
-            const valid = isOverBasket;
+            const valid = isOverBasketRef.current;
             onDrop(dragItemIdRef.current, valid);
           }
           setActiveDrag(null);
           setDragPosition({ x: 0, y: 0 });
           setIsOverBasket(false);
+          isOverBasketRef.current = false;
           dragItemIdRef.current = null;
         },
         onPanResponderTerminate: () => {
           setActiveDrag(null);
           setDragPosition({ x: 0, y: 0 });
           setIsOverBasket(false);
+          isOverBasketRef.current = false;
           dragItemIdRef.current = null;
         },
       }),
@@ -57,6 +60,8 @@ export function usePicnicDrag({ onDrop, dropZoneBounds }: UsePicnicDragOptions) 
     setActiveDrag: (id: string | null) => {
       setActiveDrag(id);
       dragItemIdRef.current = id;
+      isOverBasketRef.current = false;
+      setIsOverBasket(false);
     },
     dragPosition,
     isOverBasket,

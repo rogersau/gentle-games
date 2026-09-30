@@ -16,7 +16,14 @@
     "on": "On",
     "off": "Off",
     "openOptions": "Open options",
-    "selectOption": "Select an option"
+    "selectOption": "Select an option",
+    "pauseMovement": "Pause movement",
+    "resumeMovement": "Resume movement",
+    "home": "Home",
+    "soundOn": "Sound on",
+    "soundOff": "Sound off",
+    "enableSound": "Turn sound on",
+    "muteSound": "Turn sound off"
   },
   "home": {
     "title": "Gentle Games",
@@ -166,7 +173,13 @@
       "timeLabel": "Time {{time}}",
       "moves": "Moves: {{count}}",
       "goHome": "Home",
-      "goHomeHint": "Return to main screen"
+      "goHomeHint": "Return to main screen",
+      "instruction": "Turn over two cards to find a matching pair.",
+      "changeBoard": "Change cards",
+      "chooseBoard": "Choose your cards",
+      "boardSize_one": "{{count}} pair",
+      "boardSize_other": "{{count}} pairs",
+      "boardChangeHint": "Choosing a size starts a new board."
     },
     "drawing": {
       "name": "Drawing Pad",
@@ -254,7 +267,20 @@
         "darkCyan": "Dark cyan",
         "cadetBlue": "Cadet blue"
       },
-      "saveError": "Your drawing is still here, but could not be saved. Please try again later."
+      "saveError": "Your drawing is still here, but could not be saved. Please try again later.",
+      "instruction": "Draw with your finger, or choose a tool below.",
+      "tools": {
+        "pen": "Pen",
+        "shapes": "Shapes",
+        "mirror": "Mirror",
+        "eraser": "Eraser",
+        "clear": "Clear"
+      },
+      "mirrorState": {
+        "none": "Mirror off",
+        "half": "Mirror ×2",
+        "quarter": "Mirror ×4"
+      }
     },
     "glitterFall": {
       "name": "Glitter Fall",
@@ -294,7 +320,9 @@
       "movingMode": "Moving mode",
       "useAccessibleMode": "Use stationary bubble buttons",
       "useMovingMode": "Use moving bubbles",
-      "modeToggleHint": "Switch between moving bubbles and stationary buttons"
+      "modeToggleHint": "Switch between moving bubbles and stationary buttons",
+      "stillBubbles": "Use still bubbles",
+      "movingBubbles": "Let bubbles move"
     },
     "categoryMatch": {
       "name": "Category Match",
@@ -307,24 +335,28 @@
       "quickPreview": "Quick Preview",
       "previewInstruction": "Put each picture with the group it belongs to.",
       "sortingInstruction": "Where does this picture belong?",
-      "interactionInstruction": "Tap the picture, then tap its group. You can also drag it.",
+      "interactionInstruction": "Tap the matching group, or drag the picture to it.",
       "hint": "Think about what the picture is. Which group matches?",
       "itemAccessibilityLabel": "{{item}} item",
-      "selectItemHint": "Tap to select this item, then activate a category",
+      "selectItemHint": "Drag this picture to its group, or tap the group directly",
       "selectItemFirst": "Select the item before choosing a category",
       "categoryAccessibilityLabel": "{{category}} category",
-      "categoryActivationHint": "Activate to place the selected item here",
+      "categoryActivationHint": "Put this picture in this group",
       "correctFeedback": "{{item}} goes with {{category}}.",
-      "incorrectFeedback": "Not quite. {{item}} goes with {{correctCategory}}.",
+      "incorrectFeedback": "Let’s try {{correctCategory}} for {{item}}.",
       "model": "Here is one: {{item}} goes with {{category}}. Now you try.",
       "modelAccessibilityLabel": "{{item}} goes with {{category}}.",
       "showHint": "Show a hint",
-      "replay": "Hear the rule again",
+      "replay": "Show the rule again",
       "skip": "Skip",
       "skippedFeedback": "{{item}} was skipped. Choose Next when you are ready.",
       "next": "Next item",
       "nextHint": "Show a new item using the same sorting rule",
-      "categories": { "food": "Food", "toys": "Toys", "clothes": "Clothes" },
+      "categories": {
+        "food": "Food",
+        "toys": "Toys",
+        "clothes": "Clothes"
+      },
       "items": {
         "apple": "apple",
         "banana": "banana",
@@ -350,7 +382,7 @@
       "name": "Keepy Uppy",
       "description": "Keep the balloon floating",
       "title": "Keepy Uppy",
-      "subtitle": "Keep the balloon in the air!",
+      "subtitle": "Tap a balloon to help it float. Take your time.",
       "addBalloon": "Add Balloon",
       "addBalloonHint": "Add another balloon to the game",
       "taps": "Taps: {{count}}",
@@ -393,7 +425,8 @@
         "title": "Choose a session",
         "breaths": "{{count}} breaths",
         "openEnded": "Open-ended"
-      }
+      },
+      "paused": "Paused — take your time"
     },
     "patternTrain": {
       "name": "Pattern Train",
@@ -417,7 +450,7 @@
         "arrived": "A train has arrived. Pattern: {{pattern}}. Drag or tap a carriage to complete the train."
       },
       "platform": {
-        "label": "Platform",
+        "label": "Choose a picture",
         "accessibilityLabel": "Platform with {{count}} carriages available"
       },
       "carriage": {
@@ -448,12 +481,12 @@
         "reveal": "The pattern is shown."
       },
       "guidance": {
-        "instruction": "Choose the carriage that continues the pattern.",
+        "instruction": "Find the missing picture.",
         "showPatternButton": "Show the pattern",
         "showPattern": "Show the pattern: {{unit}} repeats.",
         "model": "Model: {{sequence}}. Now choose the missing carriage.",
         "modelAccessibilityLabel": "Complete pattern: {{sequence}}.",
-        "replay": "Hear instructions again",
+        "replay": "Show instructions",
         "skip": "Skip",
         "next": "Next",
         "nextHint": "Show the next pattern with the same rule and new symbols",
@@ -487,7 +520,8 @@
         "rounds": "You've completed {{count}} trains",
         "continue": "Keep Going!",
         "continueHint": "Continue playing Pattern Train"
-      }
+      },
+      "changeLevel": "Change pattern"
     },
     "numberPicnic": {
       "name": "Number Picnic",
@@ -769,7 +803,9 @@
     "volume": {
       "title": "Volume",
       "decrease": "Decrease volume",
-      "increase": "Increase volume"
+      "increase": "Increase volume",
+      "current": "Volume {{percent}}%",
+      "adjustHint": "Swipe up or down to adjust volume"
     },
     "gamesOnHomeScreen": {
       "title": "Games on Home Screen",
@@ -781,7 +817,7 @@
       "duration": "{{count}} min",
       "duration_one": "{{count}} min",
       "duration_other": "{{count}} min",
-      "description": "After the set time, a maths question pauses play until a grown-up answers"
+      "description": "After the set time, play pauses until a grown-up answers or holds to continue"
     },
     "language": {
       "title": "Language",
@@ -802,11 +838,14 @@
   },
   "parentTimer": {
     "lockTitle": "Time for a Break!",
-    "lockSubtitle": "Ask a grown-up to solve this to keep playing",
+    "lockSubtitle": "Ask a grown-up to answer or hold to keep playing",
     "challengeLabel": "What is",
     "answerPlaceholder": "Answer",
     "error": "Not quite — try again!",
-    "continue": "Continue Playing"
+    "continue": "Continue Playing",
+    "answerLabel": "Answer to {{question}}",
+    "holdToContinue": "Grown-ups: hold to continue",
+    "holdToContinueHint": "Press and hold for three seconds to start a new session. With a screen reader, use the Continue Playing action."
   },
   "accessibility": {
     "gameCardHint": "Double tap to play this game"

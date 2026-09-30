@@ -368,6 +368,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
           <Animated.View
             style={[
               styles.draggableToken,
+              isTokenSelected && styles.selectedToken,
               {
                 width: '100%',
                 height: '100%',
@@ -388,10 +389,6 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
             <Pressable
               key={zone.category}
               onPress={() => {
-                if (!isTokenSelected) {
-                  announce(t('games.categoryMatch.selectItemFirst'));
-                  return;
-                }
                 answerCategory(zone.category);
               }}
               accessibilityRole='button'
@@ -428,6 +425,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
           ]}
         >
           <AppButton
+            icon='next'
             label={t('games.categoryMatch.next')}
             onPress={handleNextRound}
             testID='category-match-next'
@@ -479,6 +477,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       elevation: 2,
     },
     emojiText: { textAlign: 'center' },
+    selectedToken: { borderWidth: 4, borderColor: colors.text },
     zoneRow: {
       position: 'absolute',
       flexDirection: 'row',

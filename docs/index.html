@@ -1,371 +1,1200 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-AU">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gentle Games — Calm, Sensory-Friendly Games for Kids</title>
+    <meta name="theme-color" content="#fffef7" />
+    <meta
+      name="description"
+      content="Gentle Games is a free, open-source collection of eight calm, sensory-considerate games for children. No ads, accounts, purchases, streaks, or time pressure."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://gentlegames.org/" />
+    <link rel="icon" href="https://games.gentlegames.org/icons/icon-64x64.png" />
+    <link rel="apple-touch-icon" href="https://games.gentlegames.org/icons/icon-180x180.png" />
 
-    <!-- Open Graph / Social Media Meta Tags -->
-    <meta property="og:title" content="Gentle Games — Calm, Sensory-Friendly Games for Kids" />
+    <title>Gentle Games — Calm play, without pressure</title>
+
+    <meta property="og:title" content="Gentle Games — Calm play, without pressure" />
     <meta
       property="og:description"
-      content="Free, open-source mobile games designed for children with sensory sensitivities. No ads, no paywalls, just calm fun. Features Memory Snap, Drawing Pad, Glitter Fall, Bubble Pop, Category Match, and Keepy Uppy."
+      content="Eight free, open-source games designed for gentle, predictable play. No ads, accounts, purchases, streaks, or time pressure."
     />
-    <meta property="og:image" content="https://gentlegames.org/assets/pwa/image.png" />
-    <meta property="og:url" content="https://gentlegames.org" />
+    <meta property="og:image" content="https://games.gentlegames.org/assets/pwa/image.png" />
+    <meta property="og:url" content="https://gentlegames.org/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Gentle Games" />
 
-    <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Gentle Games — Calm, Sensory-Friendly Games for Kids" />
+    <meta name="twitter:title" content="Gentle Games — Calm play, without pressure" />
     <meta
       name="twitter:description"
-      content="Free, open-source mobile games designed for children with sensory sensitivities. No ads, no paywalls, just calm fun."
+      content="Eight free, open-source games designed for gentle, predictable play."
     />
-    <meta name="twitter:image" content="https://gentlegames.org/assets/pwa/image.png" />
+    <meta name="twitter:image" content="https://games.gentlegames.org/assets/pwa/image.png" />
+
     <style>
       :root {
-        --bg: #fffef7;
+        color-scheme: light dark;
+        --background: #fffef7;
+        --surface: #ffffff;
+        --surface-soft: #f8f5ef;
+        --surface-blue: #e8f5fa;
+        --surface-pink: #fff0f3;
+        --surface-green: #edf8ed;
+        --surface-purple: #f5edf9;
+        --text: #454b53;
+        --text-soft: #686f78;
         --primary: #a8d8ea;
+        --primary-strong: #70b8d3;
         --secondary: #ffb6c1;
-        --accent: #b8e6b8;
-        --muted: #d3d3d3;
-        --text: #5a5a5a;
-        --subtext: #8a8a8a;
+        --success: #b8e6b8;
+        --accent: #d4a9e6;
+        --border: #e8e4e1;
+        --shadow: 0 18px 45px rgba(69, 75, 83, 0.1);
+        --shadow-soft: 0 8px 24px rgba(69, 75, 83, 0.08);
+        --radius-sm: 14px;
+        --radius-md: 22px;
+        --radius-lg: 32px;
+        --content: 1160px;
       }
 
       * {
         box-sizing: border-box;
-        margin: 0;
-        padding: 0;
+      }
+
+      html {
+        scroll-behavior: smooth;
       }
 
       body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background: var(--bg);
+        margin: 0;
+        background:
+          radial-gradient(circle at 8% 3%, rgba(168, 216, 234, 0.32), transparent 24rem),
+          radial-gradient(circle at 92% 8%, rgba(255, 182, 193, 0.24), transparent 22rem),
+          var(--background);
         color: var(--text);
+        font-family:
+          ui-rounded,
+          'Nunito',
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        font-size: 17px;
         line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
       }
 
-      header {
-        background: var(--primary);
-        padding: 2.5rem 1.5rem 2rem;
-        text-align: center;
+      img {
+        display: block;
+        max-width: 100%;
       }
 
-      header h1 {
-        font-size: 2.4rem;
-        font-weight: 700;
-        margin-bottom: 0.4rem;
+      a {
+        color: inherit;
       }
 
-      header p {
-        font-size: 1.1rem;
-        color: var(--text);
-        max-width: 560px;
+      a:focus-visible {
+        outline: 4px solid rgba(112, 184, 211, 0.45);
+        outline-offset: 4px;
+      }
+
+      .skip-link {
+        position: fixed;
+        z-index: 100;
+        top: 12px;
+        left: 12px;
+        transform: translateY(-150%);
+        border-radius: 10px;
+        background: var(--text);
+        color: var(--background);
+        padding: 0.7rem 1rem;
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      .skip-link:focus {
+        transform: translateY(0);
+      }
+
+      .site-header {
+        padding: 1rem clamp(1rem, 4vw, 2rem);
+      }
+
+      .nav {
+        display: flex;
+        width: min(100%, var(--content));
+        min-height: 64px;
         margin: 0 auto;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
       }
 
-      .badge {
-        display: inline-block;
-        background: var(--accent);
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
         color: var(--text);
-        border-radius: 20px;
-        padding: 0.25rem 0.85rem;
-        font-size: 0.82rem;
-        font-weight: 600;
-        margin: 0.3rem 0.2rem;
+        font-size: 1.05rem;
+        font-weight: 850;
+        letter-spacing: -0.01em;
+        text-decoration: none;
       }
 
-      .badges {
-        margin-top: 1rem;
+      .brand-mark {
+        display: grid;
+        width: 44px;
+        height: 44px;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        border-radius: 14px;
+        background: linear-gradient(145deg, var(--primary), var(--surface-purple));
+        box-shadow: var(--shadow-soft);
+        font-size: 1.45rem;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.25rem;
+      }
+
+      .nav-links a {
+        min-height: 48px;
+        border-radius: 999px;
+        padding: 0.65rem 0.9rem;
+        color: var(--text-soft);
+        font-size: 0.92rem;
+        font-weight: 750;
+        text-decoration: none;
+      }
+
+      .nav-links a:hover {
+        background: rgba(255, 255, 255, 0.64);
+        color: var(--text);
+      }
+
+      .nav-links .nav-cta {
+        margin-left: 0.25rem;
+        background: var(--text);
+        color: var(--background);
+        padding-inline: 1.15rem;
+      }
+
+      .nav-links .nav-cta:hover {
+        background: #2f353c;
+        color: #ffffff;
       }
 
       main {
-        max-width: 860px;
-        margin: 0 auto;
-        padding: 2rem 1.5rem 3rem;
+        overflow: hidden;
       }
 
-      section {
-        margin-bottom: 2.5rem;
+      .section {
+        width: min(100%, var(--content));
+        margin: 0 auto;
+        padding: clamp(4rem, 9vw, 7rem) clamp(1rem, 4vw, 2rem);
+      }
+
+      .hero {
+        display: grid;
+        min-height: 680px;
+        grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.72fr);
+        align-items: center;
+        gap: clamp(2.5rem, 8vw, 6rem);
+        padding-top: clamp(3rem, 7vw, 6rem);
+        padding-bottom: clamp(4rem, 8vw, 7rem);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        margin: 0 0 1.15rem;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        padding: 0.45rem 0.8rem;
+        color: var(--text-soft);
+        font-size: 0.83rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+      }
+
+      .eyebrow::before {
+        width: 0.62rem;
+        height: 0.62rem;
+        border-radius: 999px;
+        background: var(--success);
+        content: '';
+        box-shadow: 0 0 0 4px rgba(184, 230, 184, 0.3);
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin-top: 0;
+        line-height: 1.12;
+        text-wrap: balance;
+      }
+
+      h1 {
+        max-width: 780px;
+        margin-bottom: 1.4rem;
+        font-size: clamp(3rem, 7.5vw, 5.7rem);
+        letter-spacing: -0.055em;
       }
 
       h2 {
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: var(--text);
-        border-left: 4px solid var(--secondary);
-        padding-left: 0.7rem;
         margin-bottom: 1rem;
+        font-size: clamp(2.1rem, 5vw, 3.5rem);
+        letter-spacing: -0.04em;
       }
 
-      .card-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1.2rem;
+      h3 {
+        margin-bottom: 0.55rem;
+        font-size: 1.18rem;
+        letter-spacing: -0.015em;
       }
 
-      .card {
-        background: #fff;
+      .hero-copy > p {
+        max-width: 690px;
+        margin: 0 0 1.8rem;
+        color: var(--text-soft);
+        font-size: clamp(1.08rem, 2.2vw, 1.28rem);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.8rem;
+      }
+
+      .button {
+        display: inline-flex;
+        min-height: 54px;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+        border: 2px solid transparent;
         border-radius: 16px;
-        padding: 1.4rem 1.2rem;
-        box-shadow: 0 2px 10px rgba(74, 74, 106, 0.08);
-      }
-
-      .card h3 {
-        font-size: 1.1rem;
-        margin-bottom: 0.5rem;
-      }
-
-      .card p {
-        font-size: 0.92rem;
-        color: var(--subtext);
-      }
-
-      .card .icon {
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-      }
-
-      ul {
-        padding-left: 1.4rem;
-      }
-
-      ul li {
-        margin-bottom: 0.35rem;
-        font-size: 0.95rem;
-        color: var(--subtext);
-      }
-
-      .highlight-box {
-        background: var(--accent);
-        border-radius: 14px;
-        padding: 1.2rem 1.4rem;
-        margin-bottom: 1rem;
-      }
-
-      .highlight-box p {
-        font-size: 0.95rem;
-      }
-
-      .btn {
-        display: inline-block;
-        background: var(--primary);
-        color: var(--text);
+        padding: 0.8rem 1.3rem;
+        font-weight: 850;
         text-decoration: none;
-        border-radius: 10px;
-        padding: 0.55rem 1.3rem;
-        font-weight: 600;
-        font-size: 0.95rem;
-        margin: 0.3rem 0.3rem 0.3rem 0;
-        transition: opacity 0.15s;
+        transition:
+          transform 160ms ease,
+          box-shadow 160ms ease,
+          background-color 160ms ease;
       }
 
-      .btn:hover {
-        opacity: 0.82;
+      .button:hover {
+        transform: translateY(-2px);
       }
 
-      .btn.secondary {
-        background: var(--secondary);
+      .button-primary {
+        background: var(--text);
+        color: var(--background);
+        box-shadow: 0 12px 26px rgba(69, 75, 83, 0.2);
       }
 
-      .btn.muted {
-        background: var(--muted);
+      .button-primary:hover {
+        background: #2f353c;
+        color: #ffffff;
+        box-shadow: 0 16px 34px rgba(69, 75, 83, 0.24);
       }
 
-      footer {
-        background: var(--primary);
+      .button-secondary {
+        border-color: var(--border);
+        background: rgba(255, 255, 255, 0.7);
+        color: var(--text);
+      }
+
+      .button-secondary:hover {
+        background: var(--surface);
+      }
+
+      .trust-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        margin: 1.7rem 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .trust-list li {
+        border-radius: 999px;
+        background: var(--surface-soft);
+        padding: 0.4rem 0.72rem;
+        color: var(--text-soft);
+        font-size: 0.8rem;
+        font-weight: 750;
+      }
+
+      .hero-visual {
+        position: relative;
+        min-height: 470px;
+      }
+
+      .hero-visual::before,
+      .hero-visual::after {
+        position: absolute;
+        border-radius: 50%;
+        content: '';
+      }
+
+      .hero-visual::before {
+        width: 190px;
+        height: 190px;
+        top: 0;
+        right: -25px;
+        background: rgba(255, 182, 193, 0.56);
+      }
+
+      .hero-visual::after {
+        width: 145px;
+        height: 145px;
+        bottom: 8px;
+        left: -40px;
+        background: rgba(184, 230, 184, 0.66);
+      }
+
+      .app-preview {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        min-height: 430px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(255, 255, 255, 0.75);
+        border-radius: var(--radius-lg);
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(245, 237, 249, 0.9));
+        box-shadow: var(--shadow);
+        padding: 2.25rem;
         text-align: center;
-        padding: 1.5rem 1rem;
+      }
+
+      .app-icon {
+        width: 156px;
+        height: 156px;
+        margin-bottom: 1.35rem;
+        border-radius: 36px;
+        box-shadow: 0 22px 40px rgba(69, 75, 83, 0.18);
+      }
+
+      .app-preview strong {
+        display: block;
+        margin-bottom: 0.25rem;
+        font-size: 1.5rem;
+        letter-spacing: -0.025em;
+      }
+
+      .app-preview p {
+        max-width: 290px;
+        margin: 0;
+        color: var(--text-soft);
+        font-size: 0.95rem;
+      }
+
+      .preview-pills {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1.25rem;
+      }
+
+      .preview-pills span {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--surface);
+        padding: 0.35rem 0.62rem;
+        color: var(--text-soft);
+        font-size: 0.76rem;
+        font-weight: 800;
+      }
+
+      .section-heading {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(260px, 0.55fr);
+        align-items: end;
+        gap: 2rem;
+        margin-bottom: 2.2rem;
+      }
+
+      .section-heading p {
+        margin: 0;
+        color: var(--text-soft);
+      }
+
+      .section-kicker {
+        display: block;
+        margin-bottom: 0.7rem;
+        color: #517f91;
+        font-size: 0.8rem;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .games-section {
+        width: 100%;
+        max-width: none;
+        background: rgba(255, 255, 255, 0.58);
+        border-block: 1px solid rgba(232, 228, 225, 0.76);
+      }
+
+      .games-inner {
+        width: min(100%, var(--content));
+        margin: 0 auto;
+        padding-inline: clamp(1rem, 4vw, 2rem);
+      }
+
+      .game-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+      }
+
+      .game-card {
+        display: flex;
+        min-height: 265px;
+        flex-direction: column;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+        box-shadow: var(--shadow-soft);
+        padding: 1.35rem;
+      }
+
+      .game-card:nth-child(4n + 1) .game-icon {
+        background: var(--surface-blue);
+      }
+
+      .game-card:nth-child(4n + 2) .game-icon {
+        background: var(--surface-pink);
+      }
+
+      .game-card:nth-child(4n + 3) .game-icon {
+        background: var(--surface-purple);
+      }
+
+      .game-card:nth-child(4n + 4) .game-icon {
+        background: var(--surface-green);
+      }
+
+      .game-icon {
+        display: grid;
+        width: 64px;
+        height: 64px;
+        margin-bottom: 1.25rem;
+        place-items: center;
+        border-radius: 20px;
+        font-size: 2rem;
+      }
+
+      .game-card p {
+        margin: 0;
+        color: var(--text-soft);
+        font-size: 0.93rem;
+      }
+
+      .game-type {
+        display: inline-flex;
+        align-self: flex-start;
+        margin-top: auto;
+        border-radius: 999px;
+        background: var(--surface-soft);
+        padding: 0.32rem 0.6rem;
+        color: var(--text-soft);
+        font-size: 0.72rem;
+        font-weight: 850;
+      }
+
+      .values-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+      }
+
+      .value-card {
+        min-height: 205px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: clamp(1.4rem, 4vw, 2rem);
+      }
+
+      .value-card:nth-child(1) {
+        background: var(--surface-blue);
+      }
+
+      .value-card:nth-child(2) {
+        background: var(--surface-green);
+      }
+
+      .value-card:nth-child(3) {
+        background: var(--surface-pink);
+      }
+
+      .value-card:nth-child(4) {
+        background: var(--surface-purple);
+      }
+
+      .value-number {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        margin-bottom: 1rem;
+        place-items: center;
+        border: 1px solid rgba(69, 75, 83, 0.1);
+        border-radius: 13px;
+        background: rgba(255, 255, 255, 0.65);
         font-size: 0.88rem;
+        font-weight: 900;
+      }
+
+      .value-card p {
+        margin: 0;
+        color: var(--text-soft);
+      }
+
+      .grown-ups {
+        display: grid;
+        grid-template-columns: minmax(0, 0.85fr) minmax(360px, 1.15fr);
+        gap: clamp(2rem, 7vw, 5rem);
+        align-items: center;
+      }
+
+      .grown-ups-copy p {
+        color: var(--text-soft);
+      }
+
+      .grown-ups-copy p:last-of-type {
+        margin-bottom: 1.6rem;
+      }
+
+      .facts-card {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+        padding: clamp(1.4rem, 4vw, 2.2rem);
+      }
+
+      .facts-card h3 {
+        font-size: 1.45rem;
+      }
+
+      .facts-list {
+        display: grid;
+        gap: 0;
+        margin: 1rem 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .facts-list li {
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr);
+        gap: 0.8rem;
+        align-items: start;
+        border-top: 1px solid var(--border);
+        padding: 1rem 0;
+        color: var(--text-soft);
+      }
+
+      .facts-list li:first-child {
+        border-top: 0;
+      }
+
+      .fact-check {
+        display: grid;
+        width: 32px;
+        height: 32px;
+        place-items: center;
+        border-radius: 10px;
+        background: var(--surface-green);
+        color: #43734d;
+        font-size: 0.85rem;
+        font-weight: 950;
+      }
+
+      .open-source {
+        padding-top: 2rem;
+      }
+
+      .open-source-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--radius-lg);
+        background: var(--text);
+        color: #fffef7;
+        padding: clamp(2rem, 7vw, 4.5rem);
+      }
+
+      .open-source-card::after {
+        position: absolute;
+        width: 280px;
+        height: 280px;
+        right: -80px;
+        bottom: -150px;
+        border-radius: 50%;
+        background: rgba(168, 216, 234, 0.22);
+        content: '';
+      }
+
+      .open-source-card > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .open-source-card h2 {
+        max-width: 760px;
+      }
+
+      .open-source-card p {
+        max-width: 680px;
+        margin-bottom: 1.6rem;
+        color: rgba(255, 254, 247, 0.78);
+      }
+
+      .open-source-card .section-kicker {
+        color: var(--primary);
+      }
+
+      .open-source-card .button-primary {
+        background: #fffef7;
         color: var(--text);
       }
 
-      footer a {
+      .open-source-card .button-primary:hover {
+        background: #ffffff;
+        color: #2f353c;
+      }
+
+      .site-footer {
+        width: min(100%, var(--content));
+        margin: 0 auto;
+        padding: 2rem clamp(1rem, 4vw, 2rem) 3rem;
+      }
+
+      .footer-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.5rem;
+        border-top: 1px solid var(--border);
+        padding-top: 1.5rem;
+        color: var(--text-soft);
+        font-size: 0.86rem;
+      }
+
+      .footer-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .footer-links a {
+        font-weight: 750;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.2em;
+      }
+
+      .footer-links a:hover {
         color: var(--text);
       }
 
-      @media (max-width: 500px) {
-        header h1 {
-          font-size: 1.8rem;
+      @media (max-width: 960px) {
+        .hero {
+          min-height: auto;
+          grid-template-columns: 1fr;
+        }
+
+        .hero-copy {
+          max-width: 760px;
+        }
+
+        .hero-visual {
+          width: min(100%, 540px);
+          min-height: 420px;
+          margin: 0 auto;
+        }
+
+        .app-preview {
+          min-height: 390px;
+        }
+
+        .game-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grown-ups {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .nav-links a:not(.nav-cta) {
+          display: none;
+        }
+
+        .section-heading {
+          grid-template-columns: 1fr;
+          gap: 0.5rem;
+        }
+
+        .values-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .footer-row {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+
+      @media (max-width: 560px) {
+        body {
+          font-size: 16px;
+        }
+
+        .site-header {
+          padding-inline: 0.85rem;
+        }
+
+        .brand-mark {
+          width: 40px;
+          height: 40px;
+        }
+
+        .nav-links .nav-cta {
+          min-height: 44px;
+          padding: 0.55rem 0.85rem;
+          font-size: 0.84rem;
+        }
+
+        .section {
+          padding-inline: 1rem;
+        }
+
+        .hero {
+          padding-top: 2.4rem;
+        }
+
+        h1 {
+          font-size: clamp(2.8rem, 15vw, 4rem);
+        }
+
+        .actions {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .button {
+          width: 100%;
+        }
+
+        .hero-visual {
+          min-height: 360px;
+        }
+
+        .app-preview {
+          min-height: 340px;
+          padding: 1.5rem;
+        }
+
+        .app-icon {
+          width: 128px;
+          height: 128px;
+          border-radius: 30px;
+        }
+
+        .game-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .game-card {
+          min-height: 230px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --background: #2f333b;
+          --surface: #3a3e47;
+          --surface-soft: #3f444d;
+          --surface-blue: #354a53;
+          --surface-pink: #504149;
+          --surface-green: #3f5045;
+          --surface-purple: #494052;
+          --text: #eae6df;
+          --text-soft: #c2beb6;
+          --primary: #7fb1c1;
+          --primary-strong: #9bc8d5;
+          --secondary: #d59cb2;
+          --success: #95c5a3;
+          --accent: #b28dc7;
+          --border: #4a4e57;
+          --shadow: 0 18px 45px rgba(0, 0, 0, 0.2);
+          --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.17);
+        }
+
+        body {
+          background:
+            radial-gradient(circle at 8% 3%, rgba(127, 177, 193, 0.18), transparent 24rem),
+            radial-gradient(circle at 92% 8%, rgba(213, 156, 178, 0.13), transparent 22rem),
+            var(--background);
+        }
+
+        .eyebrow,
+        .button-secondary,
+        .nav-links a:hover {
+          background: rgba(58, 62, 71, 0.78);
+        }
+
+        .nav-links .nav-cta,
+        .button-primary,
+        .open-source-card {
+          background: #eae6df;
+          color: #2f333b;
+        }
+
+        .nav-links .nav-cta:hover,
+        .button-primary:hover {
+          background: #ffffff;
+          color: #2f333b;
+        }
+
+        .games-section {
+          background: rgba(47, 51, 59, 0.5);
+          border-color: rgba(74, 78, 87, 0.8);
+        }
+
+        .app-preview {
+          border-color: rgba(255, 255, 255, 0.08);
+          background: linear-gradient(145deg, rgba(58, 62, 71, 0.96), rgba(73, 64, 82, 0.9));
+        }
+
+        .open-source-card .section-kicker {
+          color: #517f91;
+        }
+
+        .open-source-card p {
+          color: rgba(47, 51, 59, 0.74);
+        }
+
+        .open-source-card .button-primary {
+          background: #2f333b;
+          color: #fffef7;
+        }
+
+        .open-source-card .button-primary:hover {
+          background: #20242a;
+          color: #ffffff;
         }
       }
     </style>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Gentle Games",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Web, Android, iOS",
+        "url": "https://games.gentlegames.org",
+        "description": "A free, open-source collection of calm, sensory-considerate games for children.",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "AUD"
+        }
+      }
+    </script>
   </head>
 
   <body>
-    <header>
-      <h1>🎮 Gentle Games</h1>
-      <p>Calm, sensory-friendly games designed for children ages 4–10.</p>
-      <p style="font-size: 0.85rem; color: var(--subtext); margin-top: 0.4rem">
-        📍 Hosted at <a href="https://gentlegames.org">gentlegames.org</a>
-      </p>
-      <div class="badges">
-        <span class="badge">🔒 Privacy-first analytics</span>
-        <span class="badge">🆓 Completely free</span>
-        <span class="badge">📖 Open source (GPLv3)</span>
-        <span class="badge">🚫 No ads</span>
-        <span class="badge">🚫 No in-app purchases</span>
-      </div>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <header class="site-header">
+      <nav class="nav" aria-label="Main navigation">
+        <a class="brand" href="/" aria-label="Gentle Games home">
+          <span class="brand-mark" aria-hidden="true">🌤️</span>
+          <span>Gentle Games</span>
+        </a>
+        <div class="nav-links">
+          <a href="#games">Games</a>
+          <a href="#why-gentle">Why gentle?</a>
+          <a href="#grown-ups">For grown-ups</a>
+          <a href="https://github.com/rogersau/gentle-games">GitHub</a>
+          <a class="nav-cta" href="https://games.gentlegames.org">Play now</a>
+        </div>
+      </nav>
     </header>
 
-    <main>
-      <section>
-        <h2>About</h2>
-        <p>
-          Gentle Games is a free, open-source mobile app built with calm, non-competitive gameplay
-          in mind. It now includes six different sensory-friendly mini-games (Memory Snap, Drawing
-          Pad, Glitter Fall, Bubble Pop, Category Match, and Keepy Uppy). Every design decision —
-          soft pastel colors, optional sounds, toggleable animations — is made to be welcoming for
-          children who experience visual or auditory sensitivities.
-        </p>
-        <br />
-        <a
-          class="btn"
-          href="https://games.gentlegames.org"
-          style="
-            font-size: 1.1rem;
-            padding: 0.7rem 1.6rem;
-            margin-bottom: 0.8rem;
-            display: block;
-            text-align: center;
-            max-width: 300px;
-            margin-left: auto;
-            margin-right: auto;
-            background-color: var(--accent);
-          "
-          >Play Games Now 🎮</a
-        >
-        <div style="text-align: center">
-          <a class="btn secondary" href="https://github.com/rogersau/gentle-games"
-            >View on GitHub</a
-          >
-          <a class="btn secondary" href="privacy-policy.html">Privacy Policy</a>
-          <a class="btn muted" href="support.html">Support</a>
-        </div>
-      </section>
-
-      <section>
-        <h2>Games</h2>
-        <div class="card-grid">
-          <div class="card">
-            <div class="icon">🧩</div>
-            <h3>Memory Snap</h3>
-            <p>
-              A calm memory-matching game where players flip tiles to find pairs. Multiple
-              difficulty levels, three themes (animals, shapes, mixed), live timer, and gentle
-              completion celebration.
-            </p>
-          </div>
-          <div class="card">
-            <div class="icon">🎨</div>
-            <h3>Drawing Pad</h3>
-            <p>
-              A free-form drawing canvas. Pen, eraser, and shape tools, 9 preset colors plus a full
-              color picker, undo support, and a clean white canvas with maximum screen space.
-            </p>
-          </div>
-          <div class="card">
-            <div class="icon">✨</div>
-            <h3>Glitter Fall</h3>
-            <p>
-              A calming snow globe where kids can add glitter, shake to swirl, and watch particles
-              gently drift. Touch to interact; mobile motion sensor support with web fallback.
-            </p>
-          </div>
-          <div class="card">
-            <div class="icon">🫧</div>
-            <h3>Bubble Pop</h3>
-            <p>
-              Soft bubbles float down the screen. Tap to pop and track a simple count. Keeps at
-              least two bubbles on-screen for continuous calm fun.
-            </p>
-          </div>
-          <div class="card">
-            <div class="icon">🗂️</div>
-            <h3>Category Match</h3>
-            <p>
-              Drag the emoji into the correct category (Sky, Land, or Ocean). Gentle feedback and an
-              endless stream of friendly icons make it great for sorting practice.
-            </p>
-          </div>
-          <div class="card">
-            <div class="icon">🎈</div>
-            <h3>Keepy Uppy</h3>
-            <p>
-              Tap the balloon to keep it from falling. Includes an easy mode setting for younger
-              children and soft, endless gameplay.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <h2>Accessibility and Sensory-Friendly Design</h2>
-        <ul>
-          <li>Animations can be turned off at any time</li>
-          <li>No flashing lights or jarring visuals</li>
-          <li>Large touch targets for small fingers</li>
-          <li>Calm, non-competitive gameplay — no scores, no timers that penalize</li>
-        </ul>
-      </section>
-
-      <section>
-        <h2>Privacy</h2>
-        <div class="highlight-box">
+    <main id="main-content">
+      <section class="section hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <span class="eyebrow">Free and open source</span>
+          <h1 id="hero-title">Calm play,<br />without pressure.</h1>
           <p>
-            <strong>Gentle Games respects your privacy.</strong>
-            We collect only anonymous, non-identifiable data to fix bugs and improve the app. We use
-            Sentry for error tracking and PostHog for usage analytics—both configured with
-            privacy-first settings: no PII, random install IDs only, and EU-hosted (GDPR compliant).
-            All app settings remain stored privately on your device.
+            Gentle Games is a collection of sensory-considerate activities for children who prefer
+            clear, predictable digital experiences. Play, create and explore at your own pace.
+          </p>
+          <div class="actions">
+            <a class="button button-primary" href="https://games.gentlegames.org">
+              Open Gentle Games <span aria-hidden="true">→</span>
+            </a>
+            <a class="button button-secondary" href="#games">Explore the games</a>
+          </div>
+          <ul class="trust-list" aria-label="Gentle Games commitments">
+            <li>No ads</li>
+            <li>No purchases</li>
+            <li>No accounts</li>
+            <li>No streaks</li>
+            <li>No time pressure</li>
+          </ul>
+        </div>
+
+        <div class="hero-visual">
+          <div class="app-preview">
+            <img
+              class="app-icon"
+              src="https://games.gentlegames.org/icons/icon-512x512.png"
+              width="156"
+              height="156"
+              alt="Gentle Games app icon"
+            />
+            <strong>Choose something gentle</strong>
+            <p>Eight activities for quiet play, creative exploration and guided practice.</p>
+            <div class="preview-pills" aria-hidden="true">
+              <span>🎨 Create</span>
+              <span>🫧 Explore</span>
+              <span>🚂 Practise</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="games" class="section games-section" aria-labelledby="games-title">
+        <div class="games-inner">
+          <div class="section-heading">
+            <div>
+              <span class="section-kicker">Eight activities available now</span>
+              <h2 id="games-title">Choose what feels right today.</h2>
+            </div>
+            <p>
+              Each game has a clear purpose, predictable controls and a way to pause, restart or
+              leave without penalty.
+            </p>
+          </div>
+
+          <div class="game-grid">
+            <article class="game-card" data-game-id="memory-snap">
+              <div class="game-icon" aria-hidden="true">🧩</div>
+              <h3>Memory Snap</h3>
+              <p>Match familiar pictures with a preview, optional hints and no forced pace.</p>
+              <span class="game-type">Guided practice</span>
+            </article>
+
+            <article class="game-card" data-game-id="drawing">
+              <div class="game-icon" aria-hidden="true">🎨</div>
+              <h3>Drawing Pad</h3>
+              <p>Draw, make shapes, use symmetry, undo changes and continue a picture later.</p>
+              <span class="game-type">Creative play</span>
+            </article>
+
+            <article class="game-card" data-game-id="glitter-fall">
+              <div class="game-icon" aria-hidden="true">✨</div>
+              <h3>Glitter Fall</h3>
+              <p>Add, swirl and watch soft sparkles, with motion controlled by the child.</p>
+              <span class="game-type">Sensory play</span>
+            </article>
+
+            <article class="game-card" data-game-id="bubble-pop">
+              <div class="game-icon" aria-hidden="true">🫧</div>
+              <h3>Bubble Pop</h3>
+              <p>Pop moving bubbles or switch to a stationary button mode.</p>
+              <span class="game-type">Cause and effect</span>
+            </article>
+
+            <article class="game-card" data-game-id="category-match">
+              <div class="game-icon" aria-hidden="true">🗂️</div>
+              <h3>Category Match</h3>
+              <p>Sort familiar food, toys and clothes using either tap or drag controls.</p>
+              <span class="game-type">Guided practice</span>
+            </article>
+
+            <article class="game-card" data-game-id="keepy-uppy">
+              <div class="game-icon" aria-hidden="true">🎈</div>
+              <h3>Keepy Uppy</h3>
+              <p>Tap one or more balloons to keep them floating, without a required score.</p>
+              <span class="game-type">Open-ended play</span>
+            </article>
+
+            <article class="game-card" data-game-id="breathing-garden">
+              <div class="game-icon" aria-hidden="true">🌸</div>
+              <h3>Breathing Garden</h3>
+              <p>
+                Watch or optionally follow a visual breathing rhythm, then pause or stop anytime.
+              </p>
+              <span class="game-type">Visual pacing</span>
+            </article>
+
+            <article class="game-card" data-game-id="pattern-train">
+              <div class="game-icon" aria-hidden="true">🚂</div>
+              <h3>Pattern Train</h3>
+              <p>Complete cosy repeating patterns using tap or drag, with hints and no timer.</p>
+              <span class="game-type">Guided practice</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="why-gentle" class="section" aria-labelledby="why-title">
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">Designed around comfort and choice</span>
+            <h2 id="why-title">A quieter kind of screen time.</h2>
+          </div>
+          <p>
+            The experience is built to reduce surprise and unnecessary demands while still giving
+            children meaningful ways to play.
           </p>
         </div>
-        <a class="btn secondary" href="privacy-policy.html">Read the full Privacy Policy →</a>
+
+        <div class="values-grid">
+          <article class="value-card">
+            <span class="value-number" aria-hidden="true">01</span>
+            <h3>No pressure loops</h3>
+            <p>
+              No leaderboards, streaks, locked rewards, compulsory scores or timers that penalise.
+            </p>
+          </article>
+
+          <article class="value-card">
+            <span class="value-number" aria-hidden="true">02</span>
+            <h3>Comfort controls</h3>
+            <p>
+              Adjust sound, music, motion and appearance, or hide games that are not a good fit.
+            </p>
+          </article>
+
+          <article class="value-card">
+            <span class="value-number" aria-hidden="true">03</span>
+            <h3>Accessible interactions</h3>
+            <p>
+              Large touch targets, clear labels and tap alternatives make activities easier to use.
+            </p>
+          </article>
+
+          <article class="value-card">
+            <span class="value-number" aria-hidden="true">04</span>
+            <h3>Child-led by default</h3>
+            <p>
+              Children can watch first, ask for help, skip, restart or leave whenever they choose.
+            </p>
+          </article>
+        </div>
       </section>
 
-      <section>
-        <h2>Open Source</h2>
-        <p>
-          Gentle Games is fully open source under the
-          <a href="https://www.gnu.org/licenses/gpl-3.0.html"
-            >GNU General Public License v3 (GPLv3)</a
-          >. You are free to view the source code, report issues, and contribute improvements.
-        </p>
-        <br />
-        <a class="btn" href="https://github.com/rogersau/gentle-games">GitHub Repository</a>
-        <a class="btn muted" href="https://github.com/rogersau/gentle-games/blob/master/LICENSE"
-          >View License</a
-        >
+      <section id="grown-ups" class="section grown-ups" aria-labelledby="grown-ups-title">
+        <div class="grown-ups-copy">
+          <span class="section-kicker">For parents, carers and educators</span>
+          <h2 id="grown-ups-title">Simple choices. Clear boundaries.</h2>
+          <p>
+            Gentle Games was created especially for children with sensory sensitivities, including
+            autistic children. It is a play app—not a therapy, treatment or assessment tool.
+          </p>
+          <p>
+            No account is needed. Game content is included with the app, and personal drawings and
+            comfort settings stay on the device. Limited anonymous diagnostics and usage data help
+            improve reliability.
+          </p>
+          <a class="button button-secondary" href="privacy-policy.html">Read the privacy policy</a>
+        </div>
+
+        <aside class="facts-card" aria-label="What families can expect">
+          <h3>What families can expect</h3>
+          <ul class="facts-list">
+            <li>
+              <span class="fact-check" aria-hidden="true">✓</span>
+              <span
+                ><strong>Free from the start.</strong> No premium tier or hidden activities.</span
+              >
+            </li>
+            <li>
+              <span class="fact-check" aria-hidden="true">✓</span>
+              <span
+                ><strong>Works offline.</strong> Installed games do not need constant
+                internet.</span
+              >
+            </li>
+            <li>
+              <span class="fact-check" aria-hidden="true">✓</span>
+              <span
+                ><strong>Predictable feedback.</strong> No flashing, pop-ups or surprise
+                interruptions.</span
+              >
+            </li>
+            <li>
+              <span class="fact-check" aria-hidden="true">✓</span>
+              <span><strong>Open for inspection.</strong> The complete source code is public.</span>
+            </li>
+          </ul>
+        </aside>
       </section>
 
-      <section>
-        <h2>Tech Stack</h2>
-        <ul>
-          <li><strong>Framework:</strong> Expo (React Native)</li>
-          <li><strong>Language:</strong> TypeScript</li>
-          <li><strong>Navigation:</strong> React Navigation</li>
-          <li><strong>Audio:</strong> Expo AV</li>
-          <li><strong>Storage:</strong> AsyncStorage (device-local only)</li>
-          <li><strong>Graphics:</strong> React Native SVG</li>
-        </ul>
+      <section class="section open-source" aria-labelledby="open-source-title">
+        <div class="open-source-card">
+          <span class="section-kicker">Built in the open</span>
+          <h2 id="open-source-title">Free software for gentler, more predictable play.</h2>
+          <p>
+            Gentle Games is released under the GNU General Public License v3. Contributions are
+            welcome, especially improvements to accessibility, sensory comfort, translations and new
+            low-pressure activities.
+          </p>
+          <div class="actions">
+            <a class="button button-primary" href="https://github.com/rogersau/gentle-games">
+              View the project on GitHub <span aria-hidden="true">→</span>
+            </a>
+            <a class="button button-secondary" href="support.html">Get support</a>
+          </div>
+        </div>
       </section>
     </main>
 
-    <footer>
-      <p>
-        Gentle Games is released under the
-        <a href="https://github.com/rogersau/gentle-games/blob/main/LICENSE"
-          >GNU General Public License v3</a
-        >. Made with 💜 for calm, sensory-friendly gaming.
-      </p>
-      <p style="margin-top: 0.4rem">
-        <a href="privacy-policy.html">Privacy Policy</a> &nbsp;·&nbsp;
-        <a href="support.html">Support</a> &nbsp;·&nbsp;
-        <a href="https://github.com/rogersau/gentle-games">GitHub</a>
-      </p>
+    <footer class="site-footer">
+      <div class="footer-row">
+        <span>Made with care for gentler, more predictable play.</span>
+        <nav class="footer-links" aria-label="Footer navigation">
+          <a href="https://games.gentlegames.org">Play</a>
+          <a href="privacy-policy.html">Privacy</a>
+          <a href="support.html">Support</a>
+          <a href="https://github.com/rogersau/gentle-games/blob/master/LICENSE">GPLv3</a>
+          <a href="https://github.com/rogersau/gentle-games">GitHub</a>
+        </nav>
+      </div>
     </footer>
   </body>
 </html>

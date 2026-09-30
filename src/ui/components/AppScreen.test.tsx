@@ -1,9 +1,10 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { Text, ScrollView } from 'react-native';
 import { render } from '@testing-library/react-native';
 import { AppScreen } from './AppScreen';
 
 jest.mock('../../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
       background: '#FFFEF7',
@@ -30,6 +31,18 @@ describe('AppScreen', () => {
       </AppScreen>,
     );
     expect(getByText('Scrollable Content')).toBeTruthy();
+  });
+
+  it('keeps navigation outside the scrollable game content', () => {
+    const screen = render(
+      <AppScreen scroll header={<Text>Back to games</Text>}>
+        <Text>Game content</Text>
+      </AppScreen>,
+    );
+    const scroll = screen.UNSAFE_getByType(ScrollView);
+    expect(scroll.findAllByProps({ children: 'Back to games' })).toHaveLength(0);
+    expect(screen.getByText('Back to games')).toBeTruthy();
+    expect(scroll.findAllByProps({ children: 'Game content' }).length).toBeGreaterThan(0);
   });
 
   it('applies custom testID', () => {

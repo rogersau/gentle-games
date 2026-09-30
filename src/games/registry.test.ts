@@ -61,7 +61,7 @@ describe('game registry', () => {
         icon: '🧩',
         accentColor: PASTEL_COLORS.primary,
         isUnfinished: false,
-        launchMode: 'difficulty-select',
+        launchMode: 'direct',
         outcome: GAME_OUTCOMES['memory-snap'],
       }),
     );
@@ -104,7 +104,7 @@ describe('game registry', () => {
         icon: '🧩',
         accentColor: PASTEL_COLORS.primary,
         isUnfinished: false,
-        launchMode: 'difficulty-select',
+        launchMode: 'direct',
       },
       {
         id: 'drawing',

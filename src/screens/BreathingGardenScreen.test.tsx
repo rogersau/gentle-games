@@ -31,6 +31,7 @@ const mockSettings: any = {
 };
 
 jest.mock('../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
       background: '#FFFEF7',
@@ -156,6 +157,7 @@ describe('BreathingGardenScreen', () => {
     fireEvent.press(screen.getByTestId('breathing-pause'));
     expect(mockPause).toHaveBeenCalled();
     expect(screen.getByTestId('breathing-resume')).toBeTruthy();
+    expect(screen.queryByText('Breathe In')).toBeNull();
 
     fireEvent.press(screen.getByTestId('breathing-resume'));
     expect(mockResume).toHaveBeenCalled();
@@ -203,7 +205,7 @@ describe('BreathingGardenScreen', () => {
     expect(screen.getByTestId('breathing-normal-state')).toBeTruthy();
     expect(screen.queryByTestId('breathing-ball')).toBeNull();
     expect(screen.getByTestId('breathing-stop')).toBeTruthy();
-    expect(screen.getByTestId('breathing-sound')).toBeTruthy();
+    expect(screen.getByTestId('game-sound')).toBeTruthy();
     expect(screen.getByTestId('breathing-music')).toBeTruthy();
     expect(screen.getByTestId('breathing-visual-cue')).toBeTruthy();
   });
@@ -227,7 +229,7 @@ describe('BreathingGardenScreen', () => {
     });
 
     fireEvent.press(screen.getByTestId('breathing-normal'));
-    fireEvent.press(screen.getByTestId('breathing-sound'));
+    fireEvent.press(screen.getByTestId('game-sound'));
     expect(mockUpdateSettings).toHaveBeenCalledWith({ soundEnabled: false });
     fireEvent.press(screen.getByTestId('breathing-visual-cue'));
     expect(mockUpdateGameSettings).toHaveBeenCalledWith('breathing-garden', {
@@ -245,8 +247,9 @@ describe('BreathingGardenScreen', () => {
     expect(mockPause).toHaveBeenCalled();
     expect(mockStopMusic).toHaveBeenCalled();
     expect(screen.getByTestId('breathing-resume')).toBeTruthy();
+    expect(screen.queryByText('Breathe In')).toBeNull();
 
-    fireEvent.press(screen.getByLabelText('← Back'));
+    fireEvent.press(screen.getByTestId('game-home'));
     expect(mockGoBack).toHaveBeenCalled();
     screen.unmount();
     expect(mockStopMusic).toHaveBeenCalled();

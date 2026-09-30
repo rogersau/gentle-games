@@ -36,10 +36,12 @@ describe('usePatternTrainGame', () => {
     });
   });
 
-  it('starts without a round until a level is chosen', () => {
+  it('starts at the saved level without a setup interruption', () => {
     const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
 
-    expect(result.current.state.pattern).toBeNull();
+    expect(result.current.state.pattern).toBe(pattern);
+    expect(result.current.state.showDifficultySelector).toBe(false);
+    expect(patternTrainLogic.generateTrainPattern).toHaveBeenCalledWith('easy');
     expect(result.current.state.guidedRound.phase).toBe('independent');
     expect(result.current.state.completedRounds).toBe(0);
   });

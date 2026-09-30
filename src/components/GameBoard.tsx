@@ -12,7 +12,7 @@ import { playCompleteSound, playFlipSound, playMatchSound } from '../utils/sound
 import { Tile } from './Tile';
 import { useSettings } from '../context/SettingsContext';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
-import { AppButton, AppModal } from '../ui/components';
+import { AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useTranslation } from 'react-i18next';
 import { useTrackedTimeouts } from '../utils/useTrackedTimeouts';
@@ -44,9 +44,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const { colors, resolvedMode } = useThemeColors();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
+  const { pairCount, previewMode, mismatchDuration, hintEnabled } = getGameSettings(
+    settings,
+    'memory-snap',
+  );
+  // Sound and other global preferences must not restart an unfinished board.
   const memorySettings = useMemo(
-    () => getGameSettings(settings, 'memory-snap'),
-    [settings.difficulty, settings.gameSettings, settings.showCardPreview],
+    () => ({ pairCount, previewMode, mismatchDuration, hintEnabled }),
+    [pairCount, previewMode, mismatchDuration, hintEnabled],
   );
   const { queueTimeout, clearAllTimeouts } = useTrackedTimeouts();
 
@@ -246,7 +251,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     [
       hintedTileId,
       isPreviewPhase,
-      isProcessing,
       memorySettings.mismatchDuration,
       onGameComplete,
       onPositiveEvent,
@@ -314,13 +318,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       <View style={styles.controls}>
         {isPreviewPhase && memorySettings.previewMode === 'until-ready' ? (
           <AppButton
+            icon='play'
             label={t('games.memorySnap.ready')}
             onPress={handleReady}
             accessibilityHint={t('games.memorySnap.readyHint')}
             testID='memory-snap-ready'
           />
         ) : null}
-        {!isPreviewPhase && memorySettings.hintEnabled ? (
+        {!isPreviewPhase && !isGameComplete && memorySettings.hintEnabled ? (
           <AppButton
             label={t('games.memorySnap.hint')}
             variant='ghost'
@@ -336,37 +341,29 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         ) : null}
       </View>
 
-      <AppModal
-        visible={isGameComplete}
-        title={t(
-          settings.pressureFreeMode
-            ? 'games.memorySnap.completedTitle'
-            : 'games.memorySnap.wellDone',
-        )}
-        onClose={() => undefined}
-        showClose={false}
-        dismissOnBackdropPress={false}
-      >
-        <Text style={styles.completeText} accessibilityRole='text'>
-          {settings.pressureFreeMode
-            ? t('games.memorySnap.completed')
-            : t('games.memorySnap.completedIn', { time: formatTime(elapsed) })}
-        </Text>
-        <View style={styles.buttonRow}>
-          <AppButton
-            label={t('games.memorySnap.goHome')}
-            variant='secondary'
-            onPress={() => onBackPress?.()}
-            accessibilityHint={t('games.memorySnap.goHomeHint')}
-          />
-          <View style={{ width: Space.md }} />
-          <AppButton
-            label={t('games.memorySnap.playAgain')}
-            onPress={startNewGame}
-            accessibilityHint={t('games.memorySnap.playAgainHint')}
-          />
+      {isGameComplete ? (
+        <View testID='memory-complete' style={styles.completion}>
+          <Text style={styles.completeText} accessibilityLiveRegion='polite'>
+            {settings.pressureFreeMode
+              ? t('games.memorySnap.completed')
+              : t('games.memorySnap.completedIn', { time: formatTime(elapsed) })}
+          </Text>
+          <View style={styles.buttonRow}>
+            <AppButton
+              label={t('games.memorySnap.goHome')}
+              variant='secondary'
+              onPress={() => onBackPress?.()}
+              accessibilityHint={t('games.memorySnap.goHomeHint')}
+            />
+            <AppButton
+              icon='repeat'
+              label={t('games.memorySnap.playAgain')}
+              onPress={startNewGame}
+              accessibilityHint={t('games.memorySnap.playAgainHint')}
+            />
+          </View>
         </View>
-      </AppModal>
+      ) : null}
     </View>
   );
 };
@@ -396,5 +393,12 @@ const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
       textAlign: 'center',
       marginBottom: Space.lg,
     },
-    buttonRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+    completion: { alignItems: 'center', paddingBottom: Space.md },
+    buttonRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: Space.md,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
   });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { AppState, Text, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ParentTimerProvider, useParentTimer } from './ParentTimerContext';
@@ -14,6 +14,7 @@ jest.mock('../context/SettingsContext', () => ({
 }));
 
 jest.mock('../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
       background: '#FFFFFF',
@@ -70,6 +71,7 @@ describe('ParentTimerContext', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+    jest.restoreAllMocks();
   });
 
   it('starts and persists a fresh allowance', async () => {
@@ -202,5 +204,69 @@ describe('ParentTimerContext', () => {
     const { unmount } = await renderTimer();
     unmount();
     act(() => jest.advanceTimersByTime(1000));
+  });
+
+  it.each([
+    { random: 0.9, question: '48 + 38 = ?', answer: '86' },
+    { random: 0, question: '12 − 11 = ?', answer: '1' },
+  ])(
+    'restarts the allowance for a correct answer to $question',
+    async ({ random, question, answer }) => {
+      jest.spyOn(Math, 'random').mockReturnValue(random);
+      mockSettings.animationsEnabled = false;
+      storage.getItem.mockResolvedValueOnce(
+        JSON.stringify({ expiresAt: Date.now() - 1, durationMinutes: 1, locked: true }),
+      );
+      const screen = await renderTimer();
+      expect(screen.getByText(question)).toBeTruthy();
+      fireEvent.changeText(screen.getByTestId('parent-timer-answer-input'), answer);
+      fireEvent.press(screen.getByTestId('parent-timer-unlock-button'));
+      expect(screen.getByTestId('locked').props.children).toBe('unlocked');
+      expect(screen.getByTestId('seconds').props.children).toBe(60);
+      await waitFor(() =>
+        expect(storage.setItem).toHaveBeenCalledWith(
+          'gentleGames.parentTimerSession',
+          expect.stringContaining('"locked":false'),
+        ),
+      );
+    },
+  );
+
+  it.each(['', '0', '1-2', '--1'])(
+    'keeps the gate closed for an incorrect or malformed answer: %s',
+    async (answer) => {
+      jest.spyOn(Math, 'random').mockReturnValue(0);
+      mockSettings.animationsEnabled = false;
+      storage.getItem.mockResolvedValueOnce(
+        JSON.stringify({ expiresAt: Date.now() - 1, durationMinutes: 1, locked: true }),
+      );
+      const screen = await renderTimer();
+      fireEvent.changeText(screen.getByTestId('parent-timer-answer-input'), answer);
+      fireEvent.press(screen.getByTestId('parent-timer-unlock-button'));
+      expect(screen.getByTestId('locked').props.children).toBe('locked');
+      expect(screen.getByTestId('seconds').props.children).toBe(0);
+    },
+  );
+
+  it('offers a hold gesture and an equivalent screen-reader action without requiring arithmetic', async () => {
+    storage.getItem.mockResolvedValueOnce(
+      JSON.stringify({ expiresAt: Date.now() - 1, durationMinutes: 1, locked: true }),
+    );
+    const screen = await renderTimer();
+    const holdButton = screen.getByTestId('parent-timer-hold-button');
+    expect(holdButton.props.accessibilityRole).toBe('button');
+    expect(holdButton.props.accessibilityHint).toBeTruthy();
+    fireEvent.press(holdButton);
+    expect(screen.getByTestId('locked').props.children).toBe('locked');
+    fireEvent(holdButton, 'longPress');
+    expect(screen.getByTestId('locked').props.children).toBe('unlocked');
+    expect(screen.getByTestId('seconds').props.children).toBe(60);
+
+    act(() => jest.advanceTimersByTime(61_000));
+    expect(screen.getByTestId('locked').props.children).toBe('locked');
+    fireEvent(screen.getByTestId('parent-timer-hold-button'), 'accessibilityAction', {
+      nativeEvent: { actionName: 'activate' },
+    });
+    expect(screen.getByTestId('locked').props.children).toBe('unlocked');
   });
 });

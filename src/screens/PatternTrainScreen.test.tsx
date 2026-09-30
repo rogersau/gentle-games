@@ -96,6 +96,7 @@ jest.mock('../utils/patternTrainLogic', () => ({
 }));
 
 jest.mock('../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
       background: '#FFFEF7',
@@ -136,6 +137,7 @@ jest.mock('../utils/sounds', () => ({
 }));
 
 jest.mock('../ui/animations', () => ({
+  useAnimationEnabled: () => false,
   useGentleBounce: () => ({
     scale: { __getValue: () => 1 },
     bounce: jest.fn(),
@@ -208,23 +210,22 @@ describe('PatternTrainScreen', () => {
     jest.restoreAllMocks();
   });
 
-  it('renders difficulty selector on initial load', () => {
+  it('opens with a playable pattern and keeps level choices optional', () => {
     const screen = render(<PatternTrainScreen />);
-
-    // Should show difficulty selector modal
-    const easyButton = screen.queryByText('Easy');
-    const mediumButton = screen.queryByText('Medium');
-    const hardButton = screen.queryByText('Hard');
-
-    expect(easyButton).toBeTruthy();
-    expect(mediumButton).toBeTruthy();
-    expect(hardButton).toBeTruthy();
+    expect(screen.queryByText('Easy')).toBeNull();
+    expect(screen.getByLabelText('Carriage with 🌈')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('pattern-train-level'));
+    expect(screen.getByText('Easy')).toBeTruthy();
+    expect(screen.getByText('Medium')).toBeTruthy();
+    expect(screen.getByText('Hard')).toBeTruthy();
+    fireEvent.press(screen.getByText('Medium'));
+    expect(screen.queryByText('Medium')).toBeNull();
   });
 
   it('shows game title', () => {
     const screen = render(<PatternTrainScreen />);
 
-    const title = screen.queryByText('Pattern Train');
+    const title = screen.queryAllByText('Pattern Train')[0];
     expect(title).toBeTruthy();
   });
 
@@ -232,33 +233,29 @@ describe('PatternTrainScreen', () => {
     const screen = render(<PatternTrainScreen />);
 
     // Screen should render successfully with accessibility
-    const title = screen.queryByText('Pattern Train');
+    const title = screen.queryAllByText('Pattern Train')[0];
     expect(title).toBeTruthy();
   });
 
-  it('navigates back when cancel is pressed', () => {
+  it('returns to the same pattern when level selection is cancelled', () => {
     const screen = render(<PatternTrainScreen />);
-
-    // Find and press cancel button
-    const cancelButton = screen.queryByText('Cancel');
-    if (cancelButton) {
-      fireEvent.press(cancelButton);
-      expect(mockGoBack).toHaveBeenCalled();
-    }
+    fireEvent.press(screen.getByTestId('pattern-train-level'));
+    fireEvent.press(screen.getByText('Cancel'));
+    expect(mockGoBack).not.toHaveBeenCalled();
+    expect(screen.queryByText('Easy')).toBeNull();
+    expect(screen.getByLabelText('Carriage with 🌈')).toBeTruthy();
   });
 
   it('renders with AppHeader for navigation', () => {
     const screen = render(<PatternTrainScreen />);
 
     // AppHeader should be rendered (we can check by looking for the title)
-    const title = screen.queryByText('Pattern Train');
+    const title = screen.queryAllByText('Pattern Train')[0];
     expect(title).toBeTruthy();
   });
 
   it('leaves carriage taps available while reserving drags for movement', async () => {
     const screen = render(<PatternTrainScreen />);
-
-    fireEvent.press(screen.getByText('Easy'));
 
     await waitFor(() => {
       expect(
@@ -283,7 +280,6 @@ describe('PatternTrainScreen', () => {
 
   it('keeps the missing carriage label from overflowing across the train', async () => {
     const screen = render(<PatternTrainScreen />);
-    fireEvent.press(screen.getByText('Easy'));
 
     await waitFor(() => expect(screen.queryByText('missing carriage')).toBeNull());
 
@@ -297,7 +293,6 @@ describe('PatternTrainScreen', () => {
 
   it('submits a choice through the accessible tap path and exposes child-controlled Next', async () => {
     const screen = render(<PatternTrainScreen />);
-    fireEvent.press(screen.getByText('Easy'));
 
     const carriage = await screen.findByLabelText('Carriage with 🌈');
     fireEvent.press(carriage);
@@ -307,7 +302,6 @@ describe('PatternTrainScreen', () => {
 
   it('shows the staged hint and model before accepting corrected Next', async () => {
     const screen = render(<PatternTrainScreen />);
-    fireEvent.press(screen.getByText('Easy'));
 
     const wrongChoice = await screen.findByLabelText('Carriage with 🌸');
     fireEvent.press(wrongChoice);
@@ -323,7 +317,6 @@ describe('PatternTrainScreen', () => {
 
   it('lets the child show the pattern before making a choice', async () => {
     const screen = render(<PatternTrainScreen />);
-    fireEvent.press(screen.getByText('Easy'));
 
     fireEvent.press(await screen.findByText('Show the pattern'));
 
@@ -333,7 +326,6 @@ describe('PatternTrainScreen', () => {
 
   it('does not play a negative sound for an incorrect choice', async () => {
     const screen = render(<PatternTrainScreen />);
-    fireEvent.press(screen.getByText('Easy'));
 
     fireEvent.press(await screen.findByLabelText('Carriage with 🌸'));
 
@@ -343,16 +335,14 @@ describe('PatternTrainScreen', () => {
   it('uses an immediate reduced-motion path without auto-advancing', async () => {
     patternSettings.reducedMotionEnabled = true;
     const screen = render(<PatternTrainScreen />);
-    fireEvent.press(screen.getByText('Easy'));
 
-    expect(await screen.findByText('AB pattern')).toBeTruthy();
+    expect(await screen.findByLabelText('Carriage with 🌈')).toBeTruthy();
     expect(screen.queryByTestId('pattern-train-next')).toBeNull();
   });
 
   it('hides completed-round stats in pressure-free mode', async () => {
     patternSettings.pressureFreeMode = true;
     const screen = render(<PatternTrainScreen />);
-    fireEvent.press(screen.getByText('Easy'));
     await waitFor(() => expect(screen.queryByText(/Completed:/)).toBeNull());
   });
 });

@@ -26,6 +26,9 @@ export const useDebouncedDrawingSave = ({
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingHistoryRef = useRef<HistoryEntry[] | null>(null);
   const writeQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const mountedRef = useRef(true);
+  const callbacksRef = useRef({ onError, onSuccess });
+  callbacksRef.current = { onError, onSuccess };
 
   const clearPendingTimer = useCallback(() => {
     if (timeoutRef.current) {
@@ -42,20 +45,20 @@ export const useDebouncedDrawingSave = ({
           try {
             if (history.length > 0) {
               await AsyncStorage.setItem(storageKey, serializeDrawingHistory(history));
-              onSuccess?.();
+              if (mountedRef.current) callbacksRef.current.onSuccess?.();
               return;
             }
 
             await AsyncStorage.removeItem(storageKey);
-            onSuccess?.();
+            if (mountedRef.current) callbacksRef.current.onSuccess?.();
           } catch (error) {
-            onError?.(error);
+            if (mountedRef.current) callbacksRef.current.onError?.(error);
           }
         });
 
       await writeQueueRef.current;
     },
-    [onError, onSuccess, storageKey],
+    [storageKey],
   );
 
   const flushPendingSave = useCallback(async () => {
@@ -81,7 +84,13 @@ export const useDebouncedDrawingSave = ({
     [clearPendingTimer, debounceMs, flushPendingSave],
   );
 
-  useEffect(() => clearPendingTimer, [clearPendingTimer]);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      void flushPendingSave();
+    };
+  }, [flushPendingSave]);
 
   return {
     scheduleSave,

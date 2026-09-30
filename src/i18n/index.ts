@@ -1,12 +1,12 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import { DEFAULT_LANGUAGE } from '../types/i18n';
+import { DEFAULT_LANGUAGE, SupportedLanguage } from '../types/i18n';
 
 // Import translation files
 import enAU from './locales/en-AU.json';
 import enUS from './locales/en-US.json';
 
-const resources = {
+export const resources = {
   'en-AU': {
     translation: enAU,
   },
@@ -29,7 +29,7 @@ i18n.use(initReactI18next).init({
 
 export default i18n;
 
-export const changeLanguage = (language: string) => {
+export const changeLanguage = (language: SupportedLanguage) => {
   return i18n.changeLanguage(language);
 };
 

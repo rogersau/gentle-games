@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
-import { Space, Radius, TypeStyle, HitTarget, Shadow } from '../tokens';
+import { Space, Radius, TypeStyle, HitTarget, Shadow, ON_ACCENT_TEXT } from '../tokens';
 import { ThemeColors } from '../../types';
 import { ResolvedThemeMode } from '../../utils/theme';
 import { useTranslation } from 'react-i18next';
@@ -66,6 +66,7 @@ export const SelectBox = <T extends string | number>({
             onPress={() => setIsOpen(false)}
             activeOpacity={1}
             accessibilityLabel={t('common.close')}
+            accessibilityRole='button'
           />
           <View style={styles.modalContent}>
             <ScrollView style={styles.optionsList}>
@@ -161,11 +162,11 @@ const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
       flex: 1,
     },
     optionTextSelected: {
-      color: colors.surface,
+      color: ON_ACCENT_TEXT,
     },
     checkmark: {
       ...TypeStyle.buttonSm,
-      color: colors.surface,
+      color: ON_ACCENT_TEXT,
       marginLeft: Space.sm,
     },
   });

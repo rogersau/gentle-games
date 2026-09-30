@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 const CELEBRATION_PHRASES = [
   'games.patternTrain.celebration.phrase1',
@@ -19,6 +19,18 @@ export function usePatternTrainUI(options: UsePatternTrainUIOptions = {}) {
   const [celebrationPhrase, setCelebrationPhrase] = useState('');
   const [milestoneCount, setMilestoneCount] = useState(0);
   const phraseIndexRef = useRef(0);
+  const milestoneCountRef = useRef(0);
+  const celebrationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!celebrationsEnabled) setShowCelebration(false);
+    return () => {
+      if (celebrationTimerRef.current !== null) {
+        clearTimeout(celebrationTimerRef.current);
+        celebrationTimerRef.current = null;
+      }
+    };
+  }, [celebrationsEnabled]);
 
   const triggerCelebration = useCallback(() => {
     const phrase = CELEBRATION_PHRASES[phraseIndexRef.current % CELEBRATION_PHRASES.length];
@@ -26,19 +38,17 @@ export function usePatternTrainUI(options: UsePatternTrainUIOptions = {}) {
     setCelebrationPhrase(phrase);
     setShowCelebration(true);
 
-    setTimeout(() => {
+    if (celebrationTimerRef.current !== null) clearTimeout(celebrationTimerRef.current);
+    celebrationTimerRef.current = setTimeout(() => {
+      celebrationTimerRef.current = null;
       setShowCelebration(false);
     }, 3000);
   }, []);
 
   const onPatternComplete = useCallback(() => {
-    setMilestoneCount((prev) => {
-      const next = prev + 1;
-      if (celebrationsEnabled && next % milestoneInterval === 0) {
-        triggerCelebration();
-      }
-      return next;
-    });
+    const next = ++milestoneCountRef.current;
+    setMilestoneCount(next);
+    if (celebrationsEnabled && next % milestoneInterval === 0) triggerCelebration();
   }, [celebrationsEnabled, milestoneInterval, triggerCelebration]);
 
   return {

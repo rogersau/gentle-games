@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DrawingCanvas, DrawingCanvasRef, HistoryEntry } from '../components/DrawingCanvas';
 import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
-import { AppScreen, AppHeader, AppButton, AppModal } from '../ui/components';
+import { AppScreen, GameHeader } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import {
   DEFAULT_DRAWING_SAVE_DEBOUNCE_MS,
@@ -18,8 +18,8 @@ import { useSettings } from '../context/SettingsContext';
 import { sanitizeDrawingHistory } from '../utils/drawingPersistence';
 
 const DRAWING_STORAGE_KEY = '@gentle_match_saved_drawing';
-export const DRAWING_HEADER_HEIGHT = 60;
-export const DRAWING_TOOLBAR_HEIGHT = 140;
+export const DRAWING_HEADER_HEIGHT = 68;
+export const DRAWING_TOOLBAR_HEIGHT = 304;
 export const DRAWING_LAYOUT_PADDING = 32;
 export const DRAWING_SAVE_DEBOUNCE_MS = DEFAULT_DRAWING_SAVE_DEBOUNCE_MS;
 
@@ -39,7 +39,6 @@ export const DrawingScreen: React.FC = () => {
   const { showMochi } = useMochi();
 
   const [savedHistory, setSavedHistory] = useState<HistoryEntry[]>([]);
-  const [showContinueModal, setShowContinueModal] = useState(false);
   const [hasCheckedSaved, setHasCheckedSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showSaveNotice, setShowSaveNotice] = useState(false);
@@ -54,11 +53,20 @@ export const DrawingScreen: React.FC = () => {
       DRAWING_TOOLBAR_HEIGHT -
       DRAWING_LAYOUT_PADDING;
 
+    // The larger toolbar must not hide marks in drawings saved with a taller canvas.
+    const savedContentHeight = savedHistory.reduce((bottom, entry) => {
+      if (entry.kind === 'shape') return Math.max(bottom, entry.y + entry.size / 2 + Space.sm);
+      return entry.points.reduce(
+        (edge, point) => Math.max(edge, point.y + entry.width / 2 + Space.sm),
+        bottom,
+      );
+    }, 0);
+
     return {
       width: availableWidth,
-      height: Math.max(0, availableHeight),
+      height: Math.max(160, availableHeight, savedContentHeight),
     };
-  }, [screenWidth, screenHeight, insets.top, insets.bottom]);
+  }, [screenWidth, screenHeight, insets.top, insets.bottom, savedHistory]);
 
   useEffect(() => {
     if (hasStartedSavedCheckRef.current) {
@@ -76,7 +84,6 @@ export const DrawingScreen: React.FC = () => {
             await AsyncStorage.removeItem(DRAWING_STORAGE_KEY);
           } else if (parsed.length > 0) {
             setSavedHistory(parsed);
-            setShowContinueModal(true);
             if (settings.showMochiInGames && !hasShownWelcomeMochiRef.current) {
               hasShownWelcomeMochiRef.current = true;
               const phrases = t('mascot.drawingWelcomePhrases', {
@@ -141,19 +148,6 @@ export const DrawingScreen: React.FC = () => {
     return unsubscribe;
   }, [flushLatestHistory, navigation]);
 
-  const handleContinue = () => setShowContinueModal(false);
-
-  const handleNewDrawing = async () => {
-    try {
-      await AsyncStorage.removeItem(DRAWING_STORAGE_KEY);
-      setSavedHistory([]);
-      canvasRef.current?.clear();
-    } catch (error) {
-      console.warn('Error clearing saved drawing:', error);
-    }
-    setShowContinueModal(false);
-  };
-
   const handleHistoryChange = useCallback(
     (history: HistoryEntry[]) => {
       scheduleSave(history);
@@ -177,9 +171,10 @@ export const DrawingScreen: React.FC = () => {
   }
 
   return (
-    <AppScreen>
-      <AppHeader title={t('games.drawing.title')} onBack={handleBackPress} />
-
+    <AppScreen
+      scroll
+      header={<GameHeader title={t('games.drawing.title')} onBack={handleBackPress} />}
+    >
       <View style={styles.content}>
         {showSaveNotice && (
           <Text
@@ -204,31 +199,6 @@ export const DrawingScreen: React.FC = () => {
           />
         )}
       </View>
-
-      <AppModal
-        visible={showContinueModal}
-        onClose={handleContinue}
-        title={t('games.drawing.welcomeBack')}
-        showClose={false}
-      >
-        <Text style={styles.modalText}>{t('games.drawing.continuePrompt')}</Text>
-        <View style={styles.modalButtons}>
-          <AppButton
-            label={t('games.drawing.newDrawing')}
-            variant='ghost'
-            onPress={handleNewDrawing}
-            style={{ flex: 1 }}
-            accessibilityHint={t('games.drawing.newDrawingHint')}
-          />
-          <AppButton
-            label={t('games.drawing.continueDrawing')}
-            variant='primary'
-            onPress={handleContinue}
-            style={{ flex: 1 }}
-            accessibilityHint={t('games.drawing.continueHint')}
-          />
-        </View>
-      </AppModal>
     </AppScreen>
   );
 };
@@ -251,20 +221,10 @@ const createStyles = (colors: ThemeColors) =>
       paddingHorizontal: Space.base,
       paddingTop: Space.base,
     },
-    modalText: {
-      ...TypeStyle.body,
-      color: colors.text,
-      textAlign: 'center',
-      marginBottom: Space.lg,
-    },
     saveNotice: {
       ...TypeStyle.body,
       color: colors.textLight,
       textAlign: 'center',
       marginBottom: Space.sm,
-    },
-    modalButtons: {
-      flexDirection: 'row',
-      gap: Space.md,
     },
   });

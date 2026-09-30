@@ -15,3 +15,4 @@ export { SectionHeader } from './SectionHeader';
 export { GuidedPracticePrompt } from './GuidedPracticePrompt';
 export { Mochi, MochiVariant, MochiSize, MochiProps } from '../../components/Mochi';
 export { MochiPresence } from '../../components/MochiPresence';
+export { GameHeader } from './GameHeader';

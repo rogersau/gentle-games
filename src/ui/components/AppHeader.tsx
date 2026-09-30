@@ -75,6 +75,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
     container: {
       height: 60,
+      flexShrink: 0,
       paddingHorizontal: Space.base,
       flexDirection: 'row',
       alignItems: 'center',

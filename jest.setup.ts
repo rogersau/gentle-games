@@ -306,6 +306,8 @@ jest.mock('react-i18next', () => ({
         // Settings volume
         'settings.volume.decrease': 'Decrease volume',
         'settings.volume.increase': 'Increase volume',
+        'settings.volume.current': 'Volume {{percent}}%',
+        'settings.volume.adjustHint': 'Swipe up or down to adjust volume',
         // Accessibility
         'accessibility.gameCardHint': 'Tap to play this game',
         // Glitter Fall accessibility

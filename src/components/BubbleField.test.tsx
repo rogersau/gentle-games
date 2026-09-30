@@ -7,6 +7,7 @@ import { BubbleField } from './BubbleField';
 let mockBubblePosition: { x: number; y: number } | undefined;
 
 jest.mock('../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
       background: '#FFFEF7',

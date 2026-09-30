@@ -26,9 +26,15 @@ jest.mock('../context/MochiContext', () => ({
   }),
 }));
 
+const mockUpdateGameSettings = jest.fn();
+const mockUpdateSettings = jest.fn();
 const memorySettings = { pressureFreeMode: false };
 jest.mock('../context/SettingsContext', () => ({
-  useSettings: () => ({ settings: memorySettings }),
+  useSettings: () => ({
+    settings: memorySettings,
+    updateGameSettings: mockUpdateGameSettings,
+    updateSettings: mockUpdateSettings,
+  }),
 }));
 
 jest.mock('react-i18next', () => ({
@@ -90,13 +96,34 @@ describe('GameScreen', () => {
   });
 
   it('renders the Memory Snap header, exposes the stats label, and wires board back presses', () => {
-    const { getByText, root } = render(<GameScreen />);
+    const { getByText, getByTestId } = render(<GameScreen />);
 
     expect(getByText('Memory Snap')).toBeTruthy();
     expect(getByText('Elapsed 0:42 · Turns 7')).toBeTruthy();
 
-    const boardBackText = root.findByProps({ testID: 'board-back' });
+    const boardBackText = getByTestId('board-back');
     fireEvent.press(boardBackText);
+    expect(mockGoBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers all board sizes on request and remembers the chosen size', () => {
+    const screen = render(<GameScreen />);
+    expect(screen.queryByTestId('memory-pairs-2')).toBeNull();
+    fireEvent.press(screen.getByTestId('memory-change-board'));
+    for (const count of [2, 3, 4, 6, 10, 15])
+      expect(screen.getByTestId(`memory-pairs-${count}`)).toBeTruthy();
+    fireEvent.press(screen.getByTestId('memory-pairs-3'));
+    expect(mockUpdateGameSettings).toHaveBeenCalledWith('memory-snap', { pairCount: 3 });
+    expect(screen.queryByTestId('memory-pairs-3')).toBeNull();
+  });
+
+  it('exposes Home and an in-game global sound switch', () => {
+    const screen = render(<GameScreen />);
+    fireEvent.press(screen.getByTestId('game-sound'));
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ soundEnabled: true });
+    expect(screen.getByTestId('game-sound').props.accessibilityRole).toBe('switch');
+    expect(screen.getByTestId('game-sound').props.accessibilityState.checked).toBe(false);
+    fireEvent.press(screen.getByTestId('game-home'));
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 

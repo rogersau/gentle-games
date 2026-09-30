@@ -50,7 +50,7 @@ export const calculateGameBoardSize = (
   viewport: GameViewport,
   options: GameBoardSizeOptions,
 ): GameViewport => {
-  const width = Math.max(1, viewport.width - options.horizontalPadding);
+  const width = Math.max(1, Math.min(760, viewport.width) - options.horizontalPadding);
   const availableHeight = Math.max(1, viewport.height - options.verticalReserve);
   const proportionalHeight = Math.max(1, viewport.height * options.maxHeightRatio);
   const height = Math.max(options.compactMinHeight, Math.min(availableHeight, proportionalHeight));

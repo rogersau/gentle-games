@@ -1,115 +1,73 @@
-/**
- * Translation validation tests
- *
- * Run these tests to ensure all translation keys return strings
- * This catches errors where object keys are used instead of leaf string keys
- */
-
-import enAU from '../i18n/locales/en-AU.json';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { resources } from '../i18n';
+import { LANGUAGE_OPTIONS } from '../types/i18n';
 import { validateTranslation } from '../i18n/types';
 
-// List of known leaf keys that should return strings
-// Add new keys here as you create them
-const knownLeafKeys = [
-  // Pattern Train
-  'games.patternTrain.difficulty.easy.label',
-  'games.patternTrain.difficulty.easy.description',
-  'games.patternTrain.difficulty.medium.label',
-  'games.patternTrain.difficulty.medium.description',
-  'games.patternTrain.difficulty.hard.label',
-  'games.patternTrain.difficulty.hard.description',
-  'games.patternTrain.title',
-  'games.patternTrain.subtitle',
+const localeDirectory = join(__dirname, '../i18n/locales');
+const locales = Object.fromEntries(
+  readdirSync(localeDirectory)
+    .filter((filename) => filename.endsWith('.json'))
+    .map((filename) => [
+      filename.slice(0, -5),
+      JSON.parse(readFileSync(join(localeDirectory, filename), 'utf8')),
+    ]),
+);
 
-  // Category Match
-  'games.categoryMatch.sortingInstruction',
-  'games.categoryMatch.correctFeedback',
-  'games.categoryMatch.incorrectFeedback',
-  'games.categoryMatch.model',
-  'games.categoryMatch.categories.food',
-  'games.categoryMatch.categories.toys',
-  'games.categoryMatch.categories.clothes',
-  'games.categoryMatch.items.apple',
-  'games.categoryMatch.items.teddy',
-  'settings.categoryMatch.categories.two',
-  'settings.categoryMatch.categories.three',
-
-  // Number Picnic
-  'games.numberPicnic.undo',
-  'games.numberPicnic.reset',
-  'games.numberPicnic.nextPicnic',
-  'games.numberPicnic.removeItemAccessibilityLabel',
-  'games.numberPicnic.removeItemAccessibilityHint',
-  'settings.numberPicnic.maximumQuantity.title',
-  'settings.numberPicnic.maximumQuantity.description',
-  'settings.numberPicnic.maximumQuantity.five',
-  'settings.numberPicnic.maximumQuantity.eight',
-  'settings.numberPicnic.maximumQuantity.ten',
-
-  // Add more known keys here...
-];
-
-// List of known parent keys that should NOT be used directly
-// These return objects, not strings
-const knownParentKeys = [
-  'games.patternTrain.difficulty', // Returns object with easy/medium/hard
-  // Add more parent keys here...
-];
-
-describe('Translation Validation', () => {
-  let consoleErrorSpy: jest.SpyInstance;
-
-  beforeEach(() => {
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    consoleErrorSpy.mockRestore();
-  });
-
-  it('all known leaf keys return strings', () => {
-    for (const key of knownLeafKeys) {
-      expect(() => validateTranslation(key)).not.toThrow();
-      const result = validateTranslation(key);
-      expect(typeof result).toBe('string');
-      expect(result.length).toBeGreaterThan(0);
+function flattenTranslations(
+  value: unknown,
+  prefix = '',
+  result: Record<string, string> = {},
+): Record<string, string> {
+  if (typeof value === 'string') {
+    expect(value.trim()).not.toBe('');
+    result[prefix] = value;
+  } else {
+    expect(value).not.toBeNull();
+    expect(typeof value).toBe('object');
+    expect(Object.keys(value as object).length).toBeGreaterThan(0);
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+      flattenTranslations(child, prefix ? `${prefix}.${key}` : key, result);
     }
+  }
+  return result;
+}
+
+function placeholders(value: string): string[] {
+  return Array.from(value.matchAll(/{{\s*-?\s*([^},]+)(?:,[^}]+)?\s*}}/g), (match) =>
+    match[1].trim(),
+  ).sort();
+}
+
+describe('Translation validation across every locale', () => {
+  it('registers every locale file and exposes it as a supported language', () => {
+    const languages = Object.keys(locales).sort();
+    expect(Object.keys(resources).sort()).toEqual(languages);
+    expect(LANGUAGE_OPTIONS.map(({ value }) => value).sort()).toEqual(languages);
   });
 
-  it('parent keys throw errors in dev mode', () => {
-    for (const key of knownParentKeys) {
-      expect(() => validateTranslation(key)).toThrow();
+  for (const [language, translations] of Object.entries(locales)) {
+    it(`${language} has the same complete leaf keys and interpolation placeholders as en-AU`, () => {
+      const reference = flattenTranslations(locales['en-AU']);
+      const actual = flattenTranslations(translations);
+      expect(Object.keys(actual).sort()).toEqual(Object.keys(reference).sort());
+      for (const key of Object.keys(reference)) {
+        expect({ key, placeholders: placeholders(actual[key]) }).toEqual({
+          key,
+          placeholders: placeholders(reference[key]),
+        });
+        expect(validateTranslation(key, translations)).toBe(actual[key]);
+      }
+    });
+  }
+
+  it('rejects missing keys and parent objects in development', () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      expect(() => validateTranslation('games.patternTrain.difficulty')).toThrow();
+      expect(() => validateTranslation('missing.translation')).toThrow();
+    } finally {
+      errorSpy.mockRestore();
     }
   });
 });
-
-/**
- * Manual validation helper
- *
- * Call this function to scan all translation keys and find issues
- * Usage: Run in browser console or add to build script
- */
-export function scanAllTranslations(): { valid: string[] } {
-  const valid: string[] = [];
-
-  function scanObject(obj: unknown, prefix = ''): void {
-    if (typeof obj === 'string') {
-      valid.push(prefix);
-      return;
-    }
-
-    if (typeof obj === 'object' && obj !== null) {
-      for (const [key, value] of Object.entries(obj)) {
-        const newKey = prefix ? `${prefix}.${key}` : key;
-        scanObject(value, newKey);
-      }
-    }
-  }
-
-  scanObject(enAU);
-
-  return { valid };
-}
-
-// Run this in your browser console to see all valid translation keys:
-// console.log(scanAllTranslations().valid.join('\n'))

@@ -48,7 +48,7 @@ describe('Analytics Fallbacks & robust initialization', () => {
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     // Ensure it doesn't throw uncaught exceptions
-    await expect(analytics.initAnalytics()).resolves.not.toThrow();
+    await expect(analytics.reconcileAnalyticsConsent(true)).resolves.not.toThrow();
 
     expect(warnSpy).toHaveBeenCalledWith(
       '[Analytics] PostHog initialization failed:',
@@ -67,7 +67,7 @@ describe('Analytics Fallbacks & robust initialization', () => {
     const analytics = require('./analytics');
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
-    await expect(analytics.initAnalytics()).resolves.not.toThrow();
+    await expect(analytics.reconcileAnalyticsConsent(true)).resolves.not.toThrow();
 
     expect(warnSpy).toHaveBeenCalledWith(
       '[Analytics] PostHog API key not configured. Analytics disabled.',
@@ -89,10 +89,9 @@ describe('Analytics Fallbacks & robust initialization', () => {
     const analytics = require('./analytics');
     jest.spyOn(console, 'warn').mockImplementation(() => {});
 
-    await analytics.initAnalytics(); // Fails gracefully
+    await analytics.reconcileAnalyticsConsent(true); // Fails gracefully
 
     // Tracking functions shouldn't throw when client is null
-    expect(() => analytics.trackEvent('test')).not.toThrow();
     expect(() => analytics.trackScreenView('Home')).not.toThrow();
   });
 });

@@ -2,11 +2,9 @@ import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Linking, StyleSheet } from 'react-native';
 import { HomeScreen } from './HomeScreen';
-import type { GameDefinition } from '../games/registry';
 import * as registry from '../games/registry';
 import { APP_ROUTES } from '../types/navigation';
 import { openExternalUrl } from '../utils/externalLinks';
-import { GAME_OUTCOMES } from '../games/outcomes';
 
 const mockNavigate = jest.fn();
 let mockFocusCallback: (() => void) | undefined;
@@ -195,145 +193,12 @@ describe('HomeScreen', () => {
     expect(screen.queryByText('Number Picnic')).toBeNull();
   });
 
-  it('shows difficulty modal for Memory Snap and navigates to Game after selection', async () => {
+  it('opens Memory immediately without replacing the saved board size', () => {
     const screen = render(<HomeScreen />);
-
-    // GameCard wraps content in TouchableOpacity with accessibility label
-    const memorySnapCard = screen
-      .getAllByRole('button')
-      .find((el: any) => el.props.accessibilityLabel?.includes('Memory Snap'));
-    expect(memorySnapCard).toBeTruthy();
-    fireEvent.press(memorySnapCard!);
-    expect(screen.getByText(/Select difficulty/)).toBeTruthy();
-    expect(
-      screen
-        .getAllByRole('button')
-        .filter((el: any) => el.props.accessibilityLabel?.includes('difficulty')),
-    ).toHaveLength(3);
-
-    // Find the Hard difficulty button
-    const hardButton = screen
-      .getAllByRole('button')
-      .find((el: any) => el.props.accessibilityLabel?.includes('Hard'));
-    expect(hardButton).toBeTruthy();
-    fireEvent.press(hardButton!);
-
-    await waitFor(() => {
-      expect(mockUpdateSettings).toHaveBeenCalledWith('memory-snap', { pairCount: 15 });
-      expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Game);
-    });
-  });
-
-  it('ignores repeated difficulty presses while settings are pending', async () => {
-    let resolveSettings!: () => void;
-    mockUpdateSettings.mockImplementation(
-      () =>
-        new Promise<void>((resolve) => {
-          resolveSettings = resolve;
-        }),
-    );
-    const screen = render(<HomeScreen />);
-    fireEvent.press(screen.getByText('Memory Snap'));
-
-    const hardButton = screen
-      .getAllByRole('button')
-      .find((el: any) => el.props.accessibilityLabel?.includes('Hard'));
-    expect(hardButton).toBeTruthy();
-    fireEvent.press(hardButton!);
-    fireEvent.press(hardButton!);
-
-    expect(mockUpdateSettings).toHaveBeenCalledTimes(1);
-    expect(hardButton!.props.accessibilityState).toMatchObject({ disabled: true, busy: true });
-    expect(mockNavigate).not.toHaveBeenCalled();
-
-    await act(async () => {
-      resolveSettings();
-      await Promise.resolve();
-    });
-    expect(mockNavigate).toHaveBeenCalledTimes(1);
+    fireEvent.press(screen.getByTestId('home-game-memory-snap'));
     expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Game);
-  });
-
-  it('resets the launch guard when saving difficulty fails', async () => {
-    mockUpdateSettings.mockRejectedValueOnce(new Error('save failed'));
-    const screen = render(<HomeScreen />);
-    fireEvent.press(screen.getByText('Memory Snap'));
-    const hardButton = screen
-      .getAllByRole('button')
-      .find((el: any) => el.props.accessibilityLabel?.includes('Hard'));
-    fireEvent.press(hardButton!);
-
-    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledTimes(1));
-    await waitFor(() => {
-      const retryButton = screen
-        .getAllByRole('button')
-        .find((el: any) => el.props.accessibilityLabel?.includes('Hard'));
-      expect(retryButton!.props.accessibilityState.disabled).toBe(false);
-    });
-
-    const retryButton = screen
-      .getAllByRole('button')
-      .find((el: any) => el.props.accessibilityLabel?.includes('Hard'));
-    fireEvent.press(retryButton!);
-    await waitFor(() => {
-      expect(mockUpdateSettings).toHaveBeenCalledTimes(2);
-      expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Game);
-    });
-  });
-
-  it('does not navigate when a pending difficulty launch resolves after unmount', async () => {
-    let resolveSettings!: () => void;
-    mockUpdateSettings.mockImplementation(
-      () =>
-        new Promise<void>((resolve) => {
-          resolveSettings = resolve;
-        }),
-    );
-    const screen = render(<HomeScreen />);
-    fireEvent.press(screen.getByText('Memory Snap'));
-    const hardButton = screen
-      .getAllByRole('button')
-      .find((el: any) => el.props.accessibilityLabel?.includes('Hard'));
-    fireEvent.press(hardButton!);
-    screen.unmount();
-
-    await act(async () => {
-      resolveSettings();
-      await Promise.resolve();
-    });
-    expect(mockNavigate).not.toHaveBeenCalled();
-  });
-
-  it('routes difficulty-select games to their own route after picking a difficulty', async () => {
-    const routedDifficultyGame: GameDefinition = {
-      id: 'pattern-train',
-      route: APP_ROUTES.PatternTrain,
-      nameKey: 'games.patternTrain.name',
-      descriptionKey: 'games.patternTrain.description',
-      icon: '🚂',
-      accentColor: '#A8DADC',
-      isUnfinished: false,
-      launchMode: 'difficulty-select',
-      outcome: GAME_OUTCOMES['pattern-train'],
-    };
-
-    mockGetVisibleGames.mockReturnValue([routedDifficultyGame]);
-
-    const screen = render(<HomeScreen />);
-
-    fireEvent.press(screen.getByText('Pattern Train'));
-    expect(screen.getByText(/Select difficulty/)).toBeTruthy();
-
-    const easyButton = screen
-      .getAllByRole('button')
-      .find((el: any) => el.props.accessibilityLabel?.includes('Easy'));
-    expect(easyButton).toBeTruthy();
-    fireEvent.press(easyButton!);
-
-    await waitFor(() => {
-      expect(mockUpdateSettings).toHaveBeenCalledWith('memory-snap', { pairCount: 6 });
-      expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.PatternTrain);
-    });
+    expect(mockUpdateSettings).not.toHaveBeenCalled();
+    expect(screen.queryByText(/Select difficulty/)).toBeNull();
   });
 
   it('navigates to Settings through the shared app route contract', () => {

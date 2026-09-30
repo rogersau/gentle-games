@@ -74,7 +74,7 @@ export const PicnicItem: React.FC<PicnicItemProps> = ({
         onAnimationComplete?.();
       });
     }
-  }, [isAnimating, animationsEnabled, onAnimationComplete]);
+  }, [isAnimating, animationsEnabled, onAnimationComplete, opacity, scaleAnim, translateY]);
 
   const animatedStyle = useMemo(
     () => ({

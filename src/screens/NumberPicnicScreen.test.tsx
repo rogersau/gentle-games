@@ -13,6 +13,7 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 jest.mock('../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
       background: '#FFFEF7',

@@ -12,6 +12,7 @@ jest.mock('../context/SettingsContext', () => ({
 }));
 
 jest.mock('../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
       background: '#FFFEF7',
@@ -100,13 +101,11 @@ describe('CategoryMatchBoard', () => {
     expect(screen.getByTestId('category-zone-toys').props.accessibilityRole).toBe('button');
   });
 
-  it('uses the same answer path for tap activation and drag release', () => {
+  it('accepts a group tap without selecting the picture and also supports dragging', () => {
     const onCorrectMatch = jest.fn();
     const screen = render(
       <CategoryMatchBoard width={360} height={480} onCorrectMatch={onCorrectMatch} />,
     );
-    const token = screen.getByTestId('category-draggable-token');
-    fireEvent.press(token);
     fireEvent.press(screen.getByTestId('category-zone-food'));
     expect(onCorrectMatch).toHaveBeenCalledTimes(1);
     expect(mockPlayMatchSound).toHaveBeenCalledTimes(1);

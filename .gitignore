@@ -43,3 +43,7 @@ nul
 /coverage
 .env
 .superpowers/brainstorm/*
+
+# Local working copies and review material
+/.worktrees/
+/gentle-games-runbook-kit/

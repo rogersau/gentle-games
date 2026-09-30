@@ -12,9 +12,7 @@ const ALLOWED_DIAGNOSTIC_KEYS = new Set([
   'boundary',
   'category',
   'difficulty',
-  'duration_ms',
   'game',
-  'score',
   'screen',
   'setting',
   'status',
@@ -32,21 +30,8 @@ export { isSentryEnabled };
 
 let telemetryEnabled = false;
 let sentryInitialized = false;
-
-async function getInstallId(): Promise<string | null> {
-  try {
-    let installId = await AsyncStorage.getItem(INSTALL_ID_KEY);
-
-    if (!installId) {
-      installId = `install_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-      await AsyncStorage.setItem(INSTALL_ID_KEY, installId);
-    }
-
-    return installId;
-  } catch {
-    return null;
-  }
-}
+let consentVersion = 0;
+let consentQueue: Promise<void> = Promise.resolve();
 
 function sanitizeDiagnosticData(
   data?: Record<string, unknown>,
@@ -111,6 +96,13 @@ function sanitizeBreadcrumb(breadcrumb: Sentry.Breadcrumb): Sentry.Breadcrumb | 
   };
 }
 
+function sanitizeFrameFilename(filename?: string): string | undefined {
+  const path = filename?.split(/[?#]/)[0];
+  // The SDK normalizes bundle names to app:/// URLs for source-map lookup.
+  // Preserve that scheme while removing filesystem paths from other frames.
+  return path?.startsWith('app:///') ? path : path?.split(/[\\/]/).pop();
+}
+
 function sanitizeEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent | null {
   if (!telemetryEnabled) {
     return null;
@@ -119,7 +111,11 @@ function sanitizeEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent | null {
   return {
     ...event,
     message: undefined,
-    user: event.user?.id ? { id: event.user.id } : undefined,
+    user: undefined,
+    request: undefined,
+    logentry: undefined,
+    transaction: undefined,
+    threads: undefined,
     tags: sanitizeTags(event.tags as Record<string, unknown> | undefined),
     contexts: undefined,
     extra: undefined,
@@ -130,66 +126,89 @@ function sanitizeEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent | null {
       ? {
           ...event.exception,
           values: event.exception.values.map((value) => ({
-            ...value,
+            type: value.type,
+            mechanism: value.mechanism
+              ? { type: value.mechanism.type, handled: value.mechanism.handled }
+              : undefined,
             value: undefined,
+            // Keep source locations for debugging, but discard runtime variables
+            // and source snippets, which can contain user content.
+            stacktrace: value.stacktrace
+              ? {
+                  frames: value.stacktrace.frames?.map((frame) => ({
+                    filename: sanitizeFrameFilename(frame.filename),
+                    function: frame.function,
+                    lineno: frame.lineno,
+                    colno: frame.colno,
+                    in_app: frame.in_app,
+                  })),
+                }
+              : undefined,
           })),
         }
       : event.exception,
   };
 }
 
-export async function reconcileSentryConsent(enabled: boolean): Promise<void> {
+export function reconcileSentryConsent(enabled: boolean): Promise<void> {
   telemetryEnabled = enabled && isSentryEnabled;
-
-  if (!telemetryEnabled) {
-    return;
+  const version = ++consentVersion;
+  const shouldClose = !telemetryEnabled && sentryInitialized;
+  if (shouldClose) {
+    sentryInitialized = false;
+    activeSentryVersion = 0;
+    // Stop SDK captures as soon as consent changes, before awaiting close().
+    const client = Sentry.getClient();
+    if (client) client.getOptions().enabled = false;
+    Sentry.setUser(null);
   }
 
-  if (!SENTRY_DSN) {
-    console.warn('[Sentry] DSN not configured. Error monitoring disabled.');
-    return;
-  }
+  consentQueue = consentQueue
+    .catch(() => undefined)
+    .then(async () => {
+      if (shouldClose) {
+        try {
+          await Sentry.close();
+        } finally {
+          Sentry.getCurrentScope().clear();
+          Sentry.getIsolationScope().clear();
+          Sentry.getCurrentScope().setClient(undefined);
+        }
+      }
+      // Remove the identity saved by earlier versions. Crash reports no longer
+      // need a persistent user, and analytics uses its own in-memory identity.
+      await AsyncStorage.removeItem(INSTALL_ID_KEY).catch(() => undefined);
+      if (version !== consentVersion || !telemetryEnabled || sentryInitialized) return;
 
-  if (sentryInitialized) {
-    return;
-  }
+      if (!SENTRY_DSN) {
+        console.warn('[Sentry] DSN not configured. Error monitoring disabled.');
+        return;
+      }
 
-  try {
-    const installId = await getInstallId();
-
-    Sentry.init({
-      dsn: SENTRY_DSN,
-      sampleRate: 1.0,
-      environment: __DEV__ ? 'development' : 'production',
-      release: SENTRY_RELEASE,
-      debug: SENTRY_DEBUG === true,
-      initialScope: {
-        user: installId ? { id: installId } : undefined,
-      },
-      beforeSend(event) {
-        return sanitizeEvent(event);
-      },
-      beforeBreadcrumb(breadcrumb) {
-        return sanitizeBreadcrumb(breadcrumb);
-      },
+      Sentry.init({
+        dsn: SENTRY_DSN,
+        sampleRate: 1.0,
+        environment: __DEV__ ? 'development' : 'production',
+        release: SENTRY_RELEASE,
+        debug: SENTRY_DEBUG === true,
+        sendDefaultPii: false,
+        enableAutoSessionTracking: false,
+        initialScope: { user: undefined },
+        beforeSend: (event) =>
+          version === activeSentryVersion && telemetryEnabled ? sanitizeEvent(event) : null,
+        beforeBreadcrumb: (breadcrumb) =>
+          version === activeSentryVersion && telemetryEnabled
+            ? sanitizeBreadcrumb(breadcrumb)
+            : null,
+      });
+      activeSentryVersion = version;
+      Sentry.setUser(null);
+      sentryInitialized = true;
     });
-
-    if (installId) {
-      Sentry.setUser({ id: installId });
-      const { setAnalyticsUser } = require('./analytics') as typeof import('./analytics');
-      setAnalyticsUser(installId);
-    }
-
-    sentryInitialized = true;
-  } catch (error) {
-    console.warn('[Sentry] Initialization failed:', error);
-    throw error;
-  }
+  return consentQueue;
 }
 
-export async function initSentry(): Promise<void> {
-  await reconcileSentryConsent(true);
-}
+let activeSentryVersion = 0;
 
 export function isSentryInitialized(): boolean {
   return telemetryEnabled && sentryInitialized && !!SENTRY_DSN;

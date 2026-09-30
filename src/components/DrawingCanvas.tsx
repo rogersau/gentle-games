@@ -5,14 +5,15 @@ import React, {
   forwardRef,
   useImperativeHandle,
   useMemo,
+  useCallback,
 } from 'react';
-import { View, StyleSheet, PanResponder, TouchableOpacity, Text, ScrollView } from 'react-native';
+import { View, StyleSheet, PanResponder, TouchableOpacity, Text } from 'react-native';
 import { AppModal, AppButton } from '../ui/components';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path, Circle, Rect, Polygon, Line } from 'react-native-svg';
 import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
-import { Space, Radius } from '../ui/tokens';
+import { Space, Radius, TypeStyle, ON_ACCENT_TEXT } from '../ui/tokens';
 import type { TranslationKey } from '../i18n/types';
 import {
   compactDrawingHistory,
@@ -501,67 +502,70 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
         : t('games.drawing.colourButtonHint');
 
     // Build SVG content from unified history.
-    const renderHistoryEntry = (entry: HistoryEntry) => {
-      if (entry.kind === 'stroke') {
-        return (
-          <Path
-            key={entry.id}
-            d={pointsToSmoothPath(entry.points)}
-            stroke={entry.color}
-            strokeWidth={entry.width}
-            strokeLinecap='round'
-            strokeLinejoin='round'
-            fill='none'
-          />
-        );
-      }
+    const renderHistoryEntry = useCallback(
+      (entry: HistoryEntry) => {
+        if (entry.kind === 'stroke') {
+          return (
+            <Path
+              key={entry.id}
+              d={pointsToSmoothPath(entry.points)}
+              stroke={entry.color}
+              strokeWidth={entry.width}
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              fill='none'
+            />
+          );
+        }
 
-      if (entry.kind === 'erase') {
-        return (
-          <Path
-            key={entry.id}
-            d={pointsToSmoothPath(entry.points)}
-            stroke={canvasBackgroundColor}
-            strokeWidth={entry.width}
-            strokeLinecap='round'
-            strokeLinejoin='round'
-            fill='none'
-          />
-        );
-      }
+        if (entry.kind === 'erase') {
+          return (
+            <Path
+              key={entry.id}
+              d={pointsToSmoothPath(entry.points)}
+              stroke={canvasBackgroundColor}
+              strokeWidth={entry.width}
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              fill='none'
+            />
+          );
+        }
 
-      if (entry.kind === 'shape') {
-        const halfSize = entry.size / 2;
-        switch (entry.type) {
-          case 'circle':
-            return (
-              <Circle key={entry.id} cx={entry.x} cy={entry.y} r={halfSize} fill={entry.color} />
-            );
-          case 'square':
-            return (
-              <Rect
-                key={entry.id}
-                x={entry.x - halfSize}
-                y={entry.y - halfSize}
-                width={entry.size}
-                height={entry.size}
-                fill={entry.color}
-              />
-            );
-          case 'triangle': {
-            const pts = `${entry.x},${entry.y - halfSize} ${entry.x - halfSize},${entry.y + halfSize} ${entry.x + halfSize},${entry.y + halfSize}`;
-            return <Polygon key={entry.id} points={pts} fill={entry.color} />;
+        if (entry.kind === 'shape') {
+          const halfSize = entry.size / 2;
+          switch (entry.type) {
+            case 'circle':
+              return (
+                <Circle key={entry.id} cx={entry.x} cy={entry.y} r={halfSize} fill={entry.color} />
+              );
+            case 'square':
+              return (
+                <Rect
+                  key={entry.id}
+                  x={entry.x - halfSize}
+                  y={entry.y - halfSize}
+                  width={entry.size}
+                  height={entry.size}
+                  fill={entry.color}
+                />
+              );
+            case 'triangle': {
+              const pts = `${entry.x},${entry.y - halfSize} ${entry.x - halfSize},${entry.y + halfSize} ${entry.x + halfSize},${entry.y + halfSize}`;
+              return <Polygon key={entry.id} points={pts} fill={entry.color} />;
+            }
           }
         }
-      }
-    };
+      },
+      [canvasBackgroundColor],
+    );
 
     const canUndo = history.length > 0;
 
     // Path construction is memoized so pointer movement only renders the live preview.
     const renderedHistory = useMemo(
       () => history.map((entry) => renderHistoryEntry(entry)),
-      [history, canvasBackgroundColor],
+      [history, renderHistoryEntry],
     );
 
     // Render symmetry guide lines
@@ -653,14 +657,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           <View style={styles.touchOverlay} {...panResponder.panHandlers} />
         </View>
 
+        <Text style={[styles.drawingInstruction, { color: colors.textLight }]}>
+          {t('games.drawing.instruction')}
+        </Text>
         {/* Toolbar */}
         <View style={[styles.toolbar, { paddingBottom: Math.max(8, bottomInset) }]}>
-          <ScrollView
-            horizontal
-            style={styles.toolbarScroll}
-            showsHorizontalScrollIndicator
-            contentContainerStyle={styles.colorPalette}
-          >
+          <View style={styles.colorPalette}>
             {allColors.map((color) => {
               const isCustomColor = customColors.includes(color);
               const isSelected = selectedColor === color && tool !== 'eraser';
@@ -685,26 +687,22 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
             <TouchableOpacity
               testID='open-color-picker'
-              style={[styles.colorButton, styles.customColorButton]}
+              style={[styles.colorButton, styles.customColorButton, themedStyles.toolButton]}
               onPress={handleOpenColorPicker}
               hitSlop={COLOR_BUTTON_HIT_SLOP}
               accessibilityRole='button'
               accessibilityLabel={t('games.drawing.addColour')}
               accessibilityHint={t('games.drawing.addColourHint')}
             >
-              <Text style={styles.plusText}>+</Text>
+              <Text style={[styles.plusText, { color: colors.text }]}>+</Text>
             </TouchableOpacity>
-          </ScrollView>
+          </View>
 
-          <ScrollView
-            horizontal
-            style={styles.toolbarScroll}
-            showsHorizontalScrollIndicator
-            contentContainerStyle={styles.toolButtons}
-          >
+          <View style={styles.toolButtons}>
             <TouchableOpacity
               style={[
                 styles.toolButton,
+                themedStyles.toolButton,
                 tool === 'pen' ? themedStyles.toolButtonActive : undefined,
               ]}
               onPress={() => handleToolSelect('pen')}
@@ -713,11 +711,17 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               accessibilityState={{ selected: tool === 'pen' }}
             >
               <Text style={styles.toolButtonText}>✏️</Text>
+              <Text
+                style={[styles.toolLabel, { color: tool === 'pen' ? ON_ACCENT_TEXT : colors.text }]}
+              >
+                {t('games.drawing.tools.pen')}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
                 styles.toolButton,
+                themedStyles.toolButton,
                 tool === 'shape' ? themedStyles.toolButtonActive : undefined,
               ]}
               onPress={() => handleToolSelect('shape')}
@@ -730,11 +734,20 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                 {shapeType === 'square' && '🟦'}
                 {shapeType === 'triangle' && '🔺'}
               </Text>
+              <Text
+                style={[
+                  styles.toolLabel,
+                  { color: tool === 'shape' ? ON_ACCENT_TEXT : colors.text },
+                ]}
+              >
+                {t('games.drawing.tools.shapes')}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
                 styles.toolButton,
+                themedStyles.toolButton,
                 symmetryMode !== 'none' ? themedStyles.toolButtonActive : undefined,
               ]}
               onPress={cycleSymmetryMode}
@@ -749,11 +762,20 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                 {symmetryMode === 'half' && '🦋'}
                 {symmetryMode === 'quarter' && '🦋'}
               </Text>
+              <Text
+                style={[
+                  styles.toolLabel,
+                  { color: symmetryMode !== 'none' ? ON_ACCENT_TEXT : colors.text },
+                ]}
+              >
+                {t(`games.drawing.mirrorState.${symmetryMode}`)}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
                 styles.toolButton,
+                themedStyles.toolButton,
                 tool === 'eraser' ? themedStyles.toolButtonActive : undefined,
               ]}
               onPress={() => handleToolSelect('eraser')}
@@ -762,10 +784,22 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               accessibilityState={{ selected: tool === 'eraser' }}
             >
               <Text style={styles.toolButtonText}>🧹</Text>
+              <Text
+                style={[
+                  styles.toolLabel,
+                  { color: tool === 'eraser' ? ON_ACCENT_TEXT : colors.text },
+                ]}
+              >
+                {t('games.drawing.tools.eraser')}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.toolButton, !canUndo ? styles.toolButtonDisabled : undefined]}
+              style={[
+                styles.toolButton,
+                themedStyles.toolButton,
+                !canUndo ? styles.toolButtonDisabled : undefined,
+              ]}
               onPress={handleUndo}
               disabled={!canUndo}
               accessibilityRole='button'
@@ -775,19 +809,25 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               <Text style={[styles.toolButtonText, !canUndo ? styles.disabledText : undefined]}>
                 ↩️
               </Text>
+              <Text style={[styles.toolLabel, { color: colors.text }]}>
+                {t('games.drawing.undo')}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               testID='clear-drawing-button'
-              style={styles.toolButton}
+              style={[styles.toolButton, themedStyles.toolButton]}
               onPress={handleClear}
               accessibilityRole='button'
               accessibilityLabel={t('games.drawing.clearCanvas')}
               accessibilityHint={t('games.drawing.clearHint')}
             >
               <Text style={styles.toolButtonText}>🗑️</Text>
+              <Text style={[styles.toolLabel, { color: colors.text }]}>
+                {t('games.drawing.tools.clear')}
+              </Text>
             </TouchableOpacity>
-          </ScrollView>
+          </View>
         </View>
         <Text
           accessibilityRole='alert'
@@ -987,6 +1027,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
 const createThemedStyles = (colors: ThemeColors) =>
   StyleSheet.create({
+    toolButton: { backgroundColor: colors.surface, borderColor: colors.border },
     toolButtonActive: {
       backgroundColor: colors.primary,
       borderColor: colors.primary,
@@ -1028,6 +1069,8 @@ const styles = StyleSheet.create({
   },
   colorPalette: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     paddingHorizontal: Space.xs,
     paddingVertical: Space.xs,
     gap: Space.sm,
@@ -1038,9 +1081,9 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   colorButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 2,
     borderColor: '#E8E4E1',
   },
@@ -1061,6 +1104,9 @@ const styles = StyleSheet.create({
   },
   toolButtons: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    width: '100%',
     gap: 8,
     marginTop: 8,
     paddingHorizontal: Space.xs,
@@ -1068,9 +1114,12 @@ const styles = StyleSheet.create({
   },
   toolButton: {
     backgroundColor: '#FFFFFF',
-    minWidth: 48,
-    minHeight: 48,
-    paddingHorizontal: 11,
+    width: '30%',
+    maxWidth: 112,
+    minHeight: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
     paddingVertical: 10,
     borderRadius: Radius.full,
     borderWidth: 2,
@@ -1079,6 +1128,8 @@ const styles = StyleSheet.create({
   toolButtonDisabled: {
     opacity: 0.4,
   },
+  drawingInstruction: { ...TypeStyle.bodySm, textAlign: 'center', marginTop: Space.sm },
+  toolLabel: { ...TypeStyle.bodySm, color: ON_ACCENT_TEXT, textAlign: 'center' },
   toolButtonText: {
     fontSize: 18,
   },
@@ -1169,9 +1220,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   gridColorButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 2,
     borderColor: '#E8E4E1',
   },

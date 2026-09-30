@@ -37,6 +37,7 @@ export interface ChoiceResult {
 export interface PatternTrainGameActions {
   handleDifficultySelect: (difficulty: Difficulty) => void;
   handleCloseDifficultySelector: () => void;
+  openDifficultySelector: () => void;
   startNewRound: () => void;
   submitChoice: (choice: string) => ChoiceResult | null;
   showHint: () => void;
@@ -64,12 +65,14 @@ export function usePatternTrainGame({
   t,
   showMilestones = true,
 }: UsePatternTrainGameOptions) {
-  const [pattern, setPattern] = useState<TrainPattern | null>(null);
+  const [pattern, setPattern] = useState<TrainPattern | null>(() =>
+    generateTrainPattern(initialDifficulty),
+  );
   const [activeDifficulty, setActiveDifficulty] = useState(initialDifficulty);
   const [completedRounds, setCompletedRounds] = useState(0);
   const [wrongAttempts, setWrongAttempts] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showDifficultySelector, setShowDifficultySelector] = useState(true);
+  const [showDifficultySelector, setShowDifficultySelector] = useState(false);
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [attachedCarriage, setAttachedCarriage] = useState<string | null>(null);
   const [guidedRound, setGuidedRound] = useState<GuidedRoundState>(() =>
@@ -184,12 +187,12 @@ export function usePatternTrainGame({
   }, [startNewRound]);
 
   const resetGame = useCallback(() => {
-    setPattern(null);
+    setPattern(generateTrainPattern(initialDifficulty));
     setActiveDifficulty(initialDifficulty);
     setCompletedRounds(0);
     setWrongAttempts(0);
     setIsProcessing(false);
-    setShowDifficultySelector(true);
+    setShowDifficultySelector(false);
     setShowMilestoneModal(false);
     setAttachedCarriage(null);
     setFeedback(t('games.patternTrain.feedback.initial'));
@@ -211,6 +214,7 @@ export function usePatternTrainGame({
   const actions: PatternTrainGameActions = {
     handleDifficultySelect,
     handleCloseDifficultySelector: () => setShowDifficultySelector(false),
+    openDifficultySelector: () => setShowDifficultySelector(true),
     startNewRound,
     submitChoice,
     showHint,

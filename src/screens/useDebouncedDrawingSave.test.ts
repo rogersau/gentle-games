@@ -138,4 +138,55 @@ describe('useDebouncedDrawingSave', () => {
     expect(AsyncStorage.removeItem).toHaveBeenCalledWith('@drawing-test');
     expect(AsyncStorage.setItem).not.toHaveBeenCalled();
   });
+
+  it('saves the final edit when unmounted before debounce and avoids callbacks into the removed screen', async () => {
+    const onSuccess = jest.fn();
+    const onError = jest.fn();
+    const { result, unmount } = renderHook(() =>
+      useDebouncedDrawingSave({ storageKey: '@drawing-test', onSuccess, onError }),
+    );
+    act(() => {
+      result.current.scheduleSave(historyA);
+      result.current.scheduleSave(historyB);
+    });
+    await act(async () => {
+      unmount();
+      await Promise.resolve();
+    });
+    expect(AsyncStorage.setItem).toHaveBeenCalledTimes(1);
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith('@drawing-test', JSON.stringify(historyB));
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it('keeps an in-flight write ahead of the final unmount save', async () => {
+    let finishWrite!: () => void;
+    jest.mocked(AsyncStorage.setItem).mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishWrite = resolve;
+        }),
+    );
+    const { result, unmount } = renderHook(() =>
+      useDebouncedDrawingSave({ storageKey: '@drawing-test' }),
+    );
+    act(() => result.current.scheduleSave(historyA));
+    const firstWrite = result.current.flushPendingSave();
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    act(() => result.current.scheduleSave(historyB));
+    unmount();
+    expect(AsyncStorage.setItem).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      finishWrite();
+      await firstWrite;
+    });
+    expect(AsyncStorage.setItem).toHaveBeenNthCalledWith(
+      2,
+      '@drawing-test',
+      JSON.stringify(historyB),
+    );
+  });
 });

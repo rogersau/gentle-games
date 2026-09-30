@@ -7,7 +7,7 @@ import { useThemeColors } from '../../utils/theme';
 
 interface GuidedPracticePromptProps {
   state: GuidedRoundState;
-  instruction: string;
+  instruction?: string;
   neutralFeedback?: string;
   hint?: string;
   model?: React.ReactNode;
@@ -37,10 +37,12 @@ export const GuidedPracticePrompt: React.FC<GuidedPracticePromptProps> = ({
 
   return (
     <View accessibilityRole='summary'>
-      <Text accessibilityRole='text' style={[styles.instruction, { color: colors.text }]}>
-        {instruction}
-      </Text>
-      {state.incorrectAttempts > 0 && neutralFeedback ? (
+      {instruction ? (
+        <Text accessibilityRole='text' style={[styles.instruction, { color: colors.text }]}>
+          {instruction}
+        </Text>
+      ) : null}
+      {(state.incorrectAttempts > 0 || state.phase === 'corrected') && neutralFeedback ? (
         <Text
           style={[styles.feedback, { color: colors.textLight }]}
           accessibilityLiveRegion='polite'
@@ -57,10 +59,22 @@ export const GuidedPracticePrompt: React.FC<GuidedPracticePromptProps> = ({
       {state.phase !== 'corrected' && state.phase !== 'skipped' ? (
         <View style={styles.actions}>
           {hintLabel && onHint && state.phase === 'independent' ? (
-            <AppButton label={hintLabel} variant='secondary' size='sm' onPress={onHint} />
+            <AppButton
+              icon='eye'
+              label={hintLabel}
+              variant='secondary'
+              size='sm'
+              onPress={onHint}
+            />
           ) : null}
-          <AppButton label={replayLabel} variant='ghost' size='sm' onPress={onReplay} />
-          <AppButton label={skipLabel} variant='ghost' size='sm' onPress={onSkip} />
+          <AppButton
+            icon='repeat'
+            label={replayLabel}
+            variant='ghost'
+            size='sm'
+            onPress={onReplay}
+          />
+          <AppButton icon='next' label={skipLabel} variant='ghost' size='sm' onPress={onSkip} />
         </View>
       ) : null}
     </View>

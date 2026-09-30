@@ -311,7 +311,7 @@ export const PASTEL_COLORS: ThemeColors = {
   cardBack: '#E8E4E1',
   cardFront: '#FFFFFF',
   text: '#5A5A5A',
-  textLight: '#8A8A8A',
+  textLight: '#6F6F6F',
   primary: '#A8D8EA',
   secondary: '#FFB6C1',
   success: '#B8E6B8',

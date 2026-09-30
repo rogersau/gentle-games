@@ -12,7 +12,7 @@ import {
 import { getGameSettings } from '../games/settings';
 import { ThemeColors } from '../types';
 import { useThemeColors, useReducedMotion } from '../utils/theme';
-import { AppScreen, AppHeader, AppButton } from '../ui/components';
+import { AppScreen, GameHeader, AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useSettings } from '../context/SettingsContext';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
@@ -38,7 +38,7 @@ export const GlitterScreen: React.FC = () => {
   const globeSize = useMemo(() => {
     const { width, height } = calculateGameBoardSize(viewport, {
       horizontalPadding: Space.base * 2,
-      verticalReserve: 276,
+      verticalReserve: 216,
       compactMinHeight: 180,
       maxHeightRatio: 0.58,
     });
@@ -56,9 +56,14 @@ export const GlitterScreen: React.FC = () => {
   };
 
   return (
-    <AppScreen scroll onLayout={onLayout} testID='glitter-screen'>
-      <AppHeader title={t('games.glitterFall.title')} onBack={() => navigation.goBack()} />
-
+    <AppScreen
+      scroll
+      onLayout={onLayout}
+      testID='glitter-screen'
+      header={
+        <GameHeader title={t('games.glitterFall.title')} onBack={() => navigation.goBack()} />
+      }
+    >
       <View style={styles.content}>
         <Text style={styles.subtitle} accessibilityRole='text'>
           {t('games.glitterFall.subtitle')}
@@ -101,6 +106,7 @@ export const GlitterScreen: React.FC = () => {
         <View style={styles.controls} testID='glitter-controls'>
           <View testID='glitter-add-button' style={styles.controlWrapper}>
             <AppButton
+              icon='add'
               label={translate('games.glitterFall.controls.addFew')}
               variant='secondary'
               onPress={addGlitter}
@@ -111,6 +117,7 @@ export const GlitterScreen: React.FC = () => {
           </View>
           <View style={styles.controlWrapper}>
             <AppButton
+              icon='swirl'
               label={translate('games.glitterFall.controls.swirl')}
               variant='primary'
               onPress={() => globeRef.current?.swirl()}
@@ -121,6 +128,7 @@ export const GlitterScreen: React.FC = () => {
           </View>
           <View testID='glitter-clear-button' style={styles.controlWrapper}>
             <AppButton
+              icon='settle'
               label={translate('games.glitterFall.controls.settle')}
               variant='ghost'
               onPress={() => globeRef.current?.settle()}
@@ -138,6 +146,9 @@ export const GlitterScreen: React.FC = () => {
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     content: {
+      width: '100%',
+      maxWidth: 760,
+      alignSelf: 'center',
       flex: 1,
       alignItems: 'center',
       paddingHorizontal: Space.base,
@@ -183,7 +194,7 @@ const createStyles = (colors: ThemeColors) =>
       gap: Space.sm,
     },
     controlButton: {
-      minHeight: 68,
+      minHeight: 80,
       paddingHorizontal: Space.sm,
     },
     controlWrapper: {

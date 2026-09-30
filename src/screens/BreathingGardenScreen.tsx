@@ -7,7 +7,7 @@ import { Mochi } from '../components/Mochi';
 import { useThemeColors } from '../utils/theme';
 import { useBackgroundMusic } from '../utils/music';
 import { useSettings } from '../context/SettingsContext';
-import { AppScreen, AppHeader, AppButton, AppCard, SegmentedControl } from '../ui/components';
+import { AppScreen, GameHeader, AppButton, AppCard, SegmentedControl } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useAnimationEnabled } from '../ui/animations';
 import { BreathingSessionLength, getGameSettings } from '../games/settings';
@@ -30,7 +30,7 @@ export const BreathingGardenScreen: React.FC = () => {
   const navigation = useNavigation();
   const { width: windowWidth } = useWindowDimensions();
   const { colors } = useThemeColors();
-  const { settings, updateSettings, updateGameSettings } = useSettings();
+  const { settings, updateGameSettings } = useSettings();
   const breathingSettings = getGameSettings(settings, 'breathing-garden');
   const motionEnabled = useAnimationEnabled();
   const { t } = useTranslation();
@@ -147,12 +147,14 @@ export const BreathingGardenScreen: React.FC = () => {
       />
       <View style={styles.openingActions}>
         <AppButton
+          icon='play'
           label={t('games.breathingGarden.start')}
           onPress={() => begin('active')}
           fullWidth
           testID='breathing-start'
         />
         <AppButton
+          icon='eye'
           label={t('games.breathingGarden.watchFirst')}
           onPress={() => begin('watching')}
           variant='secondary'
@@ -214,11 +216,13 @@ export const BreathingGardenScreen: React.FC = () => {
           <Text style={styles.watchLabel}>{t('games.breathingGarden.watching')}</Text>
         ) : null}
         <Text style={styles.phaseLabel} accessibilityLiveRegion='polite'>
-          {visualCue
-            ? phase === 'inhale'
-              ? t('games.breathingGarden.inhale')
-              : t('games.breathingGarden.exhale')
-            : t('games.breathingGarden.cueOffMessage')}
+          {mode === 'paused'
+            ? t('games.breathingGarden.paused')
+            : visualCue
+              ? phase === 'inhale'
+                ? t('games.breathingGarden.inhale')
+                : t('games.breathingGarden.exhale')
+              : t('games.breathingGarden.cueOffMessage')}
         </Text>
         <View
           style={[
@@ -280,6 +284,7 @@ export const BreathingGardenScreen: React.FC = () => {
     <View style={styles.controls}>
       {mode === 'active' || mode === 'watching' ? (
         <AppButton
+          icon='pause'
           label={t('games.breathingGarden.pause')}
           onPress={() => {
             ballRef.current?.pause();
@@ -291,6 +296,7 @@ export const BreathingGardenScreen: React.FC = () => {
         />
       ) : mode === 'paused' ? (
         <AppButton
+          icon='play'
           label={t('games.breathingGarden.resume')}
           onPress={resume}
           variant='secondary'
@@ -298,20 +304,11 @@ export const BreathingGardenScreen: React.FC = () => {
         />
       ) : null}
       <AppButton
+        icon='stop'
         label={t('games.breathingGarden.stop')}
         onPress={stop}
         variant='ghost'
         testID='breathing-stop'
-      />
-      <AppButton
-        label={
-          settings.soundEnabled
-            ? t('games.breathingGarden.soundOff')
-            : t('games.breathingGarden.soundOn')
-        }
-        onPress={() => updateSettings({ soundEnabled: !settings.soundEnabled })}
-        variant='ghost'
-        testID='breathing-sound'
       />
       <AppButton
         label={isPlaying ? t('games.breathingGarden.musicOff') : t('games.breathingGarden.musicOn')}
@@ -337,8 +334,11 @@ export const BreathingGardenScreen: React.FC = () => {
   );
 
   return (
-    <AppScreen scroll testID='breathing-garden-screen'>
-      <AppHeader title={t('games.breathingGarden.title')} onBack={handleBack} />
+    <AppScreen
+      scroll
+      testID='breathing-garden-screen'
+      header={<GameHeader title={t('games.breathingGarden.title')} onBack={handleBack} />}
+    >
       <View style={styles.content}>
         {mode === 'opening' ? renderOpening() : null}
         {mode === 'complete' ? (

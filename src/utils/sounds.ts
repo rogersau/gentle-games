@@ -21,6 +21,7 @@ const sounds: Record<keyof typeof soundAssets, SoundEffect> = {
 };
 
 const loadSound = async (name: keyof typeof soundAssets): Promise<void> => {
+  if (sounds[name].isLoaded) return;
   try {
     const player = createAudioPlayer(soundAssets[name], {
       keepAudioSessionActive: false,
@@ -37,16 +38,19 @@ const loadSound = async (name: keyof typeof soundAssets): Promise<void> => {
   }
 };
 
+let soundGeneration = 0;
 export const initializeSounds = async (): Promise<void> => {
+  const generation = ++soundGeneration;
   try {
     await setAudioModeAsync({
-      playsInSilentMode: true,
+      playsInSilentMode: false,
       shouldPlayInBackground: false,
     });
   } catch (error) {
     console.warn('Failed to configure audio mode:', error);
   }
 
+  if (generation !== soundGeneration) return;
   await Promise.all([
     loadSound('flip'),
     loadSound('match'),
@@ -93,6 +97,7 @@ export const playBubblePopSound = async (settings: Settings): Promise<void> => {
 };
 
 export const unloadSounds = async (): Promise<void> => {
+  soundGeneration += 1;
   for (const effect of Object.values(sounds)) {
     if (effect.player) {
       effect.player.remove();

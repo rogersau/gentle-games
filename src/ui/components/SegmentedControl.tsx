@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
-import { Space, Radius, TypeStyle, HitTarget } from '../tokens';
+import { Space, Radius, TypeStyle, HitTarget, ON_ACCENT_TEXT } from '../tokens';
 import { ThemeColors } from '../../types';
 import { ResolvedThemeMode } from '../../utils/theme';
 
@@ -81,6 +81,6 @@ const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
       color: colors.text,
     },
     labelActive: {
-      color: colors.surface,
+      color: ON_ACCENT_TEXT,
     },
   });

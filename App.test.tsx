@@ -6,6 +6,7 @@ import type { Settings } from './src/types';
 import { APP_ROUTES } from './src/types/navigation';
 import { trackScreenView } from './src/utils/analytics';
 import { reconcileObservability } from './src/utils/observabilityBootstrap';
+import { initializeSounds, unloadSounds } from './src/utils/sounds';
 
 const mockNavigationContainer = jest.fn();
 const renderedScreenNames: string[] = [];
@@ -330,5 +331,24 @@ describe('AppContent observability bootstrap', () => {
     expect(mockedTrackScreenView).toHaveBeenCalledTimes(2);
     expect(mockedTrackScreenView).toHaveBeenNthCalledWith(1, APP_ROUTES.Home);
     expect(mockedTrackScreenView).toHaveBeenNthCalledWith(2, APP_ROUTES.Settings);
+  });
+
+  it('waits for hydration and enabled sound before loading players, then unloads on mute', () => {
+    let currentSettings = createSettingsValue({
+      isLoading: true,
+      settings: { soundEnabled: true },
+    });
+    mockedUseSettings.mockImplementation(() => currentSettings);
+    const screen = render(<AppContent />);
+    expect(initializeSounds).not.toHaveBeenCalled();
+    currentSettings = createSettingsValue({ settings: { soundEnabled: false } });
+    screen.rerender(<AppContent />);
+    expect(initializeSounds).not.toHaveBeenCalled();
+    currentSettings = createSettingsValue({ settings: { soundEnabled: true } });
+    screen.rerender(<AppContent />);
+    expect(initializeSounds).toHaveBeenCalledTimes(1);
+    currentSettings = createSettingsValue({ settings: { soundEnabled: false } });
+    screen.rerender(<AppContent />);
+    expect(unloadSounds).toHaveBeenCalledTimes(1);
   });
 });

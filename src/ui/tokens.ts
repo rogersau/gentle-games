@@ -169,3 +169,6 @@ export const Breakpoint = {
 export const HitTarget = {
   min: 48,
 } as const;
+
+// Readable ink for the soft accent fills in both themes.
+export const ON_ACCENT_TEXT = '#202830';

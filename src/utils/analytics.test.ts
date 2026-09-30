@@ -1,96 +1,120 @@
-describe('analytics consent-aware wrappers', () => {
-  const mockIdentify = jest.fn();
-  const mockCapture = jest.fn();
+import { APP_ROUTES } from '../types/navigation';
+
+describe('analytics consent lifecycle', () => {
   const mockScreen = jest.fn();
-  const mockOptIn = jest.fn(() => Promise.resolve());
-  const mockOptOut = jest.fn(() => Promise.resolve());
-  const MockPostHog = jest.fn(() => ({
-    identify: mockIdentify,
-    capture: mockCapture,
+  const mockOptIn = jest.fn();
+  const mockOptOut = jest.fn();
+  const mockShutdown = jest.fn();
+  const mockReset = jest.fn();
+  const mockSetPersistedProperty = jest.fn();
+  const MockPostHog = jest.fn((_key: string, _options: Record<string, any>) => ({
     screen: mockScreen,
     optIn: mockOptIn,
     optOut: mockOptOut,
+    shutdown: mockShutdown,
+    reset: mockReset,
+    setPersistedProperty: mockSetPersistedProperty,
   }));
 
   beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
-
+    mockOptIn.mockResolvedValue(undefined);
+    mockOptOut.mockResolvedValue(undefined);
+    mockShutdown.mockResolvedValue(undefined);
     jest.doMock('expo-constants', () => ({
       __esModule: true,
-      default: {
-        expoConfig: {
-          extra: {
-            posthogApiKey: 'test-api-key',
-            posthogHost: 'https://test.posthog.com',
-            posthogDebug: true,
-          },
-        },
-      },
-      expoConfig: {
-        extra: {
-          posthogApiKey: 'test-api-key',
-          posthogHost: 'https://test.posthog.com',
-          posthogDebug: true,
-        },
-      },
+      default: { expoConfig: { extra: { posthogApiKey: 'test-api-key', posthogDebug: true } } },
     }));
-
     jest.doMock('posthog-react-native', () => ({
       __esModule: true,
       default: MockPostHog,
+      PostHogPersistedProperty: { Queue: 'queue' },
     }));
   });
 
-  it('keeps capture and screen tracking as safe no-ops until telemetry is enabled', async () => {
+  it('never initializes or captures without consent', async () => {
     const analytics = require('./analytics');
-
-    analytics.trackEvent('game completed', { game: 'Memory Snap' });
-    analytics.trackScreenView('Home');
-
-    expect(mockCapture).not.toHaveBeenCalled();
-    expect(mockScreen).not.toHaveBeenCalled();
-
+    analytics.trackScreenView(APP_ROUTES.Home);
     await analytics.reconcileAnalyticsConsent(false);
-
     expect(MockPostHog).not.toHaveBeenCalled();
-    expect(mockOptOut).not.toHaveBeenCalled();
+    expect(mockScreen).not.toHaveBeenCalled();
+    expect(analytics.getPostHogClient()).toBeNull();
   });
 
-  it('only forwards allowlisted flat diagnostic properties and preserves manual screen tracking', async () => {
+  it('uses an independent runtime identity with optional SDK network features disabled', async () => {
     const analytics = require('./analytics');
-
     await analytics.reconcileAnalyticsConsent(true);
-    analytics.trackEvent('game completed', {
-      game: 'Memory Snap',
-      duration_ms: 1200,
-      score: 4,
-      debug_note: 'drop me',
-      nested: { bad: true },
-      rawMessage: 'drop me too',
-    });
-    analytics.trackScreenView('Home');
-
-    expect(mockOptIn).toHaveBeenCalledTimes(1);
-    expect(mockCapture).toHaveBeenCalledWith('game completed', {
-      game: 'Memory Snap',
-      duration_ms: 1200,
-      score: 4,
-    });
-    expect(mockScreen).toHaveBeenCalledWith('Home');
-  });
-
-  it('identifies a pending install ID once after client creation and opts out after disable', async () => {
-    const analytics = require('./analytics');
-
-    analytics.setAnalyticsUser('install_pending');
     await analytics.reconcileAnalyticsConsent(true);
-    await analytics.reconcileAnalyticsConsent(false);
-
+    analytics.trackScreenView(APP_ROUTES.Home);
     expect(MockPostHog).toHaveBeenCalledTimes(1);
-    expect(mockIdentify).toHaveBeenCalledTimes(1);
-    expect(mockIdentify).toHaveBeenCalledWith('install_pending');
-    expect(mockOptIn).toHaveBeenCalledTimes(1);
+    expect(MockPostHog).toHaveBeenCalledWith(
+      'test-api-key',
+      expect.objectContaining({
+        persistence: 'memory',
+        personProfiles: 'never',
+        defaultOptIn: false,
+        preloadFeatureFlags: false,
+        disableRemoteConfig: true,
+        disableSurveys: true,
+        enableSessionReplay: false,
+        captureAppLifecycleEvents: false,
+      }),
+    );
+    expect(mockScreen).toHaveBeenCalledWith(APP_ROUTES.Home);
+  });
+
+  it('immediately blocks captures, discards queued events, and shuts down after opt-out', async () => {
+    const analytics = require('./analytics');
+    await analytics.reconcileAnalyticsConsent(true);
+    const beforeSend = MockPostHog.mock.calls[0][1].before_send;
+    expect(beforeSend({ event: '$screen' })).toEqual({ event: '$screen' });
+    const disable = analytics.reconcileAnalyticsConsent(false);
+    analytics.trackScreenView(APP_ROUTES.Game);
+    expect(analytics.getPostHogClient()).toBeNull();
+    expect(beforeSend({ event: '$screen' })).toBeNull();
+    await disable;
+    expect(mockScreen).not.toHaveBeenCalled();
     expect(mockOptOut).toHaveBeenCalledTimes(1);
+    expect(mockSetPersistedProperty).toHaveBeenCalledWith('queue', null);
+    expect(mockReset).toHaveBeenCalledTimes(1);
+    expect(mockShutdown).toHaveBeenCalledTimes(1);
+    expect(mockSetPersistedProperty.mock.invocationCallOrder[0]).toBeLessThan(
+      mockShutdown.mock.invocationCallOrder[0],
+    );
+
+    await analytics.reconcileAnalyticsConsent(true);
+    expect(MockPostHog).toHaveBeenCalledTimes(2);
+    expect(beforeSend({ event: '$screen' })).toBeNull();
+  });
+
+  it('cannot publish a client when consent is withdrawn during opt-in', async () => {
+    let finishOptIn!: () => void;
+    mockOptIn.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishOptIn = resolve;
+        }),
+    );
+    const analytics = require('./analytics');
+    const enable = analytics.reconcileAnalyticsConsent(true);
+    await Promise.resolve();
+    await Promise.resolve();
+    const disable = analytics.reconcileAnalyticsConsent(false);
+    finishOptIn();
+    await enable;
+    await disable;
+    expect(analytics.getPostHogClient()).toBeNull();
+    expect(mockShutdown).toHaveBeenCalledTimes(1);
+  });
+
+  it('still discards queued events and shuts down if SDK opt-out fails', async () => {
+    const analytics = require('./analytics');
+    await analytics.reconcileAnalyticsConsent(true);
+    mockOptOut.mockRejectedValueOnce(new Error('opt-out failure'));
+    await expect(analytics.reconcileAnalyticsConsent(false)).rejects.toThrow('opt-out failure');
+    expect(analytics.getPostHogClient()).toBeNull();
+    expect(mockSetPersistedProperty).toHaveBeenCalledWith('queue', null);
+    expect(mockShutdown).toHaveBeenCalledTimes(1);
   });
 });

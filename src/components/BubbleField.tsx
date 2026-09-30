@@ -36,6 +36,8 @@ interface BubbleFieldProps {
   accessibleMode?: boolean;
   /** Whether the containing route is currently focused. */
   isFocused?: boolean;
+  /** Screens with their own motion control can hide the in-board switch. */
+  showModeToggle?: boolean;
 }
 
 const POP_INDICATOR_DECAY_PER_SECOND = 3;
@@ -76,6 +78,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   motionEnabled = true,
   accessibleMode,
   isFocused = true,
+  showModeToggle = true,
 }) => {
   const { colors } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -359,8 +362,8 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
               cy={bubble.y}
               r={bubble.radius}
               fill={bubble.color}
-              opacity={bubble.opacity}
-              stroke={colors.cardFront}
+              fillOpacity={Math.max(0.6, bubble.opacity)}
+              stroke={colors.textLight}
               strokeWidth={2}
             />
             <Circle
@@ -440,7 +443,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
       ) : (
         <View style={styles.touchLayer} {...panResponder.panHandlers} />
       )}
-      {motionEnabled && !screenReaderEnabled && accessibleMode !== true ? (
+      {showModeToggle && motionEnabled && !screenReaderEnabled && accessibleMode !== true ? (
         <Pressable
           testID='bubble-accessible-mode-toggle'
           style={styles.modeToggle}

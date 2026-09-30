@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { Text, Modal } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { AppButton } from './AppButton';
 import { AppCard } from './AppCard';
@@ -14,6 +14,7 @@ import { SettingToggle } from './SettingToggle';
 
 // Mocks for grouped tests
 jest.mock('../../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
       background: '#FFFEF7',
@@ -140,6 +141,21 @@ describe('UI Components', () => {
   });
 
   describe('AppModal', () => {
+    it('removes the modal host immediately after dismissal without an animation callback', () => {
+      const screen = render(
+        <AppModal visible onClose={jest.fn()}>
+          <Text>Dialog</Text>
+        </AppModal>,
+      );
+      expect(screen.UNSAFE_queryByType(Modal)).toBeTruthy();
+      screen.rerender(
+        <AppModal visible={false} onClose={jest.fn()}>
+          <Text>Dialog</Text>
+        </AppModal>,
+      );
+      expect(screen.UNSAFE_queryByType(Modal)).toBeNull();
+    });
+
     it('renders when visible', () => {
       const { getByText } = render(
         <AppModal visible={true} onClose={jest.fn()} title='Modal Title'>

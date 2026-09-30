@@ -133,7 +133,7 @@ From the Expo terminal, press `a` for Android, `i` for iOS on macOS, or `w` for 
 <summary><strong>Testing and quality checks</strong></summary>
 
 ```bash
-# Tests and TypeScript checks used by shared CI
+# Lint, formatting, tests, and TypeScript checks used by shared CI
 npm run ci:shared
 
 # Web, Android, and iOS export validation

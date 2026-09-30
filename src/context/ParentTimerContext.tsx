@@ -4,18 +4,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   AppState,
   Animated,
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   StyleSheet,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
 } from 'react-native';
 import { ThemeColors } from '../types';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { useAnimationEnabled } from '../ui/animations';
 import { useSettings } from './SettingsContext';
+import { HitTarget } from '../ui/tokens';
 
 interface ParentTimerContextType {
   /** Seconds remaining; 0 when disabled or paused */
@@ -76,8 +79,7 @@ const generateMathQuestion = (): { question: string; answer: number } => {
 
 export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { settings } = useSettings();
-  const animationsEnabled =
-    typeof useAnimationEnabled === 'function' ? useAnimationEnabled() : settings.animationsEnabled;
+  const animationsEnabled = useAnimationEnabled();
   const { colors, resolvedMode } = useThemeColors();
   const initialDurationMinutes = settings.parentTimerMinutes;
   const [secondsRemaining, setSecondsRemaining] = useState(initialDurationMinutes * 60);
@@ -229,7 +231,7 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return () => {
       cancelled = true;
     };
-  }, [removePersistedSession, startFreshSession]);
+  }, [enqueueStorageOperation, removePersistedSession, startFreshSession]);
 
   useEffect(() => {
     const durationMinutes = settings.parentTimerMinutes;
@@ -285,18 +287,24 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [reconcileTimer]);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
 
+  const continueSession = useCallback(() => {
+    Keyboard.dismiss();
+    startFreshSession(durationRef.current);
+    setUserAnswer('');
+    setShowError(false);
+  }, [startFreshSession]);
+
   const handleUnlock = useCallback(() => {
-    const parsed = parseInt(userAnswer.trim(), 10);
-    if (parsed === mathChallenge.answer) {
-      startFreshSession(durationRef.current);
-      setUserAnswer('');
-      setShowError(false);
+    const answer = userAnswer.trim();
+    if (/^\d+$/.test(answer) && Number(answer) === mathChallenge.answer) {
+      continueSession();
     } else {
       setShowError(true);
       setUserAnswer('');
@@ -335,7 +343,7 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setMathChallenge(generateMathQuestion());
       }
     }
-  }, [mathChallenge.answer, animationsEnabled, shakeAnim, startFreshSession, userAnswer]);
+  }, [mathChallenge.answer, animationsEnabled, shakeAnim, continueSession, userAnswer]);
 
   const { t } = useTranslation();
   const styles = React.useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
@@ -343,40 +351,85 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
   return (
     <ParentTimerContext.Provider value={{ secondsRemaining, isLocked }}>
       {children}
-      <Modal animationType='fade' transparent={false} visible={isLocked} onRequestClose={() => {}}>
-        <View style={styles.lockContainer}>
-          <Text style={styles.lockIcon}>⏰</Text>
-          <Text style={styles.lockTitle}>{t('parentTimer.lockTitle')}</Text>
-          <Text style={styles.lockSubtitle}>{t('parentTimer.lockSubtitle')}</Text>
-
-          <Animated.View style={[styles.challengeCard, { transform: [{ translateX: shakeAnim }] }]}>
-            <Text style={styles.challengeLabel}>{t('parentTimer.challengeLabel')}</Text>
-            <Text style={styles.challengeQuestion}>{mathChallenge.question} = ?</Text>
-            <TextInput
-              style={styles.answerInput}
-              value={userAnswer}
-              onChangeText={(text) => {
-                setUserAnswer(text.replace(/[^0-9-]/g, ''));
-                setShowError(false);
-              }}
-              keyboardType='number-pad'
-              placeholder={t('parentTimer.answerPlaceholder')}
-              placeholderTextColor={colors.textLight}
-              autoFocus
-              onSubmitEditing={handleUnlock}
-              testID='parent-timer-answer-input'
-            />
-            {showError && <Text style={styles.errorText}>{t('parentTimer.error')}</Text>}
-          </Animated.View>
-
-          <TouchableOpacity
-            style={styles.unlockButton}
-            onPress={handleUnlock}
-            testID='parent-timer-unlock-button'
+      <Modal
+        animationType={animationsEnabled ? 'fade' : 'none'}
+        transparent={false}
+        visible={isLocked}
+        onRequestClose={() => {
+          // The device Back action dismisses the keyboard/answer attempt without
+          // restarting the caregiver's allowance. The hold control remains available.
+          Keyboard.dismiss();
+          setUserAnswer('');
+          setShowError(false);
+        }}
+      >
+        <KeyboardAvoidingView
+          style={styles.lockScreen}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <ScrollView
+            contentContainerStyle={styles.lockContainer}
+            keyboardShouldPersistTaps='handled'
           >
-            <Text style={styles.unlockButtonText}>{t('parentTimer.continue')}</Text>
-          </TouchableOpacity>
-        </View>
+            <Text style={styles.lockIcon}>⏰</Text>
+            <Text style={styles.lockTitle}>{t('parentTimer.lockTitle')}</Text>
+            <Text style={styles.lockSubtitle}>{t('parentTimer.lockSubtitle')}</Text>
+
+            <Animated.View
+              style={[styles.challengeCard, { transform: [{ translateX: shakeAnim }] }]}
+            >
+              <Text style={styles.challengeLabel}>{t('parentTimer.challengeLabel')}</Text>
+              <Text style={styles.challengeQuestion}>{mathChallenge.question} = ?</Text>
+              <TextInput
+                style={styles.answerInput}
+                value={userAnswer}
+                onChangeText={(text) => {
+                  setUserAnswer(text.replace(/[^0-9-]/g, ''));
+                  setShowError(false);
+                }}
+                keyboardType='number-pad'
+                placeholder={t('parentTimer.answerPlaceholder')}
+                accessibilityLabel={t('parentTimer.answerLabel', {
+                  question: mathChallenge.question,
+                })}
+                placeholderTextColor={colors.textLight}
+                onSubmitEditing={handleUnlock}
+                testID='parent-timer-answer-input'
+              />
+              {showError && (
+                <Text accessibilityLiveRegion='polite' style={styles.errorText}>
+                  {t('parentTimer.error')}
+                </Text>
+              )}
+            </Animated.View>
+
+            <TouchableOpacity
+              style={styles.unlockButton}
+              onPress={handleUnlock}
+              accessibilityRole='button'
+              accessibilityLabel={t('parentTimer.continue')}
+              testID='parent-timer-unlock-button'
+            >
+              <Text style={styles.unlockButtonText}>{t('parentTimer.continue')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.holdButton}
+              onLongPress={continueSession}
+              delayLongPress={3000}
+              accessibilityRole='button'
+              accessibilityLabel={t('parentTimer.holdToContinue')}
+              accessibilityHint={t('parentTimer.holdToContinueHint')}
+              onAccessibilityTap={continueSession}
+              accessibilityActions={[{ name: 'activate', label: t('parentTimer.continue') }]}
+              onAccessibilityAction={(event) => {
+                if (event.nativeEvent.actionName === 'activate') continueSession();
+              }}
+              testID='parent-timer-hold-button'
+            >
+              <Text style={styles.holdButtonText}>{t('parentTimer.holdToContinue')}</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
     </ParentTimerContext.Provider>
   );
@@ -386,9 +439,12 @@ export const useParentTimer = () => useContext(ParentTimerContext);
 
 const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
   StyleSheet.create({
-    lockContainer: {
+    lockScreen: {
       flex: 1,
       backgroundColor: colors.background,
+    },
+    lockContainer: {
+      flexGrow: 1,
       justifyContent: 'center',
       alignItems: 'center',
       padding: 32,
@@ -455,6 +511,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       fontWeight: '600',
     },
     unlockButton: {
+      minHeight: HitTarget.min,
       backgroundColor: colors.primary,
       paddingHorizontal: 40,
       paddingVertical: 16,
@@ -464,5 +521,17 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       fontSize: 18,
       fontWeight: '600',
       color: colors.cardFront,
+    },
+    holdButton: {
+      marginTop: 16,
+      minHeight: HitTarget.min,
+      minWidth: HitTarget.min,
+      padding: 16,
+      justifyContent: 'center',
+    },
+    holdButtonText: {
+      color: colors.text,
+      fontSize: 16,
+      textAlign: 'center',
     },
   });

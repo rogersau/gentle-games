@@ -6,7 +6,7 @@ import type { ThemeColors } from '../types';
 import { CategoryMatchBoard } from '../components/CategoryMatchBoard';
 import { useThemeColors } from '../utils/theme';
 import { useSettings } from '../context/SettingsContext';
-import { AppScreen, AppHeader, AppButton, AppCard } from '../ui/components';
+import { AppScreen, GameHeader, AppButton, AppCard } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
 import { getGameSettings } from '../games/settings';
@@ -26,7 +26,7 @@ export const CategoryMatchScreen: React.FC = () => {
     () =>
       calculateGameBoardSize(viewport, {
         horizontalPadding: Space.md * 2,
-        verticalReserve: 214,
+        verticalReserve: 154,
         compactMinHeight: 540,
         maxHeightRatio: 0.7,
       }),
@@ -49,8 +49,14 @@ export const CategoryMatchScreen: React.FC = () => {
   }, [categories, categorySettings.categoryCount]);
 
   return (
-    <AppScreen scroll onLayout={onLayout} testID='category-match-screen'>
-      <AppHeader title={t('games.categoryMatch.title')} onBack={() => navigation.goBack()} />
+    <AppScreen
+      scroll
+      onLayout={onLayout}
+      testID='category-match-screen'
+      header={
+        <GameHeader title={t('games.categoryMatch.title')} onBack={() => navigation.goBack()} />
+      }
+    >
       <View style={styles.content}>
         {showPreview ? (
           <AppCard variant='outlined' style={styles.previewCard}>
@@ -67,6 +73,7 @@ export const CategoryMatchScreen: React.FC = () => {
               </View>
             ))}
             <AppButton
+              icon='play'
               label={t('games.categoryMatch.startSorting')}
               variant='primary'
               onPress={() => setShowPreview(false)}
@@ -91,6 +98,9 @@ export const CategoryMatchScreen: React.FC = () => {
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     content: {
+      width: '100%',
+      maxWidth: 760,
+      alignSelf: 'center',
       flex: 1,
       alignItems: 'center',
       paddingHorizontal: Space.md,

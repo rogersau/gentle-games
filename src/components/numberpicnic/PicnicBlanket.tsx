@@ -339,6 +339,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
       });
     },
     [
+      dropZoneLayout,
       isProcessing,
       animationsEnabled,
       onDropStart,

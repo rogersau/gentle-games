@@ -1,5 +1,5 @@
 {
-  "ignorePatterns": ["**/*.md"],
+  "ignorePatterns": ["**/*.md", ".worktrees/**", "gentle-games-runbook-kit/**"],
   "singleQuote": true,
   "jsxSingleQuote": true
 }

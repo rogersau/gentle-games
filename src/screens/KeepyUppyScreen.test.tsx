@@ -15,6 +15,7 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 jest.mock('../utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: () => ({
     colors: {
       background: '#FFFEF7',
@@ -69,7 +70,7 @@ describe('KeepyUppyScreen', () => {
 
   it('goes back when back button is pressed', () => {
     const screen = render(<KeepyUppyScreen />);
-    fireEvent.press(screen.getByText('← Back'));
+    fireEvent.press(screen.getByTestId('game-home'));
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 

@@ -453,6 +453,7 @@ export const useNumberPicnicGame = (
     else setGuidedRound(controllerRef.current.startNextExample());
   }, [
     clearAllTimeouts,
+    dispatchGame,
     guidedRound.phase,
     isPlacementMode,
     mode,

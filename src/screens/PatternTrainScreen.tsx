@@ -19,7 +19,7 @@ import { playMatchSound } from '../utils/sounds';
 import { useThemeColors } from '../utils/theme';
 import {
   AppScreen,
-  AppHeader,
+  GameHeader,
   AppButton,
   AppCard,
   AppModal,
@@ -38,10 +38,7 @@ export const PatternTrainScreen: React.FC = () => {
   const patternSettings = getGameSettings(settings, 'pattern-train');
   const difficulty = patternLevelToDifficulty(patternSettings.level);
   const { showPressureMetrics, showMilestoneCelebrations } = getGamePresentationPolicy(settings);
-  const animationsEnabled =
-    typeof useAnimationEnabled === 'function'
-      ? useAnimationEnabled()
-      : settings.animationsEnabled !== false;
+  const animationsEnabled = useAnimationEnabled();
   const { colors } = useThemeColors();
   const { t } = useTranslation();
   const translate = t as unknown as (key: string) => string;
@@ -73,6 +70,7 @@ export const PatternTrainScreen: React.FC = () => {
 
   const [draggableCarriages, setDraggableCarriages] = useState<DraggableCarriage[]>([]);
   const trainZoneRef = useRef<View>(null);
+  const [trainWidth, setTrainWidth] = useState(Math.min(windowWidth, 760) - 88);
   const [trainZoneLayout, setTrainZoneLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
 
   React.useEffect(() => {
@@ -113,8 +111,7 @@ export const PatternTrainScreen: React.FC = () => {
 
   const handleCloseDifficultyModal = useCallback(() => {
     handleCloseDifficultySelector();
-    navigation.goBack();
-  }, [handleCloseDifficultySelector, navigation]);
+  }, [handleCloseDifficultySelector]);
 
   const measureTrainZone = useCallback(() => {
     trainZoneRef.current?.measure((_x, _y, width, height, pageX, pageY) => {
@@ -215,40 +212,31 @@ export const PatternTrainScreen: React.FC = () => {
     </View>
   ) : null;
   const trainScale = pattern
-    ? Math.min(1, (windowWidth - Space.xl * 2) / (64 + pattern.carriages.length * 56))
+    ? Math.min(1, Math.max(1, trainWidth - Space.sm) / (64 + pattern.carriages.length * 56))
     : 1;
 
   return (
-    <AppScreen scroll>
-      <AppHeader title={t('games.patternTrain.title')} onBack={() => navigation.goBack()} />
+    <AppScreen
+      scroll
+      header={
+        <GameHeader title={t('games.patternTrain.title')} onBack={() => navigation.goBack()} />
+      }
+    >
       <View style={styles.content}>
         <Text style={styles.subtitle} accessibilityRole='header'>
-          {t('games.patternTrain.subtitle')}
+          {t('games.patternTrain.guidance.instruction')}
         </Text>
-        <Text style={styles.meta}>{t(`games.patternTrain.difficulty.${difficulty}.label`)}</Text>
 
         {pattern ? (
           <>
             <AppCard variant='elevated' style={styles.patternCard}>
-              <Text style={styles.patternRule} accessibilityRole='header'>
-                {ruleLabel}
-              </Text>
-              <Text
-                style={styles.repeatUnit}
-                accessibilityLabel={t('games.patternTrain.repeatUnitAccessibilityLabel', {
-                  unit: pattern.repeatUnit.join(' '),
-                  rule: ruleLabel,
-                })}
-              >
-                {t('games.patternTrain.repeatUnit', {
-                  unit: pattern.repeatUnit.join(' '),
-                  rule: ruleLabel,
-                })}
-              </Text>
               <View
                 ref={trainZoneRef}
                 style={styles.trainZone}
-                onLayout={measureTrainZone}
+                onLayout={(event) => {
+                  setTrainWidth(event.nativeEvent.layout.width);
+                  measureTrainZone();
+                }}
                 accessibilityLabel={t('games.patternTrain.train.accessibilityLabel')}
                 accessibilityRole='image'
               >
@@ -274,22 +262,6 @@ export const PatternTrainScreen: React.FC = () => {
                 </View>
               </View>
             </AppCard>
-
-            <GuidedPracticePrompt
-              state={guidedRound}
-              instruction={t('games.patternTrain.guidance.instruction')}
-              neutralFeedback={feedback}
-              hint={t('games.patternTrain.guidance.showPattern', {
-                unit: pattern.repeatUnit.join(' '),
-              })}
-              model={model}
-              hintLabel={t('games.patternTrain.guidance.showPatternButton')}
-              replayLabel={t('games.patternTrain.guidance.replay')}
-              skipLabel={t('games.patternTrain.guidance.skip')}
-              onReplay={replayInstructions}
-              onHint={showHint}
-              onSkip={handleSkip}
-            />
 
             <AppCard variant='elevated' style={styles.platformCard}>
               <Text style={styles.platformLabel}>{t('games.patternTrain.platform.label')}</Text>
@@ -339,12 +311,35 @@ export const PatternTrainScreen: React.FC = () => {
 
             {guidedRound.phase === 'corrected' && !showMilestoneModal ? (
               <AppButton
+                icon='next'
                 label={t('games.patternTrain.guidance.next')}
                 onPress={startNewRound}
                 accessibilityHint={t('games.patternTrain.guidance.nextHint')}
                 testID='pattern-train-next'
               />
             ) : null}
+
+            <GuidedPracticePrompt
+              state={guidedRound}
+              neutralFeedback={feedback}
+              hint={t('games.patternTrain.guidance.showPattern', {
+                unit: pattern.repeatUnit.join(' '),
+              })}
+              model={model}
+              hintLabel={t('games.patternTrain.guidance.showPatternButton')}
+              replayLabel={t('games.patternTrain.guidance.replay')}
+              skipLabel={t('games.patternTrain.guidance.skip')}
+              onReplay={replayInstructions}
+              onHint={showHint}
+              onSkip={handleSkip}
+            />
+
+            <AppButton
+              label={t('games.patternTrain.changeLevel')}
+              variant='ghost'
+              onPress={actions.openDifficultySelector}
+              testID='pattern-train-level'
+            />
 
             {showPressureMetrics ? (
               <Text
@@ -408,11 +403,13 @@ export const PatternTrainScreen: React.FC = () => {
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     content: {
+      width: '100%',
+      maxWidth: 760,
+      alignSelf: 'center',
       alignItems: 'center',
       paddingHorizontal: Space.md,
       paddingTop: Space.base,
       paddingBottom: Space.xl,
-      width: '100%',
     },
     subtitle: {
       ...TypeStyle.bodySm,
@@ -422,7 +419,6 @@ const createStyles = (colors: ThemeColors) =>
     },
     meta: { ...TypeStyle.label, color: colors.text, marginVertical: Space.sm },
     patternCard: { width: '100%', alignItems: 'center', marginVertical: Space.sm },
-    patternRule: { ...TypeStyle.label, color: colors.text, marginBottom: Space.xs },
     repeatUnit: { ...TypeStyle.bodySm, color: colors.text, textAlign: 'center' },
     trainZone: {
       width: '100%',
@@ -440,7 +436,7 @@ const createStyles = (colors: ThemeColors) =>
       textAlign: 'center',
       marginTop: Space.xs,
     },
-    platformCard: { width: '100%', marginVertical: Space.base, alignItems: 'center' },
+    platformCard: { width: '100%', marginVertical: Space.sm, alignItems: 'center' },
     platformLabel: { ...TypeStyle.label, color: colors.textLight, marginBottom: Space.sm },
     platform: {
       flexDirection: 'row',
