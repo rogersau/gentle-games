@@ -3,18 +3,13 @@ import { render } from '@testing-library/react-native';
 import { NumberPicnicChoice } from './NumberPicnicChoice';
 import { createNumberPicnicRepresentation } from '../../utils/numberPicnicLogic';
 
-const choice = {
-  id: 'choice-0',
-  quantity: 4,
-  numeral: 4,
-  representation: createNumberPicnicRepresentation(4),
-};
+const representation = createNumberPicnicRepresentation(4);
 
 describe('NumberPicnicChoice', () => {
   it('shows a quantity pattern without a visible answer label or numeral', () => {
     const screen = render(
       <NumberPicnicChoice
-        choice={choice}
+        representation={representation}
         display='quantity'
         label='Group showing 4 items'
         accessibilityHint='Choose this group'
@@ -25,14 +20,18 @@ describe('NumberPicnicChoice', () => {
 
     expect(screen.queryByText('Group showing 4 items')).toBeNull();
     expect(screen.queryByText('4')).toBeNull();
-    expect(screen.getByTestId('quantity-choice-representation')).toBeTruthy();
+    expect(
+      screen.getByTestId('quantity-choice-representation', { includeHiddenElements: true }),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Group showing 4 items' })).toBeTruthy();
+    expect(screen.queryByRole('image')).toBeNull();
     expect(screen.queryByText(/🟢/)).toBeNull();
   });
 
   it('shows only the numeral for a numeral-matching choice', () => {
     const screen = render(
       <NumberPicnicChoice
-        choice={choice}
+        representation={representation}
         display='numeral'
         label='Numeral 4'
         accessibilityHint='Choose this numeral'

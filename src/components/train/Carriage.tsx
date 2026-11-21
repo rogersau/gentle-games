@@ -77,7 +77,9 @@ export const Carriage: React.FC<CarriageProps> = ({
 
       {content && (
         <View style={styles.contentContainer}>
-          <Text style={[styles.contentText, { fontSize: size * 0.4 }]}>{content}</Text>
+          <Text allowFontScaling={false} style={[styles.contentText, { fontSize: size * 0.4 }]}>
+            {content}
+          </Text>
         </View>
       )}
     </View>

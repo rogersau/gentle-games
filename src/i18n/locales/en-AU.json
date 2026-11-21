@@ -54,10 +54,11 @@
       "completedTitle": "All pairs are together",
       "completed": "All pairs are together.",
       "completedIn": "You finished in {{time}}!",
-      "tileMatched": "{{value}}, matched",
-      "tileFaceUp": "{{value}}, face up",
-      "tileFaceDown": "Card, face down",
-      "tileFlipHint": "Double tap to flip this card",
+      "tileMatched": "Card {{position}}, {{value}}, matched",
+      "tileFaceUp": "Card {{position}}, {{value}}, face up",
+      "tileFaceDown": "Card {{position}}, face down",
+      "tileFlipHint": "Turn this card over",
+      "tileDismissHint": "Turn both cards back over",
       "cardValues": {
         "sun": "sun",
         "cloud": "cloud",
@@ -175,11 +176,14 @@
       "goHome": "Home",
       "goHomeHint": "Return to main screen",
       "instruction": "Turn over two cards to find a matching pair.",
+      "chooseSecond": "Turn over one more card.",
+      "mismatchTap": "Different cards. Tap either to turn them back over.",
+      "mismatchWaiting": "Different cards. They’ll turn back over.",
       "changeBoard": "Change cards",
       "chooseBoard": "Choose your cards",
       "boardSize_one": "{{count}} pair",
       "boardSize_other": "{{count}} pairs",
-      "boardChangeHint": "Choosing a size starts a new board."
+      "boardChangeHint": "A different size starts a new board."
     },
     "drawing": {
       "name": "Drawing Pad",
@@ -208,7 +212,7 @@
       },
       "shapeTool": "Shape tool",
       "clearConfirmMessage": "This will remove everything on the canvas.",
-      "size": "Size: {{size}}",
+      "size": "Size",
       "sizeSmall": "Small",
       "sizeMedium": "Medium",
       "sizeLarge": "Large",
@@ -268,7 +272,9 @@
         "cadetBlue": "Cadet blue"
       },
       "saveError": "Your drawing is still here, but could not be saved. Please try again later.",
-      "instruction": "Draw with your finger, or choose a tool below.",
+      "instruction": "Tap to make a dot, or drag to draw.",
+      "eraseInstruction": "Tap or drag to erase.",
+      "shapeInstruction": "Tap to place a shape.",
       "tools": {
         "pen": "Pen",
         "shapes": "Shapes",
@@ -290,8 +296,9 @@
       "addGlitterHint": "Add glitter particles to the globe",
       "clearGlitter": "Clear Glitter",
       "clearGlitterHint": "Remove all glitter from the globe",
-      "accessibility": "Glitter globe. Swipe or shake to move glitter particles.",
-      "subtitle": "Watch quietly or choose how the glitter moves",
+      "accessibility": "Glitter globe",
+      "subtitle": "Tap or drag the glitter, or use the buttons.",
+      "stillSubtitle": "Tap the globe to place a sparkle.",
       "profileTitle": "Choose a style",
       "preset": {
         "settle": "Settle",
@@ -334,16 +341,15 @@
       "accessibilityLabel": "Category matching game",
       "quickPreview": "Quick Preview",
       "previewInstruction": "Put each picture with the group it belongs to.",
-      "sortingInstruction": "Where does this picture belong?",
-      "interactionInstruction": "Tap the matching group, or drag the picture to it.",
+      "sortingInstruction": "Put the picture with things like it.",
+      "interactionInstruction": "Tap a group, or drag the picture to it.",
       "hint": "Think about what the picture is. Which group matches?",
       "itemAccessibilityLabel": "{{item}} item",
-      "selectItemHint": "Drag this picture to its group, or tap the group directly",
-      "selectItemFirst": "Select the item before choosing a category",
+      "selectItemHint": "Tap to select the picture, or drag it to a group",
       "categoryAccessibilityLabel": "{{category}} category",
       "categoryActivationHint": "Put this picture in this group",
       "correctFeedback": "{{item}} goes with {{category}}.",
-      "incorrectFeedback": "Let’s try {{correctCategory}} for {{item}}.",
+      "incorrectFeedback": "Try another group.",
       "model": "Here is one: {{item}} goes with {{category}}. Now you try.",
       "modelAccessibilityLabel": "{{item}} goes with {{category}}.",
       "showHint": "Show a hint",
@@ -383,12 +389,16 @@
       "description": "Keep the balloon floating",
       "title": "Keepy Uppy",
       "subtitle": "Tap a balloon to help it float. Take your time.",
+      "restSubtitle": "Tap a balloon to lift it. It can rest on the grass.",
+      "stillSubtitle": "Tap a balloon to move it.",
       "addBalloon": "Add Balloon",
       "addBalloonHint": "Add another balloon to the game",
       "taps": "Taps: {{count}}",
       "balloons": "Balloons: {{count}}",
       "popped": "Popped: {{count}}",
-      "balloonAccessibility": "Balloon, tap to keep it up"
+      "balloonAccessibility": "Balloon {{number}}",
+      "liftHint": "Gives the balloon a lift",
+      "moveHint": "Moves the balloon to a different height"
     },
     "breathingGarden": {
       "name": "Breathing Garden",
@@ -401,8 +411,8 @@
       "exhale": "Breathe Out",
       "changeColor": "Change Colour",
       "breaths": "Breaths: {{count}}",
-      "musicOn": "Turn Music On 🔊",
-      "musicOff": "Turn Music Off 🔇",
+      "musicOn": "Play music",
+      "musicOff": "Stop music",
       "comfortMessage": "Breathe comfortably. You can stop at any time.",
       "start": "Start",
       "watchFirst": "Watch first",
@@ -410,14 +420,15 @@
       "exit": "Exit",
       "pause": "Pause",
       "resume": "Resume",
-      "stop": "Stop and finish",
+      "stop": "Stop",
+      "stopWatching": "Stop watching",
       "soundOn": "Sound on",
       "soundOff": "Sound off",
-      "visualOn": "Show visual cue",
-      "visualOff": "Hide visual cue",
-      "watching": "Just watching. This breath will not be counted.",
+      "visualLabel": "Breathing ball",
+      "visualOn": "Show breathing ball",
+      "visualOff": "Hide breathing ball",
+      "watching": "You can watch one breath.",
       "normalMessage": "Breathe in your own comfortable way. There is no pace to follow.",
-      "cueOffMessage": "The visual cue is off. Breathe comfortably.",
       "finished": "Finished for now. You can start again or leave.",
       "startAgain": "Start again",
       "sessionProgress": "Breathing session progress",
@@ -446,7 +457,7 @@
         "accessibilityLabel": "Pattern Train game screen"
       },
       "train": {
-        "accessibilityLabel": "Train on the track",
+        "accessibilityLabel": "Train carriages in order. {{sequence}}.",
         "arrived": "A train has arrived. Pattern: {{pattern}}. Drag or tap a carriage to complete the train."
       },
       "platform": {
@@ -454,10 +465,20 @@
         "accessibilityLabel": "Platform with {{count}} carriages available"
       },
       "carriage": {
-        "accessibilityLabel": "Carriage with {{emoji}}",
-        "accessibilityHint": "Activate to place this carriage, or drag it to the missing place"
+        "accessibilityLabel": "Carriage with {{picture}}",
+        "accessibilityHint": "Activate to try this carriage in the gap"
       },
-      "instructions": "Tap a carriage to place it, or drag it to the missing place.",
+      "pictures": {
+        "engine": "train engine",
+        "star": "star",
+        "rainbow": "rainbow",
+        "flower": "flower",
+        "cloud": "cloud",
+        "bubbles": "bubbles",
+        "strawberry": "strawberry",
+        "teddy": "teddy bear"
+      },
+      "instructions": "Tap a carriage or drag it onto the train to fill the gap.",
       "repeatUnit": "Repeat {{unit}} for the {{rule}}.",
       "repeatUnitAccessibilityLabel": "Repeat unit: {{unit}}. Rule: {{rule}}.",
       "rules": {
@@ -487,9 +508,10 @@
         "model": "Model: {{sequence}}. Now choose the missing carriage.",
         "modelAccessibilityLabel": "Complete pattern: {{sequence}}.",
         "replay": "Show instructions",
+        "hideInstructions": "Hide instructions",
         "skip": "Skip",
         "next": "Next",
-        "nextHint": "Show the next pattern with the same rule and new symbols",
+        "nextHint": "Show the next train",
         "modelledFeedback": "Watch the model, then choose the missing carriage."
       },
       "difficulty": {
@@ -521,15 +543,14 @@
         "continue": "Keep Going!",
         "continueHint": "Continue playing Pattern Train"
       },
-      "changeLevel": "Change pattern"
+      "changeLevel": "Change level"
     },
     "numberPicnic": {
       "name": "Number Picnic",
       "description": "Count and fill the basket",
       "title": "Number Picnic",
       "nextPicnic": "Next Picnic",
-      "nextPicnicHint": "Continue to the next picnic challenge",
-      "subtitle": "Tap or drag items from the blanket to the basket",
+      "nextPicnicHint": "Start a new picnic whenever you like",
       "place": "Place",
       "basket": "Basket",
       "remove": "Remove",
@@ -540,12 +561,11 @@
       "resetHint": "Clear this picnic and keep the same target",
       "completed": "Completed picnics",
       "instruction": "Tap an item or drag it up to the basket",
-      "emptyBasket": "Add items here!",
+      "emptyBasket": "Empty basket",
       "moreItems": "+{{count}} more",
       "itemAccessibilityLabel": "{{item}} item {{index}}",
       "itemAccessibilityHint": "Tap to add this item, or drag it to the picnic basket",
-      "basketAccessibilityLabel": "Basket with {{count}} {{item}}",
-      "basketAccessibilityHint": "Add items from the blanket to fill the basket",
+      "basketAccessibilityLabel": "Basket with {{count}} {{item}}. Target {{target}}.",
       "removeItemAccessibilityLabel": "Remove {{item}} {{index}} from the basket",
       "removeItemAccessibilityHint": "Tap to return this item to the blanket",
       "items": {
@@ -567,8 +587,7 @@
         "other": "items"
       },
       "feedback": {
-        "complete": "Great counting!",
-        "incomplete": "Keep adding items"
+        "complete": "You found the right amount."
       },
       "representation": {
         "accessibilityLabel": "{{count}} {{itemWord}} shown as a numeral and a frame",
@@ -582,7 +601,8 @@
       "choiceAccessibilityLabel": "Group showing {{count}} {{itemWord}}",
       "numeralChoiceAccessibilityLabel": "Numeral {{numeral}}",
       "choiceHint": "Choose this group",
-      "groupAccessibilityLabel": "{{group}} group showing {{count}} {{itemWord}}",
+      "numeralChoiceHint": "Choose this numeral",
+      "groupAccessibilityLabel": "{{group}} showing {{count}} {{itemWord}}",
       "groups": {
         "left": "Left group",
         "right": "Right group"
@@ -596,12 +616,11 @@
       "guidance": {
         "neutral": "That choice does not show {{target}} {{item}}. You can try again.",
         "comparisonNeutral": "That group does not have {{comparison}} items. You can try again.",
+        "matchNumeralNeutral": "That numeral does not match the group. You can try again.",
         "findAmountHint": "Count the filled spaces in each frame. Look for {{target}}.",
         "matchNumeralHint": "Count the filled spaces, then choose that numeral.",
         "comparisonHint": "Compare the frames. Look for the group with {{comparison}} filled spaces.",
-        "hintButton": "Show a hint",
-        "replay": "Hear the instruction again",
-        "skip": "Try a new example"
+        "hintButton": "Show a hint"
       },
       "modes": {
         "makeAmount": {
@@ -690,7 +709,7 @@
       },
       "mismatch": {
         "title": "Mismatched cards",
-        "description": "Choose how long mismatched cards stay visible",
+        "description": "Hints and timed turns use this length. With pressure-free play, tap either mismatched card to turn both back over.",
         "oneSecond": "1 second",
         "twoSeconds": "2 seconds",
         "threeSeconds": "3 seconds"
@@ -711,11 +730,11 @@
     },
     "animations": {
       "label": "Animations",
-      "description": "Allow decorative card flips and UI animations"
+      "description": "Allow gentle movement in games and when changing screens"
     },
     "reducedMotion": {
       "label": "Reduced Motion",
-      "description": "Reduce decorative motion; device accessibility settings also apply"
+      "description": "Use still or simpler visuals. Your device’s reduced motion setting also applies."
     },
     "keepyUppyEasyMode": {
       "label": "Keepy Uppy Easy Mode",

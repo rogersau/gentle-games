@@ -8,8 +8,8 @@ import { ThemeColors } from '../types';
 import { APP_ROUTES, AppStackParamList } from '../types/navigation';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { openExternalUrl } from '../utils/externalLinks';
-import { AppScreen, AppButton, AppModal, GameCard, MochiPresence } from '../ui/components';
-import { useMochi } from '../hooks/useMochi';
+import { AppScreen, AppButton, AppModal, GameCard } from '../ui/components';
+import { Mochi } from '../components/Mochi';
 import { GameDefinition, getGameRoute, getVisibleGames } from '../games/registry';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useLayout } from '../ui/useLayout';
@@ -21,13 +21,13 @@ export const HomeScreen: React.FC = () => {
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const { contentWidth, isTablet } = useLayout();
   const { t } = useTranslation();
-  const { showMochi } = useMochi();
   const [showWebsiteFallback, setShowWebsiteFallback] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
   const isLaunchingRef = useRef(false);
   const isMountedRef = useRef(true);
 
   React.useEffect(() => {
+    isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
       isLaunchingRef.current = false;
@@ -40,10 +40,6 @@ export const HomeScreen: React.FC = () => {
       setIsLaunching(false);
     }, []),
   );
-
-  React.useEffect(() => {
-    showMochi('mascot.greeting', 'floating');
-  }, [showMochi]);
 
   const visibleGames = useMemo(
     () =>
@@ -101,7 +97,14 @@ export const HomeScreen: React.FC = () => {
             </Text>
             <Text style={styles.subtitle}>{t('home.subtitle')}</Text>
           </View>
-          <MochiPresence size='sm' showPhrase={false} style={styles.mochiInHeader} />
+          <View
+            style={styles.mochiInHeader}
+            accessibilityElementsHidden
+            importantForAccessibility='no-hide-descendants'
+            aria-hidden
+          >
+            <Mochi size='sm' animate={false} />
+          </View>
         </View>
 
         <View style={styles.gamesContainer} testID='home-games-container'>

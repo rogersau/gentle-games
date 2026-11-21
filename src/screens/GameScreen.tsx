@@ -37,9 +37,6 @@ export const GameScreen: React.FC = () => {
       header={<GameHeader title={t('games.memorySnap.title')} onBack={handleBackPress} />}
     >
       <View style={styles.content}>
-        <Text style={[styles.instruction, { color: colors.textLight }]}>
-          {t('games.memorySnap.instruction')}
-        </Text>
         <GameBoard
           onGameComplete={showMilestoneCelebrations ? handleGameComplete : () => undefined}
           onBackPress={handleBackPress}
@@ -87,7 +84,9 @@ export const GameScreen: React.FC = () => {
               variant={memorySettings.pairCount === pairCount ? 'primary' : 'ghost'}
               accessibilityState={{ selected: memorySettings.pairCount === pairCount }}
               onPress={() => {
-                void updateGameSettings('memory-snap', { pairCount });
+                if (pairCount !== memorySettings.pairCount) {
+                  void updateGameSettings('memory-snap', { pairCount });
+                }
                 setShowBoardChoices(false);
               }}
               testID={`memory-pairs-${pairCount}`}

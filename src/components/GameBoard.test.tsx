@@ -75,17 +75,24 @@ jest.mock('./Tile', () => {
       tile,
       onPress,
       size,
+      locked,
+      canDismissMismatch,
     }: {
       tile: { id: string; value: string; isFlipped: boolean; isMatched: boolean };
       onPress: () => void;
       size: number;
+      locked?: boolean;
+      canDismissMismatch?: boolean;
     }) => {
       renderedTileSize = size;
+      const disabled = !canDismissMismatch && (locked || tile.isFlipped || tile.isMatched);
       return (
         <TouchableOpacity
           testID={`tile-${tile.id}`}
           style={{ width: size, height: size }}
           onPress={onPress}
+          disabled={disabled}
+          accessibilityState={{ disabled }}
         >
           <Text>{tile.isFlipped || tile.isMatched ? tile.value : '?'}</Text>
         </TouchableOpacity>
@@ -152,6 +159,61 @@ describe('GameBoard', () => {
       jest.runOnlyPendingTimers();
       jest.useRealTimers();
     }
+  });
+
+  it('keeps a mismatch visible until either revealed card is tapped in pressure-free mode', () => {
+    jest.useFakeTimers();
+    mockSettings.pressureFreeMode = true;
+    const screen = render(<GameBoard onGameComplete={jest.fn()} />);
+    const card = (id: string) => screen.getByTestId(`tile-${id}`);
+
+    fireEvent.press(card('1a'));
+    expect(screen.getByText('games.memorySnap.chooseSecond')).toBeTruthy();
+    fireEvent.press(card('2a'));
+    expect(screen.getByText('games.memorySnap.mismatchTap')).toBeTruthy();
+    expect(card('1a')).toBeEnabled();
+    expect(card('2a')).toBeEnabled();
+    expect(card('1b')).toBeDisabled();
+    expect(card('2b')).toBeDisabled();
+    expect(screen.getByTestId('memory-snap-hint')).toBeDisabled();
+
+    fireEvent.press(card('1b'));
+    act(() => jest.advanceTimersByTime(30_000));
+    expect(screen.getByText('🐰')).toBeTruthy();
+    expect(screen.getByText('🐶')).toBeTruthy();
+    expect(mockPlayFlipSound).toHaveBeenCalledTimes(2);
+
+    fireEvent.press(card('2a'));
+    expect(screen.getAllByText('?')).toHaveLength(4);
+    expect(screen.getByTestId('memory-snap-hint')).toBeEnabled();
+    expect(card('1b')).toBeEnabled();
+    expect(mockPlayFlipSound).toHaveBeenCalledTimes(2);
+    fireEvent.press(card('1b'));
+    expect(screen.getByText('🐰')).toBeTruthy();
+    screen.unmount();
+    jest.useRealTimers();
+  });
+
+  it('rejects duplicate batched taps and plays one sound for each accepted tap', () => {
+    const onGameComplete = jest.fn();
+    const onPositiveEvent = jest.fn();
+    const screen = render(
+      <GameBoard onGameComplete={onGameComplete} onPositiveEvent={onPositiveEvent} />,
+    );
+
+    act(() => {
+      for (const id of ['1a', '1a', '1b', '1a', '2a', '2b', '2b']) {
+        fireEvent.press(screen.getByTestId(`tile-${id}`));
+      }
+    });
+
+    expect(screen.getByTestId('memory-complete')).toBeTruthy();
+    expect(screen.getByTestId('memory-snap-moves')).toHaveTextContent('2 moves');
+    expect(onGameComplete).toHaveBeenCalledTimes(1);
+    expect(onPositiveEvent).toHaveBeenCalledTimes(1);
+    expect(mockPlayFlipSound).toHaveBeenCalledTimes(2);
+    expect(mockPlayMatchSound).toHaveBeenCalledTimes(1);
+    expect(mockPlayCompleteSound).toHaveBeenCalledTimes(1);
   });
 
   it('shows completion state and calls onGameComplete after all matches', async () => {
@@ -453,6 +515,25 @@ describe('GameBoard', () => {
     jest.useRealTimers();
   });
 
+  it('lets a player end a timed preview early and keeps their first turn past the preview deadline', () => {
+    jest.useFakeTimers();
+    mockSettings.gameSettings['memory-snap'].previewMode = '4-seconds';
+    const screen = render(<GameBoard onGameComplete={jest.fn()} />);
+    expect(screen.getByTestId('tile-1a')).toBeDisabled();
+
+    fireEvent.press(screen.getByTestId('memory-snap-ready'));
+    expect(screen.getAllByText('?')).toHaveLength(4);
+    expect(screen.getByTestId('memory-snap-hint')).toBeEnabled();
+    fireEvent.press(screen.getByTestId('tile-2a'));
+    act(() => jest.advanceTimersByTime(4000));
+
+    expect(screen.getByText('🐶')).toBeTruthy();
+    expect(screen.getByTestId('memory-snap-hint')).toBeDisabled();
+    expect(screen.getByTestId('memory-snap-moves')).toHaveTextContent('0 moves');
+    screen.unmount();
+    jest.useRealTimers();
+  });
+
   it('uses the configured mismatch duration independently of preview', async () => {
     jest.useFakeTimers();
     mockSettings.gameSettings['memory-snap'].mismatchDuration = 1000;
@@ -491,12 +572,33 @@ describe('GameBoard', () => {
       jest.advanceTimersByTime(2000);
     });
     expect(screen.getByTestId('memory-snap-hint').props.accessibilityState.disabled).toBe(false);
+    expect(screen.getByTestId('memory-snap-moves')).toHaveTextContent('1 moves');
     fireEvent.press(screen.getByTestId('memory-snap-hint'));
     expect(screen.queryAllByText('🐰').length).toBeGreaterThan(0);
+    expect(screen.getByTestId('memory-snap-hint')).toBeDisabled();
+    expect(screen.getByTestId('memory-snap-moves')).toHaveTextContent('1 moves');
     await act(async () => {
       jest.advanceTimersByTime(2000);
     });
     expect(screen.queryAllByText('?')).toHaveLength(4);
+    screen.unmount();
+    jest.useRealTimers();
+  });
+
+  it('puts a hint away when the player starts a turn so only the chosen cards are visible', () => {
+    jest.useFakeTimers();
+    mockSettings.gameSettings['memory-snap'].previewMode = 'until-ready';
+    const screen = render(<GameBoard onGameComplete={jest.fn()} />);
+    fireEvent.press(screen.getByTestId('memory-snap-ready'));
+    fireEvent.press(screen.getByTestId('memory-snap-hint'));
+    expect(screen.getByText('🐰')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('tile-2a'));
+    expect(screen.queryByText('🐰')).toBeNull();
+    expect(screen.getByText('🐶')).toBeTruthy();
+    act(() => jest.advanceTimersByTime(2000));
+    expect(screen.getByText('🐶')).toBeTruthy();
+    expect(screen.getAllByText('?')).toHaveLength(3);
     screen.unmount();
     jest.useRealTimers();
   });

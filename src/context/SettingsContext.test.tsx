@@ -167,6 +167,7 @@ describe('SettingsContext', () => {
 
     expect(screen.getByTestId('telemetry').props.children).toBe('false');
     expect(screen.getByTestId('sound').props.children).toBe('false');
+    expect(screen.getByTestId('animations').props.children).toBe('false');
     expect(defaultSettings.showMochiInGames).toBe(false);
     expect(screen.getByTestId('pressure-free').props.children).toBe('true');
     expect(screen.getByTestId('difficulty').props.children).toBe('easy');

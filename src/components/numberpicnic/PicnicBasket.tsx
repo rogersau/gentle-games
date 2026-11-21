@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { LayoutChangeEvent, Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import React, { useMemo } from 'react';
+import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
-import { Space, TypeStyle, Radius, HitTarget } from '../../ui/tokens';
+import { Space, TypeStyle, Radius, HitTarget, ON_ACCENT_TEXT } from '../../ui/tokens';
 import { ThemeColors } from '../../types';
 import { useTranslation } from 'react-i18next';
 
@@ -9,18 +9,15 @@ interface PicnicBasketProps {
   items: string[];
   itemIds?: number[];
   removableItemIds?: readonly number[];
-  measureRequest?: number;
+  dropZoneRef?: React.Ref<View>;
   targetCount: number;
-  onPress: () => void;
+  itemName?: string;
   onItemPress?: (itemId: number) => void;
-  onDropZoneLayout?: (layout: { x: number; y: number; width: number; height: number }) => void;
-  onDrop?: (itemId: string, valid: boolean) => void;
   isDropTarget?: boolean;
+  isDragging?: boolean;
   isSuccess?: boolean;
-  onAnimationComplete?: () => void;
   style?: ViewStyle;
   accessibilityLabel?: string;
-  accessibilityHint?: string;
   testID?: string;
 }
 
@@ -28,40 +25,20 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
   items,
   itemIds,
   removableItemIds,
-  measureRequest = 0,
+  dropZoneRef,
   targetCount,
+  itemName,
   onItemPress,
-  onDropZoneLayout,
   isDropTarget = false,
+  isDragging = false,
   isSuccess = false,
   style,
   accessibilityLabel,
-  accessibilityHint,
   testID,
 }) => {
   const { colors } = useThemeColors();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const basketRef = useRef<View>(null);
-
-  const measureDropZone = useCallback(() => {
-    basketRef.current?.measureInWindow?.((x, y, width, height) => {
-      onDropZoneLayout?.({ x, y, width, height });
-    });
-  }, [onDropZoneLayout]);
-
-  const handleLayout = (event: LayoutChangeEvent) => {
-    if (basketRef.current?.measureInWindow) {
-      measureDropZone();
-      return;
-    }
-    const { layout } = event.nativeEvent;
-    onDropZoneLayout?.(layout);
-  };
-
-  useEffect(() => {
-    measureDropZone();
-  }, [items.length, measureDropZone, measureRequest]);
 
   const ids = itemIds ?? items.map((_, index) => index);
   const removableIds = new Set(removableItemIds ?? ids);
@@ -73,8 +50,8 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
     <View style={[styles.container, style]} accessible={false}>
       <View style={styles.handle} />
       <View
-        ref={basketRef}
-        onLayout={handleLayout}
+        ref={dropZoneRef}
+        collapsable={false}
         testID={testID ? `${testID}-drop-zone` : undefined}
         style={[
           styles.basket,
@@ -110,9 +87,10 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
                   <Pressable
                     key={itemId}
                     onPress={() => onItemPress?.(itemId)}
+                    disabled={isDragging}
                     accessibilityRole='button'
                     accessibilityLabel={t('games.numberPicnic.removeItemAccessibilityLabel', {
-                      item: emoji,
+                      item: itemName ?? emoji,
                       index: index + 1,
                     })}
                     accessibilityHint={t('games.numberPicnic.removeItemAccessibilityHint')}
@@ -134,11 +112,7 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
           )}
         </View>
         <View style={[styles.countBadge, isSuccess && styles.countBadgeCorrect]}>
-          <Text
-            style={styles.countText}
-            accessibilityLabel={accessibilityLabel}
-            accessibilityHint={accessibilityHint}
-          >
+          <Text style={styles.countText} accessibilityLabel={accessibilityLabel}>
             {items.length}/{targetCount}
           </Text>
         </View>
@@ -151,7 +125,7 @@ const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
       alignItems: 'center',
-      paddingHorizontal: Space.md,
+      width: '100%',
     },
     handle: {
       width: 100,
@@ -164,7 +138,8 @@ const createStyles = (colors: ThemeColors) =>
       zIndex: 1,
     },
     basket: {
-      width: 280,
+      width: '100%',
+      maxWidth: 280,
       minHeight: 180,
       backgroundColor: colors.surface,
       borderRadius: Radius.lg,
@@ -177,7 +152,6 @@ const createStyles = (colors: ThemeColors) =>
     },
     basketTarget: {
       borderColor: colors.primary,
-      borderWidth: 6,
     },
     basketCorrect: {
       borderColor: colors.success,
@@ -245,7 +219,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     countText: {
       ...TypeStyle.label,
-      color: '#FFFFFF',
+      color: ON_ACCENT_TEXT,
       fontWeight: 'bold',
     },
   });

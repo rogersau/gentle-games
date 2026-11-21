@@ -9,9 +9,9 @@ import React, {
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import {
-  BREATHING_CYCLE_DURATION_MS,
   getBreathingPhase,
   getBreathingPhaseProgress,
+  getCompletedBreathingCycles,
   type BreathingGardenPhase,
 } from '../utils/breathingGardenLogic';
 import { useTranslation } from 'react-i18next';
@@ -50,6 +50,7 @@ interface BreathingBallProps {
   onCycleComplete?: (cycleCount: number) => void;
   onProgress?: (progress: number) => void;
   showCycleCount?: boolean;
+  showVisual?: boolean;
 }
 
 export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
@@ -65,6 +66,7 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
       onCycleComplete,
       onProgress,
       showCycleCount = true,
+      showVisual = true,
     },
     ref,
   ) => {
@@ -72,16 +74,14 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
     const translate = t as unknown as (key: string, options?: Record<string, unknown>) => string;
     const [isRunning, setIsRunning] = useState(autoStart);
     const [elapsedMs, setElapsedMs] = useState(0);
-    const lastTimeRef = useRef<number>(0);
-    const frameRef = useRef<number | null>(null);
-    const stepIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const lastTimeRef = useRef<number | null>(null);
     const previousPhaseRef = useRef<BreathingGardenPhase | null>(null);
     const previousCycleRef = useRef<number>(0);
 
     const { phase, phaseProgress, cycleCount } = useMemo(() => {
       const currentPhase = getBreathingPhase(elapsedMs);
       const progress = getBreathingPhaseProgress(elapsedMs);
-      const cycles = Math.floor(elapsedMs / BREATHING_CYCLE_DURATION_MS);
+      const cycles = getCompletedBreathingCycles(elapsedMs);
 
       return {
         phase: currentPhase,
@@ -127,63 +127,46 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
         getElapsedMs: () => elapsedMs,
         reset: () => {
           setElapsedMs(0);
-          lastTimeRef.current = 0;
-          previousPhaseRef.current = null;
+          if (lastTimeRef.current !== null) lastTimeRef.current = performance.now();
+          previousCycleRef.current = 0;
         },
-        pause: () => setIsRunning(false),
-        resume: () => setIsRunning(true),
+        pause: () => {
+          lastTimeRef.current = null;
+          setIsRunning(false);
+        },
+        resume: () => {
+          lastTimeRef.current ??= performance.now();
+          setIsRunning(true);
+        },
       }),
       [phase, cycleCount, elapsedMs],
     );
 
     useEffect(() => {
-      if (!isRunning) {
-        if (frameRef.current !== null) {
-          cancelAnimationFrame(frameRef.current);
-          frameRef.current = null;
-        }
-        if (stepIntervalRef.current !== null) {
-          clearInterval(stepIntervalRef.current);
-          stepIntervalRef.current = null;
-        }
-        lastTimeRef.current = 0;
-        return;
-      }
+      if (!isRunning) return;
 
-      if (reducedMotion) {
-        lastTimeRef.current = Date.now();
-        stepIntervalRef.current = setInterval(() => {
-          const now = Date.now();
-          const deltaMs = Math.max(0, now - lastTimeRef.current);
-          lastTimeRef.current = now;
-          setElapsedMs((prev) => prev + deltaMs);
-        }, 250);
-        return () => {
-          if (stepIntervalRef.current !== null) clearInterval(stepIntervalRef.current);
-          stepIntervalRef.current = null;
-        };
-      }
-
-      const tick = (time: number) => {
-        if (!lastTimeRef.current) {
-          lastTimeRef.current = time;
-        }
-
-        const deltaMs = time - lastTimeRef.current;
-        lastTimeRef.current = time;
-
+      lastTimeRef.current ??= performance.now();
+      const tick = () => {
+        const lastTime = lastTimeRef.current;
+        if (lastTime === null) return;
+        const now = performance.now();
+        const deltaMs = Math.max(0, now - lastTime);
+        lastTimeRef.current = now;
         setElapsedMs((prev) => prev + deltaMs);
-        frameRef.current = requestAnimationFrame(tick);
       };
 
-      frameRef.current = requestAnimationFrame(tick);
+      if (reducedMotion || !showVisual) {
+        const interval = setInterval(tick, 250);
+        return () => clearInterval(interval);
+      }
 
-      return () => {
-        if (frameRef.current !== null) {
-          cancelAnimationFrame(frameRef.current);
-        }
+      const animate = () => {
+        tick();
+        frame = requestAnimationFrame(animate);
       };
-    }, [isRunning, reducedMotion]);
+      let frame = requestAnimationFrame(animate);
+      return () => cancelAnimationFrame(frame);
+    }, [isRunning, reducedMotion, showVisual]);
 
     const center = size / 2;
     const ballRadius = ballSize / 2;
@@ -193,7 +176,7 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
     // Generate breathing rings that expand outward
     const ringCount = 5;
     const rings = useMemo(() => {
-      if (reducedMotion) return [];
+      if (reducedMotion || !showVisual) return [];
       return Array.from({ length: ringCount }, (_, index) => {
         // Each ring is offset in the breathing cycle
         const ringOffset = (index / ringCount) * 0.9; // 0 to 0.9 offset
@@ -218,8 +201,9 @@ export const BreathingBall = forwardRef<BreathingBallRef, BreathingBallProps>(
           strokeWidth: Math.max(0.5, ringStrokeWidth),
         };
       });
-    }, [phase, phaseProgress, ballRadius, maxRingRadius, reducedMotion]);
+    }, [phase, phaseProgress, ballRadius, maxRingRadius, reducedMotion, showVisual]);
 
+    if (!showVisual) return null;
     return (
       <View
         style={[styles.container, { width: size, height: size }]}

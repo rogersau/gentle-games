@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated } from 'react-native';
 import { createGuidedRoundController, GuidedRoundState } from '../guided-practice/controller';
 import { Difficulty } from '../types';
 import {
@@ -9,21 +8,11 @@ import {
   TrainPattern,
 } from '../utils/patternTrainLogic';
 
-export interface DraggableCarriage {
-  emoji: string;
-  position: Animated.ValueXY;
-  scale: Animated.Value;
-  opacity: Animated.Value;
-  isAvailable: boolean;
-}
-
 export interface PatternTrainGameState {
-  pattern: TrainPattern | null;
+  pattern: TrainPattern;
   completedRounds: number;
-  wrongAttempts: number;
-  isProcessing: boolean;
   showDifficultySelector: boolean;
-  showMilestoneModal: boolean;
+  showMilestone: boolean;
   attachedCarriage: string | null;
   guidedRound: GuidedRoundState;
   feedback: string;
@@ -43,7 +32,6 @@ export interface PatternTrainGameActions {
   showHint: () => void;
   skipRound: () => void;
   replayInstructions: () => void;
-  handleMilestoneContinue: () => void;
   resetGame: () => void;
 }
 
@@ -65,21 +53,16 @@ export function usePatternTrainGame({
   t,
   showMilestones = true,
 }: UsePatternTrainGameOptions) {
-  const [pattern, setPattern] = useState<TrainPattern | null>(() =>
-    generateTrainPattern(initialDifficulty),
-  );
-  const [activeDifficulty, setActiveDifficulty] = useState(initialDifficulty);
+  const [pattern, setPattern] = useState(() => generateTrainPattern(initialDifficulty));
+  const currentPattern = useRef(pattern);
   const [completedRounds, setCompletedRounds] = useState(0);
-  const [wrongAttempts, setWrongAttempts] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [showDifficultySelector, setShowDifficultySelector] = useState(false);
-  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [attachedCarriage, setAttachedCarriage] = useState<string | null>(null);
   const [guidedRound, setGuidedRound] = useState<GuidedRoundState>(() =>
     createController().getState(),
   );
-  const [feedback, setFeedback] = useState(t('games.patternTrain.feedback.initial'));
-  const controllerRef = useRef(createController());
+  const [initialController] = useState(createController);
+  const controllerRef = useRef(initialController);
 
   useEffect(() => {
     return () => {
@@ -95,83 +78,67 @@ export function usePatternTrainGame({
     return nextState;
   }, []);
 
+  const replacePattern = useCallback((nextPattern: TrainPattern) => {
+    currentPattern.current = nextPattern;
+    setPattern(nextPattern);
+    setAttachedCarriage(null);
+  }, []);
+
   const handleDifficultySelect = useCallback(
     (nextDifficulty: Difficulty) => {
-      setActiveDifficulty(nextDifficulty);
-      setPattern(generateTrainPattern(nextDifficulty));
-      setWrongAttempts(0);
-      setAttachedCarriage(null);
-      setIsProcessing(false);
+      replacePattern(generateTrainPattern(nextDifficulty));
       setShowDifficultySelector(false);
-      setShowMilestoneModal(false);
-      setFeedback(t('games.patternTrain.feedback.initial'));
       resetController();
     },
-    [resetController, t],
+    [replacePattern, resetController],
   );
 
   const startNewRound = useCallback(() => {
     const currentGuidedRound = controllerRef.current.getState();
     if (
-      pattern &&
-      currentGuidedRound.phase !== 'corrected' &&
-      currentGuidedRound.phase !== 'skipped'
+      currentPattern.current !== pattern ||
+      (currentGuidedRound.phase !== 'corrected' && currentGuidedRound.phase !== 'skipped')
     ) {
       return;
     }
-    const nextPattern = pattern
-      ? currentGuidedRound.exampleNumber % 2 === 1
+    const nextPattern =
+      currentGuidedRound.exampleNumber % 2 === 1
         ? generateTransferPattern(pattern)
-        : generateTrainPattern(activeDifficulty)
-      : generateTrainPattern(activeDifficulty);
-    setPattern(nextPattern);
-    setGuidedRound(pattern ? controllerRef.current.startNextExample() : resetController());
-    setWrongAttempts(0);
-    setAttachedCarriage(null);
-    setIsProcessing(false);
-    setShowMilestoneModal(false);
-    setFeedback(t('games.patternTrain.feedback.initial'));
-  }, [activeDifficulty, pattern, resetController, t]);
+        : generateTrainPattern(pattern.difficulty);
+    replacePattern(nextPattern);
+    setGuidedRound(controllerRef.current.startNextExample());
+  }, [pattern, replacePattern]);
 
   const submitChoice = useCallback(
     (choice: string): ChoiceResult | null => {
+      const previousRound = controllerRef.current.getState();
       if (
-        !pattern ||
-        isProcessing ||
-        guidedRound.phase === 'corrected' ||
-        guidedRound.phase === 'skipped'
+        currentPattern.current !== pattern ||
+        previousRound.phase === 'corrected' ||
+        previousRound.phase === 'skipped'
       ) {
         return null;
       }
 
       const isCorrect = isTrainChoiceCorrect(pattern, choice);
       const nextGuidedRound = controllerRef.current.attempt(isCorrect);
+      if (nextGuidedRound === previousRound) return null;
       setGuidedRound(nextGuidedRound);
-      setWrongAttempts(nextGuidedRound.incorrectAttempts);
 
       if (isCorrect) {
         setAttachedCarriage(choice);
-        setIsProcessing(true);
-        const nextCompletedRounds = completedRounds + 1;
-        setCompletedRounds(nextCompletedRounds);
-        if (showMilestones && nextCompletedRounds % 5 === 0) {
-          setShowMilestoneModal(true);
-        }
-        setFeedback(t('games.patternTrain.feedback.correct'));
-      } else {
-        setFeedback(t('games.patternTrain.feedback.incorrect'));
+        setCompletedRounds((count) => count + 1);
       }
 
       return { isCorrect, guidedRound: nextGuidedRound };
     },
-    [completedRounds, guidedRound.phase, isProcessing, pattern, showMilestones, t],
+    [pattern],
   );
 
   const skipRound = useCallback(() => {
-    if (!pattern) return;
-    setGuidedRound(controllerRef.current.skip());
-    setIsProcessing(false);
-  }, [pattern]);
+    if (currentPattern.current !== pattern) return;
+    if (controllerRef.current.skip().phase === 'skipped') startNewRound();
+  }, [pattern, startNewRound]);
 
   const showHint = useCallback(() => {
     setGuidedRound(controllerRef.current.showHint());
@@ -181,34 +148,26 @@ export function usePatternTrainGame({
     setGuidedRound(controllerRef.current.replayInstructions());
   }, []);
 
-  const handleMilestoneContinue = useCallback(() => {
-    setShowMilestoneModal(false);
-    startNewRound();
-  }, [startNewRound]);
-
   const resetGame = useCallback(() => {
-    setPattern(generateTrainPattern(initialDifficulty));
-    setActiveDifficulty(initialDifficulty);
+    replacePattern(generateTrainPattern(initialDifficulty));
     setCompletedRounds(0);
-    setWrongAttempts(0);
-    setIsProcessing(false);
     setShowDifficultySelector(false);
-    setShowMilestoneModal(false);
-    setAttachedCarriage(null);
-    setFeedback(t('games.patternTrain.feedback.initial'));
     resetController();
-  }, [initialDifficulty, resetController, t]);
+  }, [initialDifficulty, replacePattern, resetController]);
 
   const state: PatternTrainGameState = {
     pattern,
     completedRounds,
-    wrongAttempts,
-    isProcessing,
     showDifficultySelector,
-    showMilestoneModal,
+    showMilestone: showMilestones && guidedRound.phase === 'corrected' && completedRounds % 5 === 0,
     attachedCarriage,
     guidedRound,
-    feedback,
+    feedback:
+      guidedRound.phase === 'corrected'
+        ? t('games.patternTrain.feedback.correct')
+        : guidedRound.incorrectAttempts > 0
+          ? t('games.patternTrain.feedback.incorrect')
+          : '',
   };
 
   const actions: PatternTrainGameActions = {
@@ -220,7 +179,6 @@ export function usePatternTrainGame({
     showHint,
     skipRound,
     replayInstructions,
-    handleMilestoneContinue,
     resetGame,
   };
 

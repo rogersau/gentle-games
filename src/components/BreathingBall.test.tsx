@@ -3,6 +3,10 @@ import { Button, View } from 'react-native';
 import { act, render } from '@testing-library/react-native';
 import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { BreathingBall, BreathingBallRef, defaultColorSchemes } from './BreathingBall';
+import {
+  BREATHING_CYCLE_DURATION_MS,
+  BREATHING_PHASE_DURATION_MS,
+} from '../utils/breathingGardenLogic';
 
 // Mock requestAnimationFrame
 const mockRequestAnimationFrame = jest.fn((callback: FrameRequestCallback) => {
@@ -94,35 +98,68 @@ describe('BreathingBall', () => {
     expect(elapsedAfterResume).toBeGreaterThanOrEqual(elapsedAfterPause);
   });
 
-  it('resets the animation state', () => {
+  it('resets elapsed time and reports phases and cycles for the next breath', () => {
+    jest.useFakeTimers();
     const ref = { current: null as BreathingBallRef | null };
+    const onPhaseChange = jest.fn();
+    const onCycleComplete = jest.fn();
+    const ball = render(
+      <BreathingBall
+        size={300}
+        reducedMotion
+        ref={ref}
+        onPhaseChange={onPhaseChange}
+        onCycleComplete={onCycleComplete}
+      />,
+    );
 
-    render(<BreathingBall size={300} autoStart={true} ref={ref} />);
+    try {
+      act(() =>
+        jest.advanceTimersByTime(BREATHING_CYCLE_DURATION_MS + BREATHING_PHASE_DURATION_MS),
+      );
+      expect(onCycleComplete).toHaveBeenCalledWith(1);
+      expect(onPhaseChange).toHaveBeenLastCalledWith('exhale');
 
-    // Simulate time passing by forcing a re-render with elapsed time
-    // This is tricky in tests, so we verify reset clears state
-    act(() => {
-      ref.current?.reset();
-    });
+      act(() => ref.current?.reset());
+      expect(ref.current?.getElapsedMs()).toBe(0);
+      expect(ref.current?.getCycleCount()).toBe(0);
+      expect(onPhaseChange).toHaveBeenLastCalledWith('inhale');
 
-    expect(ref.current?.getPhase()).toBe('inhale');
-    expect(ref.current?.getCycleCount()).toBe(0);
-    expect(ref.current?.getElapsedMs()).toBe(0);
+      act(() => jest.advanceTimersByTime(BREATHING_CYCLE_DURATION_MS));
+      expect(onCycleComplete.mock.calls).toEqual([[1], [1]]);
+    } finally {
+      ball.unmount();
+      jest.useRealTimers();
+    }
   });
 
-  it('calls onPhaseChange callback when phase changes', async () => {
-    const onPhaseChange = jest.fn();
+  it('keeps elapsed time when the player hides the ball or changes motion settings', () => {
+    jest.useFakeTimers();
     const ref = { current: null as BreathingBallRef | null };
+    const ball = render(<BreathingBall size={300} ref={ref} />);
 
-    render(<BreathingBall size={300} autoStart={false} onPhaseChange={onPhaseChange} ref={ref} />);
+    try {
+      act(() => jest.advanceTimersByTime(1999));
+      expect(ref.current?.getElapsedMs()).toBe(1984);
 
-    // Phase is initially inhale
-    expect(ref.current?.getPhase()).toBe('inhale');
+      ball.rerender(<BreathingBall size={300} ref={ref} showVisual={false} />);
+      expect(ball.queryByRole('progressbar')).toBeNull();
+      act(() => jest.advanceTimersByTime(1000));
+      expect(ref.current?.getElapsedMs()).toBe(2999);
 
-    // Start and let it run (in real time this would change)
-    act(() => {
-      ref.current?.resume();
-    });
+      ball.rerender(<BreathingBall size={300} ref={ref} reducedMotion />);
+      act(() => jest.advanceTimersByTime(750));
+      expect(ref.current?.getPhase()).toBe('exhale');
+
+      ball.rerender(<BreathingBall size={300} ref={ref} />);
+      act(() => jest.advanceTimersByTime(250));
+      expect(ref.current?.getElapsedMs()).toBeGreaterThanOrEqual(3984);
+      expect(ref.current?.getElapsedMs()).toBeLessThanOrEqual(3999);
+      expect(ref.current?.getCycleCount()).toBe(0);
+    } finally {
+      ball.unmount();
+      jest.useRealTimers();
+    }
   });
 
   it('respects autoStart prop', () => {

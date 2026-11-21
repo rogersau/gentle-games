@@ -1,236 +1,139 @@
 import React from 'react';
-import { PanResponder } from 'react-native';
+import { PanResponder, View } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { isNumberPicnicDropValid, PicnicBlanket } from './PicnicBlanket';
 
-let mockSettings = {
-  animationsEnabled: false,
-  reducedMotionEnabled: false,
-};
+type MeasureCallback = Parameters<View['measureInWindow']>[0];
 
-let mockMeasuredLayout = {
-  x: 10,
-  y: 100,
-  width: 56,
-  height: 56,
-};
+const dragGesture = { dx: 5, dy: -70, moveX: 115, moveY: 220 };
+const itemBounds = [100, 300, 56, 56] as const;
+const basketBounds = [120, 100, 150, 150] as const;
 
-jest.mock('../../context/SettingsContext', () => ({
-  useSettings: () => ({
-    settings: mockSettings,
-  }),
-}));
-
-jest.mock('../../utils/theme', () => ({
-  useReducedMotion: () => false,
-  useThemeColors: () => ({
-    colors: {
-      background: '#FFFEF7',
-      cardBack: '#E8E4E1',
-      cardFront: '#FFFFFF',
-      text: '#5A5A5A',
-      textLight: '#8A8A8A',
-      primary: '#A8D8EA',
-      secondary: '#FFB6C1',
-      success: '#B8E6B8',
-      matched: '#D3D3D3',
-      surfaceGame: '#FFFFFF',
-      surface: '#FFFFFF',
-      surfaceElevated: '#FFFFFF',
-      border: '#E8E4E1',
-      borderSubtle: '#F0EDE9',
-      overlay: 'rgba(90, 90, 90, 0.4)',
-      accent: '#D4A9E6',
-      danger: '#E8A0A0',
-    },
-  }),
-}));
-
-jest.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: Record<string, unknown>) =>
-      options
-        ? `${String(options.item ?? '')} translated:${key}:${String(options.index ?? '')}`
-        : `translated:${key}`,
-  }),
-}));
+function setup({
+  measureItem = (callback: MeasureCallback) => callback(...itemBounds),
+  measureBasket = (callback: MeasureCallback) => callback(...basketBounds),
+  firstItemId = 0,
+} = {}) {
+  const props = {
+    itemEmoji: '🍎',
+    itemName: 'apple',
+    itemIds: [firstItemId, firstItemId + 2],
+    firstItemId,
+    poolSize: firstItemId + 3,
+    onItemDrop: jest.fn(),
+    onDropStart: jest.fn(),
+    onDropEnd: jest.fn(),
+    onDragOverBasket: jest.fn(),
+    basketRef: { current: { measureInWindow: jest.fn(measureBasket) } as unknown as View },
+    isComplete: false,
+  };
+  jest.spyOn(View.prototype, 'measureInWindow').mockImplementation(measureItem);
+  const screen = render(<PicnicBlanket {...props} />);
+  return { ...screen, props };
+}
 
 describe('PicnicBlanket', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockSettings = {
-      animationsEnabled: false,
-      reducedMotionEnabled: false,
-    };
-    mockMeasuredLayout = {
-      x: 10,
-      y: 100,
-      width: 56,
-      height: 56,
-    };
-    jest.spyOn(PanResponder, 'create').mockImplementation(
-      (handlers: any) =>
-        ({
-          panHandlers: handlers,
-        }) as any,
-    );
+    jest
+      .spyOn(PanResponder, 'create')
+      .mockImplementation(
+        (handlers) =>
+          ({ panHandlers: handlers }) as unknown as ReturnType<typeof PanResponder.create>,
+      );
   });
 
-  afterEach(() => {
-    jest.restoreAllMocks();
+  afterEach(() => jest.restoreAllMocks());
+
+  it('keeps only the source slots in add-one-more and makes available fruit tappable', () => {
+    const { getAllByTestId, getByTestId, props, rerender } = setup({ firstItemId: 6 });
+
+    expect(getAllByTestId(/^picnic-drag-/)).toHaveLength(3);
+    expect(getAllByTestId(/^picnic-item-/)).toHaveLength(2);
+    fireEvent.press(getByTestId('picnic-item-8'));
+    expect(props.onItemDrop).toHaveBeenCalledWith(8);
+
+    rerender(<PicnicBlanket {...props} itemIds={[6]} />);
+    expect(getAllByTestId(/^picnic-drag-/)).toHaveLength(3);
+    expect(getAllByTestId(/^picnic-item-/)).toHaveLength(1);
+
+    rerender(<PicnicBlanket {...props} isComplete />);
+    expect(getByTestId('picnic-item-6')).toBeDisabled();
   });
 
-  it('renders only the available draggable items', () => {
-    const { queryAllByTestId } = render(
-      <PicnicBlanket itemEmoji='🍎' itemCount={2} targetCount={5} onItemDrop={jest.fn()} />,
-    );
+  it('grants a drag from the stationary slot after an upward move and keeps its responder through rerenders', () => {
+    const measureItem = jest.fn((callback: MeasureCallback) => callback(...itemBounds));
+    const { getByTestId, rerender, props } = setup({ measureItem });
+    const slot = getByTestId('picnic-drag-0');
+    const { onMoveShouldSetPanResponder, onPanResponderGrant } = slot.props;
 
-    expect(queryAllByTestId(/picnic-item-/)).toHaveLength(2);
-  });
+    expect(onMoveShouldSetPanResponder({}, { dx: 1, dy: -3 })).toBe(false);
+    expect(onMoveShouldSetPanResponder({}, { dx: 1, dy: 20 })).toBe(false);
+    expect(onMoveShouldSetPanResponder({}, { dx: 1, dy: -10 })).toBe(true);
 
-  it('renders instructions through the translation interface', () => {
-    const { getByText } = render(
-      <PicnicBlanket itemEmoji='🍎' itemCount={1} targetCount={3} onItemDrop={jest.fn()} />,
-    );
-
-    expect(getByText('translated:games.numberPicnic.instruction')).toBeTruthy();
-  });
-
-  it('rebuilds item labels when emoji changes between rounds', () => {
-    const { getByTestId, rerender } = render(
-      <PicnicBlanket itemEmoji='🍓' itemCount={1} targetCount={3} onItemDrop={jest.fn()} />,
-    );
-
-    expect(getByTestId('picnic-item-0').props.accessibilityLabel).toContain('🍓');
-
-    rerender(<PicnicBlanket itemEmoji='🥕' itemCount={1} targetCount={3} onItemDrop={jest.fn()} />);
-
-    expect(getByTestId('picnic-item-0').props.accessibilityLabel).toContain('🥕');
-  });
-
-  it('adds an available item with a simple press', () => {
-    const onItemDrop = jest.fn();
-    const { getByTestId } = render(
-      <PicnicBlanket itemEmoji='🍎' itemCount={1} targetCount={3} onItemDrop={onItemDrop} />,
-    );
-
-    fireEvent.press(getByTestId('picnic-item-0'));
-
-    expect(onItemDrop).toHaveBeenCalledWith(0);
-  });
-
-  it('drops item when dragged into the measured basket overlap area', () => {
-    const onItemDrop = jest.fn();
-    const onDropStart = jest.fn();
-    const onDropEnd = jest.fn();
-
-    const { getByTestId } = render(
-      <PicnicBlanket
-        itemEmoji='🍌'
-        itemCount={1}
-        targetCount={3}
-        onItemDrop={onItemDrop}
-        onDropStart={onDropStart}
-        onDropEnd={onDropEnd}
-        dropZoneLayout={{ x: 20, y: 50, width: 120, height: 120 }}
-        measureItemInWindow={(_, callback) =>
-          callback(
-            mockMeasuredLayout.x,
-            mockMeasuredLayout.y,
-            mockMeasuredLayout.width,
-            mockMeasuredLayout.height,
-          )
-        }
-      />,
-      {
-        createNodeMock: () => ({
-          measureInWindow: (
-            callback: (x: number, y: number, width: number, height: number) => void,
-          ) =>
-            callback(
-              mockMeasuredLayout.x,
-              mockMeasuredLayout.y,
-              mockMeasuredLayout.width,
-              mockMeasuredLayout.height,
-            ),
-        }),
-      },
-    );
-
-    const item = getByTestId('picnic-item-0');
-    const startShouldSet = item.props.onStartShouldSetPanResponder;
-    const moveShouldSet = item.props.onMoveShouldSetPanResponder;
-    const onGrant = item.props.onPanResponderGrant;
-    const onMove = item.props.onPanResponderMove;
-    const onRelease = item.props.onPanResponderRelease;
-
-    expect(startShouldSet()).toBe(false);
-    expect(moveShouldSet()).toBe(true);
+    act(() => onPanResponderGrant());
+    rerender(<PicnicBlanket {...props} />);
+    expect(getByTestId('picnic-drag-0').props.onPanResponderGrant).toBe(onPanResponderGrant);
 
     act(() => {
-      item.props.onLayout?.({
-        nativeEvent: {
-          layout: mockMeasuredLayout,
-        },
-      });
-      onGrant?.({}, {});
-      onMove?.({}, { dx: 20, dy: -40, moveX: 80, moveY: 100 });
-      onRelease?.({}, { dx: 20, dy: -40, moveX: 80, moveY: 100 });
+      getByTestId('picnic-drag-0').props.onPanResponderMove({}, dragGesture);
+      getByTestId('picnic-drag-0').props.onPanResponderRelease();
     });
 
-    expect(onDropStart).toHaveBeenCalledTimes(1);
-    expect(onDropEnd).toHaveBeenCalledTimes(1);
-    expect(onItemDrop).toHaveBeenCalledWith(0);
+    expect(measureItem).toHaveBeenCalledTimes(1);
+    expect(props.onDropStart).toHaveBeenCalledTimes(1);
+    expect(props.onDropEnd).toHaveBeenCalledTimes(1);
+    expect(props.onDragOverBasket).toHaveBeenLastCalledWith(true);
+    expect(props.onItemDrop).toHaveBeenCalledTimes(1);
+    expect(props.onItemDrop).toHaveBeenCalledWith(0);
   });
 
-  it('does not drop item when release does not overlap the basket bounds', () => {
-    const onItemDrop = jest.fn();
+  it('remeasures the basket for each gesture after scrolling', () => {
+    let basketY = 600;
+    const { getByTestId, props } = setup({
+      measureBasket: (callback) => callback(120, basketY, 150, 150),
+    });
+    const slot = getByTestId('picnic-drag-0');
 
-    const { getByTestId } = render(
-      <PicnicBlanket
-        itemEmoji='🍇'
-        itemCount={1}
-        targetCount={3}
-        onItemDrop={onItemDrop}
-        dropZoneLayout={{ x: 220, y: 20, width: 100, height: 100 }}
-        measureItemInWindow={(_, callback) =>
-          callback(
-            mockMeasuredLayout.x,
-            mockMeasuredLayout.y,
-            mockMeasuredLayout.width,
-            mockMeasuredLayout.height,
-          )
-        }
-      />,
-      {
-        createNodeMock: () => ({
-          measureInWindow: (
-            callback: (x: number, y: number, width: number, height: number) => void,
-          ) =>
-            callback(
-              mockMeasuredLayout.x,
-              mockMeasuredLayout.y,
-              mockMeasuredLayout.width,
-              mockMeasuredLayout.height,
-            ),
-        }),
+    const drag = () => {
+      slot.props.onPanResponderGrant();
+      slot.props.onPanResponderMove({}, dragGesture);
+      slot.props.onPanResponderRelease();
+    };
+    act(drag);
+    expect(props.onItemDrop).not.toHaveBeenCalled();
+
+    basketY = 100;
+    act(drag);
+    expect(props.onItemDrop).toHaveBeenCalledTimes(1);
+    expect(props.onItemDrop).toHaveBeenCalledWith(0);
+  });
+
+  it('clears a cancelled drag and ignores its delayed measurements and release', () => {
+    let completeMeasurement: MeasureCallback | undefined;
+    const { getByTestId, props } = setup({
+      measureItem: (callback) => {
+        completeMeasurement = callback;
       },
-    );
-
-    const item = getByTestId('picnic-item-0');
+    });
+    const {
+      onPanResponderGrant,
+      onPanResponderMove,
+      onPanResponderTerminate,
+      onPanResponderRelease,
+    } = getByTestId('picnic-drag-0').props;
 
     act(() => {
-      item.props.onLayout?.({
-        nativeEvent: {
-          layout: mockMeasuredLayout,
-        },
-      });
-      item.props.onPanResponderGrant?.({}, {});
-      item.props.onPanResponderMove?.({}, { dx: 15, dy: -30 });
-      item.props.onPanResponderRelease?.({}, { dx: 15, dy: -30 });
+      onPanResponderGrant();
+      onPanResponderMove({}, dragGesture);
+      onPanResponderTerminate();
+      completeMeasurement?.(...itemBounds);
+      onPanResponderRelease();
     });
 
-    expect(onItemDrop).not.toHaveBeenCalled();
+    expect(props.onDragOverBasket).toHaveBeenCalledTimes(1);
+    expect(props.onDragOverBasket).toHaveBeenCalledWith(false);
+    expect(props.onDropEnd).toHaveBeenCalledTimes(1);
+    expect(props.onItemDrop).not.toHaveBeenCalled();
   });
 
   it('accepts visible item overlap even when the pointer is outside the basket', () => {

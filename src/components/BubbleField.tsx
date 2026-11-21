@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   AppState,
+  GestureResponderEvent,
   PanResponder,
   Platform,
   Pressable,
@@ -11,7 +12,15 @@ import {
 } from 'react-native';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { ThemeColors } from '../types';
-import { Bubble, ensureMinimumBubbles, spawnBubbles, stepBubbles } from '../utils/bubbleLogic';
+import {
+  Bubble,
+  ensureMinimumBubbles,
+  findBubbleAtPoint,
+  getBubbleHitRadius,
+  positionStillBubbles,
+  spawnBubbles,
+  stepBubbles,
+} from '../utils/bubbleLogic';
 import { useThemeColors } from '../utils/theme';
 import { useTranslation } from 'react-i18next';
 import { Radius } from '../ui/tokens';
@@ -43,6 +52,13 @@ interface BubbleFieldProps {
 const POP_INDICATOR_DECAY_PER_SECOND = 3;
 const POP_INDICATOR_FLOAT_PER_SECOND = 28;
 const SNAPSHOT_INTERVAL_MS = 1000 / 30;
+const TAP_SLOP = 20;
+
+interface BubbleTouch {
+  id: string;
+  pageX: number;
+  pageY: number;
+}
 
 interface BubbleFieldSnapshot {
   bubbles: Bubble[];
@@ -51,22 +67,6 @@ interface BubbleFieldSnapshot {
 
 const haveSameIds = <T extends { id: string }>(left: T[], right: T[]): boolean =>
   left.length === right.length && left.every((item, index) => item.id === right[index]?.id);
-
-const keepBubblesVisible = (bubbles: Bubble[], width: number, height: number): Bubble[] =>
-  bubbles.map((bubble, index) => {
-    const hitTargetRadius = Math.max(32, bubble.radius + 8);
-    const minX = Math.min(width / 2, hitTargetRadius);
-    const maxX = Math.max(minX, width - hitTargetRadius);
-    const minY = Math.min(height / 2, hitTargetRadius);
-    const maxY = Math.max(minY, height - hitTargetRadius);
-    const slot = (index + 1) / (bubbles.length + 1);
-
-    return {
-      ...bubble,
-      x: bubble.x >= minX && bubble.x <= maxX ? bubble.x : minX + (maxX - minX) * slot,
-      y: bubble.y >= minY && bubble.y <= maxY ? bubble.y : minY + (maxY - minY) * slot,
-    };
-  });
 
 export const BubbleField: React.FC<BubbleFieldProps> = ({
   width,
@@ -83,22 +83,26 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   const { colors } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { t } = useTranslation();
-  const [snapshot, setSnapshot] = useState<BubbleFieldSnapshot>(() => {
-    let initialBubbles = ensureMinimumBubbles(
-      [],
-      minActiveBubbles,
-      width,
-      height,
-      maxActiveBubbles,
-    );
-    if (accessibleMode === true || !motionEnabled) {
-      initialBubbles = keepBubblesVisible(initialBubbles, width, height);
-    }
-    return {
-      bubbles: initialBubbles,
-      popIndicators: [],
-    };
-  });
+  const [screenReaderEnabled, setScreenReaderEnabled] = useState(false);
+  const [manualAccessibleMode, setManualAccessibleMode] = useState(false);
+  const isAccessibleMode =
+    accessibleMode === true || manualAccessibleMode || screenReaderEnabled || !motionEnabled;
+  const replenishBubbles = useCallback(
+    (bubbles: Bubble[], lastPop?: Bubble) => {
+      const limit = isAccessibleMode
+        ? Math.min(minActiveBubbles, maxActiveBubbles)
+        : maxActiveBubbles;
+      const nextBubbles = ensureMinimumBubbles(bubbles, minActiveBubbles, width, height, limit);
+      return isAccessibleMode
+        ? positionStillBubbles(nextBubbles, width, height, lastPop)
+        : nextBubbles;
+    },
+    [height, isAccessibleMode, maxActiveBubbles, minActiveBubbles, width],
+  );
+  const [snapshot, setSnapshot] = useState<BubbleFieldSnapshot>(() => ({
+    bubbles: replenishBubbles([]),
+    popIndicators: [],
+  }));
 
   const frameRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number>(0);
@@ -106,20 +110,20 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
   const widthRef = useRef<number>(width);
   const heightRef = useRef<number>(height);
   const bubblesRef = useRef<Bubble[]>(snapshot.bubbles);
+  const visibleBubblesRef = useRef(snapshot.bubbles);
+  const touchRef = useRef<BubbleTouch | null>(null);
   const popIndicatorsRef = useRef<PopIndicator[]>(snapshot.popIndicators);
-  const bubbleLabelNumbersRef = useRef(new Map<string, number>());
-  const nextBubbleLabelNumberRef = useRef(1);
   const nextPopIndicatorIdRef = useRef(1);
   const renderedBubbleIdsRef = useRef(snapshot.bubbles.map((bubble) => bubble.id));
   const renderedPopIndicatorIdsRef = useRef<string[]>([]);
   const lastSnapshotTimeRef = useRef<number>(0);
   const appStateRef = useRef(AppState.currentState);
   const [appState, setAppState] = useState(AppState.currentState);
-  const [screenReaderEnabled, setScreenReaderEnabled] = useState(false);
-  const [manualAccessibleMode, setManualAccessibleMode] = useState(false);
   const [accessibilityAnnouncement, setAccessibilityAnnouncement] = useState('');
-  const isAccessibleMode =
-    accessibleMode === true || manualAccessibleMode || screenReaderEnabled || !motionEnabled;
+
+  useLayoutEffect(() => {
+    visibleBubblesRef.current = snapshot.bubbles;
+  }, [snapshot.bubbles]);
 
   useEffect(() => {
     // React Native Web currently reports screen-reader support as enabled for
@@ -180,25 +184,21 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
     [],
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     widthRef.current = width;
     heightRef.current = height;
-    let nextBubbles = ensureMinimumBubbles(
-      bubblesRef.current,
-      minActiveBubbles,
-      width,
-      height,
-      maxActiveBubbles,
+    touchRef.current = null;
+    publishSnapshot(
+      replenishBubbles(bubblesRef.current),
+      isAccessibleMode ? [] : popIndicatorsRef.current,
+      true,
     );
-    if (isAccessibleMode) {
-      nextBubbles = keepBubblesVisible(nextBubbles, width, height);
-    }
-    publishSnapshot(nextBubbles, popIndicatorsRef.current, true);
-  }, [height, isAccessibleMode, maxActiveBubbles, minActiveBubbles, publishSnapshot, width]);
+  }, [height, isAccessibleMode, publishSnapshot, replenishBubbles, width]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
       appStateRef.current = nextState;
+      touchRef.current = null;
       lastFrameTimeRef.current = 0;
       setAppState(nextState);
     });
@@ -254,6 +254,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
     frameRef.current = requestAnimationFrame(tick);
     return () => {
       cancelled = true;
+      touchRef.current = null;
       if (frameRef.current !== null) {
         cancelAnimationFrame(frameRef.current);
         frameRef.current = null;
@@ -272,28 +273,27 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
     motionEnabled,
   ]);
 
-  const getBubbleLabelNumber = (bubbleId: string): number => {
-    const existingNumber = bubbleLabelNumbersRef.current.get(bubbleId);
-    if (existingNumber !== undefined) return existingNumber;
-    const nextNumber = nextBubbleLabelNumberRef.current++;
-    bubbleLabelNumbersRef.current.set(bubbleId, nextNumber);
-    return nextNumber;
-  };
-
   const popBubble = useCallback(
-    (bubbleId: string, locationX?: number, locationY?: number) => {
-      const poppedBubble = bubblesRef.current.find((bubble) => bubble.id === bubbleId);
+    (bubbleId: string) => {
+      if (
+        !isFocused ||
+        appStateRef.current === 'background' ||
+        appStateRef.current === 'inactive'
+      ) {
+        return;
+      }
+      const poppedIndex = bubblesRef.current.findIndex((bubble) => bubble.id === bubbleId);
+      const poppedBubble = bubblesRef.current[poppedIndex];
       if (!poppedBubble) return;
 
-      let nextBubbles = ensureMinimumBubbles(
-        bubblesRef.current.filter((bubble) => bubble.id !== poppedBubble.id),
-        minActiveBubbles,
-        widthRef.current,
-        heightRef.current,
-        maxActiveBubbles,
+      const nextBubbles = replenishBubbles(
+        bubblesRef.current.filter((bubble) => bubble.id !== bubbleId),
+        poppedBubble,
       );
-      if (isAccessibleMode) {
-        nextBubbles = keepBubblesVisible(nextBubbles, widthRef.current, heightRef.current);
+      if (isAccessibleMode && nextBubbles.length === bubblesRef.current.length) {
+        // Keep the replacement in the same button so repeated keyboard presses retain focus.
+        const replacement = nextBubbles.pop();
+        if (replacement) nextBubbles.splice(poppedIndex, 0, replacement);
       }
       const nextPopIndicators =
         motionEnabled && !isAccessibleMode
@@ -301,8 +301,8 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
               ...popIndicatorsRef.current,
               {
                 id: 'pop-' + nextPopIndicatorIdRef.current++,
-                x: locationX ?? poppedBubble.x,
-                y: locationY ?? poppedBubble.y,
+                x: poppedBubble.x,
+                y: poppedBubble.y,
                 life: 1,
               },
             ]
@@ -314,39 +314,46 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
       }
       onBubblePop?.();
     },
-    [
-      isAccessibleMode,
-      maxActiveBubbles,
-      minActiveBubbles,
-      motionEnabled,
-      onBubblePop,
-      publishSnapshot,
-      t,
-    ],
+    [isAccessibleMode, isFocused, motionEnabled, onBubblePop, publishSnapshot, replenishBubbles, t],
   );
 
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => false,
-        onPanResponderRelease: (event) => {
-          const { locationX, locationY } = event.nativeEvent;
-          const poppedBubble = bubblesRef.current.find((bubble) => {
-            const dx = bubble.x - locationX;
-            const dy = bubble.y - locationY;
-            return dx * dx + dy * dy <= bubble.radius * bubble.radius;
-          });
+  const panResponder = useMemo(() => {
+    const getTouchedBubble = ({ nativeEvent }: GestureResponderEvent) =>
+      findBubbleAtPoint(
+        visibleBubblesRef.current,
+        { x: nativeEvent.locationX, y: nativeEvent.locationY },
+        widthRef.current,
+        heightRef.current,
+      );
+    const withinTapSlop = ({ nativeEvent }: GestureResponderEvent, touch: BubbleTouch) =>
+      (nativeEvent.pageX - touch.pageX) ** 2 + (nativeEvent.pageY - touch.pageY) ** 2 <=
+      TAP_SLOP ** 2;
 
-          if (!poppedBubble) {
-            return;
-          }
-
-          popBubble(poppedBubble.id, locationX, locationY);
-        },
-      }),
-    [popBubble],
-  );
+    return PanResponder.create({
+      onStartShouldSetPanResponder: (event) => isFocused && getTouchedBubble(event) !== undefined,
+      onPanResponderGrant: (event) => {
+        const bubble = getTouchedBubble(event);
+        const { pageX, pageY } = event.nativeEvent;
+        touchRef.current = bubble ? { id: bubble.id, pageX, pageY } : null;
+      },
+      onPanResponderStart: (_, gesture) => {
+        if (gesture.numberActiveTouches > 1) touchRef.current = null;
+      },
+      onPanResponderMove: (event) => {
+        if (touchRef.current && !withinTapSlop(event, touchRef.current)) touchRef.current = null;
+      },
+      onPanResponderRelease: (event) => {
+        const touch = touchRef.current;
+        touchRef.current = null;
+        if (touch && withinTapSlop(event, touch)) popBubble(touch.id);
+      },
+      onPanResponderTerminate: () => {
+        touchRef.current = null;
+      },
+      // Let the surrounding scroll view take over on a swipe.
+      onShouldBlockNativeResponder: () => false,
+    });
+  }, [isFocused, popBubble]);
 
   return (
     <View
@@ -406,11 +413,11 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
           style={styles.accessibleLayer}
           accessibilityLabel={t('games.bubblePop.accessibility')}
         >
-          {snapshot.bubbles.map((bubble) => {
-            const targetSize = Math.max(64, bubble.radius * 2 + 16);
+          {snapshot.bubbles.map((bubble, index) => {
+            const targetSize = Math.min(width, height, getBubbleHitRadius(bubble.radius) * 2);
             return (
               <Pressable
-                key={bubble.id}
+                key={index}
                 testID={'bubble-button-' + bubble.id}
                 style={[
                   styles.bubbleButton,
@@ -424,7 +431,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
                 ]}
                 accessibilityRole='button'
                 accessibilityLabel={t('games.bubblePop.bubbleAccessibilityLabel', {
-                  number: getBubbleLabelNumber(bubble.id),
+                  number: index + 1,
                 })}
                 accessibilityHint={t('games.bubblePop.bubbleAccessibilityHint')}
                 onPress={() => popBubble(bubble.id)}
@@ -441,7 +448,7 @@ export const BubbleField: React.FC<BubbleFieldProps> = ({
           </View>
         </View>
       ) : (
-        <View style={styles.touchLayer} {...panResponder.panHandlers} />
+        <View testID='bubble-touch-layer' style={styles.touchLayer} {...panResponder.panHandlers} />
       )}
       {showModeToggle && motionEnabled && !screenReaderEnabled && accessibleMode !== true ? (
         <Pressable

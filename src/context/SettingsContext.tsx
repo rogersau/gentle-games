@@ -36,7 +36,7 @@ interface SettingsContextType {
 
 export const defaultSettings: Settings = {
   settingsVersion: SETTINGS_VERSION,
-  animationsEnabled: true,
+  animationsEnabled: false,
   soundEnabled: false,
   soundVolume: 0.5,
   difficulty: 'easy',

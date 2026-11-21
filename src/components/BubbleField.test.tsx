@@ -1,6 +1,6 @@
 import React, { Profiler } from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { AccessibilityInfo, PanResponder, Platform, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, PanResponder, Platform, StyleSheet } from 'react-native';
 import { Circle, Text as SvgText } from 'react-native-svg';
 import { BubbleField } from './BubbleField';
 
@@ -64,6 +64,7 @@ jest.mock('../utils/bubbleLogic', () => {
   };
 
   return {
+    ...jest.requireActual('../utils/bubbleLogic'),
     ensureMinimumBubbles: (
       existing: ReturnType<typeof createBubble>[],
       minimum: number,
@@ -124,6 +125,10 @@ describe('BubbleField', () => {
 
   const getPopIndicatorLabels = (screen: ReturnType<typeof render>) =>
     screen.UNSAFE_root.findAllByType(SvgText);
+
+  const touchAt = (x: number, y: number) => ({
+    nativeEvent: { locationX: x, locationY: y, pageX: x, pageY: y },
+  });
 
   beforeAll(() => {
     globalThis.requestAnimationFrame = jest.fn((callback: FrameRequestCallback) => {
@@ -285,6 +290,51 @@ describe('BubbleField', () => {
     });
   });
 
+  it('settles a crowded moving field into separate, stable still buttons on a narrow board', () => {
+    mockBubblePosition = { x: 55, y: 55 };
+    const onBubblePop = jest.fn();
+    const field = (motionEnabled: boolean) => (
+      <BubbleField
+        width={216}
+        height={220}
+        minActiveBubbles={2}
+        maxActiveBubbles={4}
+        spawnIntervalMs={50}
+        motionEnabled={motionEnabled}
+        onBubblePop={onBubblePop}
+      />
+    );
+    const screen = render(field(true));
+    advanceFrame(1);
+    advanceFrame(51);
+    advanceFrame(101);
+    expect(getBubbleCircles(screen)).toHaveLength(4);
+    fireEvent(screen.getByTestId('bubble-touch-layer'), 'panResponderGrant', touchAt(55, 55));
+    fireEvent(screen.getByTestId('bubble-touch-layer'), 'panResponderRelease', touchAt(55, 55));
+    expect(getPopIndicators(screen)).toHaveLength(1);
+
+    screen.rerender(field(false));
+    expect(getPopIndicators(screen)).toHaveLength(0);
+    const [first, second] = screen.getAllByRole('button');
+    const firstTarget = StyleSheet.flatten(first.props.style);
+    const secondTarget = StyleSheet.flatten(second.props.style);
+    expect(
+      firstTarget.left + firstTarget.width <= secondTarget.left ||
+        secondTarget.left + secondTarget.width <= firstTarget.left ||
+        firstTarget.top + firstTarget.height <= secondTarget.top ||
+        secondTarget.top + secondTarget.height <= firstTarget.top,
+    ).toBe(true);
+
+    fireEvent.press(first);
+    const [replacement, remaining] = screen.getAllByRole('button');
+    expect(replacement).toBe(first);
+    expect(remaining).toBe(second);
+    expect(StyleSheet.flatten(second.props.style)).toEqual(secondTarget);
+    expect(StyleSheet.flatten(first.props.style)).not.toEqual(firstTarget);
+    fireEvent.press(first);
+    expect(onBubblePop).toHaveBeenCalledTimes(3);
+  });
+
   it('exposes stationary large buttons and shared pop behavior in accessible mode', () => {
     const onBubblePop = jest.fn();
     const screen = render(
@@ -356,48 +406,60 @@ describe('BubbleField', () => {
     expect(getBubbleCircles(screen)[0].props.cy).toBeGreaterThan(initialY);
   });
 
-  it('removes the tapped bubble, creates an indicator, and calls onBubblePop', () => {
+  it('recognizes a near-edge touch on the bubble that was visible when the tap began', () => {
+    mockBubblePosition = { x: 100, y: 100 };
     const onBubblePop = jest.fn();
     const screen = render(
       <BubbleField
         width={240}
         height={220}
         minActiveBubbles={1}
-        maxActiveBubbles={2}
+        maxActiveBubbles={1}
         onBubblePop={onBubblePop}
       />,
     );
 
-    const touchLayer = screen
-      .UNSAFE_getAllByType(View)
-      .find((node) => typeof node.props.onPanResponderRelease === 'function');
-
-    expect(getBubbleCircles(screen).length).toBeGreaterThan(0);
-
-    const firstBubble = getBubbleCircles(screen)[0];
-    const tappedBubblePosition = {
-      x: firstBubble.props.cx,
-      y: firstBubble.props.cy,
-    };
-
-    act(() => {
-      touchLayer?.props.onPanResponderRelease({
-        nativeEvent: {
-          locationX: tappedBubblePosition.x,
-          locationY: tappedBubblePosition.y,
-        },
-      });
-    });
+    const touchLayer = screen.getByTestId('bubble-touch-layer');
+    const touch = touchAt(100, 69);
+    expect(touchLayer.props.onStartShouldSetPanResponder(touch)).toBe(true);
+    fireEvent(touchLayer, 'panResponderGrant', touch);
+    mockBubblePosition = { x: 150, y: 100 };
+    advanceFrame(1);
+    advanceFrame(51);
+    advanceFrame(101);
+    expect(getBubbleCircles(screen)[0].props.cy).toBeGreaterThan(101);
+    fireEvent(touchLayer, 'panResponderRelease', touch);
 
     expect(onBubblePop).toHaveBeenCalledTimes(1);
-    expect(
-      getBubbleCircles(screen).some(
-        (node: any) =>
-          node.props.cx === tappedBubblePosition.x && node.props.cy === tappedBubblePosition.y,
-      ),
-    ).toBe(false);
     expect(getBubbleCircles(screen)).toHaveLength(1);
+    expect(getBubbleCircles(screen)[0].props.cx).toBe(150);
     expect(getPopIndicators(screen)).toHaveLength(1);
     expect(getPopIndicatorLabels(screen)).toHaveLength(1);
+  });
+
+  it('ignores swipes, cancelled touches, and touches that start on empty space', () => {
+    mockBubblePosition = { x: 100, y: 100 };
+    const onBubblePop = jest.fn();
+    const screen = render(
+      <BubbleField width={240} height={220} minActiveBubbles={1} onBubblePop={onBubblePop} />,
+    );
+    const touchLayer = screen.getByTestId('bubble-touch-layer');
+    const bubbleTouch = touchAt(100, 100);
+    const emptyTouch = touchAt(100, 150);
+
+    expect(touchLayer.props.onStartShouldSetPanResponder(emptyTouch)).toBe(false);
+    fireEvent(touchLayer, 'panResponderRelease', bubbleTouch);
+    fireEvent(touchLayer, 'panResponderGrant', bubbleTouch);
+    fireEvent(touchLayer, 'panResponderMove', emptyTouch);
+    fireEvent(touchLayer, 'panResponderRelease', bubbleTouch);
+    fireEvent(touchLayer, 'panResponderGrant', bubbleTouch);
+    fireEvent(touchLayer, 'panResponderTerminate', bubbleTouch);
+    fireEvent(touchLayer, 'panResponderRelease', bubbleTouch);
+    fireEvent(touchLayer, 'panResponderGrant', bubbleTouch);
+    fireEvent(touchLayer, 'panResponderStart', bubbleTouch, { numberActiveTouches: 2 });
+    fireEvent(touchLayer, 'panResponderRelease', bubbleTouch);
+
+    expect(onBubblePop).not.toHaveBeenCalled();
+    expect(getPopIndicators(screen)).toHaveLength(0);
   });
 });

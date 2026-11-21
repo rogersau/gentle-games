@@ -16,7 +16,7 @@
 **Hosting & Delivery:**
 
 - Azure Static Web Apps - Hosts the exported web app from `dist/` and the docs site from `docs/`.
-  - SDK/Client: GitHub Action `Azure/static-web-apps-deploy@v1` in `.github/workflows/azure-prod-deploy.yml`, `.github/workflows/azure-dev-deploy.yml`, and `.github/workflows/deploy-docs.yml`
+  - SDK/Client: GitHub Action `Azure/static-web-apps-deploy@v1` in `.github/workflows/azure-prod-deploy.yml`, and `.github/workflows/deploy-docs.yml`
   - Auth: GitHub repository secrets for Azure deployment tokens referenced by workflow files
 - GitHub Actions - CI pipeline, platform export validation, smoke testing, and deployment orchestration.
   - SDK/Client: GitHub-hosted workflows in `.github/workflows/*.yml`
@@ -65,7 +65,7 @@
 
 **Hosting:**
 
-- Azure Static Web Apps for production and dev web deployments in `.github/workflows/azure-prod-deploy.yml` and `.github/workflows/azure-dev-deploy.yml`
+- Azure Static Web Apps for the production web deployment in `.github/workflows/azure-prod-deploy.yml`
 - Azure Static Web Apps for the docs site in `.github/workflows/deploy-docs.yml`
 
 **CI Pipeline:**
@@ -80,14 +80,14 @@
 
 **Required env vars:**
 
-- Web base path: `EXPO_BASE_URL` in `app.config.js` and Azure deploy workflows
+- Web base path: `EXPO_BASE_URL` in `app.config.js` (defaults to the domain root)
 - Sentry runtime/build: `SENTRY_DSN`, `SENTRY_DEBUG`, `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` in `app.config.js`, `.github/workflows/azure-*.yml`, and `scripts/upload-sourcemaps.js`
 - PostHog runtime: `POSTHOG_API_KEY`, `POSTHOG_HOST`, `POSTHOG_DEBUG` in `app.config.js` and `.github/workflows/azure-prod-deploy.yml`
 - Build stamping: `GITHUB_SHA` in `scripts/prepare-pwa.js`
 
 **Secrets location:**
 
-- GitHub Actions repository secrets referenced by `.github/workflows/azure-prod-deploy.yml`, `.github/workflows/azure-dev-deploy.yml`, and `.github/workflows/deploy-docs.yml`
+- GitHub Actions repository secrets referenced by `.github/workflows/azure-prod-deploy.yml`, and `.github/workflows/deploy-docs.yml`
 - No checked-in secret files were read; `.env` files were not detected from repository root listing
 
 ## Webhooks & Callbacks

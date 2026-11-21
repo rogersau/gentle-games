@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   Difficulty,
   NumberPicnicChoice,
@@ -10,7 +10,6 @@ import type {
 import { NUMBER_PICNIC_ITEMS } from '../types';
 import type { Settings } from '../types';
 import { createGuidedRoundController, GuidedRoundState } from '../guided-practice/controller';
-import { useTrackedTimeouts } from './useTrackedTimeouts';
 import { narrateNumberPicnicCount } from './numberPicnicNarration';
 
 export const NUMBER_PICNIC_EXTRA_ITEMS = 2;
@@ -257,13 +256,17 @@ export const numberPicnicReducer = (
     case 'new-prompt':
       return createNumberPicnicState(action.prompt);
     case 'next':
-      if (state.placedItemIds.length !== state.prompt.targetCount) return state;
-      return createNumberPicnicState(action.prompt, state.round + 1, state.completedPicnics + 1);
+      return createNumberPicnicState(
+        action.prompt,
+        state.round + 1,
+        state.completedPicnics + Number(state.placedItemIds.length === state.prompt.targetCount),
+      );
     case 'drag-start':
       return { ...state, isDragging: true, isOverBasket: false };
     case 'drag-end':
       return { ...state, isDragging: false, isOverBasket: false };
     case 'drag-over':
+      if (!state.isDragging || state.isOverBasket === action.isOver) return state;
       return { ...state, isOverBasket: action.isOver };
   }
 };
@@ -280,11 +283,9 @@ export interface UseNumberPicnicGameResult {
   prompt: NumberPicnicPrompt;
   basketCount: number;
   completedPicnics: number;
-  isProcessing: boolean;
   isDragging: boolean;
   isOverBasket: boolean;
   isSuccess: boolean;
-  blanketItemCount: number;
   blanketItemIds: number[];
   basketItems: string[];
   basketItemIds: number[];
@@ -300,8 +301,6 @@ export interface UseNumberPicnicGameResult {
   handleDragOverBasket: (isOver: boolean) => void;
   handleChoice: (choiceId: string) => boolean;
   showHint: () => void;
-  skipRound: () => void;
-  replayInstructions: () => void;
   startNewRound: () => void;
 }
 
@@ -313,13 +312,10 @@ export const useNumberPicnicGame = (
   const mode = isNumberPicnicModeAvailable(stage, requestedMode) ? requestedMode : 'make-amount';
   const isPlacementMode = mode === 'make-amount' || mode === 'add-one-more';
   const rng = options.rng ?? Math.random;
-  const { queueTimeout, clearAllTimeouts } = useTrackedTimeouts();
-  const [state, dispatch] = useReducer(numberPicnicReducer, undefined, () =>
+  const [state, setState] = useState(() =>
     createNumberPicnicState(generateNumberPicnicPrompt(stage, rng, mode)),
   );
   const stateRef = useRef(state);
-  const processingRef = useRef(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const controllerRef = useRef(createGuidedRoundController({ hintAfter: 1, modelAfter: 2 }));
   const [guidedRound, setGuidedRound] = useState<GuidedRoundState>(() =>
     controllerRef.current.getState(),
@@ -327,13 +323,11 @@ export const useNumberPicnicGame = (
   const previousConfigRef = useRef({ stage, mode });
 
   const dispatchGame = useCallback((action: NumberPicnicAction) => {
-    stateRef.current = numberPicnicReducer(stateRef.current, action);
-    dispatch(action);
+    const next = numberPicnicReducer(stateRef.current, action);
+    if (next === stateRef.current) return;
+    stateRef.current = next;
+    setState(next);
   }, []);
-
-  useEffect(() => {
-    stateRef.current = state;
-  }, [state]);
 
   const resetGuidance = useCallback(() => {
     controllerRef.current.dispose();
@@ -345,80 +339,68 @@ export const useNumberPicnicGame = (
     const previous = previousConfigRef.current;
     if (previous.stage === stage && previous.mode === mode) return;
     previousConfigRef.current = { stage, mode };
-    clearAllTimeouts();
-    processingRef.current = false;
-    setIsProcessing(false);
     dispatchGame({
       type: 'new-prompt',
       prompt: generateNumberPicnicPrompt(stage, rng, mode),
     });
     resetGuidance();
-  }, [clearAllTimeouts, dispatchGame, mode, resetGuidance, rng, stage]);
+  }, [dispatchGame, mode, resetGuidance, rng, stage]);
 
   useEffect(() => () => controllerRef.current.dispose(), []);
-
-  const unlockInput = useCallback(() => {
-    processingRef.current = false;
-    setIsProcessing(false);
-  }, []);
 
   const handleItemDrop = useCallback(
     (itemId: number) => {
       const current = stateRef.current;
-      if (
-        !isPlacementMode ||
-        processingRef.current ||
-        !current.poolItemIds.includes(itemId) ||
-        current.placedItemIds.length >= current.prompt.targetCount
-      ) {
-        return;
-      }
-      processingRef.current = true;
-      setIsProcessing(true);
-      const nextCount = current.placedItemIds.length + 1;
+      if (!isPlacementMode) return;
       dispatchGame({ type: 'add', itemId });
-      narrateNumberPicnicCount(nextCount, {
+      if (current === stateRef.current) return;
+      narrateNumberPicnicCount(stateRef.current.placedItemIds.length, {
         spokenCounting: options.spokenCounting === true,
         soundEnabled: options.settings?.soundEnabled !== false,
         narrate: options.narrateCount,
       });
-      queueTimeout(unlockInput, 300);
     },
-    [dispatchGame, isPlacementMode, options, queueTimeout, unlockInput],
+    [
+      dispatchGame,
+      isPlacementMode,
+      options.spokenCounting,
+      options.settings?.soundEnabled,
+      options.narrateCount,
+    ],
   );
 
   const handleRemove = useCallback(
     (itemId: number) => {
-      clearAllTimeouts();
-      unlockInput();
+      if (stateRef.current.isDragging) return;
       dispatchGame({ type: 'remove', itemId });
     },
-    [clearAllTimeouts, dispatchGame, unlockInput],
+    [dispatchGame],
   );
 
   const handleChoice = useCallback(
     (choiceId: string): boolean => {
-      const current = stateRef.current;
-      if (isPlacementMode || guidedRound.phase === 'corrected' || guidedRound.phase === 'skipped') {
+      const { prompt } = stateRef.current;
+      const { phase } = controllerRef.current.getState();
+      if (isPlacementMode || phase === 'corrected' || phase === 'skipped') {
         return false;
       }
-      const isCorrect =
-        mode === 'more-fewer'
-          ? choiceId ===
-            (current.prompt.comparison === 'more'
-              ? current.prompt.groups.reduce((best, group) =>
-                  group.quantity > best.quantity ? group : best,
-                ).id
-              : current.prompt.groups.reduce((best, group) =>
-                  group.quantity < best.quantity ? group : best,
-                ).id)
-          : current.prompt.choices.find((choice) => choice.id === choiceId)?.quantity ===
-            current.prompt.targetCount;
+      const choices = prompt.mode === 'more-fewer' ? prompt.groups : prompt.choices;
+      const choice = choices.find(({ id }) => id === choiceId);
+      if (!choice) return false;
+
+      const quantities = prompt.groups.map(({ quantity }) => quantity);
+      const target =
+        prompt.mode === 'more-fewer'
+          ? prompt.comparison === 'more'
+            ? Math.max(...quantities)
+            : Math.min(...quantities)
+          : prompt.targetCount;
+      const isCorrect = choice.quantity === target;
       const nextGuidedRound = controllerRef.current.attempt(isCorrect);
       setGuidedRound(nextGuidedRound);
       return isCorrect;
     },
-    [guidedRound.phase, isPlacementMode, mode],
+    [isPlacementMode],
   );
 
   const handleUndo = useCallback(() => {
@@ -431,37 +413,20 @@ export const useNumberPicnicGame = (
   }, [handleRemove]);
 
   const handleReset = useCallback(() => {
-    clearAllTimeouts();
-    unlockInput();
+    if (stateRef.current.isDragging) return;
     dispatchGame({ type: 'reset' });
     resetGuidance();
-  }, [clearAllTimeouts, dispatchGame, resetGuidance, unlockInput]);
+  }, [dispatchGame, resetGuidance]);
 
   const startNewRound = useCallback(() => {
-    const current = stateRef.current;
-    if (isPlacementMode && current.placedItemIds.length !== current.prompt.targetCount) {
-      return;
-    }
-    if (!isPlacementMode && guidedRound.phase !== 'corrected' && guidedRound.phase !== 'skipped') {
-      return;
-    }
-    clearAllTimeouts();
-    unlockInput();
+    if (stateRef.current.isDragging) return;
     const nextPrompt = generateNumberPicnicPrompt(stage, rng, mode);
     dispatchGame({ type: isPlacementMode ? 'next' : 'new-prompt', prompt: nextPrompt });
-    if (isPlacementMode) resetGuidance();
-    else setGuidedRound(controllerRef.current.startNextExample());
-  }, [
-    clearAllTimeouts,
-    dispatchGame,
-    guidedRound.phase,
-    isPlacementMode,
-    mode,
-    resetGuidance,
-    rng,
-    stage,
-    unlockInput,
-  ]);
+    if (!isPlacementMode) {
+      controllerRef.current.skip();
+      setGuidedRound(controllerRef.current.startNextExample());
+    }
+  }, [dispatchGame, isPlacementMode, mode, rng, stage]);
 
   const currentComplete = state.placedItemIds.length === state.prompt.targetCount;
   const isChoiceComplete = !isPlacementMode && guidedRound.phase === 'corrected';
@@ -471,11 +436,9 @@ export const useNumberPicnicGame = (
     prompt: state.prompt,
     basketCount: state.placedItemIds.length,
     completedPicnics: state.completedPicnics,
-    isProcessing,
     isDragging: state.isDragging,
     isOverBasket: state.isOverBasket,
     isSuccess: isComplete,
-    blanketItemCount: state.poolItemIds.length,
     blanketItemIds: state.poolItemIds,
     basketItems: state.placedItemIds.map(() => state.prompt.itemEmoji),
     basketItemIds: state.placedItemIds,
@@ -491,8 +454,6 @@ export const useNumberPicnicGame = (
     handleDragOverBasket: (isOver: boolean) => dispatchGame({ type: 'drag-over', isOver }),
     handleChoice,
     showHint: () => setGuidedRound(controllerRef.current.showHint()),
-    skipRound: () => setGuidedRound(controllerRef.current.skip()),
-    replayInstructions: () => setGuidedRound(controllerRef.current.replayInstructions()),
     startNewRound,
   };
 };

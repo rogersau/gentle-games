@@ -32,7 +32,7 @@ jest.mock('../utils/theme', () => ({
     resolvedMode: 'light',
     colorMode: 'light',
   }),
-  useReducedMotion: () => false,
+  useReducedMotion: () => mockSettings.reducedMotionEnabled,
 }));
 
 jest.mock('@react-navigation/native', () => ({
@@ -73,9 +73,10 @@ describe('GlitterScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    mockAddGlitter.mockReturnValue(true);
     mockSettings = {
       settingsVersion: 2,
-      animationsEnabled: false,
+      animationsEnabled: true,
       reducedMotionEnabled: false,
       showMochiInGames: true,
       soundEnabled: true,
@@ -125,6 +126,28 @@ describe('GlitterScreen', () => {
     });
   });
 
+  it.each([{ animationsEnabled: false }, { reducedMotionEnabled: true }])(
+    'offers still play and disables motion-only buttons with %p',
+    (motionSettings) => {
+      Object.assign(mockSettings, motionSettings);
+      const screen = render(<GlitterScreen />);
+      const add = screen.getByTestId('glitter-add-few-button');
+      const swirl = screen.getByTestId('glitter-swirl-button');
+      const settle = screen.getByTestId('glitter-settle-button');
+
+      expect(screen.getByText('games.glitterFall.stillSubtitle')).toBeTruthy();
+      expect(add).toBeEnabled();
+      expect(swirl).toBeDisabled();
+      expect(settle).toBeDisabled();
+      fireEvent.press(add);
+      fireEvent.press(swirl);
+      fireEvent.press(settle);
+      expect(mockAddGlitter).toHaveBeenCalledWith(6);
+      expect(mockSwirl).not.toHaveBeenCalled();
+      expect(mockSettle).not.toHaveBeenCalled();
+    },
+  );
+
   it('plays optional Glitter sound when the game setting enables it', () => {
     mockSettings.gameSettings['glitter-fall'] = GLITTER_PRESETS.full;
     const screen = render(<GlitterScreen />);
@@ -134,11 +157,31 @@ describe('GlitterScreen', () => {
     expect(mockPlayBubblePopSound).toHaveBeenCalledWith(mockSettings);
   });
 
+  it('keeps a full globe quiet when the Add button cannot add any glitter', () => {
+    mockSettings.gameSettings['glitter-fall'] = GLITTER_PRESETS.full;
+    mockAddGlitter.mockReturnValue(false);
+    const screen = render(<GlitterScreen />);
+
+    fireEvent.press(screen.getByTestId('glitter-add-few-button'));
+
+    expect(mockPlayBubblePopSound).not.toHaveBeenCalled();
+  });
+
   it('exposes presets as selectable radio controls', () => {
     const screen = render(<GlitterScreen />);
 
     const settle = screen.getByRole('radio', { name: 'games.glitterFall.preset.settle' });
     expect(settle.props.accessibilityState.checked).toBe(true);
+  });
+
+  it('keeps the checked style in sync with the globe’s saved settings', () => {
+    const screen = render(<GlitterScreen />);
+
+    mockSettings.gameSettings['glitter-fall'] = GLITTER_PRESETS.watch;
+    screen.rerender(<GlitterScreen />);
+
+    expect(screen.getByTestId('glitter-preset-settle')).not.toBeChecked();
+    expect(screen.getByTestId('glitter-preset-watch')).toBeChecked();
   });
 
   it('does not prompt after a long period without interaction', () => {

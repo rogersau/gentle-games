@@ -2,12 +2,23 @@ import React, {
   useState,
   useRef,
   useEffect,
+  useLayoutEffect,
   forwardRef,
   useImperativeHandle,
   useMemo,
   useCallback,
 } from 'react';
-import { View, StyleSheet, PanResponder, TouchableOpacity, Text } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  PanResponder,
+  TouchableOpacity,
+  Text,
+  Platform,
+  type GestureResponderEvent,
+  type NativeTouchEvent,
+  type ViewStyle,
+} from 'react-native';
 import { AppModal, AppButton } from '../ui/components';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path, Circle, Rect, Polygon, Line } from 'react-native-svg';
@@ -58,14 +69,42 @@ export interface ErasedRegion {
 export type HistoryEntry = Stroke | Shape | ErasedRegion;
 
 type Tool = 'pen' | 'eraser' | 'shape';
-type ShapeType = 'circle' | 'square' | 'triangle';
+type ShapeType = Shape['type'];
 type SymmetryMode = 'none' | 'half' | 'quarter';
+type ShapeChoice = { type: ShapeType; size: number };
+
+type DrawingGesture = {
+  entry: HistoryEntry;
+  touchId: NativeTouchEvent['identifier'];
+  width: number;
+  height: number;
+  symmetryMode: SymmetryMode;
+};
+
+const EMPTY_HISTORY: HistoryEntry[] = [];
+
+const TOOL_INSTRUCTION_KEYS: Record<Tool, TranslationKey> = {
+  pen: 'games.drawing.instruction',
+  eraser: 'games.drawing.eraseInstruction',
+  shape: 'games.drawing.shapeInstruction',
+};
 
 const SHAPE_TRANSLATION_KEYS: Record<ShapeType, TranslationKey> = {
   circle: 'games.drawing.shape.circle',
   square: 'games.drawing.shape.square',
   triangle: 'games.drawing.shape.triangle',
 };
+
+const SHAPE_ICONS = { circle: '🔴', square: '🟦', triangle: '🔺' } satisfies Record<
+  ShapeType,
+  string
+>;
+const SHAPES = ['circle', 'square', 'triangle'] as const;
+const SHAPE_SIZES = [
+  { size: 30, label: 'games.drawing.sizeSmall', name: 'small' },
+  { size: 60, label: 'games.drawing.sizeMedium', name: 'medium' },
+  { size: 100, label: 'games.drawing.sizeLarge', name: 'large' },
+] as const;
 
 const SYMMETRY_MODE_TRANSLATION_KEYS: Record<SymmetryMode, TranslationKey> = {
   none: 'games.drawing.symmetryMode.none',
@@ -137,8 +176,6 @@ export interface DrawingCanvasRef {
  * curves through the midpoints between consecutive points.
  */
 const pointsToSmoothPath = (points: Point[]): string => {
-  if (points.length === 0) return '';
-  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
   if (points.length === 2) {
     return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
   }
@@ -177,23 +214,28 @@ const getSymmetryOffsets = (mode: SymmetryMode): Array<[number, number]> => {
   return [[1, 1]];
 };
 
-/**
- * Apply symmetry transform to a point
- */
-const applySymmetry = (
-  point: Point,
-  width: number,
-  height: number,
-  xMult: number,
-  yMult: number,
-): Point => {
-  const centerX = width / 2;
-  const centerY = height / 2;
+const getGestureEntries = ({
+  entry,
+  width,
+  height,
+  symmetryMode,
+}: DrawingGesture): HistoryEntry[] =>
+  getSymmetryOffsets(symmetryMode).map(([xMult, yMult], index) => {
+    const mirror = ({ x, y }: Point): Point => ({
+      x: xMult === 1 ? x : width - x,
+      y: yMult === 1 ? y : height - y,
+    });
+    const id = `${entry.id}-${index}`;
+    if (entry.kind === 'shape') return { ...entry, id, ...mirror(entry) };
+    const points = index === 0 ? entry.points : entry.points.map(mirror);
+    return { ...entry, id, points };
+  });
 
-  return {
-    x: centerX + (point.x - centerX) * xMult,
-    y: centerY + (point.y - centerY) * yMult,
-  };
+const getTouchPoint = (touch: NativeTouchEvent | undefined): Point | undefined => {
+  if (!touch) return undefined;
+  const { locationX: x, locationY: y } = touch;
+  if (Number.isFinite(x) && Number.isFinite(y)) return { x, y };
+  return undefined;
 };
 
 export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
@@ -202,7 +244,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
       width,
       height,
       bottomInset = 0,
-      initialHistory = [],
+      initialHistory = EMPTY_HISTORY,
       onHistoryChange,
       canvasBackgroundColor = '#FFFFFF',
     },
@@ -211,198 +253,125 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     const { colors } = useThemeColors();
     const { t } = useTranslation();
     const themedStyles = useMemo(() => createThemedStyles(colors), [colors]);
-    // Unified ordered history — preserves exact draw order for correct undo
-    const [history, setHistory] = useState<HistoryEntry[]>(() =>
-      compactDrawingHistory(initialHistory),
-    );
-    // Current strokes being drawn (one per symmetry copy)
-    const [currentStrokes, setCurrentStrokes] = useState<Array<Omit<Stroke, 'kind' | 'id'>>>([]);
-
-    // Update history when initialHistory prop changes (e.g., when loading saved drawing)
-    useEffect(() => {
-      setHistory(compactDrawingHistory(initialHistory));
-    }, [initialHistory]);
+    const [history, setHistory] = useState(() => compactDrawingHistory(initialHistory));
+    const historyRef = useRef(history);
+    const initialHistoryRef = useRef(initialHistory);
+    const nextActionIdRef = useRef(0);
+    const [activeGesture, setActiveGesture] = useState<DrawingGesture | null>(null);
+    const activeGestureRef = useRef<DrawingGesture | null>(null);
 
     const [selectedColor, setSelectedColor] = useState('#FF6B6B');
     const [tool, setTool] = useState<Tool>('pen');
-    const [shapeType, setShapeType] = useState<ShapeType>('circle');
-    const [shapeSize, setShapeSize] = useState(60);
+    const [shape, setShape] = useState<ShapeChoice>({ type: 'circle', size: 60 });
+    const [shapeDraft, setShapeDraft] = useState<ShapeChoice | null>(null);
     const [symmetryMode, setSymmetryMode] = useState<SymmetryMode>('none');
     const [showClearConfirm, setShowClearConfirm] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
-    const [showShapePicker, setShowShapePicker] = useState(false);
     const [customColors, setCustomColors] = useState<string[]>([]);
     const [pickerColor, setPickerColor] = useState('#FF6B6B');
     const [accessibilityAnnouncement, setAccessibilityAnnouncement] = useState('');
 
-    // Refs for PanResponder closures
-    const selectedColorRef = useRef(selectedColor);
-    const toolRef = useRef(tool);
-    const shapeTypeRef = useRef(shapeType);
-    const shapeSizeRef = useRef(shapeSize);
-    const symmetryModeRef = useRef(symmetryMode);
-    const historyRef = useRef(history);
-    const nextActionIdRef = useRef(0);
+    const settingsRef = useRef({ width, height, selectedColor, tool, shape, symmetryMode });
+    useLayoutEffect(() => {
+      settingsRef.current = { width, height, selectedColor, tool, shape, symmetryMode };
+    }, [width, height, selectedColor, tool, shape, symmetryMode]);
+
+    // Responder events and navigation can arrive before React renders the preceding update.
+    const replaceHistory = useCallback((next: HistoryEntry[]) => {
+      historyRef.current = next;
+      setHistory(next);
+    }, []);
+    const replaceActiveGesture = useCallback((next: DrawingGesture | null) => {
+      activeGestureRef.current = next;
+      setActiveGesture(next);
+    }, []);
 
     useEffect(() => {
-      selectedColorRef.current = selectedColor;
-    }, [selectedColor]);
-    useEffect(() => {
-      toolRef.current = tool;
-    }, [tool]);
-    useEffect(() => {
-      shapeTypeRef.current = shapeType;
-    }, [shapeType]);
-    useEffect(() => {
-      shapeSizeRef.current = shapeSize;
-    }, [shapeSize]);
-    useEffect(() => {
-      symmetryModeRef.current = symmetryMode;
-    }, [symmetryMode]);
-    useEffect(() => {
-      historyRef.current = history;
-    }, [history]);
+      if (initialHistoryRef.current === initialHistory) return;
+      initialHistoryRef.current = initialHistory;
+      replaceActiveGesture(null);
+      replaceHistory(compactDrawingHistory(initialHistory));
+    }, [initialHistory, replaceActiveGesture, replaceHistory]);
 
-    // Notify parent of history changes
     useEffect(() => {
       onHistoryChange?.(history);
     }, [history, onHistoryChange]);
 
-    const clearCanvas = () => {
-      setHistory([]);
-      setCurrentStrokes([]);
-    };
+    const clearCanvas = useCallback(() => {
+      replaceActiveGesture(null);
+      replaceHistory([]);
+    }, [replaceActiveGesture, replaceHistory]);
 
-    const createActionId = () => {
-      const actionId = `action-${Date.now()}-${nextActionIdRef.current}`;
-      nextActionIdRef.current += 1;
-      return actionId;
-    };
-
-    // Expose imperative methods
-    useImperativeHandle(ref, () => ({
-      clear: clearCanvas,
-      getHistory: () => historyRef.current,
-    }));
-
-    const panResponder = useRef(
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderGrant: (evt) => {
-          const { locationX, locationY } = evt.nativeEvent;
-          const mode = symmetryModeRef.current;
-
-          if (toolRef.current === 'shape') {
-            // Create shapes with symmetry
-            const offsets = getSymmetryOffsets(mode);
-            const actionId = createActionId();
-            const newShapes: Shape[] = offsets.map(([xMult, yMult], idx) => {
-              const pt = applySymmetry({ x: locationX, y: locationY }, width, height, xMult, yMult);
-              return {
-                kind: 'shape' as const,
-                id: `shape-${Date.now()}-${idx}`,
-                actionId,
-                type: shapeTypeRef.current,
-                x: pt.x,
-                y: pt.y,
-                size: shapeSizeRef.current,
-                color: selectedColorRef.current,
-              };
-            });
-            setHistory((prev) => compactDrawingHistory([...prev, ...newShapes]));
-          } else {
-            const strokeWidth = toolRef.current === 'eraser' ? 30 : 5;
-            const offsets = getSymmetryOffsets(mode);
-            const actionId = createActionId();
-            // Create one stroke for each symmetry copy with properly mirrored initial points
-            const newStrokes = offsets.map(([xMult, yMult]) => {
-              const mirroredPt = applySymmetry(
-                { x: locationX, y: locationY },
-                width,
-                height,
-                xMult,
-                yMult,
-              );
-              return {
-                actionId,
-                points: [mirroredPt],
-                color: selectedColorRef.current,
-                width: strokeWidth,
-              };
-            });
-            setCurrentStrokes(newStrokes);
-          }
-        },
-        onPanResponderMove: (evt) => {
-          if (toolRef.current === 'shape') return;
-          const { locationX, locationY } = evt.nativeEvent;
-          const mode = symmetryModeRef.current;
-
-          setCurrentStrokes((prevStrokes) => {
-            if (prevStrokes.length === 0) return [];
-            const offsets = getSymmetryOffsets(mode);
-
-            let changed = false;
-            const next = prevStrokes.map((stroke, idx) => {
-              const [xMult, yMult] = offsets[idx] || [1, 1];
-              const mirroredPt = applySymmetry(
-                { x: locationX, y: locationY },
-                width,
-                height,
-                xMult,
-                yMult,
-              );
-              const previous = stroke.points[stroke.points.length - 1];
-              const dx = mirroredPt.x - previous.x;
-              const dy = mirroredPt.y - previous.y;
-              // Pointer events can repeat the same coordinate many times.
-              if (dx * dx + dy * dy < 4) return stroke;
-              changed = true;
-              return {
-                ...stroke,
-                points: decimateDrawingPoints(
-                  [...stroke.points, mirroredPt],
-                  DRAWING_HISTORY_MAX_POINTS_PER_ENTRY,
-                ),
-              };
-            });
-            return changed ? next : prevStrokes;
-          });
-        },
-        onPanResponderRelease: () => {
-          if (toolRef.current === 'shape') return;
-
-          setCurrentStrokes((strokes) => {
-            if (strokes.length === 0) return [];
-
-            if (toolRef.current === 'eraser') {
-              // Create erase entries for each symmetry copy
-              const eraseEntries: ErasedRegion[] = strokes.map((stroke, idx) => ({
-                kind: 'erase',
-                id: `erase-${Date.now()}-${idx}`,
-                actionId: stroke.actionId,
-                points: stroke.points,
-                width: stroke.width,
-              }));
-              setHistory((h) => compactDrawingHistory([...h, ...eraseEntries]));
-            } else {
-              // Create stroke entries for each symmetry copy
-              const strokeEntries: Stroke[] = strokes.map((stroke, idx) => ({
-                kind: 'stroke',
-                id: `stroke-${Date.now()}-${idx}`,
-                actionId: stroke.actionId,
-                points: stroke.points,
-                color: stroke.color,
-                width: stroke.width,
-              }));
-              setHistory((h) => compactDrawingHistory([...h, ...strokeEntries]));
-            }
-            return [];
-          });
-        },
+    useImperativeHandle(
+      ref,
+      () => ({
+        clear: clearCanvas,
+        getHistory: () => historyRef.current,
       }),
-    ).current;
+      [clearCanvas],
+    );
+
+    const [panResponder] = useState(() => {
+      const appendPoint = (gesture: DrawingGesture, event?: GestureResponderEvent) => {
+        const { entry, touchId } = gesture;
+        if (entry.kind === 'shape' || !event) return gesture;
+
+        const touch = event.nativeEvent;
+        const point = getTouchPoint(
+          touch.changedTouches?.find(({ identifier }) => identifier === touchId) ??
+            (touch.identifier === touchId ? touch : undefined),
+        );
+        if (!point) return gesture;
+
+        const previous = entry.points[entry.points.length - 1];
+        const dx = point.x - previous.x;
+        const dy = point.y - previous.y;
+        if (dx * dx + dy * dy < 4) return gesture;
+
+        const points = decimateDrawingPoints(
+          [...entry.points, point],
+          DRAWING_HISTORY_MAX_POINTS_PER_ENTRY,
+        );
+        return { ...gesture, entry: { ...entry, points } };
+      };
+
+      return PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onPanResponderTerminationRequest: () => activeGestureRef.current === null,
+        onPanResponderGrant: ({ nativeEvent }) => {
+          const touch = nativeEvent.changedTouches?.[0] ?? nativeEvent;
+          const point = getTouchPoint(touch);
+          if (!point) return;
+
+          const { width, height, selectedColor, tool, shape, symmetryMode } = settingsRef.current;
+          const actionId = `action-${Date.now()}-${nextActionIdRef.current++}`;
+          const base = { id: actionId, actionId };
+          const entry: HistoryEntry =
+            tool === 'shape'
+              ? { ...base, kind: 'shape', ...shape, ...point, color: selectedColor }
+              : tool === 'eraser'
+                ? { ...base, kind: 'erase', points: [point], width: 30 }
+                : { ...base, kind: 'stroke', points: [point], width: 5, color: selectedColor };
+
+          replaceActiveGesture({ entry, touchId: touch.identifier, width, height, symmetryMode });
+        },
+        onPanResponderMove: (event) => {
+          const gesture = activeGestureRef.current;
+          if (!gesture) return;
+          const updated = appendPoint(gesture, event);
+          if (updated !== gesture) replaceActiveGesture(updated);
+        },
+        onPanResponderRelease: (event) => {
+          const gesture = activeGestureRef.current;
+          if (!gesture) return;
+
+          replaceActiveGesture(null);
+          const entries = getGestureEntries(appendPoint(gesture, event));
+          replaceHistory(compactDrawingHistory([...historyRef.current, ...entries]));
+        },
+        onPanResponderTerminate: () => replaceActiveGesture(null),
+      });
+    });
 
     const handleClear = () => {
       setShowClearConfirm(true);
@@ -418,23 +387,19 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     };
 
     const handleUndo = () => {
-      setHistory((prev) => {
-        if (prev.length === 0) {
-          return prev;
-        }
+      const previous = historyRef.current;
+      if (previous.length === 0) return;
 
-        const lastEntry = prev[prev.length - 1];
-        if (!lastEntry.actionId) {
-          return prev.slice(0, -1);
-        }
-
-        let cutoffIndex = prev.length - 1;
-        while (cutoffIndex >= 0 && prev[cutoffIndex].actionId === lastEntry.actionId) {
-          cutoffIndex -= 1;
-        }
-
-        return prev.slice(0, cutoffIndex + 1);
-      });
+      const lastEntry = previous[previous.length - 1];
+      let cutoff = previous.length - 1;
+      while (
+        lastEntry.actionId &&
+        cutoff > 0 &&
+        previous[cutoff - 1].actionId === lastEntry.actionId
+      ) {
+        cutoff -= 1;
+      }
+      replaceHistory(previous.slice(0, cutoff));
     };
 
     const handleColorSelect = (color: string) => {
@@ -447,14 +412,19 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     };
 
     const handleToolSelect = (selectedTool: Tool) => {
-      setTool(selectedTool);
-      if (selectedTool === 'shape') setShowShapePicker(true);
+      if (selectedTool === 'shape') {
+        setShapeDraft(shape);
+      } else {
+        setTool(selectedTool);
+      }
     };
 
     const handleOpenColorPicker = () => {
       setPickerColor(selectedColor);
       setShowColorPicker(true);
     };
+
+    const handleCloseColorPicker = () => setShowColorPicker(false);
 
     const handleCustomColorSelect = () => {
       const normalizedPickerColor = pickerColor.toUpperCase();
@@ -469,13 +439,15 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
       });
 
       handleColorSelect(normalizedPickerColor);
-      setShowColorPicker(false);
+      handleCloseColorPicker();
     };
 
-    const handleShapeSelect = (type: ShapeType) => {
-      setShapeType(type);
+    const shapeChoice = shapeDraft ?? shape;
+    const handleCloseShapePicker = () => setShapeDraft(null);
+    const handleConfirmShape = () => {
+      setShape(shapeChoice);
       setTool('shape');
-      setShowShapePicker(false);
+      handleCloseShapePicker();
     };
 
     const cycleSymmetryMode = () => {
@@ -504,27 +476,21 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     // Build SVG content from unified history.
     const renderHistoryEntry = useCallback(
       (entry: HistoryEntry) => {
-        if (entry.kind === 'stroke') {
-          return (
-            <Path
-              key={entry.id}
-              d={pointsToSmoothPath(entry.points)}
-              stroke={entry.color}
-              strokeWidth={entry.width}
-              strokeLinecap='round'
-              strokeLinejoin='round'
-              fill='none'
-            />
-          );
-        }
+        if (entry.kind === 'stroke' || entry.kind === 'erase') {
+          const { id, points, width } = entry;
+          const color = entry.kind === 'erase' ? canvasBackgroundColor : entry.color;
+          if (points.length === 0) return null;
+          if (points.length === 1) {
+            const [point] = points;
+            return <Circle key={id} cx={point.x} cy={point.y} r={width / 2} fill={color} />;
+          }
 
-        if (entry.kind === 'erase') {
           return (
             <Path
-              key={entry.id}
-              d={pointsToSmoothPath(entry.points)}
-              stroke={canvasBackgroundColor}
-              strokeWidth={entry.width}
+              key={id}
+              d={pointsToSmoothPath(points)}
+              stroke={color}
+              strokeWidth={width}
               strokeLinecap='round'
               strokeLinejoin='round'
               fill='none'
@@ -637,28 +603,23 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
             {renderedHistory}
 
-            {/* Symmetry guide lines */}
-            {renderSymmetryGuides()}
+            {activeGesture && getGestureEntries(activeGesture).map(renderHistoryEntry)}
 
-            {/* Live stroke previews */}
-            {currentStrokes.map((stroke, idx) => (
-              <Path
-                key={`preview-${idx}`}
-                d={pointsToSmoothPath(stroke.points)}
-                stroke={tool === 'eraser' ? canvasBackgroundColor : stroke.color}
-                strokeWidth={stroke.width}
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                fill='none'
-              />
-            ))}
+            {renderSymmetryGuides()}
           </Svg>
 
-          <View style={styles.touchOverlay} {...panResponder.panHandlers} />
+          <View
+            collapsable={false}
+            style={[
+              styles.touchOverlay,
+              Platform.OS === 'web' && ({ touchAction: 'none' } as ViewStyle),
+            ]}
+            {...panResponder.panHandlers}
+          />
         </View>
 
         <Text style={[styles.drawingInstruction, { color: colors.textLight }]}>
-          {t('games.drawing.instruction')}
+          {t(TOOL_INSTRUCTION_KEYS[tool])}
         </Text>
         {/* Toolbar */}
         <View style={[styles.toolbar, { paddingBottom: Math.max(8, bottomInset) }]}>
@@ -726,14 +687,10 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               ]}
               onPress={() => handleToolSelect('shape')}
               accessibilityRole='button'
-              accessibilityLabel={`${t('games.drawing.shapeTool')}, ${t(SHAPE_TRANSLATION_KEYS[shapeType])}`}
+              accessibilityLabel={`${t('games.drawing.shapeTool')}, ${t(SHAPE_TRANSLATION_KEYS[shape.type])}`}
               accessibilityState={{ selected: tool === 'shape' }}
             >
-              <Text style={styles.toolButtonText}>
-                {shapeType === 'circle' && '🔴'}
-                {shapeType === 'square' && '🟦'}
-                {shapeType === 'triangle' && '🔺'}
-              </Text>
+              <Text style={styles.toolButtonText}>{SHAPE_ICONS[shape.type]}</Text>
               <Text
                 style={[
                   styles.toolLabel,
@@ -816,11 +773,17 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
             <TouchableOpacity
               testID='clear-drawing-button'
-              style={[styles.toolButton, themedStyles.toolButton]}
+              style={[
+                styles.toolButton,
+                themedStyles.toolButton,
+                !canUndo && styles.toolButtonDisabled,
+              ]}
               onPress={handleClear}
+              disabled={!canUndo}
               accessibilityRole='button'
               accessibilityLabel={t('games.drawing.clearCanvas')}
               accessibilityHint={t('games.drawing.clearHint')}
+              accessibilityState={{ disabled: !canUndo }}
             >
               <Text style={styles.toolButtonText}>🗑️</Text>
               <Text style={[styles.toolLabel, { color: colors.text }]}>
@@ -844,9 +807,11 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           showClose={false}
           dismissOnBackdropPress={false}
         >
-          <Text style={styles.modalText}>{t('games.drawing.clearConfirmMessage')}</Text>
+          <Text style={[styles.modalText, themedStyles.modalText]}>
+            {t('games.drawing.clearConfirmMessage')}
+          </Text>
 
-          <View style={[styles.modalButtons, { gap: 12 }]}>
+          <View style={styles.modalButtons}>
             <AppButton
               label={t('common.cancel')}
               variant='secondary'
@@ -865,14 +830,16 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
         {/* Color Picker Modal */}
         <AppModal
           visible={showColorPicker}
-          onClose={handleCustomColorSelect}
+          onClose={handleCloseColorPicker}
           title={t('games.drawing.pickColour')}
           showClose={false}
           dismissOnBackdropPress={false}
         >
           <View style={styles.previewContainer}>
             <View style={[styles.colorPreview, { backgroundColor: pickerColor }]} />
-            <Text style={styles.colorHex}>{pickerColor.toUpperCase()}</Text>
+            <Text style={[styles.colorHex, themedStyles.modalText]}>
+              {pickerColor.toUpperCase()}
+            </Text>
           </View>
 
           <View style={styles.colorGrid}>
@@ -898,127 +865,101 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
             })}
           </View>
 
-          <View style={[styles.modalButtons]}>
+          <View style={styles.modalButtons}>
             <AppButton
               label={t('common.cancel')}
               variant='secondary'
-              onPress={() => setShowColorPicker(false)}
-              style={{ flex: 1, marginRight: Space.sm }}
+              onPress={handleCloseColorPicker}
             />
             <AppButton
               label={t('games.drawing.useColour')}
               variant='primary'
               onPress={handleCustomColorSelect}
               testID='confirm-custom-color'
-              style={{ flex: 1, marginLeft: Space.sm }}
             />
           </View>
         </AppModal>
 
         {/* Shape Picker Modal */}
         <AppModal
-          visible={showShapePicker}
-          onClose={() => setShowShapePicker(false)}
+          visible={shapeDraft !== null}
+          onClose={handleCloseShapePicker}
           title={t('games.drawing.chooseShape')}
           showClose={false}
           dismissOnBackdropPress={false}
           contentStyle={{ maxHeight: '80%' }}
         >
           <View style={styles.shapeGrid}>
-            <TouchableOpacity
-              testID='shape-option-circle'
-              style={[
-                styles.shapeButton,
-                shapeType === 'circle' ? styles.shapeButtonActive : undefined,
-              ]}
-              onPress={() => handleShapeSelect('circle')}
-              accessibilityRole='button'
-              accessibilityLabel={t('games.drawing.shape.circle')}
-              accessibilityState={{ selected: shapeType === 'circle' }}
-            >
-              <Text style={styles.shapeIcon}>🔴</Text>
-              <Text style={styles.shapeLabel}>{t('games.drawing.shape.circle')}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              testID='shape-option-square'
-              style={[
-                styles.shapeButton,
-                shapeType === 'square' ? styles.shapeButtonActive : undefined,
-              ]}
-              onPress={() => handleShapeSelect('square')}
-              accessibilityRole='button'
-              accessibilityLabel={t('games.drawing.shape.square')}
-              accessibilityState={{ selected: shapeType === 'square' }}
-            >
-              <Text style={styles.shapeIcon}>🟦</Text>
-              <Text style={styles.shapeLabel}>{t('games.drawing.shape.square')}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              testID='shape-option-triangle'
-              style={[
-                styles.shapeButton,
-                shapeType === 'triangle' ? styles.shapeButtonActive : undefined,
-              ]}
-              onPress={() => handleShapeSelect('triangle')}
-              accessibilityRole='button'
-              accessibilityLabel={t('games.drawing.shape.triangle')}
-              accessibilityState={{ selected: shapeType === 'triangle' }}
-            >
-              <Text style={styles.shapeIcon}>🔺</Text>
-              <Text style={styles.shapeLabel}>{t('games.drawing.shape.triangle')}</Text>
-            </TouchableOpacity>
+            {SHAPES.map((type) => {
+              const selected = shapeChoice.type === type;
+              const label = t(SHAPE_TRANSLATION_KEYS[type]);
+              return (
+                <TouchableOpacity
+                  key={type}
+                  testID={`shape-option-${type}`}
+                  style={[
+                    styles.shapeButton,
+                    themedStyles.toolButton,
+                    selected && themedStyles.toolButtonActive,
+                  ]}
+                  onPress={() => setShapeDraft({ ...shapeChoice, type })}
+                  accessibilityRole='button'
+                  accessibilityLabel={label}
+                  accessibilityState={{ selected }}
+                >
+                  <Text style={styles.shapeIcon}>{SHAPE_ICONS[type]}</Text>
+                  <Text
+                    style={[
+                      styles.shapeLabel,
+                      selected ? styles.selectedLabel : themedStyles.modalText,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
-          <Text style={styles.sizeLabel}>{t('games.drawing.size', { size: shapeSize })}</Text>
-          <View style={styles.sizeSlider}>
-            <TouchableOpacity
-              testID='shape-size-small'
-              style={[
-                styles.sizeControlButton,
-                shapeSize === 30 ? styles.sizeControlButtonActive : undefined,
-              ]}
-              onPress={() => setShapeSize(30)}
-              accessibilityRole='button'
-              accessibilityLabel={t('games.drawing.sizeSmall')}
-              accessibilityState={{ selected: shapeSize === 30 }}
-            >
-              <Text style={styles.sizeControlText}>{t('games.drawing.sizeSmall')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              testID='shape-size-medium'
-              style={[
-                styles.sizeControlButton,
-                shapeSize === 60 ? styles.sizeControlButtonActive : undefined,
-              ]}
-              onPress={() => setShapeSize(60)}
-              accessibilityRole='button'
-              accessibilityLabel={t('games.drawing.sizeMedium')}
-              accessibilityState={{ selected: shapeSize === 60 }}
-            >
-              <Text style={styles.sizeControlText}>{t('games.drawing.sizeMedium')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              testID='shape-size-large'
-              style={[
-                styles.sizeControlButton,
-                shapeSize === 100 ? styles.sizeControlButtonActive : undefined,
-              ]}
-              onPress={() => setShapeSize(100)}
-              accessibilityRole='button'
-              accessibilityLabel={t('games.drawing.sizeLarge')}
-              accessibilityState={{ selected: shapeSize === 100 }}
-            >
-              <Text style={styles.sizeControlText}>{t('games.drawing.sizeLarge')}</Text>
-            </TouchableOpacity>
+          <Text style={[styles.sizeLabel, themedStyles.modalText]}>{t('games.drawing.size')}</Text>
+          <View style={styles.sizeOptions}>
+            {SHAPE_SIZES.map(({ size, label, name }) => {
+              const selected = shapeChoice.size === size;
+              return (
+                <TouchableOpacity
+                  key={size}
+                  testID={`shape-size-${name}`}
+                  style={[
+                    styles.sizeControlButton,
+                    themedStyles.toolButton,
+                    selected && themedStyles.toolButtonActive,
+                  ]}
+                  onPress={() => setShapeDraft({ ...shapeChoice, size })}
+                  accessibilityRole='button'
+                  accessibilityLabel={t(label)}
+                  accessibilityState={{ selected }}
+                >
+                  <Text
+                    style={[
+                      styles.sizeControlText,
+                      selected ? styles.selectedLabel : themedStyles.modalText,
+                    ]}
+                  >
+                    {t(label)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
-          <AppButton
-            label={t('common.done')}
-            variant='primary'
-            onPress={() => setShowShapePicker(false)}
-          />
+          <View style={styles.modalButtons}>
+            <AppButton
+              label={t('common.cancel')}
+              variant='secondary'
+              onPress={handleCloseShapePicker}
+            />
+            <AppButton label={t('common.done')} variant='primary' onPress={handleConfirmShape} />
+          </View>
         </AppModal>
       </View>
     );
@@ -1027,6 +968,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
 const createThemedStyles = (colors: ThemeColors) =>
   StyleSheet.create({
+    modalText: { color: colors.text },
     toolButton: { backgroundColor: colors.surface, borderColor: colors.border },
     toolButtonActive: {
       backgroundColor: colors.primary,
@@ -1233,6 +1175,7 @@ const styles = StyleSheet.create({
   },
   modalButtons: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
     justifyContent: 'center',
   },
@@ -1276,10 +1219,6 @@ const styles = StyleSheet.create({
     minHeight: 104,
     justifyContent: 'center',
   },
-  shapeButtonActive: {
-    backgroundColor: '#A8D8EA',
-    borderColor: '#A8D8EA',
-  },
   shapeIcon: {
     fontSize: 36,
     marginBottom: 8,
@@ -1296,8 +1235,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontWeight: '600',
   },
-  sizeSlider: {
+  sizeOptions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
     gap: 8,
     marginBottom: 20,
@@ -1314,10 +1254,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sizeControlButtonActive: {
-    backgroundColor: '#A8D8EA',
-    borderColor: '#A8D8EA',
-  },
+  selectedLabel: { color: ON_ACCENT_TEXT },
   accessibilityAnnouncement: {
     position: 'absolute',
     left: -1000,

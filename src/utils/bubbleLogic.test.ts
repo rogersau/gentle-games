@@ -4,6 +4,7 @@ import {
   spawnBubbles,
   Bubble,
   createBubble,
+  findBubbleAtPoint,
 } from './bubbleLogic';
 
 const sequenceRng = (values: number[]) => {
@@ -24,6 +25,25 @@ describe('bubbleLogic', () => {
   it('respects max bubble cap while enforcing minimum', () => {
     const bubbles = ensureMinimumBubbles([], 4, 300, 400, 2, sequenceRng([0.1]));
     expect(bubbles).toHaveLength(2);
+  });
+
+  it('places immediately playable bubbles on the board while scheduled bubbles still enter from above', () => {
+    const [initial] = ensureMinimumBubbles([], 1, 300, 400, 2, () => 0.5);
+    const [scheduled] = spawnBubbles([], 1, 300, 400, () => 0.5);
+
+    expect(initial.y - initial.radius).toBeGreaterThanOrEqual(0);
+    expect(scheduled.y + scheduled.radius).toBeLessThan(0);
+  });
+
+  it('targets the frontmost visible circle before considering a nearby bubble’s padded target', () => {
+    const bubble = { ...createBubble(300, 400, () => 0.5), x: 80, y: 80, radius: 20 };
+    const overlap = { ...bubble, id: 'overlap', x: 110 };
+    const hidden = { ...bubble, id: 'hidden', y: -21 };
+
+    expect(findBubbleAtPoint([bubble, overlap], { x: 95, y: 80 }, 300, 400)).toBe(overlap);
+    expect(findBubbleAtPoint([bubble, overlap], { x: 85, y: 80 }, 300, 400)).toBe(bubble);
+    expect(findBubbleAtPoint([bubble, overlap], { x: 103, y: 105 }, 300, 400)).toBe(overlap);
+    expect(findBubbleAtPoint([hidden], { x: 80, y: 0 }, 300, 400)).toBeUndefined();
   });
 
   it('can spawn a bubble lower in the field with a smaller initial size', () => {

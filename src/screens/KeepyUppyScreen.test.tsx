@@ -1,12 +1,15 @@
 import React from 'react';
 import { fireEvent, render, waitFor, act } from '@testing-library/react-native';
 import { KeepyUppyScreen } from './KeepyUppyScreen';
+import '../i18n';
 import {
   assertNoSetStateDuringRender,
   createSetStateDuringRenderSpy,
 } from '../test-utils/setStateDetection';
 
 const mockGoBack = jest.fn();
+
+jest.unmock('react-i18next');
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
@@ -34,7 +37,12 @@ jest.mock('../utils/theme', () => ({
   }),
 }));
 
-const keepySettings = { keepyUppyEasyMode: true, showMochiInGames: true, pressureFreeMode: false };
+const keepySettings = {
+  keepyUppyEasyMode: true,
+  showMochiInGames: true,
+  pressureFreeMode: false,
+  animationsEnabled: true,
+};
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: keepySettings,
@@ -55,6 +63,8 @@ describe('KeepyUppyScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    keepySettings.animationsEnabled = true;
+    keepySettings.pressureFreeMode = false;
     consoleErrorSpy = createSetStateDuringRenderSpy();
   });
 
@@ -76,7 +86,7 @@ describe('KeepyUppyScreen', () => {
 
   it('adds balloons up to a max of three', async () => {
     const screen = render(<KeepyUppyScreen />);
-    const addButton = screen.getByText('+ Balloon');
+    const addButton = screen.getByRole('button', { name: 'Add Balloon' });
 
     expect(screen.getByText('Balloons: 1')).toBeTruthy();
 
@@ -126,13 +136,33 @@ describe('KeepyUppyScreen', () => {
   });
 
   it('hides score, balloon, and popped counters in pressure-free mode', () => {
-    const settingsModule = jest.requireMock('../context/SettingsContext') as {
-      useSettings: () => { settings: { pressureFreeMode: boolean } };
-    };
-    settingsModule.useSettings().settings.pressureFreeMode = true;
+    keepySettings.pressureFreeMode = true;
     const screen = render(<KeepyUppyScreen />);
+    expect(screen.getByText('Tap a balloon to lift it. It can rest on the grass.')).toBeTruthy();
     expect(screen.queryByText('Taps: 0')).toBeNull();
     expect(screen.queryByText('Balloons: 1')).toBeNull();
     expect(screen.queryByText('Popped: 0')).toBeNull();
+  });
+
+  it('updates the instruction and keeps play controls available when movement is paused', () => {
+    const screen = render(<KeepyUppyScreen />);
+
+    fireEvent.press(screen.getByRole('button', { name: 'Pause movement' }));
+    expect(screen.getByText('Tap a balloon to move it.')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Add Balloon' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Balloon 2' }));
+    expect(screen.getByText('Taps: 1')).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Resume movement' }));
+    expect(screen.getByText('Tap a balloon to help it float. Take your time.')).toBeTruthy();
+  });
+
+  it('offers still play from the start when animations are disabled', () => {
+    keepySettings.animationsEnabled = false;
+    const screen = render(<KeepyUppyScreen />);
+    expect(screen.getByText('Tap a balloon to move it.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Pause movement' })).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Balloon 1' }));
+    expect(screen.getByText('Taps: 1')).toBeTruthy();
   });
 });

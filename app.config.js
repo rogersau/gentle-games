@@ -68,7 +68,7 @@ module.exports = {
     ],
   },
   experiments: {
-    baseUrl: process.env.EXPO_BASE_URL !== undefined ? process.env.EXPO_BASE_URL : '/gentle-games',
+    baseUrl: process.env.EXPO_BASE_URL ?? '',
   },
   plugins: [
     'expo-asset',

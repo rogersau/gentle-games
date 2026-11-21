@@ -98,4 +98,23 @@ describe('patternTrainLogic', () => {
       }
     }
   });
+
+  it('leaves a visible copy of the missing picture in every allowed gap', () => {
+    const samples = Array.from({ length: 20 }, (_, index) => index / 20);
+
+    for (const difficulty of ['easy', 'medium', 'hard'] as const) {
+      for (const templateSample of samples) {
+        const source = generateTrainPattern(difficulty, () => templateSample);
+        for (const gapSample of samples) {
+          const pattern = generateTransferPattern(source, () => gapSample);
+
+          expect(
+            pattern.carriages.some(
+              ({ emoji, isMissing }) => emoji === pattern.answer && !isMissing,
+            ),
+          ).toBe(true);
+        }
+      }
+    }
+  });
 });

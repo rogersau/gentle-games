@@ -39,11 +39,11 @@ describe('useGlitterParticles', () => {
 
   it('caps physics and rendering at 30 updates per second and cancels the animation', () => {
     let frame!: FrameRequestCallback;
-    const raf = jest.spyOn(global, 'requestAnimationFrame').mockImplementation((callback) => {
+    const raf = jest.spyOn(globalThis, 'requestAnimationFrame').mockImplementation((callback) => {
       frame = callback;
       return 123;
     });
-    const cancel = jest.spyOn(global, 'cancelAnimationFrame');
+    const cancel = jest.spyOn(globalThis, 'cancelAnimationFrame');
     const resolveCollisions = jest.fn((particles) => particles);
     try {
       const { result, unmount } = renderHook(() =>
@@ -91,6 +91,34 @@ describe('useGlitterParticles', () => {
       expect(Math.hypot(particle.x - 100, particle.y - 100)).toBeLessThanOrEqual(
         90 - particle.radius,
       );
+    });
+  });
+
+  it('bounds consecutive additions and preserves the child’s glitter through a resize', () => {
+    const { result, rerender } = renderHook(
+      ({ size }: { size: number }) =>
+        useGlitterParticles({
+          particleCount: 4,
+          maxParticles: 12,
+          canvasWidth: size,
+          canvasHeight: size,
+        }),
+      { initialProps: { size: 220 } },
+    );
+
+    act(() => {
+      expect(result.current.addParticles(6)).toBe(true);
+      expect(result.current.addParticles(6)).toBe(true);
+      expect(result.current.addParticles(6)).toBe(false);
+    });
+    const ids = result.current.particles.map((particle) => particle.id);
+    expect(ids).toHaveLength(12);
+    expect(new Set(ids).size).toBe(12);
+
+    rerender({ size: 160 });
+    expect(result.current.particles.map((particle) => particle.id)).toEqual(ids);
+    result.current.particles.forEach(({ x, y, radius }) => {
+      expect(Math.hypot(x - 80, y - 80)).toBeLessThanOrEqual(70 - radius + 0.001);
     });
   });
 });

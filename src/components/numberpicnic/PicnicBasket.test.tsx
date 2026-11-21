@@ -32,7 +32,6 @@ describe('PicnicBasket', () => {
         items={['🍎', '🍎']}
         itemIds={[3, 7]}
         targetCount={3}
-        onPress={jest.fn()}
         onItemPress={onItemPress}
       />,
     );
@@ -42,20 +41,15 @@ describe('PicnicBasket', () => {
     expect(onItemPress).toHaveBeenCalledWith(7);
   });
 
-  it('does not auto-advance after completion', () => {
-    const onAnimationComplete = jest.fn();
-    const { getByText } = render(
-      <PicnicBasket
-        items={['🍎']}
-        targetCount={1}
-        onPress={jest.fn()}
-        isSuccess
-        onAnimationComplete={onAnimationComplete}
-      />,
+  it('keeps the drop-zone width and border geometry stable during hover', () => {
+    const { getByTestId, rerender } = render(
+      <PicnicBasket items={[]} targetCount={1} testID='basket' />,
     );
+    const zone = getByTestId('basket-drop-zone');
+    expect(zone).toHaveStyle({ width: '100%', maxWidth: 280, borderWidth: 4 });
 
-    expect(getByText('1/1')).toBeTruthy();
-    expect(onAnimationComplete).not.toHaveBeenCalled();
+    rerender(<PicnicBasket items={[]} targetCount={1} testID='basket' isDropTarget />);
+    expect(zone).toHaveStyle({ borderWidth: 4 });
   });
 
   it('does not present prefilled items as remove controls', () => {
@@ -66,7 +60,6 @@ describe('PicnicBasket', () => {
         itemIds={[0, 1]}
         removableItemIds={[1]}
         targetCount={3}
-        onPress={jest.fn()}
         onItemPress={onItemPress}
       />,
     );

@@ -22,8 +22,9 @@ export const KeepyUppyScreen: React.FC = () => {
   const { settings } = useSettings();
   const { showPressureMetrics, showMilestoneCelebrations } = getGamePresentationPolicy(settings);
   const { colors } = useThemeColors();
-  const motionEnabled = useAnimationEnabled();
+  const canAnimate = useAnimationEnabled();
   const [paused, setPaused] = useState(false);
+  const motionEnabled = canAnimate && !paused;
   const { t } = useTranslation();
   const { showMochi } = useMochi();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -32,7 +33,6 @@ export const KeepyUppyScreen: React.FC = () => {
   const [score, setScore] = useState(0);
   const [balloonCount, setBalloonCount] = useState(1);
   const [popped, setPopped] = useState(0);
-  const tapCountRef = useRef(0);
   const lastPhraseIndexRef = useRef(-1);
 
   const pickPhrase = (phrases: string[], lastIndex: number): { phrase: string; index: number } => {
@@ -46,7 +46,6 @@ export const KeepyUppyScreen: React.FC = () => {
   const handleScoreChange = useCallback(
     (newScore: number) => {
       setScore(newScore);
-      tapCountRef.current = newScore;
       if (MILESTONES.includes(newScore) && settings.showMochiInGames && showMilestoneCelebrations) {
         const { phrase, index } = pickPhrase(
           t('mascot.keepyUppyPhrases', { returnObjects: true }) as string[],
@@ -81,7 +80,13 @@ export const KeepyUppyScreen: React.FC = () => {
     >
       <View style={styles.content}>
         <Text style={styles.subtitle} accessibilityRole='text'>
-          {t('games.keepyUppy.subtitle')}
+          {t(
+            !motionEnabled
+              ? 'games.keepyUppy.stillSubtitle'
+              : showPressureMetrics
+                ? 'games.keepyUppy.subtitle'
+                : 'games.keepyUppy.restSubtitle',
+          )}
         </Text>
         {showPressureMetrics ? (
           <View style={styles.statsRow}>
@@ -114,9 +119,8 @@ export const KeepyUppyScreen: React.FC = () => {
             onPress={handleAddBalloon}
             disabled={balloonCount >= MAX_BALLOONS}
             accessibilityHint={t('games.keepyUppy.addBalloonHint')}
-            style={{ marginBottom: Space.sm }}
           />
-          {motionEnabled ? (
+          {canAnimate ? (
             <AppButton
               icon={paused ? 'play' : 'pause'}
               label={t(paused ? 'common.resumeMovement' : 'common.pauseMovement')}
@@ -134,7 +138,8 @@ export const KeepyUppyScreen: React.FC = () => {
           onBalloonCountChange={setBalloonCount}
           onPoppedChange={setPopped}
           easyMode={getGameSettings(settings, 'keepy-uppy').liftMode === 'gentle'}
-          motionEnabled={motionEnabled && !paused}
+          motionEnabled={motionEnabled}
+          allowPopping={showPressureMetrics}
         />
       </View>
     </AppScreen>
@@ -168,6 +173,8 @@ const createStyles = (colors: ThemeColors) =>
     },
     statsRow: {
       flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
       gap: Space.md,
       marginBottom: Space.md,
     },

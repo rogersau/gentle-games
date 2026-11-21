@@ -1,24 +1,21 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { Accelerometer } from 'expo-sensors';
 import { EventSubscription } from 'expo-modules-core';
-import { getMotionForce, shouldTriggerShake, MotionReading } from '../utils/glitterMotion';
+import { shouldTriggerShake, MotionReading } from '../utils/glitterMotion';
 
 interface UseGlitterGesturesOptions {
   onShake: () => void;
-  onWake: () => void;
   enabled?: boolean;
 }
 
-export function useGlitterGestures({ onShake, onWake, enabled = true }: UseGlitterGesturesOptions) {
+export function useGlitterGestures({ onShake, enabled = true }: UseGlitterGesturesOptions) {
   const lastShakeTime = useRef(0);
   const subscriptionRef = useRef<EventSubscription | null>(null);
   const onShakeRef = useRef(onShake);
-  const onWakeRef = useRef(onWake);
 
   useEffect(() => {
     onShakeRef.current = onShake;
-    onWakeRef.current = onWake;
-  }, [onShake, onWake]);
+  }, [onShake]);
 
   const handleShake = useCallback(() => {
     if (!enabled) return;
@@ -28,10 +25,6 @@ export function useGlitterGestures({ onShake, onWake, enabled = true }: UseGlitt
       onShakeRef.current();
     }
   }, [enabled]);
-
-  const handleWake = useCallback(() => {
-    onWakeRef.current();
-  }, []);
 
   useEffect(() => {
     if (!enabled || subscriptionRef.current) {
@@ -47,7 +40,6 @@ export function useGlitterGestures({ onShake, onWake, enabled = true }: UseGlitt
         }
 
         const subscription = Accelerometer.addListener((reading: MotionReading) => {
-          getMotionForce(reading);
           if (shouldTriggerShake(reading, lastShakeTime.current, Date.now())) {
             handleShake();
           }
@@ -75,6 +67,5 @@ export function useGlitterGestures({ onShake, onWake, enabled = true }: UseGlitt
 
   return {
     handleShake,
-    handleWake,
   };
 }

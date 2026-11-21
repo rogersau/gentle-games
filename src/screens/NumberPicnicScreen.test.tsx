@@ -1,42 +1,14 @@
 import React from 'react';
-import { render, fireEvent, act } from '@testing-library/react-native';
+import { PanResponder, View } from 'react-native';
+import { act, fireEvent, render, within } from '@testing-library/react-native';
 import { NumberPicnicScreen } from './NumberPicnicScreen';
+import type { NumberPicnicMode, NumberPicnicStage } from '../types';
 
-const mockGoBack = jest.fn();
-let mockPicnicMode = 'make-amount';
-let mockPicnicStage = '1-5';
+let mockMode: NumberPicnicMode;
+let mockStage: NumberPicnicStage;
 
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({
-    goBack: mockGoBack,
-  }),
-}));
-
-jest.mock('../utils/theme', () => ({
-  useReducedMotion: () => false,
-  useThemeColors: () => ({
-    colors: {
-      background: '#FFFEF7',
-      cardBack: '#E8E4E1',
-      cardFront: '#FFFFFF',
-      text: '#5A5A5A',
-      textLight: '#8A8A8A',
-      primary: '#A8D8EA',
-      secondary: '#FFB6C1',
-      success: '#B8E6B8',
-      matched: '#D3D3D3',
-      surfaceGame: '#FFFFFF',
-      surface: '#FFFFFF',
-      surfaceElevated: '#FFFFFF',
-      border: '#E8E4E1',
-      borderSubtle: '#F0EDE9',
-      overlay: 'rgba(90, 90, 90, 0.4)',
-      accent: '#D4A9E6',
-      danger: '#E8A0A0',
-    },
-    resolvedMode: 'light',
-    colorMode: 'light',
-  }),
+  useNavigation: () => ({ goBack: jest.fn() }),
 }));
 
 jest.mock('../context/SettingsContext', () => ({
@@ -44,13 +16,11 @@ jest.mock('../context/SettingsContext', () => ({
     settings: {
       animationsEnabled: false,
       reducedMotionEnabled: false,
-      difficulty: 'easy',
-      showMochiInGames: true,
       gameSettings: {
         'number-picnic': {
-          maxQuantity: mockPicnicStage === '1-5' ? 5 : 10,
-          stage: mockPicnicStage,
-          mode: mockPicnicMode,
+          maxQuantity: 5,
+          stage: mockStage,
+          mode: mockMode,
           spokenCounting: false,
         },
       },
@@ -58,386 +28,146 @@ jest.mock('../context/SettingsContext', () => ({
   }),
 }));
 
-jest.mock('../context/MochiContext', () => ({
-  useMochiContext: () => ({
-    mochiProps: { variant: 'idle', visible: false, phrase: null },
-    showMochi: jest.fn(),
-    hideMochi: jest.fn(),
-    celebrate: jest.fn(),
-  }),
-}));
-
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: Record<string, unknown>) => {
-      const translations: Record<string, string> = {
-        'games.numberPicnic.title': 'Number Picnic',
-        'games.numberPicnic.subtitle': 'Drag items from the blanket to the basket',
-        'games.numberPicnic.place': 'Place',
-        'games.numberPicnic.modes.makeAmount.instruction': 'Make {{count}} {{item}} in the basket',
-        'games.numberPicnic.modes.findAmount.instruction': 'Find the group with {{count}} {{item}}',
-        'games.numberPicnic.modes.matchNumeral.instruction': 'Which numeral matches this group?',
-        'games.numberPicnic.modes.moreFewer.instruction':
-          'Choose the group with {{comparison}} items',
-        'games.numberPicnic.modes.addOneMore.instruction':
-          'There are {{count}} {{item}}. Add one more to make {{target}}',
-        'games.numberPicnic.comparison.more': 'more',
-        'games.numberPicnic.comparison.fewer': 'fewer',
-        'games.numberPicnic.guidance.neutral':
-          'That choice does not show {{target}} {{item}}. You can try again.',
-        'games.numberPicnic.guidance.comparisonNeutral':
-          'That group does not have {{comparison}} items. You can try again.',
-        'games.numberPicnic.guidance.findAmountHint':
-          'Count the filled spaces in each frame. Look for {{target}}.',
-        'games.numberPicnic.guidance.matchNumeralHint':
-          'Count the filled spaces, then choose that numeral.',
-        'games.numberPicnic.guidance.comparisonHint':
-          'Compare the frames. Look for the group with {{comparison}} filled spaces.',
-        'games.numberPicnic.guidance.hintButton': 'Show a hint',
-        'games.numberPicnic.guidance.replay': 'Hear the instruction again',
-        'games.numberPicnic.guidance.skip': 'Try a new example',
-        'games.numberPicnic.transfer': 'Try a new example',
-        'games.numberPicnic.transferHint': 'Try the same idea with new items',
-        'games.numberPicnic.choiceAccessibilityLabel': 'Group showing {{count}} items',
-        'games.numberPicnic.numeralChoiceAccessibilityLabel': 'Numeral {{numeral}}',
-        'games.numberPicnic.choiceHint': 'Choose this group',
-        'games.numberPicnic.representation.accessibilityLabel':
-          '{{count}} items shown as a numeral, dots, and a frame',
-        'games.numberPicnic.representation.quantityAccessibilityLabel':
-          '{{count}} items shown as dots and a frame',
-        'games.numberPicnic.groupAccessibilityLabel': '{{group}} group showing {{count}} items',
-        'games.numberPicnic.groups.left': 'Left group',
-        'games.numberPicnic.groups.right': 'Right group',
-        'games.numberPicnic.feedback.complete': 'Great counting!',
-        'games.numberPicnic.feedback.incomplete': 'Keep adding items',
-        'games.numberPicnic.completed': 'Completed picnics',
-      };
-      if (key.startsWith('games.numberPicnic.items.')) return 'translated picnic item';
-      if (key === 'games.numberPicnic.basketAccessibilityLabel') {
-        return `translated basket ${String(options?.count)} ${String(options?.item)}`;
-      }
-      if (key === 'games.numberPicnic.basketAccessibilityHint') return 'translated basket hint';
-      return translations[key] || key;
+      const { getTranslationSafe } = jest.requireActual('../i18n/types');
+      const value: string = getTranslationSafe(key) ?? key;
+      return value.replace(/{{(\w+)}}/g, (_, token: string) => String(options?.[token] ?? ''));
     },
   }),
 }));
 
-jest.mock('../components/numberpicnic', () => {
-  const { View, Text, Pressable } = require('react-native');
-
-  return {
-    NumberPicnicRepresentation: ({
-      representation,
-      showNumeral = true,
-      testID,
-    }: {
-      representation: { numeral: number };
-      showNumeral?: boolean;
-      testID?: string;
-    }) => <View testID={testID}>{showNumeral && <Text>{representation.numeral}</Text>}</View>,
-    NumberPicnicChoice: ({
-      choice,
-      display,
-      onPress,
-      testID,
-    }: {
-      choice: { quantity: number };
-      display: 'quantity' | 'numeral';
-      onPress: () => void;
-      testID?: string;
-    }) => (
-      <Pressable testID={testID} onPress={onPress}>
-        <Text>{display === 'numeral' ? choice.quantity : 'quantity pattern'}</Text>
-      </Pressable>
-    ),
-    PicnicBasket: ({
-      isDropTarget,
-      items,
-      itemIds,
-      targetCount,
-      onItemPress,
-      onAnimationComplete,
-      accessibilityLabel,
-      accessibilityHint,
-      testID,
-    }: {
-      isDropTarget?: boolean;
-      items: string[];
-      targetCount: number;
-      onAnimationComplete?: () => void;
-      accessibilityLabel?: string;
-      accessibilityHint?: string;
-      testID?: string;
-      itemIds?: number[];
-      onItemPress?: (itemId: number) => void;
-    }) => (
-      <View testID={testID}>
-        <Text>{`drop-target:${isDropTarget ? 'yes' : 'no'}`}</Text>
-        <Text>{`basket-items:${items.length}/${targetCount}`}</Text>
-        <Text>{accessibilityLabel}</Text>
-        <Text>{accessibilityHint}</Text>
-        {items.map((item, index) => (
-          <Pressable
-            key={itemIds?.[index] ?? index}
-            testID={`picnic-placed-item-${itemIds?.[index] ?? index}`}
-            onPress={() => onItemPress?.(itemIds?.[index] ?? index)}
-          />
-        ))}
-        <Pressable testID='basket-next-round' onPress={() => onAnimationComplete?.()} />
-      </View>
-    ),
-    PicnicBlanket: ({
-      itemEmoji,
-      itemCount,
-      onDropStart,
-      onDropEnd,
-      onDragOverBasket,
-      onItemDrop,
-      testID,
-    }: {
-      itemEmoji: string;
-      itemCount: number;
-      onDropStart?: () => void;
-      onDropEnd?: () => void;
-      onDragOverBasket?: (isOver: boolean) => void;
-      onItemDrop: (index: number) => void;
-      testID?: string;
-    }) => (
-      <View testID={testID}>
-        {Array.from({ length: Math.min(itemCount, 2) }, (_, index) => (
-          <View
-            key={index}
-            testID={`picnic-item-${index}`}
-            accessibilityLabel={`${itemEmoji} item ${index + 1}. Drag up to basket.`}
-          />
-        ))}
-        <Pressable testID='blanket-start-drag' onPress={() => onDropStart?.()} />
-        <Pressable testID='blanket-hover-on' onPress={() => onDragOverBasket?.(true)} />
-        <Pressable testID='blanket-hover-off' onPress={() => onDragOverBasket?.(false)} />
-        <Pressable testID='blanket-release' onPress={() => onDropEnd?.()} />
-        <Pressable
-          testID='blanket-drop'
-          onPress={() => {
-            onDropEnd?.();
-            onItemDrop(0);
-          }}
-        />
-      </View>
-    ),
-  };
-});
-
 describe('NumberPicnicScreen', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockPicnicMode = 'make-amount';
-    mockPicnicStage = '1-5';
-    jest.useFakeTimers();
+    mockMode = 'make-amount';
+    mockStage = '1-5';
+    jest.spyOn(Math, 'random').mockReturnValue(0);
   });
 
-  afterEach(() => {
-    jest.useRealTimers();
-  });
+  afterEach(() => jest.restoreAllMocks());
 
-  it('shows correct prompt with item name and count', () => {
-    const { getAllByText, getByText } = render(<NumberPicnicScreen />);
-
-    // Should show prompt with target count and item name
-    expect(getByText(/Make/)).toBeTruthy();
-    expect(getAllByText(/translated picnic item/).length).toBeGreaterThan(0);
-    expect(getByText(/translated basket 0 translated picnic item/)).toBeTruthy();
-    expect(getByText('translated basket hint')).toBeTruthy();
-  });
-
-  it('shows one target representation for the target count', () => {
-    const { getByTestId, queryByText } = render(<NumberPicnicScreen />);
-
-    expect(getByTestId('number-picnic-target-representation')).toBeTruthy();
-    expect(queryByText(/🟢/)).toBeNull();
-  });
-
-  it('renders a guided choice mode without requiring drag input', () => {
-    mockPicnicMode = 'find-amount';
-    const { getByTestId, getByText } = render(<NumberPicnicScreen />);
-
-    expect(getByTestId('number-picnic-choices')).toBeTruthy();
-    expect(getByText('Show a hint')).toBeTruthy();
-    expect(getByText('Hear the instruction again')).toBeTruthy();
-    expect(getByText('Try a new example')).toBeTruthy();
-  });
-
-  it('presents match-numeral as a quantity source with numeral-only choices', () => {
-    mockPicnicMode = 'match-numeral';
-    const { getByTestId, getAllByText, getByText } = render(<NumberPicnicScreen />);
-
-    expect(getByText('Which numeral matches this group?')).toBeTruthy();
-    expect(getByTestId('number-picnic-match-quantity')).toBeTruthy();
-    expect(getAllByText(/^\d+$/).length).toBeGreaterThan(0);
-    expect(() => getByText('quantity pattern')).toThrow();
-  });
-
-  it('makes add-one-more a placement round with the starting quantity already in the basket', () => {
-    mockPicnicMode = 'add-one-more';
-    mockPicnicStage = '6-10';
+  it('lets a child fill the basket by touch, undo, and choose when to start the next round', () => {
+    jest.spyOn(Math, 'random').mockReturnValueOnce(0).mockReturnValueOnce(0.2);
     const { getByTestId, getByText, queryByTestId } = render(<NumberPicnicScreen />);
 
-    expect(getByText(/Add one more/)).toBeTruthy();
-    expect(getByText(/basket-items:\d+\/\d+/)).toBeTruthy();
-    expect(getByTestId('picnic-blanket')).toBeTruthy();
-    expect(queryByTestId('number-picnic-choices')).toBeNull();
-  });
-
-  it('keeps More/fewer groups separate and exposes both non-drag choices', () => {
-    mockPicnicMode = 'more-fewer';
-    const { getByTestId } = render(<NumberPicnicScreen />);
-
-    expect(getByTestId('number-picnic-groups')).toBeTruthy();
-    expect(getByTestId('number-picnic-choice-left')).toBeTruthy();
-    expect(getByTestId('number-picnic-choice-right')).toBeTruthy();
-  });
-
-  it('shows items on the blanket', () => {
-    const { getByTestId } = render(<NumberPicnicScreen />);
-
-    // Items should be rendered on the blanket with testIDs
-    expect(getByTestId('picnic-item-0')).toBeTruthy();
-    expect(getByTestId('picnic-item-1')).toBeTruthy();
-  });
-
-  it('shows basket count starting at 0', () => {
-    const { getByText } = render(<NumberPicnicScreen />);
-
-    // Basket should show 0/count
-    expect(getByText(/0\//)).toBeTruthy();
-  });
-
-  it('disables scroll during an active drag without highlighting the basket until overlap is reported', () => {
-    const { getByTestId, getByText } = render(<NumberPicnicScreen />);
-
-    expect(getByTestId('number-picnic-scroll').props.scrollEnabled).toBe(true);
-    expect(getByText('drop-target:no')).toBeTruthy();
-
-    fireEvent.press(getByTestId('blanket-start-drag'));
-
-    expect(getByTestId('number-picnic-scroll').props.scrollEnabled).toBe(false);
-    expect(getByText('drop-target:no')).toBeTruthy();
-
-    fireEvent.press(getByTestId('blanket-hover-on'));
-
-    expect(getByText('drop-target:yes')).toBeTruthy();
-  });
-
-  it('releasing outside the basket clears drag state without adding an item', () => {
-    const { getByTestId, getByText } = render(<NumberPicnicScreen />);
-
-    fireEvent.press(getByTestId('blanket-start-drag'));
-    fireEvent.press(getByTestId('blanket-hover-on'));
-    fireEvent.press(getByTestId('blanket-release'));
-
-    expect(getByTestId('number-picnic-scroll').props.scrollEnabled).toBe(true);
-    expect(getByText('drop-target:no')).toBeTruthy();
-    expect(getByText(/basket-items:0\//)).toBeTruthy();
-  });
-
-  it('valid drops increment the basket once and clear transient drag state', () => {
-    const { getByTestId, getByText } = render(<NumberPicnicScreen />);
-
-    fireEvent.press(getByTestId('blanket-start-drag'));
-    fireEvent.press(getByTestId('blanket-hover-on'));
-    fireEvent.press(getByTestId('blanket-drop'));
+    expect(getByText('Make 2 berries in the basket')).toBeTruthy();
+    expect(getByText('Tap an item or drag it up to the basket')).toBeTruthy();
+    expect(getByTestId('number-picnic-target-representation')).toBeTruthy();
 
     act(() => {
-      jest.advanceTimersByTime(300);
+      fireEvent.press(getByTestId('picnic-item-0'));
+      fireEvent.press(getByTestId('picnic-item-1'));
     });
-
-    expect(getByTestId('number-picnic-scroll').props.scrollEnabled).toBe(true);
-    expect(getByText('drop-target:no')).toBeTruthy();
-    expect(getByText(/basket-items:1\//)).toBeTruthy();
-  });
-
-  it('resets blanket items when new round starts - BUG: blanket keeps old emoji', () => {
-    // This test captures the bug where blanket items don't update
-    // when a new round starts with a different emoji
-
-    const { getByTestId, rerender } = render(<NumberPicnicScreen />);
-
-    // First render - get the first item's accessibility label
-    const firstItem = getByTestId('picnic-item-0');
-    const initialLabel = firstItem.props.accessibilityLabel;
-
-    // The initial emoji should be something (like 🍓 or 🥕)
-    expect(initialLabel).toBeTruthy();
-
-    // Now simulate a new round by re-rendering with different state
-    // In the real app, this happens when:
-    // 1. User completes the puzzle (basketCount === targetCount)
-    // 2. isSuccess becomes true
-    // 3. Basket animates out
-    // 4. New prompt is generated with potentially different emoji
-    // 5. Basket re-enters with new emoji
-
-    // The bug: even though prompt changes, the blanket still shows old emoji
-    // This test verifies the blanket SHOULD update with new emoji
-
-    // For now, let's just verify the component renders
-    rerender(<NumberPicnicScreen />);
-
-    // After rerender, the item should still exist
-    expect(getByTestId('picnic-item-0')).toBeTruthy();
-  });
-
-  it('clears basket hover state when reset is pressed', () => {
-    const { getByTestId, getByText } = render(<NumberPicnicScreen />);
-
-    fireEvent.press(getByTestId('blanket-start-drag'));
-    fireEvent.press(getByTestId('blanket-hover-on'));
-    expect(getByText('drop-target:yes')).toBeTruthy();
-
-    fireEvent.press(getByTestId('number-picnic-reset'));
-
-    expect(getByText('drop-target:no')).toBeTruthy();
-    expect(getByTestId('number-picnic-scroll').props.scrollEnabled).toBe(true);
-  });
-
-  it('exposes deliberate undo and reset controls', () => {
-    const { getByTestId, getByText } = render(<NumberPicnicScreen />);
-
-    fireEvent.press(getByTestId('blanket-drop'));
-    act(() => jest.advanceTimersByTime(300));
-    expect(getByText(/basket-items:1\//)).toBeTruthy();
+    expect(getByText('2/2').props.accessibilityLabel).toBe('Basket with 2 berries. Target 2.');
+    expect(getByTestId('number-picnic-completion-announcement')).toHaveTextContent(
+      'You found the right amount.',
+    );
+    expect(getByTestId('picnic-item-2')).toBeDisabled();
 
     fireEvent.press(getByTestId('number-picnic-undo'));
-    expect(getByText(/basket-items:0\//)).toBeTruthy();
+    expect(getByText('1/2')).toBeTruthy();
+    expect(getByTestId('picnic-item-1')).toBeEnabled();
+    expect(queryByTestId('number-picnic-completion-announcement')).toBeNull();
 
+    fireEvent.press(getByTestId('picnic-item-1'));
+    fireEvent.press(getByTestId('number-picnic-next'));
+    expect(getByText('0/1')).toBeTruthy();
+  });
+
+  it('lets a child leave a partially filled picnic in one tap', () => {
+    jest.spyOn(Math, 'random').mockReturnValueOnce(0).mockReturnValueOnce(0.2);
+    const { getByTestId, getByText } = render(<NumberPicnicScreen />);
+
+    fireEvent.press(getByTestId('picnic-item-0'));
+    expect(getByText('1/2')).toBeTruthy();
+    fireEvent.press(getByTestId('number-picnic-next'));
+    expect(getByText('0/1')).toBeTruthy();
+  });
+
+  it('keeps prefilled items in place and restores only the added item with Reset', () => {
+    mockMode = 'add-one-more';
+    mockStage = '6-10';
+    const { getByTestId, getByText, getAllByTestId } = render(<NumberPicnicScreen />);
+
+    expect(getByText('There are 6 berries. Add one more to make 7')).toBeTruthy();
+    expect(getByTestId('picnic-placed-item-0').props.accessibilityRole).toBeUndefined();
+    expect(getAllByTestId(/^picnic-item-/)).toHaveLength(3);
+    fireEvent.press(getByTestId('picnic-item-6'));
+    expect(getByText('7/7')).toBeTruthy();
     fireEvent.press(getByTestId('number-picnic-reset'));
-    expect(getByText(/basket-items:0\//)).toBeTruthy();
-  });
-});
-
-describe('Number Picnic overlap components', () => {
-  const { translateNumberPicnicRect, doesNumberPicnicRectOverlap } = jest.requireActual(
-    '../components/numberpicnic/PicnicBlanket',
-  );
-
-  it('rejects upward drags that still miss the visible basket', () => {
-    const basketRect = { x: 100, y: 100, width: 120, height: 120 };
-    const translatedItemRect = translateNumberPicnicRect(
-      { x: 0, y: 350, width: 56, height: 56 },
-      0,
-      -250,
-    );
-
-    expect(doesNumberPicnicRectOverlap(translatedItemRect, basketRect)).toBe(false);
+    expect(getByText('6/7')).toBeTruthy();
+    expect(getByTestId('picnic-item-6')).toBeEnabled();
   });
 
-  it('uses the same visible overlap check for hover and valid drop acceptance', () => {
-    const basketRect = { x: 100, y: 100, width: 120, height: 120 };
-    const translatedItemRect = translateNumberPicnicRect(
-      { x: 120, y: 350, width: 56, height: 56 },
-      0,
-      -200,
-    );
+  it('uses both More or Fewer cards as the answer controls and confirms a correct selection', () => {
+    mockMode = 'more-fewer';
+    const { getAllByRole, getByRole, getByText, queryByText } = render(<NumberPicnicScreen />);
 
-    expect(doesNumberPicnicRectOverlap(translatedItemRect, basketRect)).toBe(true);
+    const left = getByRole('button', { name: 'Left group showing 1 item' });
+    const right = getByRole('button', { name: 'Right group showing 2 items' });
+    expect(within(left).getByText('Left group')).toBeTruthy();
+    expect(within(right).getByText('Right group')).toBeTruthy();
+    expect(getAllByRole('button', { name: /group showing/ })).toHaveLength(2);
+
+    fireEvent.press(left);
+    expect(getByText('That group does not have more items. You can try again.')).toBeTruthy();
+    fireEvent.press(right);
+    expect(getByText('You found the right amount.')).toBeTruthy();
+    expect(queryByText('That group does not have more items. You can try again.')).toBeNull();
+    expect(right).toBeDisabled();
+  });
+
+  it('keeps the numeral hidden on the prompt and advances an unfinished guided example in one tap', () => {
+    mockMode = 'match-numeral';
+    jest.spyOn(Math, 'random').mockReturnValueOnce(0).mockReturnValueOnce(0.2);
+    const { getByTestId, getByRole, getByText, queryByText } = render(<NumberPicnicScreen />);
+
+    const quantity = getByTestId('number-picnic-match-quantity');
+    expect(quantity.props.accessibilityLabel).toMatch(/2 items shown in a frame/);
+    expect(within(quantity).queryByText('2')).toBeNull();
+
+    fireEvent.press(getByRole('button', { name: 'Numeral 1' }));
+    expect(getByText('That numeral does not match the group. You can try again.')).toBeTruthy();
+
+    fireEvent.press(getByRole('button', { name: 'Try a new example' }));
+    expect(quantity.props.accessibilityLabel).toMatch(/1 item shown in a frame/);
+    expect(queryByText('That numeral does not match the group. You can try again.')).toBeNull();
+    expect(getByTestId('number-picnic-hint')).toBeEnabled();
+  });
+
+  it('locks scrolling only while dragging and adds one item when released over the basket', () => {
+    jest
+      .spyOn(PanResponder, 'create')
+      .mockImplementation(
+        (handlers) =>
+          ({ panHandlers: handlers }) as unknown as ReturnType<typeof PanResponder.create>,
+      );
+    type MeasureCallback = Parameters<View['measureInWindow']>[0];
+    jest.spyOn(View.prototype, 'measureInWindow').mockImplementation(function (
+      this: View,
+      callback: MeasureCallback,
+    ) {
+      if (this.props.testID === 'picnic-basket-drop-zone') {
+        callback(100, 100, 150, 150);
+      } else callback(100, 300, 56, 56);
+    });
+    const { getByTestId, getByText } = render(<NumberPicnicScreen />);
+
+    const scroll = getByTestId('number-picnic-scroll');
+    const { onPanResponderGrant, onPanResponderMove, onPanResponderRelease } =
+      getByTestId('picnic-drag-0').props;
+    expect(scroll.props.scrollEnabled).toBe(true);
+    act(() => onPanResponderGrant());
+    expect(scroll.props.scrollEnabled).toBe(false);
+    expect(getByTestId('number-picnic-next')).toBeDisabled();
+
+    act(() => {
+      onPanResponderMove({}, { dx: 0, dy: -80, moveX: 110, moveY: 220 });
+      onPanResponderRelease();
+    });
+
+    expect(scroll.props.scrollEnabled).toBe(true);
+    expect(getByText('1/1')).toBeTruthy();
   });
 });

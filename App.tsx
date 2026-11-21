@@ -26,6 +26,7 @@ import { installPwaBackNavigationGuard } from './src/utils/pwaBackGuard';
 import { trackScreenView } from './src/utils/analytics';
 import { PASTEL_COLORS } from './src/types';
 import { useThemeColors } from './src/utils/theme';
+import { useAnimationEnabled } from './src/ui/animations';
 import { useFonts } from './src/ui/fonts';
 import { GentleErrorBoundary } from './src/components/GentleErrorBoundary';
 import { installPwaInteractionGuards } from './src/utils/pwaInteractionGuards';
@@ -58,6 +59,7 @@ function getActiveRouteName(state: NavigationState | undefined): string | undefi
 
 const AppNavigator: React.FC = () => {
   const { resolvedMode } = useThemeColors();
+  const animationEnabled = useAnimationEnabled();
   const routeNameRef = useRef<AppRouteName | undefined>(undefined);
 
   useEffect(() => {
@@ -92,6 +94,7 @@ const AppNavigator: React.FC = () => {
         <Stack.Navigator
           screenOptions={{
             headerShown: false,
+            animation: animationEnabled ? 'default' : 'none',
             cardStyle: { flex: 1, minHeight: 0 },
           }}
         >

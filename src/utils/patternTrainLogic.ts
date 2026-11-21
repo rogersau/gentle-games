@@ -14,15 +14,14 @@ export interface PatternTemplate {
   label: string;
   indexes: number[];
   unitLength: number;
-  displayLength: number;
 }
 
 const PATTERN_POOLS: Record<Difficulty, PatternTemplate[]> = {
-  easy: [{ id: 'ab', label: 'AB pattern', indexes: [0, 1, 0, 1], unitLength: 2, displayLength: 4 }],
+  easy: [{ id: 'ab', label: 'AB pattern', indexes: [0, 1, 0, 1], unitLength: 2 }],
   medium: [
-    { id: 'abc', label: 'ABC pattern', indexes: [0, 1, 2, 0, 1], unitLength: 3, displayLength: 5 },
-    { id: 'aab', label: 'AAB pattern', indexes: [0, 0, 1, 0, 0], unitLength: 3, displayLength: 5 },
-    { id: 'abb', label: 'ABB pattern', indexes: [0, 1, 1, 0, 1], unitLength: 3, displayLength: 5 },
+    { id: 'abc', label: 'ABC pattern', indexes: [0, 1, 2, 0, 1], unitLength: 3 },
+    { id: 'aab', label: 'AAB pattern', indexes: [0, 0, 1, 0, 0], unitLength: 3 },
+    { id: 'abb', label: 'ABB pattern', indexes: [0, 1, 1, 0, 1], unitLength: 3 },
   ],
   hard: [
     {
@@ -30,21 +29,18 @@ const PATTERN_POOLS: Record<Difficulty, PatternTemplate[]> = {
       label: 'AABB pattern',
       indexes: [0, 0, 1, 1, 0, 0],
       unitLength: 4,
-      displayLength: 6,
     },
     {
       id: 'abba',
       label: 'ABBA pattern',
       indexes: [0, 1, 1, 0, 0, 1],
       unitLength: 4,
-      displayLength: 6,
     },
     {
       id: 'abcb',
       label: 'ABCB pattern',
       indexes: [0, 1, 2, 1, 0, 1],
       unitLength: 4,
-      displayLength: 6,
     },
   ],
 };
@@ -73,8 +69,10 @@ const getRandomPatternTemplate = (difficulty: Difficulty, rng: () => number): Pa
 };
 
 const getMissingIndex = (template: PatternTemplate, rng: () => number): number => {
-  // Keep the first symbol visible, while allowing middle positions to be tested.
-  const positions = Array.from({ length: template.displayLength - 1 }, (_, index) => index + 1);
+  // Keep the first carriage and at least one visible copy of the missing picture.
+  const positions = template.indexes.flatMap((symbol, index, sequence) =>
+    index > 0 && sequence.indexOf(symbol) !== sequence.lastIndexOf(symbol) ? [index] : [],
+  );
   return positions[Math.min(positions.length - 1, Math.floor(rng() * positions.length))];
 };
 

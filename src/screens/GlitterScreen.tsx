@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +11,7 @@ import {
 } from '../games/glitterSettings';
 import { getGameSettings } from '../games/settings';
 import { ThemeColors } from '../types';
-import { useThemeColors, useReducedMotion } from '../utils/theme';
+import { useThemeColors } from '../utils/theme';
 import { AppScreen, GameHeader, AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useSettings } from '../context/SettingsContext';
@@ -29,11 +29,9 @@ export const GlitterScreen: React.FC = () => {
   const globeRef = useRef<GlitterGlobeRef>(null);
   const { viewport, onLayout } = useMeasuredGameViewport();
   const { settings, updateGameSettings } = useSettings();
-  const reducedMotion = useReducedMotion();
   const motionEnabled = useAnimationEnabled();
   const translate = t as unknown as (key: string) => string;
   const config = resolveGlitterSettings(getGameSettings(settings, 'glitter-fall'));
-  const [selectedPreset, setSelectedPreset] = useState<GlitterPreset>(config.preset);
 
   const globeSize = useMemo(() => {
     const { width, height } = calculateGameBoardSize(viewport, {
@@ -46,13 +44,11 @@ export const GlitterScreen: React.FC = () => {
   }, [viewport]);
 
   const savePreset = (preset: GlitterPreset) => {
-    setSelectedPreset(preset);
     void updateGameSettings('glitter-fall', GLITTER_PRESETS[preset]);
   };
 
   const addGlitter = () => {
-    globeRef.current?.addGlitter(6);
-    if (config.sound) void playBubblePopSound(settings);
+    if (globeRef.current?.addGlitter(6) && config.sound) void playBubblePopSound(settings);
   };
 
   return (
@@ -66,7 +62,7 @@ export const GlitterScreen: React.FC = () => {
     >
       <View style={styles.content}>
         <Text style={styles.subtitle} accessibilityRole='text'>
-          {t('games.glitterFall.subtitle')}
+          {motionEnabled ? t('games.glitterFall.subtitle') : t('games.glitterFall.stillSubtitle')}
         </Text>
 
         <View style={styles.globeWrap}>
@@ -76,31 +72,8 @@ export const GlitterScreen: React.FC = () => {
             height={globeSize}
             config={config}
             maxParticles={GLITTER_PARTICLE_COUNTS.dense + 20}
-            reducedMotion={reducedMotion}
             motionEnabled={motionEnabled}
           />
-        </View>
-
-        <View style={styles.profile}>
-          <Text style={styles.profileTitle} accessibilityRole='header'>
-            {translate('games.glitterFall.profileTitle')}
-          </Text>
-          <View style={styles.presetRow} accessibilityRole='radiogroup'>
-            {PRESETS.map((preset) => (
-              <AppButton
-                key={preset}
-                label={translate(`games.glitterFall.preset.${preset}`)}
-                variant={selectedPreset === preset ? 'primary' : 'ghost'}
-                size='sm'
-                onPress={() => savePreset(preset)}
-                accessibilityRole='radio'
-                accessibilityState={{ checked: selectedPreset === preset }}
-                aria-checked={selectedPreset === preset}
-                testID={`glitter-preset-${preset}`}
-                style={styles.presetButton}
-              />
-            ))}
-          </View>
         </View>
 
         <View style={styles.controls} testID='glitter-controls'>
@@ -121,6 +94,7 @@ export const GlitterScreen: React.FC = () => {
               label={translate('games.glitterFall.controls.swirl')}
               variant='primary'
               onPress={() => globeRef.current?.swirl()}
+              disabled={!motionEnabled}
               fullWidth
               testID='glitter-swirl-button'
               style={styles.controlButton}
@@ -132,10 +106,33 @@ export const GlitterScreen: React.FC = () => {
               label={translate('games.glitterFall.controls.settle')}
               variant='ghost'
               onPress={() => globeRef.current?.settle()}
+              disabled={!motionEnabled}
               fullWidth
               testID='glitter-settle-button'
               style={styles.controlButton}
             />
+          </View>
+        </View>
+
+        <View style={styles.profile}>
+          <Text style={styles.profileTitle} accessibilityRole='header'>
+            {translate('games.glitterFall.profileTitle')}
+          </Text>
+          <View style={styles.presetRow} accessibilityRole='radiogroup'>
+            {PRESETS.map((preset) => (
+              <AppButton
+                key={preset}
+                label={translate(`games.glitterFall.preset.${preset}`)}
+                variant={config.preset === preset ? 'primary' : 'ghost'}
+                size='sm'
+                onPress={() => savePreset(preset)}
+                accessibilityRole='radio'
+                accessibilityState={{ checked: config.preset === preset }}
+                aria-checked={config.preset === preset}
+                testID={`glitter-preset-${preset}`}
+                style={styles.presetButton}
+              />
+            ))}
           </View>
         </View>
       </View>
@@ -169,7 +166,6 @@ const createStyles = (colors: ThemeColors) =>
     profile: {
       width: '100%',
       alignItems: 'center',
-      marginBottom: Space.md,
     },
     profileTitle: {
       ...TypeStyle.label,
@@ -192,6 +188,7 @@ const createStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       justifyContent: 'center',
       gap: Space.sm,
+      marginBottom: Space.md,
     },
     controlButton: {
       minHeight: 80,

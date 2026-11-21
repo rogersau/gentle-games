@@ -18,14 +18,16 @@ export interface KeepyUppyBounds {
 
 export const MAX_BALLOONS = 3;
 export const GROUND_POP_DELAY_MS = 1200;
+export const BALLOON_WIDTH_RATIO = 1.7;
+export const BALLOON_HEIGHT_RATIO = 2.1;
+export const GROUND_HEIGHT = 50;
 
 const GRAVITY = 200;
 const AIR_DRAG = 0.993;
 const BALLOON_RADIUS = 34;
 const BOUNCE = 0.62;
 
-// default palette used when no theme is supplied (for backwards compatibility/testing)
-const _DEFAULT_BALLOON_COLORS = [...BALLOON_PALETTE];
+let nextBalloonId = 0;
 
 /**
  * Build a balloon colour palette adapted for the current theme.
@@ -58,6 +60,31 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 
 const randomInRange = (min: number, max: number, rng: () => number) => min + (max - min) * rng();
 
+const balloonLimits = (radius: number, bounds: KeepyUppyBounds) => {
+  const left = Math.min(radius, bounds.width / 2);
+  const top = Math.min((radius * BALLOON_HEIGHT_RATIO) / 2, bounds.height / 2);
+  return {
+    left,
+    right: bounds.width - left,
+    top,
+    bottom: Math.max(top, bounds.height - GROUND_HEIGHT - top),
+  };
+};
+
+export const containBalloon = (balloon: KeepyUppyBalloon, bounds: KeepyUppyBounds) => {
+  const { left, right, top, bottom } = balloonLimits(balloon.radius, bounds);
+  const x = clamp(balloon.x, left, right);
+  const y = balloon.groundedAt === null ? clamp(balloon.y, top, bottom) : bottom;
+  return x === balloon.x && y === balloon.y ? balloon : { ...balloon, x, y };
+};
+
+export const moveStillBalloon = (balloon: KeepyUppyBalloon, bounds: KeepyUppyBounds) => {
+  const { top, bottom } = balloonLimits(balloon.radius, bounds);
+  const liftedY = top + (bottom - top) / 4;
+  const y = balloon.y <= liftedY ? top + (bottom - top) / 2 : liftedY;
+  return { ...balloon, y, vx: 0, vy: 0, groundedAt: null };
+};
+
 export interface CreateBalloonOptions {
   colors?: ThemeColors;
   rng?: () => number;
@@ -73,11 +100,12 @@ export const createBalloon = (
   const radius = BALLOON_RADIUS;
   const palette = resolveBalloonPalette(colors, resolvedMode);
   const color = overrideColor ?? pickBalloonColor(palette, [], rng);
+  const { left, right, top, bottom } = balloonLimits(radius, bounds);
 
   return {
-    id: `keepy-uppy-balloon-${Date.now()}-${Math.floor(rng() * 100000)}`,
-    x: randomInRange(radius, Math.max(radius, bounds.width - radius), rng),
-    y: randomInRange(bounds.height * 0.22, bounds.height * 0.56, rng),
+    id: `keepy-uppy-balloon-${nextBalloonId++}`,
+    x: randomInRange(left, right, rng),
+    y: clamp(randomInRange(bounds.height * 0.22, bounds.height * 0.56, rng), top, bottom),
     vx: randomInRange(-36, 36, rng),
     vy: randomInRange(-28, 18, rng),
     radius,
@@ -90,6 +118,7 @@ export interface AddBalloonOptions {
   colors?: ThemeColors;
   rng?: () => number;
   resolvedMode?: string;
+  balloon?: KeepyUppyBalloon;
 }
 
 export const addBalloon = (
@@ -104,8 +133,19 @@ export const addBalloon = (
   const palette = resolveBalloonPalette(colors, resolvedMode);
   const used = balloons.map((b) => b.color);
   const color = pickBalloonColor(palette, used, rng);
+  const balloon =
+    options.balloon ?? createBalloon(bounds, { colors, rng, overrideColor: color, resolvedMode });
 
-  return [...balloons, createBalloon(bounds, { colors, rng, overrideColor: color, resolvedMode })];
+  const distanceToNearest = (x: number) =>
+    Math.min(...balloons.map((other) => Math.hypot(x - other.x, balloon.y - other.y)));
+  const { left, right } = balloonLimits(balloon.radius, bounds);
+  const x = [left, bounds.width / 2, right].reduce(
+    (best, candidate) =>
+      distanceToNearest(candidate) > distanceToNearest(best) ? candidate : best,
+    balloon.x,
+  );
+
+  return [...balloons, { ...balloon, x, color }];
 };
 
 export const tapBalloon = (
@@ -160,7 +200,11 @@ const resolveBalloonCollisions = (balloons: KeepyUppyBalloon[]): KeepyUppyBalloo
       const distance = Math.hypot(dx, dy);
       const minDistance = first.radius + second.radius;
 
-      if (distance === 0 || distance >= minDistance) {
+      if (
+        distance === 0 ||
+        distance >= minDistance ||
+        (first.groundedAt !== null && second.groundedAt !== null)
+      ) {
         continue;
       }
 
@@ -184,8 +228,8 @@ const resolveBalloonCollisions = (balloons: KeepyUppyBalloon[]): KeepyUppyBalloo
       first.vy += impulse * ny;
       second.vx -= impulse * nx;
       second.vy -= impulse * ny;
-      first.groundedAt = null;
-      second.groundedAt = null;
+      if (first.vy < 0) first.groundedAt = null;
+      if (second.vy < 0) second.groundedAt = null;
     }
   }
 
@@ -197,37 +241,33 @@ export const stepBalloons = (
   bounds: KeepyUppyBounds,
   deltaSeconds: number,
   nowMs: number,
+  allowPopping = true,
 ): { balloons: KeepyUppyBalloon[]; popped: number } => {
   const safeDelta = clamp(deltaSeconds, 0, 1 / 24);
-  const floorY = bounds.height - BALLOON_RADIUS;
 
   const moved = balloons
     .map((balloon) => {
+      const { left, right, top, bottom } = balloonLimits(balloon.radius, bounds);
       let vx = balloon.vx * AIR_DRAG;
       let vy = (balloon.vy + GRAVITY * safeDelta) * AIR_DRAG;
       let x = balloon.x + vx * safeDelta;
       let y = balloon.y + vy * safeDelta;
 
-      if (x < balloon.radius) {
-        x = balloon.radius;
+      if (x < left) {
+        x = left;
         vx = Math.abs(vx) * BOUNCE;
-      } else if (x > bounds.width - balloon.radius) {
-        x = bounds.width - balloon.radius;
+      } else if (x > right) {
+        x = right;
         vx = -Math.abs(vx) * BOUNCE;
       }
 
-      if (y < balloon.radius) {
-        y = balloon.radius;
+      if (y < top) {
+        y = top;
         vy = Math.abs(vy) * 0.3;
       }
 
-      let groundedAt = balloon.groundedAt;
-      if (y >= floorY) {
-        y = floorY;
-        vy = -Math.abs(vy) * 0.25;
-        groundedAt = groundedAt ?? nowMs;
-      } else if (groundedAt !== null) {
-        groundedAt = null;
+      if (y >= bottom) {
+        return { ...balloon, x, y: bottom, vx: 0, vy: 0, groundedAt: balloon.groundedAt ?? nowMs };
       }
 
       return {
@@ -236,13 +276,19 @@ export const stepBalloons = (
         y,
         vx,
         vy,
-        groundedAt,
+        groundedAt: null,
       };
     })
     .filter(
-      (balloon) => balloon.groundedAt === null || nowMs - balloon.groundedAt < GROUND_POP_DELAY_MS,
+      (balloon) =>
+        !allowPopping ||
+        balloon.groundedAt === null ||
+        nowMs - balloon.groundedAt < GROUND_POP_DELAY_MS,
     );
 
   const popped = balloons.length - moved.length;
-  return { balloons: resolveBalloonCollisions(moved), popped };
+  return {
+    balloons: resolveBalloonCollisions(moved).map((balloon) => containBalloon(balloon, bounds)),
+    popped,
+  };
 };

@@ -3,17 +3,23 @@ import React, {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { GestureResponderEvent, Pressable, StyleSheet, View } from 'react-native';
 import {
   addBalloon,
+  BALLOON_HEIGHT_RATIO,
+  BALLOON_WIDTH_RATIO,
+  containBalloon,
   createBalloon,
   flickBalloon,
+  GROUND_HEIGHT,
   KeepyUppyBalloon,
   KeepyUppyBounds,
+  moveStillBalloon,
   stepBalloons,
   tapBalloon,
 } from '../utils/keepyUppyLogic';
@@ -34,14 +40,22 @@ interface KeepyUppyBoardProps {
   onPoppedChange?: (popped: number) => void;
   easyMode?: boolean;
   motionEnabled?: boolean;
+  allowPopping?: boolean;
+}
+
+interface BalloonPress {
+  balloonId: string;
+  pageX: number;
+  pageY: number;
+  offsetX: number;
+  offsetY: number;
+  startedAt: number;
 }
 
 const STEP_MS = 1000 / 30;
-const BALLOON_WIDTH_RATIO = 1.7;
-const BALLOON_HEIGHT_RATIO = 2.1;
 const BALLOON_STRING_HEIGHT = 22;
 const BALLOON_KNOT_HEIGHT = 8;
-const MIN_FLICK_DISTANCE = 8;
+const MIN_FLICK_DISTANCE = 16;
 const MAX_FLICK_DURATION_MS = 500;
 
 export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>(
@@ -53,6 +67,7 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
       onPoppedChange,
       easyMode = false,
       motionEnabled = true,
+      allowPopping = true,
     },
     ref,
   ) => {
@@ -63,10 +78,14 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
       () => createBalloon(bounds, { colors, resolvedMode }),
       [bounds, colors, resolvedMode],
     );
-    const [score, setScore] = useState(0);
-    const [popped, setPopped] = useState(0);
-    const touchStartRef = useRef<Record<string, { x: number; y: number; startedAt: number }>>({});
-    const [balloons, setBalloons] = useState<KeepyUppyBalloon[]>(() => [createBoardBalloon()]);
+    const [{ balloons, score, popped }, setBoard] = useState(() => ({
+      balloons: [createBoardBalloon()],
+      score: 0,
+      popped: 0,
+    }));
+    const touchStartRef = useRef<BalloonPress | null>(null);
+    const elapsedPlayMs = useRef(0);
+    const previousBoundsRef = useRef(bounds);
     const onBalloonCountChangeRef = useRef(onBalloonCountChange);
     const onScoreChangeRef = useRef(onScoreChange);
     const onPoppedChangeRef = useRef(onPoppedChange);
@@ -77,8 +96,10 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
 
     useEffect(() => {
       if (balloons.length === 0) {
-        setBalloons([createBoardBalloon()]);
-        return;
+        const newBalloon = createBoardBalloon();
+        setBoard((previous) =>
+          previous.balloons.length === 0 ? { ...previous, balloons: [newBalloon] } : previous,
+        );
       }
     }, [balloons.length, createBoardBalloon]);
 
@@ -96,31 +117,73 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
       onPoppedChangeRef.current?.(popped);
     }, [popped]);
 
+    useLayoutEffect(() => {
+      const previousBounds = previousBoundsRef.current;
+      if (previousBounds.width === bounds.width && previousBounds.height === bounds.height) return;
+      previousBoundsRef.current = bounds;
+      touchStartRef.current = null;
+      setBoard((previous) => ({
+        ...previous,
+        balloons: previous.balloons.map((balloon) =>
+          containBalloon(
+            {
+              ...balloon,
+              x: (balloon.x * bounds.width) / previousBounds.width,
+              y: (balloon.y * bounds.height) / previousBounds.height,
+            },
+            bounds,
+          ),
+        ),
+      }));
+    }, [bounds]);
+
     useEffect(() => {
       if (!motionEnabled) return;
       const timer = setInterval(() => {
-        const now = Date.now();
-        setBalloons((previous) => {
-          const stepped = stepBalloons(previous, bounds, STEP_MS / 1000, now);
-          if (stepped.popped > 0) {
-            setPopped((currentPopped) => currentPopped + stepped.popped);
+        // Count simulated play time so a pause also pauses the ground grace period.
+        if (allowPopping) elapsedPlayMs.current += STEP_MS;
+        const now = elapsedPlayMs.current;
+        setBoard((previous) => {
+          if (previous.balloons.length === 0) return previous;
+          if (!allowPopping && previous.balloons.every((balloon) => balloon.groundedAt !== null)) {
+            return previous;
           }
-          return stepped.balloons;
+          const stepped = stepBalloons(
+            previous.balloons,
+            bounds,
+            STEP_MS / 1000,
+            now,
+            allowPopping,
+          );
+          return {
+            ...previous,
+            balloons: stepped.balloons,
+            popped: previous.popped + stepped.popped,
+          };
         });
       }, STEP_MS);
 
       return () => clearInterval(timer);
-    }, [bounds, motionEnabled]);
+    }, [allowPopping, bounds, motionEnabled]);
 
     const resetBoard = useCallback(() => {
-      setBalloons([createBoardBalloon()]);
-      setScore(0);
-      setPopped(0);
+      touchStartRef.current = null;
+      setBoard({ balloons: [createBoardBalloon()], score: 0, popped: 0 });
     }, [createBoardBalloon]);
 
     const addBoardBalloon = useCallback(() => {
-      setBalloons((previous) => addBalloon(previous, bounds, { colors, resolvedMode }));
-    }, [bounds, colors, resolvedMode]);
+      const balloon = createBoardBalloon();
+      const colorSample = Math.random();
+      setBoard((previous) => {
+        const next = addBalloon(previous.balloons, bounds, {
+          balloon,
+          colors,
+          resolvedMode,
+          rng: () => colorSample,
+        });
+        return next === previous.balloons ? previous : { ...previous, balloons: next };
+      });
+    }, [bounds, colors, createBoardBalloon, resolvedMode]);
 
     useImperativeHandle(
       ref,
@@ -132,54 +195,50 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
       [addBoardBalloon, balloons.length, resetBoard],
     );
 
-    const toBoardPoint = useCallback(
-      (balloon: KeepyUppyBalloon, locationX: number, locationY: number) => {
-        const balloonW = balloon.radius * BALLOON_WIDTH_RATIO;
-        const balloonH = balloon.radius * BALLOON_HEIGHT_RATIO;
+    const handleBalloonPress = (balloonId: string, event: GestureResponderEvent) => {
+      const nativeEvent = event?.nativeEvent as GestureResponderEvent['nativeEvent'] & {
+        detail?: number;
+      };
+      const touchStart = touchStartRef.current;
+      touchStartRef.current = null;
+      // Keyboard and assistive activations may have no pointer coordinates.
+      const pointerStart =
+        touchStart?.balloonId === balloonId &&
+        nativeEvent?.detail !== 0 &&
+        Number.isFinite(nativeEvent?.pageX) &&
+        Number.isFinite(nativeEvent?.pageY)
+          ? touchStart
+          : null;
+      const deltaX = pointerStart ? nativeEvent.pageX - pointerStart.pageX : 0;
+      const deltaY = pointerStart ? nativeEvent.pageY - pointerStart.pageY : 0;
+      const durationMs = pointerStart ? Date.now() - pointerStart.startedAt : 0;
+      const isFlick =
+        durationMs <= MAX_FLICK_DURATION_MS && Math.hypot(deltaX, deltaY) >= MIN_FLICK_DISTANCE;
+
+      setBoard((previous) => {
+        const balloon = previous.balloons.find((current) => current.id === balloonId);
+        if (!balloon) return previous;
+
+        let lifted: KeepyUppyBalloon;
+        if (!motionEnabled) {
+          lifted = moveStillBalloon(balloon, bounds);
+        } else if (isFlick) {
+          lifted = flickBalloon(balloon, deltaX, deltaY, durationMs);
+        } else {
+          lifted = tapBalloon(
+            balloon,
+            balloon.x + (pointerStart?.offsetX ?? 0),
+            balloon.y + (pointerStart?.offsetY ?? 0),
+            easyMode,
+          );
+        }
         return {
-          x: balloon.x - balloonW / 2 + locationX,
-          y: balloon.y - balloonH / 2 + locationY,
+          ...previous,
+          balloons: previous.balloons.map((current) => (current === balloon ? lifted : current)),
+          score: previous.score + 1,
         };
-      },
-      [],
-    );
-
-    const handleBalloonPress = useCallback(
-      (balloon: KeepyUppyBalloon, locationX: number, locationY: number) => {
-        const tapPoint = toBoardPoint(balloon, locationX, locationY);
-        setScore((currentScore) => currentScore + 1);
-        setBalloons((previous) =>
-          previous.map((current) =>
-            current.id === balloon.id
-              ? tapBalloon(current, tapPoint.x, tapPoint.y, easyMode)
-              : current,
-          ),
-        );
-      },
-      [easyMode, toBoardPoint],
-    );
-
-    const handleBalloonRelease = useCallback(
-      (balloon: KeepyUppyBalloon, pageX: number, pageY: number) => {
-        const touchStart = touchStartRef.current[balloon.id];
-        delete touchStartRef.current[balloon.id];
-        if (!touchStart) {
-          return;
-        }
-        const deltaX = pageX - touchStart.x;
-        const deltaY = pageY - touchStart.y;
-        const durationMs = Math.max(1, Date.now() - touchStart.startedAt);
-        if (Math.hypot(deltaX, deltaY) < MIN_FLICK_DISTANCE || durationMs > MAX_FLICK_DURATION_MS) {
-          return;
-        }
-        setBalloons((previous) =>
-          previous.map((current) =>
-            current.id === balloon.id ? flickBalloon(current, deltaX, deltaY, durationMs) : current,
-          ),
-        );
-      },
-      [],
-    );
+      });
+    };
 
     return (
       <View style={[styles.board, { width: bounds.width, height: bounds.height }]}>
@@ -190,32 +249,34 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
         <View style={styles.ground}>
           <View style={styles.grassStripe} />
         </View>
-        {balloons.map((balloon) => {
+        {balloons.map((balloon, index) => {
           const balloonW = balloon.radius * BALLOON_WIDTH_RATIO;
           const balloonH = balloon.radius * BALLOON_HEIGHT_RATIO;
           return (
-            <TouchableOpacity
+            <Pressable
               key={balloon.id}
               accessibilityRole='button'
-              accessibilityLabel={t('games.keepyUppy.balloonAccessibility')}
+              accessibilityLabel={t('games.keepyUppy.balloonAccessibility', { number: index + 1 })}
+              accessibilityHint={t(
+                motionEnabled ? 'games.keepyUppy.liftHint' : 'games.keepyUppy.moveHint',
+              )}
+              android_disableSound
               testID={`balloon-${balloon.id}`}
               onPressIn={(event) => {
-                touchStartRef.current[balloon.id] = {
-                  x: event.nativeEvent.pageX,
-                  y: event.nativeEvent.pageY,
-                  startedAt: Date.now(),
-                };
+                const { pageX, pageY, locationX, locationY } = event.nativeEvent;
+                touchStartRef.current =
+                  Number.isFinite(pageX) && Number.isFinite(pageY)
+                    ? {
+                        balloonId: balloon.id,
+                        pageX,
+                        pageY,
+                        offsetX: Number.isFinite(locationX) ? locationX - balloonW / 2 : 0,
+                        offsetY: Number.isFinite(locationY) ? locationY - balloonH / 2 : 0,
+                        startedAt: Date.now(),
+                      }
+                    : null;
               }}
-              onPress={(event) => {
-                handleBalloonPress(
-                  balloon,
-                  event.nativeEvent.locationX,
-                  event.nativeEvent.locationY,
-                );
-              }}
-              onPressOut={(event) =>
-                handleBalloonRelease(balloon, event.nativeEvent.pageX, event.nativeEvent.pageY)
-              }
+              onPress={(event) => handleBalloonPress(balloon.id, event)}
               style={[
                 styles.balloonHitArea,
                 {
@@ -223,26 +284,28 @@ export const KeepyUppyBoard = forwardRef<KeepyUppyBoardRef, KeepyUppyBoardProps>
                   top: balloon.y - balloonH / 2,
                   width: balloonW,
                   height: balloonH + BALLOON_KNOT_HEIGHT + BALLOON_STRING_HEIGHT,
-                  opacity: balloon.groundedAt === null ? 1 : 0.72,
+                  opacity: allowPopping && balloon.groundedAt !== null ? 0.72 : 1,
                 },
               ]}
             >
-              <View
-                style={[
-                  styles.balloonBody,
-                  {
-                    width: balloonW,
-                    height: balloonH,
-                    borderRadius: balloonW / 2,
-                    backgroundColor: balloon.color,
-                  },
-                ]}
-              >
-                <View style={styles.balloonShine} />
+              <View pointerEvents='none' style={styles.balloonArtwork}>
+                <View
+                  style={[
+                    styles.balloonBody,
+                    {
+                      width: balloonW,
+                      height: balloonH,
+                      borderRadius: balloonW / 2,
+                      backgroundColor: balloon.color,
+                    },
+                  ]}
+                >
+                  <View style={styles.balloonShine} />
+                </View>
+                <View style={[styles.balloonKnot, { borderTopColor: balloon.color }]} />
+                <View style={styles.balloonString} />
               </View>
-              <View style={[styles.balloonKnot, { borderTopColor: balloon.color }]} />
-              <View style={styles.balloonString} />
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </View>
@@ -298,7 +361,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       left: 0,
       right: 0,
       bottom: 0,
-      height: 50,
+      height: GROUND_HEIGHT,
       backgroundColor: colors.success,
       borderTopWidth: 3,
       borderTopColor: colors.cardBack,
@@ -313,6 +376,8 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     },
     balloonHitArea: {
       position: 'absolute',
+    },
+    balloonArtwork: {
       alignItems: 'center',
     },
     balloonBody: {

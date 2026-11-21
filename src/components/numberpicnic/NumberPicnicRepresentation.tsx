@@ -7,7 +7,7 @@ import { useThemeColors } from '../../utils/theme';
 
 interface NumberPicnicRepresentationProps {
   representation: Representation;
-  accessibilityLabel: string;
+  accessibilityLabel?: string;
   showNumeral?: boolean;
   style?: ViewStyle;
   testID?: string;
@@ -34,13 +34,17 @@ export const NumberPicnicRepresentation: React.FC<NumberPicnicRepresentationProp
   return (
     <View
       style={[styles.container, style]}
-      accessible
-      accessibilityRole='image'
-      accessibilityLabel={`${accessibilityLabel}; ${frameAccessibilityLabel}`}
+      accessible={Boolean(accessibilityLabel)}
+      accessibilityElementsHidden={!accessibilityLabel}
+      importantForAccessibility={accessibilityLabel ? 'auto' : 'no-hide-descendants'}
+      accessibilityRole={accessibilityLabel ? 'image' : undefined}
+      accessibilityLabel={
+        accessibilityLabel ? `${accessibilityLabel}. ${frameAccessibilityLabel}` : undefined
+      }
       testID={testID}
     >
       {showNumeral && (
-        <Text style={[styles.numeral, { color: colors.primary }]}>{representation.numeral}</Text>
+        <Text style={[styles.numeral, { color: colors.text }]}>{representation.numeral}</Text>
       )}
       <View
         style={[styles.frame, representation.frameCapacity === 10 && styles.tenFrame]}
@@ -49,13 +53,13 @@ export const NumberPicnicRepresentation: React.FC<NumberPicnicRepresentationProp
         {Array.from({ length: representation.frameCapacity }, (_, index) => (
           <View
             key={index}
-            style={[styles.cell, { borderColor: colors.borderSubtle }]}
+            style={[styles.cell, { borderColor: colors.textLight }]}
             testID={testID ? `${testID}-cell-${index}` : undefined}
           >
             <View
               style={[
                 styles.dot,
-                { backgroundColor: colors.success },
+                { backgroundColor: colors.textLight },
                 !filled.has(index) && styles.emptyDot,
               ]}
             />

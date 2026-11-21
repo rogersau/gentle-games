@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AppState, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { BreathingBall, BreathingBallRef, BallColorScheme } from '../components/BreathingBall';
+import { BreathingBall, BreathingBallRef, defaultColorSchemes } from '../components/BreathingBall';
 import { Mochi } from '../components/Mochi';
 import { useThemeColors } from '../utils/theme';
 import { useBackgroundMusic } from '../utils/music';
@@ -13,18 +13,12 @@ import { useAnimationEnabled } from '../ui/animations';
 import { BreathingSessionLength, getGameSettings } from '../games/settings';
 import type { ThemeColors } from '../types';
 
-type ActivityMode = 'opening' | 'watching' | 'active' | 'paused' | 'normal' | 'complete';
+type Activity =
+  | { mode: 'opening' | 'normal' | 'complete' }
+  | { mode: 'watching' | 'active'; paused: boolean };
 
 const MAX_BALL_SIZE = 250;
 const SESSION_OPTIONS: BreathingSessionLength[] = [3, 5, 10, 'open-ended'];
-
-const getColorSchemes = (): BallColorScheme[] => [
-  { primary: '#B4D7E8', accent: '#7FB3D5', name: 'Ocean' },
-  { primary: '#F5C6D6', accent: '#E8A4C9', name: 'Rose' },
-  { primary: '#C8E6C9', accent: '#A5D6A7', name: 'Mint' },
-  { primary: '#FFE0B2', accent: '#FFCC80', name: 'Sunset' },
-  { primary: '#E1BEE7', accent: '#CE93D8', name: 'Lavender' },
-];
 
 export const BreathingGardenScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -35,95 +29,78 @@ export const BreathingGardenScreen: React.FC = () => {
   const motionEnabled = useAnimationEnabled();
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const colorSchemes = useMemo(() => getColorSchemes(), []);
   const [colorIndex, setColorIndex] = useState(0);
-  const [mode, setMode] = useState<ActivityMode>('opening');
+  const [activity, setActivity] = useState<Activity>({ mode: 'opening' });
+  const activityRef = useRef(activity);
   const [phase, setPhase] = useState<'inhale' | 'exhale'>('inhale');
   const [progress, setProgress] = useState(0);
   const [completedBreaths, setCompletedBreaths] = useState(0);
   const ballRef = useRef<BreathingBallRef>(null);
-  const modeRef = useRef(mode);
-  const pausedActivityRef = useRef<'active' | 'watching'>('active');
   const { isPlaying, toggleMusic, stopMusic } = useBackgroundMusic();
-  const sessionLength = breathingSettings.sessionLength;
-  const visualCue = breathingSettings.visualCue;
-  const ballSize = Math.min(MAX_BALL_SIZE, Math.max(160, windowWidth - Space.lg * 4));
+  const { sessionLength, visualCue } = breathingSettings;
+  const { mode } = activity;
+  const isPaced = 'paused' in activity;
+  const paused = isPaced && activity.paused;
+  const ballSize = Math.max(1, Math.min(MAX_BALL_SIZE, windowWidth - Space.lg * 4));
+  const colorScheme = defaultColorSchemes[colorIndex];
 
-  modeRef.current = mode;
+  const changeActivity = useCallback((next: Activity) => {
+    activityRef.current = next;
+    setActivity(next);
+  }, []);
 
-  const pauseForInterruption = useCallback(() => {
-    ballRef.current?.pause();
+  const pause = useCallback(() => {
+    const current = activityRef.current;
+    if ('paused' in current && !current.paused) {
+      ballRef.current?.pause();
+      changeActivity({ ...current, paused: true });
+    }
     stopMusic();
-    setMode((current) => {
-      if (current === 'active' || current === 'watching') {
-        pausedActivityRef.current = current;
-        return 'paused';
-      }
-      return current;
-    });
-  }, [stopMusic]);
+  }, [changeActivity, stopMusic]);
 
-  useFocusEffect(
-    useCallback(() => {
-      return pauseForInterruption;
-    }, [pauseForInterruption]),
-  );
+  useFocusEffect(useCallback(() => pause, [pause]));
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state !== 'active') pauseForInterruption();
+      if (state !== 'active') pause();
     });
     return () => subscription.remove();
-  }, [pauseForInterruption]);
-
-  useEffect(
-    () => () => {
-      ballRef.current?.pause();
-      stopMusic();
-    },
-    [stopMusic],
-  );
+  }, [pause]);
 
   const begin = (nextMode: 'active' | 'watching') => {
     setCompletedBreaths(0);
     setPhase('inhale');
     setProgress(0);
-    setMode(nextMode);
+    changeActivity({ mode: nextMode, paused: false });
   };
 
-  const stop = () => {
-    ballRef.current?.pause();
-    stopMusic();
-    setMode('complete');
-  };
-
-  const handleCycleComplete = () => {
-    if (modeRef.current === 'watching') {
+  const finishActivity = useCallback(
+    (nextMode: 'opening' | 'complete') => {
       ballRef.current?.pause();
-      setMode('opening');
-      return;
-    }
-    if (modeRef.current !== 'active') return;
+      stopMusic();
+      changeActivity({ mode: nextMode });
+    },
+    [changeActivity, stopMusic],
+  );
 
-    setCompletedBreaths((current) => {
-      const next = current + 1;
-      if (sessionLength !== 'open-ended' && next >= sessionLength) {
-        ballRef.current?.pause();
-        stopMusic();
-        setMode('complete');
+  const handleCycleComplete = useCallback(
+    (count: number) => {
+      const currentMode = activityRef.current.mode;
+      if (currentMode === 'watching') {
+        finishActivity('opening');
+      } else if (currentMode === 'active' && sessionLength !== 'open-ended') {
+        if (count >= sessionLength) {
+          finishActivity('complete');
+        } else {
+          setCompletedBreaths(count);
+        }
       }
-      return next;
-    });
-  };
-
-  const resume = () => {
-    ballRef.current?.resume();
-    setMode(pausedActivityRef.current);
-  };
+    },
+    [finishActivity, sessionLength],
+  );
 
   const handleBack = () => {
-    ballRef.current?.pause();
-    stopMusic();
+    pause();
     navigation.goBack();
   };
 
@@ -134,6 +111,20 @@ export const BreathingGardenScreen: React.FC = () => {
         ? t('games.breathingGarden.session.openEnded')
         : t('games.breathingGarden.session.breaths', { count: value }),
   }));
+
+  const visualControl = (
+    <AppButton
+      label={t(visualCue ? 'games.breathingGarden.visualOff' : 'games.breathingGarden.visualOn')}
+      accessibilityLabel={t('games.breathingGarden.visualLabel')}
+      accessibilityRole='switch'
+      accessibilityState={{ checked: visualCue }}
+      aria-checked={visualCue}
+      onPress={() => updateGameSettings('breathing-garden', { visualCue: !visualCue })}
+      variant='ghost'
+      size='sm'
+      testID='breathing-visual-cue'
+    />
+  );
 
   const renderOpening = () => (
     <AppCard variant='elevated' style={styles.openingCard}>
@@ -163,11 +154,12 @@ export const BreathingGardenScreen: React.FC = () => {
         />
         <AppButton
           label={t('games.breathingGarden.breatheNormally')}
-          onPress={() => setMode('normal')}
+          onPress={() => changeActivity({ mode: 'normal' })}
           variant='ghost'
           fullWidth
           testID='breathing-normal'
         />
+        {visualControl}
         <AppButton
           label={t('games.breathingGarden.exit')}
           onPress={handleBack}
@@ -180,11 +172,14 @@ export const BreathingGardenScreen: React.FC = () => {
   );
 
   const renderProgressDots = () => {
-    if (sessionLength === 'open-ended' || mode === 'watching') return null;
+    if (sessionLength === 'open-ended' || mode !== 'active') return null;
     return (
       <View
         style={styles.progressDots}
+        accessible
+        accessibilityRole='progressbar'
         accessibilityLabel={t('games.breathingGarden.sessionProgress')}
+        accessibilityValue={{ min: 0, max: sessionLength, now: completedBreaths }}
       >
         {Array.from({ length: sessionLength }, (_, index) => (
           <View
@@ -192,8 +187,8 @@ export const BreathingGardenScreen: React.FC = () => {
             testID={`breathing-session-dot-${index}`}
             style={[
               styles.progressDot,
-              { borderColor: colors.primary },
-              index < completedBreaths && { backgroundColor: colors.primary },
+              { borderColor: colors.textLight },
+              index < completedBreaths && { backgroundColor: colors.textLight },
             ]}
           />
         ))}
@@ -215,48 +210,55 @@ export const BreathingGardenScreen: React.FC = () => {
         {mode === 'watching' ? (
           <Text style={styles.watchLabel}>{t('games.breathingGarden.watching')}</Text>
         ) : null}
-        <Text style={styles.phaseLabel} accessibilityLiveRegion='polite'>
-          {mode === 'paused'
-            ? t('games.breathingGarden.paused')
-            : visualCue
-              ? phase === 'inhale'
-                ? t('games.breathingGarden.inhale')
-                : t('games.breathingGarden.exhale')
-              : t('games.breathingGarden.cueOffMessage')}
-        </Text>
+        <View aria-live='polite'>
+          <Text style={styles.phaseLabel}>
+            {paused
+              ? t('games.breathingGarden.paused')
+              : t(
+                  phase === 'inhale'
+                    ? 'games.breathingGarden.inhale'
+                    : 'games.breathingGarden.exhale',
+                )}
+          </Text>
+        </View>
         <View
           style={[
             styles.ballContainer,
             { width: ballSize, height: ballSize },
             !visualCue && styles.hiddenCue,
           ]}
-          accessibilityElementsHidden={!visualCue}
-          importantForAccessibility={visualCue ? 'auto' : 'no-hide-descendants'}
+          pointerEvents='none'
+          aria-hidden
+          accessibilityElementsHidden
+          importantForAccessibility='no-hide-descendants'
+          testID={visualCue ? 'breathing-ball' : undefined}
         >
           <BreathingBall
-            key={mode === 'watching' ? 'watching' : 'session'}
             ref={ballRef}
             size={ballSize}
             baseSize={Math.min(120, ballSize * 0.5)}
             expandSize={Math.min(210, ballSize * 0.84)}
-            colorScheme={colorSchemes[colorIndex]}
-            autoStart={mode === 'watching' || mode === 'active'}
+            colorScheme={colorScheme}
+            autoStart
             reducedMotion={!motionEnabled}
+            showVisual={visualCue}
             onPhaseChange={setPhase}
             onCycleComplete={handleCycleComplete}
-            onProgress={setProgress}
+            onProgress={
+              visualCue && (!motionEnabled || settings.showMochiInGames) ? setProgress : undefined
+            }
             showCycleCount={false}
           />
-          {settings.showMochiInGames ? (
+          {visualCue && settings.showMochiInGames ? (
             <View style={styles.breathingMochi} pointerEvents='none'>
               <Mochi
                 size='md'
-                breathingPhase={phase}
+                breathingPhase={motionEnabled ? phase : null}
                 breathingProgress={progress}
                 animate={motionEnabled}
-                color={colorSchemes[colorIndex].primary}
-                highlightColor={colorSchemes[colorIndex].accent}
-                shadowColor={colorSchemes[colorIndex].accent}
+                color={colorScheme.primary}
+                highlightColor={colorScheme.accent}
+                shadowColor={colorScheme.accent}
               />
             </View>
           ) : null}
@@ -268,8 +270,8 @@ export const BreathingGardenScreen: React.FC = () => {
                 key={threshold}
                 style={[
                   styles.phaseDot,
-                  { borderColor: colors.accent },
-                  progress >= threshold && { backgroundColor: colors.accent },
+                  { borderColor: colors.textLight },
+                  progress >= threshold && { backgroundColor: colors.textLight },
                 ]}
               />
             ))}
@@ -280,64 +282,71 @@ export const BreathingGardenScreen: React.FC = () => {
     );
   };
 
-  const renderControls = () => (
-    <View style={styles.controls}>
-      {mode === 'active' || mode === 'watching' ? (
+  const renderSessionControls = () => (
+    <View style={styles.sessionControls} testID='breathing-session-controls'>
+      {isPaced ? (
         <AppButton
-          icon='pause'
-          label={t('games.breathingGarden.pause')}
+          icon={paused ? 'play' : 'pause'}
+          label={t(paused ? 'games.breathingGarden.resume' : 'games.breathingGarden.pause')}
           onPress={() => {
-            ballRef.current?.pause();
-            pausedActivityRef.current = mode;
-            setMode('paused');
+            if (paused) {
+              ballRef.current?.resume();
+              changeActivity({ ...activity, paused: false });
+            } else {
+              pause();
+            }
           }}
           variant='secondary'
-          testID='breathing-pause'
-        />
-      ) : mode === 'paused' ? (
-        <AppButton
-          icon='play'
-          label={t('games.breathingGarden.resume')}
-          onPress={resume}
-          variant='secondary'
-          testID='breathing-resume'
+          size='sm'
+          testID={paused ? 'breathing-resume' : 'breathing-pause'}
         />
       ) : null}
       <AppButton
         icon='stop'
-        label={t('games.breathingGarden.stop')}
-        onPress={stop}
+        label={t(
+          mode === 'watching' ? 'games.breathingGarden.stopWatching' : 'games.breathingGarden.stop',
+        )}
+        onPress={() => finishActivity(mode === 'watching' ? 'opening' : 'complete')}
         variant='ghost'
+        size='sm'
         testID='breathing-stop'
-      />
-      <AppButton
-        label={isPlaying ? t('games.breathingGarden.musicOff') : t('games.breathingGarden.musicOn')}
-        onPress={toggleMusic}
-        variant='ghost'
-        disabled={!settings.soundEnabled}
-        testID='breathing-music'
-      />
-      <AppButton
-        label={
-          visualCue ? t('games.breathingGarden.visualOff') : t('games.breathingGarden.visualOn')
-        }
-        onPress={() => updateGameSettings('breathing-garden', { visualCue: !visualCue })}
-        variant='ghost'
-        testID='breathing-visual-cue'
-      />
-      <AppButton
-        label={t('games.breathingGarden.changeColor')}
-        onPress={() => setColorIndex((current) => (current + 1) % colorSchemes.length)}
-        variant='ghost'
       />
     </View>
   );
 
+  const renderPreferences = () => (
+    <View style={styles.preferences}>
+      <AppButton
+        label={isPlaying ? t('games.breathingGarden.musicOff') : t('games.breathingGarden.musicOn')}
+        onPress={toggleMusic}
+        variant='ghost'
+        size='sm'
+        disabled={!settings.soundEnabled}
+        testID='breathing-music'
+      />
+      {isPaced ? visualControl : null}
+      {isPaced && visualCue ? (
+        <AppButton
+          label={t('games.breathingGarden.changeColor')}
+          onPress={() => setColorIndex((current) => (current + 1) % defaultColorSchemes.length)}
+          variant='ghost'
+          size='sm'
+        />
+      ) : null}
+    </View>
+  );
+
+  const inActivity = isPaced || mode === 'normal';
   return (
     <AppScreen
       scroll
       testID='breathing-garden-screen'
-      header={<GameHeader title={t('games.breathingGarden.title')} onBack={handleBack} />}
+      header={
+        <>
+          <GameHeader title={t('games.breathingGarden.title')} onBack={handleBack} />
+          {inActivity ? renderSessionControls() : null}
+        </>
+      }
     >
       <View style={styles.content}>
         {mode === 'opening' ? renderOpening() : null}
@@ -346,7 +355,7 @@ export const BreathingGardenScreen: React.FC = () => {
             <Text style={styles.guidance}>{t('games.breathingGarden.finished')}</Text>
             <AppButton
               label={t('games.breathingGarden.startAgain')}
-              onPress={() => setMode('opening')}
+              onPress={() => changeActivity({ mode: 'opening' })}
               fullWidth
             />
             <AppButton
@@ -356,8 +365,8 @@ export const BreathingGardenScreen: React.FC = () => {
             />
           </AppCard>
         ) : null}
-        {mode !== 'opening' && mode !== 'complete' ? renderActivity() : null}
-        {mode !== 'opening' && mode !== 'complete' ? renderControls() : null}
+        {inActivity ? renderActivity() : null}
+        {inActivity ? renderPreferences() : null}
       </View>
     </AppScreen>
   );
@@ -379,7 +388,6 @@ const createStyles = (colors: ThemeColors) =>
     breathCard: {
       width: '100%',
       maxWidth: 620,
-      minHeight: 360,
       alignItems: 'center',
       justifyContent: 'center',
       gap: Space.base,
@@ -392,8 +400,19 @@ const createStyles = (colors: ThemeColors) =>
       position: 'relative',
     },
     breathingMochi: { position: 'absolute', right: 0, bottom: 0 },
-    hiddenCue: { opacity: 0, height: 1, overflow: 'hidden' },
-    controls: {
+    hiddenCue: { display: 'none' },
+    sessionControls: {
+      alignSelf: 'center',
+      width: '100%',
+      maxWidth: 620,
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      paddingHorizontal: Space.sm,
+      paddingTop: Space.sm,
+      gap: Space.sm,
+    },
+    preferences: {
       width: '100%',
       maxWidth: 620,
       flexDirection: 'row',
@@ -401,7 +420,12 @@ const createStyles = (colors: ThemeColors) =>
       justifyContent: 'center',
       gap: Space.sm,
     },
-    progressDots: { flexDirection: 'row', gap: Space.sm },
+    progressDots: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      flexWrap: 'wrap',
+      gap: Space.sm,
+    },
     progressDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 2 },
     phaseDots: { flexDirection: 'row', gap: Space.xs },
     phaseDot: { width: 10, height: 10, borderRadius: 5, borderWidth: 1 },

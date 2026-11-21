@@ -11,11 +11,11 @@
 </p>
 
 <p align="center">
-  <a href="https://rogersau.github.io/gentle-games/"><strong>Play in your browser</strong></a>
+  <a href="https://games.gentlegames.org/"><strong>Play in your browser</strong></a>
   ·
-  <a href="https://rogersau.github.io/gentle-games/docs/support.html">Get support</a>
+  <a href="https://gentlegames.org/support.html">Get support</a>
   ·
-  <a href="https://rogersau.github.io/gentle-games/docs/privacy-policy.html">Privacy</a>
+  <a href="https://gentlegames.org/privacy-policy.html">Privacy</a>
 </p>
 
 <p align="center">
@@ -28,7 +28,7 @@
 
 Gentle Games gives children a place to play, create, and explore at their own pace. There are no streaks to maintain, advertisements to dismiss, competitive leaderboards, or surprise interruptions.
 
-Children and caregivers can adjust sound, motion, appearance, and other comfort settings. Activities use clear language, large touch targets, predictable interactions, and gentle feedback. A child can pause, restart, or leave whenever they choose.
+New installs start with sound and decorative animations off. Children and caregivers can adjust these preferences in Settings. Activities use clear language, large touch targets, predictable interactions, and gentle feedback. A child can pause, restart, or leave whenever they choose.
 
 ## Explore the games
 
@@ -93,7 +93,7 @@ Children and caregivers can adjust sound, motion, appearance, and other comfort 
 
 The easiest way to explore the project is the web app:
 
-**[Open Gentle Games](https://rogersau.github.io/gentle-games/)**
+**[Open Gentle Games](https://games.gentlegames.org/)**
 
 On supported browsers, it can also be installed to the home screen as a Progressive Web App (PWA).
 
@@ -185,6 +185,10 @@ npm run smoke:android:test
 
 </details>
 
+### Production deployment
+
+Push to `master` to publish the app at [games.gentlegames.org](https://games.gentlegames.org/). GitHub Actions builds the PWA and uploads it to Azure Static Web Apps using the existing production deployment token. Changes under `docs/` also publish the project website at [gentlegames.org](https://gentlegames.org/).
+
 ### Project structure
 
 ```text
@@ -219,9 +223,9 @@ A new activity normally needs:
 
 ## Project links
 
-- [Project website](https://rogersau.github.io/gentle-games/docs/)
-- [Privacy policy](https://rogersau.github.io/gentle-games/docs/privacy-policy.html)
-- [Support](https://rogersau.github.io/gentle-games/docs/support.html)
+- [Project website](https://gentlegames.org/)
+- [Privacy policy](https://gentlegames.org/privacy-policy.html)
+- [Support](https://gentlegames.org/support.html)
 - [Issue tracker](https://github.com/rogersau/gentle-games/issues)
 
 ## Licence

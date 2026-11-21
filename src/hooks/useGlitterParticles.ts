@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { GlitterColorCount, GlitterFallSpeed } from '../games/glitterSettings';
 
-interface GlitterParticle {
+export interface GlitterParticle {
   id: number;
   x: number;
   y: number;
@@ -14,7 +14,7 @@ interface GlitterParticle {
 }
 
 interface WakeRipple {
-  id: string;
+  id: number;
   x: number;
   y: number;
   radius: number;
@@ -28,14 +28,18 @@ interface UseGlitterParticlesOptions {
   colorCount?: GlitterColorCount;
   fallSpeed?: GlitterFallSpeed;
   backgroundMotion?: boolean;
+  maxParticles?: number;
   resolveCollisions?: (particles: GlitterParticle[]) => GlitterParticle[];
 }
 
 const DRAG = 0.988;
 const MAX_SPEED = 65;
-const GLOBE_PADDING = 10;
+export const GLITTER_GLOBE_PADDING = 10;
 const BOUNCE = 0.4;
 const FRAME_INTERVAL_MS = 1000 / 30;
+const WAKE_LIFETIME_SECONDS = 0.45;
+const WAKE_MAX_TRAIL = 22;
+const WAKE_OPACITY = 0.32;
 const PARTICLE_COLORS = ['#FF5D8F', '#6BCBFF', '#FFD166', '#B8F559', '#C792EA', '#FF9E5E'];
 const PARTICLE_SHAPES: GlitterParticle['shape'][] = ['circle', 'square', 'diamond', 'star'];
 const FALL_SPEED_GRAVITY: Record<GlitterFallSpeed, number> = {
@@ -49,18 +53,38 @@ const createParticle = (
   id: number,
   centerX: number,
   centerY: number,
+  globeRadius: number,
   colorCount: GlitterColorCount,
-): GlitterParticle => ({
-  id,
-  x: centerX + Math.random() * 50 - 25,
-  y: centerY + Math.random() * 50 - 25,
-  vx: Math.random() * 20 - 10,
-  vy: Math.random() * 10,
-  radius: Math.random() * 6 + 4,
-  shape: PARTICLE_SHAPES[Math.floor(Math.random() * PARTICLE_SHAPES.length)],
-  color: PARTICLE_COLORS[Math.floor(Math.random() * colorCount)],
-  opacity: Math.random() * 0.3 + 0.7,
-});
+  sprinkled = false,
+  point?: { x: number; y: number },
+): GlitterParticle => {
+  const radius =
+    sprinkled && Math.random() < 0.3
+      ? 12 + Math.random() * 6
+      : 4 + Math.random() * (sprinkled ? 3 : 6);
+  const dx = point
+    ? point.x - centerX
+    : sprinkled
+      ? (Math.random() - 0.5) * globeRadius * 0.7
+      : (Math.random() - 0.5) * globeRadius;
+  const dy = point
+    ? point.y - centerY
+    : sprinkled
+      ? 16 + Math.random() * 26 - globeRadius
+      : (Math.random() - 0.5) * globeRadius;
+  const scale = Math.min(1, Math.max(0, globeRadius - radius) / (Math.hypot(dx, dy) || 1));
+  return {
+    id,
+    x: centerX + dx * scale,
+    y: centerY + dy * scale,
+    vx: Math.random() * 20 - 10,
+    vy: sprinkled ? 4 + Math.random() * 14 : Math.random() * 10,
+    radius,
+    shape: PARTICLE_SHAPES[Math.floor(Math.random() * PARTICLE_SHAPES.length)],
+    color: PARTICLE_COLORS[Math.floor(Math.random() * colorCount)],
+    opacity: Math.random() * 0.3 + 0.7,
+  };
+};
 
 export function useGlitterParticles({
   particleCount,
@@ -69,26 +93,44 @@ export function useGlitterParticles({
   colorCount = 6,
   fallSpeed = 'normal',
   backgroundMotion = false,
+  maxParticles = 120,
   resolveCollisions = keepParticlesSeparate,
 }: UseGlitterParticlesOptions) {
   const [particles, setParticles] = useState<GlitterParticle[]>([]);
   const [ripples, setRipples] = useState<WakeRipple[]>([]);
   const rafRef = useRef<number | null>(null);
   const particlesRef = useRef<GlitterParticle[]>([]);
-  const initializedRef = useRef(false);
+  const ripplesRef = useRef<WakeRipple[]>([]);
+  const nextParticleId = useRef(0);
+  const nextRippleId = useRef(0);
   const lastFrameTimeRef = useRef<number | null>(null);
-  const previousBoundsRef = useRef({
-    centerX: canvasWidth / 2,
-    centerY: canvasHeight / 2,
-    radius: Math.max(0, Math.min(canvasWidth, canvasHeight) / 2 - GLOBE_PADDING),
-  });
+  const previousLayoutRef = useRef<{
+    centerX: number;
+    centerY: number;
+    globeRadius: number;
+    particleCount: number;
+    colorCount: GlitterColorCount;
+  } | null>(null);
   const stepParticlesRef = useRef<
     (currentParticles: GlitterParticle[], dt: number) => GlitterParticle[]
   >(() => []);
 
   const centerX = canvasWidth / 2;
   const centerY = canvasHeight / 2;
-  const globeRadius = Math.max(0, Math.min(canvasWidth, canvasHeight) / 2 - GLOBE_PADDING);
+  const globeRadius = Math.max(0, Math.min(canvasWidth, canvasHeight) / 2 - GLITTER_GLOBE_PADDING);
+
+  const updateParticles = useCallback(
+    (update: (current: GlitterParticle[]) => GlitterParticle[]) => {
+      particlesRef.current = update(particlesRef.current);
+      setParticles(particlesRef.current);
+    },
+    [],
+  );
+
+  const updateRipples = useCallback((update: (current: WakeRipple[]) => WakeRipple[]) => {
+    ripplesRef.current = update(ripplesRef.current);
+    setRipples(ripplesRef.current);
+  }, []);
 
   const stepParticles = useCallback(
     (currentParticles: GlitterParticle[], dt: number): GlitterParticle[] => {
@@ -145,14 +187,23 @@ export function useGlitterParticles({
         // motion keeps the same speed on displays with different refresh rates.
         const dt = Math.min((timestamp - previousTime) / 1000, 0.1);
         lastFrameTimeRef.current = timestamp;
-        const updated = stepParticlesRef.current(particlesRef.current, dt);
-        particlesRef.current = updated;
-        setParticles(updated);
+        updateParticles((current) => stepParticlesRef.current(current, dt));
+        if (ripplesRef.current.length) {
+          updateRipples((current) =>
+            current
+              .map((ripple) => ({
+                ...ripple,
+                radius: ripple.radius + dt * 42,
+                opacity: ripple.opacity - (dt * WAKE_OPACITY) / WAKE_LIFETIME_SECONDS,
+              }))
+              .filter((ripple) => ripple.opacity > 0),
+          );
+        }
       }
       rafRef.current = requestAnimationFrame(animate);
     };
     rafRef.current = requestAnimationFrame(animate);
-  }, []);
+  }, [updateParticles, updateRipples]);
 
   const stopAnimation = useCallback(() => {
     if (rafRef.current !== null) {
@@ -162,89 +213,89 @@ export function useGlitterParticles({
     }
   }, []);
 
-  useEffect(() => {
-    if (initializedRef.current) return;
-    initializedRef.current = true;
-    particlesRef.current = Array.from({ length: particleCount }, (_, i) =>
-      createParticle(i, centerX, centerY, colorCount),
-    );
-    setParticles([...particlesRef.current]);
-  }, [centerX, centerY, colorCount, particleCount]);
+  useEffect(() => stopAnimation, [stopAnimation]);
 
   useEffect(() => {
-    return () => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
+    const previous = previousLayoutRef.current;
+    previousLayoutRef.current = { centerX, centerY, globeRadius, particleCount, colorCount };
+    updateParticles((current) => {
+      const count = Math.min(
+        maxParticles,
+        previous?.particleCount === particleCount ? current.length : particleCount,
+      );
+      const next = current.slice(0, count);
+      if (previous) {
+        for (const [index, particle] of next.entries()) {
+          const scale =
+            Math.max(0, globeRadius - particle.radius) /
+            Math.max(1, previous.globeRadius - particle.radius);
+          next[index] = {
+            ...particle,
+            x: centerX + (particle.x - previous.centerX) * scale,
+            y: centerY + (particle.y - previous.centerY) * scale,
+            color:
+              previous.colorCount === colorCount
+                ? particle.color
+                : PARTICLE_COLORS[particle.id % colorCount],
+          };
+        }
       }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!initializedRef.current) return;
-
-    const previousBounds = previousBoundsRef.current;
-    const resized =
-      previousBounds.centerX !== centerX ||
-      previousBounds.centerY !== centerY ||
-      previousBounds.radius !== globeRadius;
-    const nextParticles = particlesRef.current.map((particle) => {
-      if (!resized) return particle;
-      const oldRadius = Math.max(1, previousBounds.radius - particle.radius);
-      const newRadius = Math.max(0, globeRadius - particle.radius);
-      const scale = newRadius / oldRadius;
-      return {
-        ...particle,
-        x: centerX + (particle.x - previousBounds.centerX) * scale,
-        y: centerY + (particle.y - previousBounds.centerY) * scale,
-      };
-    });
-    previousBoundsRef.current = { centerX, centerY, radius: globeRadius };
-    if (nextParticles.length < particleCount) {
-      nextParticles.push(
-        ...Array.from({ length: particleCount - nextParticles.length }, (_, index) =>
-          createParticle(nextParticles.length + index, centerX, centerY, colorCount),
+      next.push(
+        ...Array.from({ length: count - next.length }, () =>
+          createParticle(nextParticleId.current++, centerX, centerY, globeRadius, colorCount),
         ),
       );
-    } else if (nextParticles.length > particleCount) {
-      nextParticles.length = particleCount;
-    }
+      return next;
+    });
+  }, [centerX, centerY, colorCount, globeRadius, maxParticles, particleCount, updateParticles]);
 
-    particlesRef.current = nextParticles;
-    setParticles(nextParticles);
-  }, [centerX, centerY, colorCount, globeRadius, particleCount]);
-
-  const syncParticles = useCallback((particles: GlitterParticle[]) => {
-    particlesRef.current = particles;
-    setParticles(particles);
-  }, []);
-
-  const addParticles = useCallback((particles: GlitterParticle[]) => {
-    particlesRef.current = [...particlesRef.current, ...particles];
-    setParticles([...particlesRef.current]);
-  }, []);
+  const addParticles = useCallback(
+    (count: number, point?: { x: number; y: number }) => {
+      const added = Math.min(Math.floor(count), maxParticles - particlesRef.current.length);
+      if (!(added > 0)) return false;
+      updateParticles((current) => [
+        ...current,
+        ...Array.from({ length: added }, () =>
+          createParticle(
+            nextParticleId.current++,
+            centerX,
+            centerY,
+            globeRadius,
+            colorCount,
+            true,
+            point,
+          ),
+        ),
+      ]);
+      return true;
+    },
+    [centerX, centerY, colorCount, globeRadius, maxParticles, updateParticles],
+  );
 
   const clearParticles = useCallback(() => {
-    particlesRef.current = [];
-    setParticles([]);
-  }, []);
+    updateParticles(() => []);
+  }, [updateParticles]);
 
   const clearRipples = useCallback(() => {
-    setRipples([]);
-  }, []);
+    updateRipples(() => []);
+  }, [updateRipples]);
 
-  const syncRipples = useCallback((ripples: WakeRipple[]) => {
-    setRipples(ripples);
-  }, []);
+  const addRipple = useCallback(
+    (x: number, y: number) => {
+      const ripple = { id: nextRippleId.current++, x, y, radius: 5, opacity: WAKE_OPACITY };
+      updateRipples((current) => [...current.slice(1 - WAKE_MAX_TRAIL), ripple]);
+    },
+    [updateRipples],
+  );
 
   return {
     particles,
     ripples,
-    syncParticles,
+    updateParticles,
     addParticles,
     clearParticles,
     clearRipples,
-    syncRipples,
+    addRipple,
     startAnimation,
     stopAnimation,
   };

@@ -1,13 +1,14 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
-import type { NumberPicnicChoice as Choice } from '../../types';
+import type { NumberPicnicRepresentation as Representation } from '../../types';
 import { NumberPicnicRepresentation } from './NumberPicnicRepresentation';
 import { Space, TypeStyle } from '../../ui/tokens';
 import { useThemeColors } from '../../utils/theme';
 
 interface NumberPicnicChoiceProps {
-  choice: Choice;
+  representation: Representation;
   label: string;
+  title?: string;
   display: 'quantity' | 'numeral';
   onPress: () => void;
   disabled?: boolean;
@@ -16,8 +17,9 @@ interface NumberPicnicChoiceProps {
 }
 
 export const NumberPicnicChoice: React.FC<NumberPicnicChoiceProps> = ({
-  choice,
+  representation,
   label,
+  title,
   display,
   onPress,
   disabled = false,
@@ -41,12 +43,12 @@ export const NumberPicnicChoice: React.FC<NumberPicnicChoiceProps> = ({
       ]}
       testID={testID}
     >
+      {title && <Text style={[styles.title, { color: colors.text }]}>{title}</Text>}
       {display === 'numeral' ? (
-        <Text style={[styles.numeral, { color: colors.primary }]}>{choice.numeral}</Text>
+        <Text style={[styles.numeral, { color: colors.text }]}>{representation.numeral}</Text>
       ) : (
         <NumberPicnicRepresentation
-          representation={choice.representation}
-          accessibilityLabel={label}
+          representation={representation}
           showNumeral={false}
           testID={testID ? `${testID}-representation` : undefined}
         />
@@ -57,9 +59,10 @@ export const NumberPicnicChoice: React.FC<NumberPicnicChoiceProps> = ({
 
 const styles = StyleSheet.create({
   choice: {
-    flex: 1,
-    minWidth: 108,
-    minHeight: 150,
+    flexGrow: 1,
+    flexBasis: 132,
+    maxWidth: 180,
+    minHeight: 96,
     borderWidth: 2,
     borderRadius: 16,
     padding: Space.sm,
@@ -67,6 +70,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Space.xs,
   },
+  title: { ...TypeStyle.label, textAlign: 'center' },
   numeral: { ...TypeStyle.h2, fontWeight: 'bold', textAlign: 'center' },
-  disabled: { opacity: 0.55 },
+  disabled: { opacity: 0.85 },
 });

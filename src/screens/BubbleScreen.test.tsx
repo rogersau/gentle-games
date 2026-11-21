@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { BubbleScreen } from './BubbleScreen';
+import { DEFAULT_GAME_SETTINGS } from '../games/settings';
 
 const mockGoBack = jest.fn();
 const mockPlayBubblePopSound = jest.fn();
@@ -15,6 +16,7 @@ const mockSettings = {
   showCardPreview: true,
   colorMode: 'system' as const,
   pressureFreeMode: false,
+  gameSettings: DEFAULT_GAME_SETTINGS,
 };
 
 jest.mock('../utils/theme', () => ({
@@ -88,10 +90,22 @@ describe('BubbleScreen', () => {
     mockBubbleProps = {};
     mockSettings.animationsEnabled = true;
     mockSettings.pressureFreeMode = false;
+    mockSettings.gameSettings = DEFAULT_GAME_SETTINGS;
+  });
+
+  it('starts with a single still bubble when using new profile defaults', () => {
+    render(<BubbleScreen />);
+
+    expect(mockBubbleProps.motionEnabled).toBe(false);
+    expect(mockBubbleProps.minActiveBubbles).toBe(1);
   });
 
   it('keeps gameplay motion enabled when only decorative animations are disabled', () => {
     mockSettings.animationsEnabled = false;
+    mockSettings.gameSettings = {
+      ...DEFAULT_GAME_SETTINGS,
+      'bubble-pop': { motion: 'moving', density: 'full' },
+    };
     render(<BubbleScreen />);
 
     expect(mockBubbleProps.motionEnabled).toBe(true);
@@ -99,17 +113,22 @@ describe('BubbleScreen', () => {
 
   it('uses stationary bubbles when reduced motion is enabled', () => {
     mockReducedMotion = true;
-    render(<BubbleScreen />);
+    mockSettings.gameSettings = {
+      ...DEFAULT_GAME_SETTINGS,
+      'bubble-pop': { motion: 'moving', density: 'full' },
+    };
+    const screen = render(<BubbleScreen />);
 
     expect(mockBubbleProps.motionEnabled).toBe(false);
+    expect(screen.queryByTestId('bubble-motion-toggle')).toBeNull();
   });
 
   it('switches to still bubbles and back without leaving the game', () => {
     const screen = render(<BubbleScreen />);
     fireEvent.press(screen.getByTestId('bubble-motion-toggle'));
-    expect(mockBubbleProps.motionEnabled).toBe(false);
-    fireEvent.press(screen.getByTestId('bubble-motion-toggle'));
     expect(mockBubbleProps.motionEnabled).toBe(true);
+    fireEvent.press(screen.getByTestId('bubble-motion-toggle'));
+    expect(mockBubbleProps.motionEnabled).toBe(false);
     expect(mockGoBack).not.toHaveBeenCalled();
   });
 

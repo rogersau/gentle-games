@@ -12,15 +12,11 @@ import {
   useNumberPicnicGame,
 } from './numberPicnicLogic';
 
-const addAndUnlock = (result: { current: ReturnType<typeof useNumberPicnicGame> }, id: number) => {
+const addItem = (result: { current: ReturnType<typeof useNumberPicnicGame> }, id: number) => {
   act(() => result.current.handleItemDrop(id));
-  act(() => jest.advanceTimersByTime(300));
 };
 
 describe('numberPicnicLogic', () => {
-  beforeEach(() => jest.useFakeTimers());
-  afterEach(() => jest.useRealTimers());
-
   it('keeps target quantities manageable and the source pool deliberately small', () => {
     expect(getNumberPicnicMaxCount('easy')).toBe(5);
     expect(getNumberPicnicMaxCount('medium')).toBe(8);
@@ -199,14 +195,14 @@ describe('numberPicnicLogic', () => {
 
     act(() => result.current.handleDropStart());
     act(() => result.current.handleDragOverBasket(true));
-    addAndUnlock(result, firstId);
+    addItem(result, firstId);
 
     expect(result.current.basketItemIds).toEqual([firstId]);
     expect(result.current.isDragging).toBe(false);
     expect(result.current.isOverBasket).toBe(false);
   });
 
-  it('ignores rapid duplicate input and never overshoots the target', () => {
+  it('accepts successive distinct items immediately, deduplicates input, and stops at the target', () => {
     const { result } = renderHook(() => useNumberPicnicGame('6-10'));
     const target = result.current.prompt.targetCount;
     const ids = [...result.current.blanketItemIds];
@@ -214,13 +210,11 @@ describe('numberPicnicLogic', () => {
     act(() => {
       result.current.handleItemDrop(ids[0]);
       result.current.handleItemDrop(ids[0]);
+      result.current.handleItemDrop(ids[1]);
     });
-    expect(result.current.basketCount).toBe(1);
-    act(() => jest.advanceTimersByTime(300));
+    expect(result.current.basketItemIds).toEqual(ids.slice(0, 2));
 
-    for (let index = 1; index < ids.length; index += 1) {
-      addAndUnlock(result, ids[index]);
-    }
+    act(() => ids.slice(2).forEach((id) => result.current.handleItemDrop(id)));
 
     expect(result.current.basketCount).toBe(target);
     expect(result.current.isComplete).toBe(true);
@@ -231,7 +225,7 @@ describe('numberPicnicLogic', () => {
     const ids = [...result.current.blanketItemIds];
 
     for (let index = 0; index < result.current.prompt.targetCount; index += 1) {
-      addAndUnlock(result, ids[index]);
+      addItem(result, ids[index]);
     }
 
     expect(result.current.hasCompletionAnnouncement).toBe(true);
@@ -246,19 +240,30 @@ describe('numberPicnicLogic', () => {
     expect(result.current.completedPicnics).toBe(completedRound + 1);
   });
 
+  it('opens a new prompt without crediting a partially completed picnic', () => {
+    const { result } = renderHook(() => useNumberPicnicGame('1-3', { rng: () => 0.5 }));
+    const prompt = result.current.prompt;
+    addItem(result, result.current.blanketItemIds[0]);
+
+    act(() => result.current.startNewRound());
+    expect(result.current.prompt).not.toBe(prompt);
+    expect(result.current.basketCount).toBe(0);
+    expect(result.current.completedPicnics).toBe(0);
+  });
+
   it('supports safe reversal after completion and preserves count on rerender', () => {
     const { result, rerender, unmount } = renderHook(() => useNumberPicnicGame('1-3'));
     const ids = [...result.current.blanketItemIds];
 
     for (let index = 0; index < result.current.prompt.targetCount; index += 1) {
-      addAndUnlock(result, ids[index]);
+      addItem(result, ids[index]);
     }
     const completedPrompt = result.current.prompt;
     act(() => result.current.handleBasketItemPress(ids[0]));
     expect(result.current.basketCount).toBe(completedPrompt.targetCount - 1);
     expect(result.current.isComplete).toBe(false);
 
-    addAndUnlock(result, ids[0]);
+    addItem(result, ids[0]);
     const countBeforeRerender = result.current.basketCount;
     rerender(undefined);
     expect(result.current.basketCount).toBe(countBeforeRerender);
@@ -266,7 +271,7 @@ describe('numberPicnicLogic', () => {
     unmount();
   });
 
-  it('uses the shared guided sequence and requires corrected response before transfer', () => {
+  it('uses the shared guided sequence and resets help on the next example', () => {
     const { result } = renderHook(() =>
       useNumberPicnicGame('1-5', { mode: 'find-amount', rng: () => 0.5 }),
     );
@@ -317,13 +322,5 @@ describe('numberPicnicLogic', () => {
     );
     act(() => muted.result.current.handleItemDrop(muted.result.current.blanketItemIds[0]));
     expect(mutedNarrate).not.toHaveBeenCalled();
-  });
-
-  it('cancels its input unlock timer during teardown', () => {
-    const { result, unmount } = renderHook(() => useNumberPicnicGame('1-3'));
-    act(() => result.current.handleItemDrop(result.current.blanketItemIds[0]));
-    expect(jest.getTimerCount()).toBe(1);
-    unmount();
-    expect(jest.getTimerCount()).toBe(0);
   });
 });

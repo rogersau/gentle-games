@@ -1,8 +1,14 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { Animated } from 'react-native';
+import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
+import {
+  Animated,
+  GestureResponderEvent,
+  PanResponder,
+  PanResponderGestureState,
+  View,
+} from 'react-native';
 import { PatternTrainScreen } from '../screens/PatternTrainScreen';
-import { playFlipSound } from '../utils/sounds';
+import { playFlipSound, playMatchSound } from '../utils/sounds';
 
 const mockGoBack = jest.fn();
 const mockNavigate = jest.fn();
@@ -29,14 +35,16 @@ jest.mock('react-i18next', () => ({
         'games.patternTrain.platform.label': 'Platform',
         'games.patternTrain.feedback.initial': 'Drag a carriage to complete the train',
         'games.patternTrain.completedRounds': 'Completed',
-        'games.patternTrain.instructions': 'Drag a carriage to complete the train',
-        'games.patternTrain.train.accessibilityLabel': 'Train with pattern',
+        'games.patternTrain.instructions':
+          'Tap a carriage or drag it onto the train to fill the gap.',
+        'games.patternTrain.train.accessibilityLabel': 'Train carriages in order. {{sequence}}.',
         'games.patternTrain.roundsAccessibilityLabel': '{{count}} rounds completed',
         'games.patternTrain.guidance.instruction':
           'Choose the carriage that continues the pattern.',
         'games.patternTrain.guidance.showPattern': 'Show the pattern: {{unit}} repeats.',
         'games.patternTrain.guidance.showPatternButton': 'Show the pattern',
-        'games.patternTrain.guidance.replay': 'Hear instructions again',
+        'games.patternTrain.guidance.replay': 'Show instructions',
+        'games.patternTrain.guidance.hideInstructions': 'Hide instructions',
         'games.patternTrain.guidance.skip': 'Skip',
         'games.patternTrain.guidance.next': 'Next',
         'games.patternTrain.guidance.nextHint': 'Next pattern',
@@ -48,9 +56,11 @@ jest.mock('react-i18next', () => ({
         'games.patternTrain.missingCarriage': 'missing carriage',
         'games.patternTrain.feedback.correct': 'Correct.',
         'games.patternTrain.feedback.incorrect': 'Try again.',
-        'games.patternTrain.feedback.correctAnnouncement': 'Correct.',
-        'games.patternTrain.feedback.incorrectAnnouncement': 'Try again.',
-        'games.patternTrain.carriage.accessibilityLabel': 'Carriage with {{emoji}}',
+        'games.patternTrain.carriage.accessibilityLabel': 'Carriage with {{picture}}',
+        'games.patternTrain.pictures.star': 'star',
+        'games.patternTrain.pictures.rainbow': 'rainbow',
+        'games.patternTrain.pictures.flower': 'flower',
+        'games.patternTrain.milestone.rounds': "You've completed {{count}} trains",
         'games.patternTrain.carriage.accessibilityHint':
           'Tap to choose or drag to the missing place',
         'difficulty.title': 'Select Difficulty',
@@ -91,7 +101,7 @@ jest.mock('../utils/patternTrainLogic', () => ({
     missingIndex: 1,
     difficulty: 'easy',
   })),
-  generateTransferPattern: jest.fn(),
+  generateTransferPattern: jest.fn((pattern) => ({ ...pattern })),
   isTrainChoiceCorrect: jest.fn((pattern, choice) => pattern.answer === choice),
 }));
 
@@ -123,6 +133,12 @@ const patternSettings = {
   animationsEnabled: true,
   difficulty: 'easy' as const,
 };
+
+const dragGesture = (dx: number, dy: number) =>
+  ({ dx, dy, numberActiveTouches: 1 }) as PanResponderGestureState;
+
+const touchEvent = (pageX: number, pageY: number) =>
+  ({ nativeEvent: { pageX, pageY } }) as GestureResponderEvent;
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: patternSettings,
@@ -213,7 +229,7 @@ describe('PatternTrainScreen', () => {
   it('opens with a playable pattern and keeps level choices optional', () => {
     const screen = render(<PatternTrainScreen />);
     expect(screen.queryByText('Easy')).toBeNull();
-    expect(screen.getByLabelText('Carriage with 🌈')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Carriage with rainbow' })).toBeTruthy();
     fireEvent.press(screen.getByTestId('pattern-train-level'));
     expect(screen.getByText('Easy')).toBeTruthy();
     expect(screen.getByText('Medium')).toBeTruthy();
@@ -243,7 +259,7 @@ describe('PatternTrainScreen', () => {
     fireEvent.press(screen.getByText('Cancel'));
     expect(mockGoBack).not.toHaveBeenCalled();
     expect(screen.queryByText('Easy')).toBeNull();
-    expect(screen.getByLabelText('Carriage with 🌈')).toBeTruthy();
+    expect(screen.getByLabelText('Carriage with rainbow')).toBeTruthy();
   });
 
   it('renders with AppHeader for navigation', () => {
@@ -254,28 +270,62 @@ describe('PatternTrainScreen', () => {
     expect(title).toBeTruthy();
   });
 
-  it('leaves carriage taps available while reserving drags for movement', async () => {
+  it('leaves carriage taps available while reserving drags for deliberate movement', () => {
+    const responders = jest.spyOn(PanResponder, 'create');
     const screen = render(<PatternTrainScreen />);
+    const [drag] = responders.mock.calls[0];
 
-    await waitFor(() => {
-      expect(
-        screen.UNSAFE_root.findAll(
-          (node: any) =>
-            typeof node.props.onStartShouldSetResponder === 'function' &&
-            typeof node.props.onMoveShouldSetResponder === 'function',
-        ),
-      ).not.toHaveLength(0);
+    expect(drag.onStartShouldSetPanResponderCapture?.(touchEvent(1, 1), dragGesture(0, 0))).toBe(
+      false,
+    );
+    expect(drag.onMoveShouldSetPanResponder?.(touchEvent(1, 1), dragGesture(0, -5))).toBe(false);
+    expect(drag.onMoveShouldSetPanResponder?.(touchEvent(1, 1), dragGesture(0, -12))).toBe(true);
+    expect(screen.getByRole('button', { name: 'Carriage with rainbow' })).toBeEnabled();
+  });
+
+  it('measures the train at release and accepts a drop after the screen scrolls', () => {
+    const responders = jest.spyOn(PanResponder, 'create');
+    let zoneTop = 220;
+    const screen = render(<PatternTrainScreen />);
+    const zone = screen
+      .UNSAFE_getAllByType(View)
+      .find(({ props }) => props.testID === 'pattern-train-zone');
+    const measure = jest.spyOn(zone?.instance as View, 'measure').mockImplementation((callback) => {
+      callback(0, 0, 220, 64, 20, zoneTop);
     });
+    const [drag] = responders.mock.calls[0];
+    const release = touchEvent(100, 135);
+    const movement = dragGesture(0, -110);
 
-    const draggable = screen.UNSAFE_root.findAll(
-      (node: any) =>
-        typeof node.props.onStartShouldSetResponder === 'function' &&
-        typeof node.props.onMoveShouldSetResponder === 'function',
-    )[0];
+    act(() => drag.onPanResponderGrant?.(touchEvent(100, 245), movement));
+    act(() => drag.onPanResponderRelease?.(release, movement));
+    fireEvent.press(screen.getByLabelText('Carriage with rainbow'), { nativeEvent: { detail: 1 } });
+    expect(screen.queryByTestId('pattern-train-next')).toBeNull();
+    expect(screen.queryByText('Try again.')).toBeNull();
 
-    expect(draggable.props.onStartShouldSetResponder()).toBe(false);
-    expect(draggable.props.onMoveShouldSetResponder({}, { dx: 0, dy: 0 })).toBe(false);
-    expect(screen.getAllByLabelText('Carriage with 🌈')[0].props.hitSlop).toBe(8);
+    zoneTop = 110;
+    act(() => drag.onPanResponderGrant?.(touchEvent(100, 245), movement));
+    act(() => drag.onPanResponderRelease?.(release, movement));
+    expect(measure).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId('pattern-train-next')).toBeTruthy();
+    expect(playMatchSound).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns a cancelled drag home without submitting a choice', () => {
+    const responders = jest.spyOn(PanResponder, 'create');
+    const setPosition = jest.spyOn(Animated.ValueXY.prototype, 'setValue');
+    const screen = render(<PatternTrainScreen />);
+    const [drag] = responders.mock.calls[0];
+    const movement = dragGesture(15, -35);
+    const event = touchEvent(100, 135);
+
+    act(() => drag.onPanResponderGrant?.(event, movement));
+    act(() => drag.onPanResponderMove?.(event, movement));
+    expect(setPosition).toHaveBeenLastCalledWith({ x: 15, y: -35 });
+    act(() => drag.onPanResponderTerminate?.(event, movement));
+    expect(setPosition).toHaveBeenLastCalledWith({ x: 0, y: 0 });
+    expect(screen.queryByTestId('pattern-train-next')).toBeNull();
+    expect(playMatchSound).not.toHaveBeenCalled();
   });
 
   it('keeps the missing carriage label from overflowing across the train', async () => {
@@ -285,25 +335,35 @@ describe('PatternTrainScreen', () => {
 
     const carriageMock = jest.requireMock('../components/train').Carriage as jest.Mock;
     expect(
-      carriageMock.mock.calls.some(
-        ([props]) => props.content === '?' && props.isMissing === true && props.size === 56,
-      ),
+      carriageMock.mock.calls.some(([props]) => props.content === '?' && props.isMissing === true),
     ).toBe(true);
   });
 
   it('submits a choice through the accessible tap path and exposes child-controlled Next', async () => {
     const screen = render(<PatternTrainScreen />);
 
-    const carriage = await screen.findByLabelText('Carriage with 🌈');
+    expect(
+      screen.getByRole('image', {
+        name: 'Train carriages in order. star, missing carriage, star, rainbow.',
+      }),
+    ).toBeTruthy();
+    const carriage = await screen.findByLabelText('Carriage with rainbow');
     fireEvent.press(carriage);
 
     expect(await screen.findByTestId('pattern-train-next')).toBeTruthy();
+    expect(screen.getByText('Correct.')).toBeTruthy();
+    expect(
+      screen.getByRole('image', {
+        name: 'Train carriages in order. star, rainbow, star, rainbow.',
+      }),
+    ).toBeTruthy();
+    expect(carriage).toBeDisabled();
   });
 
   it('shows the staged hint and model before accepting corrected Next', async () => {
     const screen = render(<PatternTrainScreen />);
 
-    const wrongChoice = await screen.findByLabelText('Carriage with 🌸');
+    const wrongChoice = await screen.findByLabelText('Carriage with flower');
     fireEvent.press(wrongChoice);
     expect(await screen.findByText('Show the pattern: 🌟 🌈 repeats.')).toBeTruthy();
 
@@ -311,7 +371,7 @@ describe('PatternTrainScreen', () => {
     expect(await screen.findByText('Model: 🌟 🌈 🌟 🌈')).toBeTruthy();
     expect(screen.queryByTestId('pattern-train-next')).toBeNull();
 
-    fireEvent.press(await screen.findByLabelText('Carriage with 🌈'));
+    fireEvent.press(await screen.findByLabelText('Carriage with rainbow'));
     expect(await screen.findByTestId('pattern-train-next')).toBeTruthy();
   });
 
@@ -321,13 +381,42 @@ describe('PatternTrainScreen', () => {
     fireEvent.press(await screen.findByText('Show the pattern'));
 
     expect(await screen.findByText('Show the pattern: 🌟 🌈 repeats.')).toBeTruthy();
-    expect(screen.getAllByLabelText('Carriage with 🌈')).not.toHaveLength(0);
+    expect(screen.getByLabelText('Carriage with rainbow')).toBeEnabled();
   });
+
+  it('lets the child show and hide the play instructions', () => {
+    const screen = render(<PatternTrainScreen />);
+    const instructions = 'Tap a carriage or drag it onto the train to fill the gap.';
+
+    expect(screen.queryByText(instructions)).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Show instructions' }));
+    expect(screen.getByText(instructions)).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Hide instructions' }));
+    expect(screen.queryByText(instructions)).toBeNull();
+  });
+
+  it.each([false, true])(
+    'keeps Next available at a milestone with pressure-free mode set to %s',
+    (pressureFreeMode) => {
+      patternSettings.pressureFreeMode = pressureFreeMode;
+      const screen = render(<PatternTrainScreen />);
+
+      for (let round = 0; round < 5; round += 1) {
+        fireEvent.press(screen.getByRole('button', { name: 'Carriage with rainbow' }));
+        if (round < 4) fireEvent.press(screen.getByTestId('pattern-train-next'));
+      }
+
+      expect(screen.queryByText("You've completed 5 trains") !== null).toBe(!pressureFreeMode);
+      expect(screen.getByRole('button', { name: 'Carriage with rainbow' })).toBeDisabled();
+      fireEvent.press(screen.getByTestId('pattern-train-next'));
+      expect(screen.getByRole('button', { name: 'Carriage with rainbow' })).toBeEnabled();
+    },
+  );
 
   it('does not play a negative sound for an incorrect choice', async () => {
     const screen = render(<PatternTrainScreen />);
 
-    fireEvent.press(await screen.findByLabelText('Carriage with 🌸'));
+    fireEvent.press(await screen.findByLabelText('Carriage with flower'));
 
     expect(playFlipSound).not.toHaveBeenCalled();
   });
@@ -336,7 +425,7 @@ describe('PatternTrainScreen', () => {
     patternSettings.reducedMotionEnabled = true;
     const screen = render(<PatternTrainScreen />);
 
-    expect(await screen.findByLabelText('Carriage with 🌈')).toBeTruthy();
+    expect(await screen.findByLabelText('Carriage with rainbow')).toBeTruthy();
     expect(screen.queryByTestId('pattern-train-next')).toBeNull();
   });
 

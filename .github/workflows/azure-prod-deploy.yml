@@ -4,15 +4,18 @@ on:
   push:
     branches:
       - master
-      - main
   workflow_dispatch:
 
 permissions:
   contents: read
-  id-token: write
+
+concurrency:
+  group: production-app
+  cancel-in-progress: false
 
 jobs:
   build_and_deploy_job:
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     name: Build and Deploy Prod
     steps:
@@ -30,36 +33,29 @@ jobs:
 
       - name: Build web export for Azure (root path)
         env:
-          EXPO_BASE_URL: ''
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
           POSTHOG_HOST: ${{ secrets.POSTHOG_HOST }}
-        run: |
-          npx expo export --platform web --output-dir dist --clear --source-maps
-
-      - name: Build PWA assets
-        run: node scripts/prepare-pwa.js
+        run: npm run build:pwa
 
       - name: Upload web source maps
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-        run: node scripts/upload-sourcemaps.js
+        run: |
+          if [[ -n "$SENTRY_AUTH_TOKEN" && -n "$SENTRY_ORG" && -n "$SENTRY_PROJECT" ]]; then
+            node scripts/upload-sourcemaps.js
+          fi
 
       - name: Remove source maps from deployment artifact
         run: find dist -type f -name '*.map' -delete
 
       - name: Copy Azure config to dist
         run: cp staticwebapp.config.json dist/staticwebapp.config.json
-
-      - name: List dist contents
-        run: |
-          echo "Dist contents:"
-          ls -la dist/
 
       - name: Build And Deploy
         id: builddeploy
@@ -68,6 +64,7 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GENTLE_GAMES_PROD }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: 'upload'
-          app_location: '/dist'
+          production_branch: master
+          app_location: 'dist'
           output_location: ''
           skip_app_build: true

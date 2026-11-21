@@ -12,13 +12,13 @@
 **Secondary:**
 
 - YAML - CI/CD and deployment automation in `.github/workflows/*.yml` and Maestro flows in `.maestro/*.yml`.
-- JSON - Static web app config in `staticwebapp.config.json`, Azure Expo config in `app.azure.json`, and package metadata in `package.json`.
+- JSON - Static web app config in `staticwebapp.config.json`, and package metadata in `package.json`.
 
 ## Runtime
 
 **Environment:**
 
-- Node.js 20 in CI via `.github/workflows/ci.yml`, `.github/workflows/azure-prod-deploy.yml`, `.github/workflows/azure-dev-deploy.yml`, and `.github/workflows/mobile-validation.yml`.
+- Node.js 20 in CI via `.github/workflows/ci.yml`, `.github/workflows/azure-prod-deploy.yml`, and `.github/workflows/mobile-validation.yml`.
 - Expo SDK 54 app runtime on React Native 0.81 / React 19 from `package.json`.
 
 **Package Manager:**
@@ -78,7 +78,6 @@
 **Build:**
 
 - Expo app/platform config: `app.config.js`
-- Alternate Azure-oriented Expo config snapshot: `app.azure.json`
 - Metro bundler/source maps: `metro.config.js`
 - TypeScript compiler options: `tsconfig.json`
 - Jest config: `jest.config.js`
@@ -99,7 +98,7 @@
 
 - Mobile targets: Expo export outputs for Android and iOS via `npm run build:android`, `npm run build:ios`, `npm run validate:android`, and `npm run validate:ios` in `package.json`.
 - Web target: Expo web export with Metro bundler and PWA patching via `npm run build:web` / `npm run build:pwa` in `package.json` and `scripts/prepare-pwa.js`.
-- Deployment target: Azure Static Web Apps for the web app and docs via `.github/workflows/azure-prod-deploy.yml`, `.github/workflows/azure-dev-deploy.yml`, and `.github/workflows/deploy-docs.yml`.
+- Deployment target: Azure Static Web Apps for the web app and docs via `.github/workflows/azure-prod-deploy.yml`, and `.github/workflows/deploy-docs.yml`.
 
 ---
 

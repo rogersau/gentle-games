@@ -1,13 +1,9 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
-  Animated,
-  PanResponder,
-  PanResponderGestureState,
   Platform,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
@@ -25,12 +21,24 @@ import {
   AppModal,
   GuidedPracticePrompt,
 } from '../ui/components';
-import { Space, TypeStyle } from '../ui/tokens';
+import { HitTarget, Space, TypeStyle } from '../ui/tokens';
 import { getGameSettings, patternLevelToDifficulty, PatternTrainLevel } from '../games/settings';
 import { useAnimationEnabled } from '../ui/animations';
 import { TrainEngine, Carriage } from '../components/train';
 import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
-import { usePatternTrainGame, DraggableCarriage } from './usePatternTrainGame';
+import { usePatternTrainGame } from './usePatternTrainGame';
+import { PatternTrainChoice } from './PatternTrainChoice';
+
+const pictureKeys: Record<string, string> = {
+  '🚂': 'engine',
+  '🌟': 'star',
+  '🌈': 'rainbow',
+  '🌸': 'flower',
+  '☁️': 'cloud',
+  '🫧': 'bubbles',
+  '🍓': 'strawberry',
+  '🧸': 'teddy',
+};
 
 export const PatternTrainScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -52,9 +60,9 @@ export const PatternTrainScreen: React.FC = () => {
   const {
     pattern,
     completedRounds,
-    isProcessing,
     showDifficultySelector,
-    showMilestoneModal,
+    showMilestone,
+    attachedCarriage,
     guidedRound,
     feedback,
   } = state;
@@ -68,26 +76,10 @@ export const PatternTrainScreen: React.FC = () => {
     replayInstructions,
   } = actions;
 
-  const [draggableCarriages, setDraggableCarriages] = useState<DraggableCarriage[]>([]);
+  const [showInstructions, setShowInstructions] = useState(false);
   const trainZoneRef = useRef<View>(null);
-  const [trainWidth, setTrainWidth] = useState(Math.min(windowWidth, 760) - 88);
-  const [trainZoneLayout, setTrainZoneLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
-
-  React.useEffect(() => {
-    if (!pattern) {
-      setDraggableCarriages([]);
-      return;
-    }
-    setDraggableCarriages(
-      pattern.choices.map((emoji) => ({
-        emoji,
-        position: new Animated.ValueXY({ x: 0, y: 0 }),
-        scale: new Animated.Value(1),
-        opacity: new Animated.Value(1),
-        isAvailable: true,
-      })),
-    );
-  }, [pattern]);
+  const [measuredTrainWidth, setMeasuredTrainWidth] = useState<number>();
+  const trainWidth = measuredTrainWidth ?? Math.min(windowWidth, 760) - 2 * (Space.md + Space.lg);
 
   const difficultyOptions: { value: Difficulty; label: string }[] = [
     { value: 'easy', label: t('games.patternTrain.difficulty.easy.label') },
@@ -109,96 +101,73 @@ export const PatternTrainScreen: React.FC = () => {
     [selectDifficulty, updateGameSettings],
   );
 
-  const handleCloseDifficultyModal = useCallback(() => {
-    handleCloseDifficultySelector();
-  }, [handleCloseDifficultySelector]);
-
-  const measureTrainZone = useCallback(() => {
-    trainZoneRef.current?.measure((_x, _y, width, height, pageX, pageY) => {
-      setTrainZoneLayout({ x: pageX, y: pageY, width, height });
-    });
-  }, []);
-
   const handleChoice = useCallback(
     (choice: string) => {
       const result = submitChoice(choice);
       if (!result) return;
 
       if (result.isCorrect) void playMatchSound(settings);
-      AccessibilityInfo.announceForAccessibility(
-        result.isCorrect
-          ? t('games.patternTrain.feedback.correctAnnouncement')
-          : t('games.patternTrain.feedback.incorrectAnnouncement'),
-      );
+      if (Platform.OS === 'ios') {
+        AccessibilityInfo.announceForAccessibility(
+          result.isCorrect
+            ? t('games.patternTrain.feedback.correct')
+            : t('games.patternTrain.feedback.incorrect'),
+        );
+      }
     },
     [settings, submitChoice, t],
   );
 
-  const isOverTrainZone = useCallback(
-    (gestureState: PanResponderGestureState) =>
-      gestureState.moveX >= trainZoneLayout.x &&
-      gestureState.moveX <= trainZoneLayout.x + trainZoneLayout.width &&
-      gestureState.moveY >= trainZoneLayout.y &&
-      gestureState.moveY <= trainZoneLayout.y + trainZoneLayout.height,
-    [trainZoneLayout],
+  const handleDrop = useCallback(
+    (choice: string, pageX: number, pageY: number) => {
+      const zone = trainZoneRef.current;
+      // Web measurement uses viewport coordinates, while responder events use page coordinates.
+      const x = Platform.OS === 'web' ? pageX - window.scrollX : pageX;
+      const y = Platform.OS === 'web' ? pageY - window.scrollY : pageY;
+      zone?.measure((_left, _top, width, height, zoneX, zoneY) => {
+        if (
+          zone === trainZoneRef.current &&
+          width > 0 &&
+          height > 0 &&
+          x >= zoneX &&
+          x <= zoneX + width &&
+          y >= zoneY &&
+          y <= zoneY + height
+        ) {
+          handleChoice(choice);
+        }
+      });
+    },
+    [handleChoice],
   );
 
-  const createPanResponder = useCallback(
-    (carriage: DraggableCarriage) =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => false,
-        onMoveShouldSetPanResponder: (_, gestureState) =>
-          !isProcessing &&
-          guidedRound.phase !== 'corrected' &&
-          carriage.isAvailable &&
-          (Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4),
-        onPanResponderGrant: () => {
-          if (animationsEnabled) {
-            Animated.spring(carriage.scale, {
-              toValue: 1.08,
-              useNativeDriver: Platform.OS !== 'web',
-            }).start();
-          } else {
-            carriage.scale.setValue(1.08);
-          }
-        },
-        onPanResponderMove: (_, gestureState) => {
-          carriage.position.setValue({ x: gestureState.dx, y: gestureState.dy });
-        },
-        onPanResponderRelease: (_, gestureState) => {
-          const droppedOnTrain = isOverTrainZone(gestureState);
-          if (droppedOnTrain) handleChoice(carriage.emoji);
-          if (animationsEnabled) {
-            Animated.spring(carriage.position, {
-              toValue: { x: 0, y: 0 },
-              useNativeDriver: Platform.OS !== 'web',
-            }).start();
-            Animated.spring(carriage.scale, {
-              toValue: 1,
-              useNativeDriver: Platform.OS !== 'web',
-            }).start();
-          } else {
-            carriage.position.setValue({ x: 0, y: 0 });
-            carriage.scale.setValue(1);
-          }
-        },
-      }),
-    [animationsEnabled, guidedRound.phase, handleChoice, isOverTrainZone, isProcessing],
+  const pictureName = (emoji: string) =>
+    pictureKeys[emoji] ? translate(`games.patternTrain.pictures.${pictureKeys[emoji]}`) : emoji;
+  const trainSequence = pattern.carriages.map((carriage) =>
+    carriage.isMissing
+      ? attachedCarriage
+        ? pictureName(attachedCarriage)
+        : t('games.patternTrain.missingCarriage')
+      : pictureName(carriage.emoji),
   );
-
-  const handleSkip = useCallback(() => {
-    skipRound();
-    startNewRound();
-  }, [skipRound, startNewRound]);
-
-  const ruleLabel = pattern ? translate(`games.patternTrain.rules.${pattern.templateId}`) : '';
-  const model = pattern ? (
-    <View
-      accessibilityLabel={t('games.patternTrain.guidance.modelAccessibilityLabel', {
-        sequence: pattern.carriages.map((carriage) => carriage.emoji).join(' '),
-      })}
-    >
-      <Text style={styles.modelText}>
+  const toggleInstructions = () => {
+    if (!showInstructions) {
+      replayInstructions();
+      if (Platform.OS === 'ios') {
+        AccessibilityInfo.announceForAccessibility(t('games.patternTrain.instructions'));
+      }
+    }
+    setShowInstructions(!showInstructions);
+  };
+  const ruleLabel = translate(`games.patternTrain.rules.${pattern.templateId}`);
+  const model = (
+    <View>
+      <Text
+        style={styles.modelText}
+        accessibilityLabel={t('games.patternTrain.guidance.modelAccessibilityLabel', {
+          sequence: pattern.carriages.map((carriage) => pictureName(carriage.emoji)).join(', '),
+        })}
+      >
         {t('games.patternTrain.guidance.model', {
           sequence: pattern.carriages.map((carriage) => carriage.emoji).join(' '),
         })}
@@ -210,10 +179,15 @@ export const PatternTrainScreen: React.FC = () => {
         })}
       </Text>
     </View>
-  ) : null;
-  const trainScale = pattern
-    ? Math.min(1, Math.max(1, trainWidth - Space.sm) / (64 + pattern.carriages.length * 56))
-    : 1;
+  );
+  const trainScale = Math.min(
+    1,
+    Math.max(1, trainWidth - Space.sm) / (64 + pattern.carriages.length * 56),
+  );
+  const choiceWidth =
+    (trainWidth - Space.sm * (pattern.choices.length - 1)) / pattern.choices.length;
+  const choiceSize = Math.max(HitTarget.min, Math.min(64, Math.floor(choiceWidth)));
+  const isComplete = guidedRound.phase === 'corrected';
 
   return (
     <AppScreen
@@ -227,160 +201,120 @@ export const PatternTrainScreen: React.FC = () => {
           {t('games.patternTrain.guidance.instruction')}
         </Text>
 
-        {pattern ? (
-          <>
-            <AppCard variant='elevated' style={styles.patternCard}>
-              <View
-                ref={trainZoneRef}
-                style={styles.trainZone}
-                onLayout={(event) => {
-                  setTrainWidth(event.nativeEvent.layout.width);
-                  measureTrainZone();
-                }}
-                accessibilityLabel={t('games.patternTrain.train.accessibilityLabel')}
-                accessibilityRole='image'
-              >
-                <View style={[styles.trainContainer, { transform: [{ scale: trainScale }] }]}>
-                  <View style={styles.trainPart}>
-                    <TrainEngine size={64} />
-                  </View>
-                  {pattern.carriages.map((carriage, index) => {
-                    const displayedEmoji = carriage.isMissing
-                      ? state.attachedCarriage
-                      : carriage.emoji;
-                    const isOpenSlot = carriage.isMissing && !state.attachedCarriage;
-                    return (
-                      <View key={`${carriage.emoji}-${index}`} style={styles.trainPart}>
-                        <Carriage
-                          size={56}
-                          isMissing={isOpenSlot}
-                          content={displayedEmoji ?? '?'}
-                        />
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-            </AppCard>
+        <AppCard variant='elevated' style={styles.patternCard}>
+          <View
+            ref={trainZoneRef}
+            collapsable={false}
+            style={styles.trainZone}
+            onLayout={(event) => setMeasuredTrainWidth(event.nativeEvent.layout.width)}
+            accessible
+            accessibilityLabel={t('games.patternTrain.train.accessibilityLabel', {
+              sequence: trainSequence.join(', '),
+            })}
+            accessibilityRole='image'
+            testID='pattern-train-zone'
+          >
+            <View style={styles.trainContainer}>
+              <TrainEngine size={64 * trainScale} />
+              {pattern.carriages.map((carriage, index) => (
+                <Carriage
+                  key={index}
+                  size={56 * trainScale}
+                  isMissing={carriage.isMissing && !attachedCarriage}
+                  content={carriage.isMissing ? (attachedCarriage ?? '?') : carriage.emoji}
+                />
+              ))}
+            </View>
+          </View>
+        </AppCard>
 
-            <AppCard variant='elevated' style={styles.platformCard}>
-              <Text style={styles.platformLabel}>{t('games.patternTrain.platform.label')}</Text>
-              <View
-                style={styles.platform}
-                accessibilityLabel={t('games.patternTrain.platform.accessibilityLabel', {
-                  count: draggableCarriages.length,
+        <AppCard variant='elevated' style={styles.platformCard}>
+          <Text style={styles.platformLabel}>{t('games.patternTrain.platform.label')}</Text>
+          <View style={styles.platform}>
+            {pattern.choices.map((emoji) => (
+              <PatternTrainChoice
+                key={`${guidedRound.exampleNumber}-${pattern.difficulty}-${emoji}`}
+                emoji={emoji}
+                label={t('games.patternTrain.carriage.accessibilityLabel', {
+                  picture: pictureName(emoji),
                 })}
-              >
-                {draggableCarriages.map((carriage, index) => {
-                  const panResponder = createPanResponder(carriage);
-                  return (
-                    <Animated.View
-                      key={`${carriage.emoji}-${index}`}
-                      style={[
-                        styles.draggableCarriage,
-                        {
-                          transform: [
-                            { translateX: carriage.position.x },
-                            { translateY: carriage.position.y },
-                            { scale: carriage.scale },
-                          ],
-                          opacity: carriage.opacity,
-                        },
-                      ]}
-                      {...panResponder.panHandlers}
-                    >
-                      <TouchableOpacity
-                        onPress={() => handleChoice(carriage.emoji)}
-                        disabled={isProcessing || guidedRound.phase === 'corrected'}
-                        accessibilityRole='button'
-                        accessibilityLabel={t('games.patternTrain.carriage.accessibilityLabel', {
-                          emoji: carriage.emoji,
-                        })}
-                        accessibilityHint={t('games.patternTrain.carriage.accessibilityHint')}
-                        hitSlop={8}
-                        style={styles.carriageButton}
-                      >
-                        <Carriage content={carriage.emoji} size={64} />
-                      </TouchableOpacity>
-                    </Animated.View>
-                  );
-                })}
-              </View>
-              <Text style={styles.instructions}>{t('games.patternTrain.instructions')}</Text>
-            </AppCard>
-
-            {guidedRound.phase === 'corrected' && !showMilestoneModal ? (
-              <AppButton
-                icon='next'
-                label={t('games.patternTrain.guidance.next')}
-                onPress={startNewRound}
-                accessibilityHint={t('games.patternTrain.guidance.nextHint')}
-                testID='pattern-train-next'
+                hint={t('games.patternTrain.carriage.accessibilityHint')}
+                size={choiceSize}
+                disabled={isComplete}
+                animationsEnabled={animationsEnabled}
+                onChoose={handleChoice}
+                onDrop={handleDrop}
               />
-            ) : null}
+            ))}
+          </View>
+          <View aria-live='polite'>
+            {feedback ? <Text style={styles.feedback}>{feedback}</Text> : null}
+          </View>
+        </AppCard>
 
-            <GuidedPracticePrompt
-              state={guidedRound}
-              neutralFeedback={feedback}
-              hint={t('games.patternTrain.guidance.showPattern', {
-                unit: pattern.repeatUnit.join(' '),
-              })}
-              model={model}
-              hintLabel={t('games.patternTrain.guidance.showPatternButton')}
-              replayLabel={t('games.patternTrain.guidance.replay')}
-              skipLabel={t('games.patternTrain.guidance.skip')}
-              onReplay={replayInstructions}
-              onHint={showHint}
-              onSkip={handleSkip}
-            />
-
+        {isComplete ? (
+          <>
             <AppButton
-              label={t('games.patternTrain.changeLevel')}
-              variant='ghost'
-              onPress={actions.openDifficultySelector}
-              testID='pattern-train-level'
+              icon='next'
+              label={t('games.patternTrain.guidance.next')}
+              onPress={startNewRound}
+              accessibilityHint={t('games.patternTrain.guidance.nextHint')}
+              testID='pattern-train-next'
             />
-
-            {showPressureMetrics ? (
-              <Text
-                style={styles.meta}
-                accessibilityLabel={t('games.patternTrain.roundsAccessibilityLabel', {
-                  count: completedRounds,
-                })}
-              >
-                {t('games.patternTrain.completedRounds')}: {completedRounds}
+            {showMilestone ? (
+              <Text style={styles.meta}>
+                {t('games.patternTrain.milestone.rounds', { count: completedRounds })}
               </Text>
             ) : null}
           </>
+        ) : (
+          <GuidedPracticePrompt
+            state={guidedRound}
+            instruction={showInstructions ? t('games.patternTrain.instructions') : undefined}
+            hint={t('games.patternTrain.guidance.showPattern', {
+              unit: pattern.repeatUnit.join(' '),
+            })}
+            model={model}
+            hintLabel={t('games.patternTrain.guidance.showPatternButton')}
+            replayLabel={t(
+              showInstructions
+                ? 'games.patternTrain.guidance.hideInstructions'
+                : 'games.patternTrain.guidance.replay',
+            )}
+            skipLabel={t('games.patternTrain.guidance.skip')}
+            onReplay={toggleInstructions}
+            onHint={showHint}
+            onSkip={skipRound}
+          />
+        )}
+
+        <AppButton
+          label={t('games.patternTrain.changeLevel')}
+          variant='ghost'
+          onPress={actions.openDifficultySelector}
+          style={styles.levelButton}
+          testID='pattern-train-level'
+        />
+
+        {showPressureMetrics && !showMilestone ? (
+          <Text
+            style={styles.meta}
+            accessibilityLabel={t('games.patternTrain.roundsAccessibilityLabel', {
+              count: completedRounds,
+            })}
+          >
+            {t('games.patternTrain.completedRounds')}: {completedRounds}
+          </Text>
         ) : null}
       </View>
 
       <AppModal
-        visible={showMilestoneCelebrations && showMilestoneModal}
-        title={t('games.patternTrain.milestone.title', { count: completedRounds })}
-        onClose={() => undefined}
-        showClose={false}
-        dismissOnBackdropPress={false}
-      >
-        <Text style={styles.milestoneText}>{t('games.patternTrain.milestone.default')}</Text>
-        <Text style={styles.milestoneCount}>
-          {t('games.patternTrain.milestone.rounds', { count: completedRounds })}
-        </Text>
-        <AppButton
-          label={t('games.patternTrain.milestone.continue')}
-          onPress={actions.handleMilestoneContinue}
-          accessibilityHint={t('games.patternTrain.milestone.continueHint')}
-        />
-      </AppModal>
-
-      <AppModal
         visible={showDifficultySelector}
-        onClose={handleCloseDifficultyModal}
-        title={t('games.patternTrain.title')}
+        onClose={handleCloseDifficultySelector}
+        title={t('games.patternTrain.chooseDifficulty')}
         showClose
         closeLabel={t('common.cancel')}
       >
-        <Text style={styles.modalSubtitle}>{t('games.patternTrain.chooseDifficulty')}</Text>
         <View style={styles.optionsList}>
           {difficultyOptions.map(({ value, label }) => (
             <AppButton
@@ -392,6 +326,7 @@ export const PatternTrainScreen: React.FC = () => {
               onPress={() => handleDifficultySelect(value)}
               style={styles.optionButton}
               accessibilityLabel={t('games.patternTrain.difficultyAccessibilityLabel', { label })}
+              accessibilityState={{ selected: difficulty === value }}
             />
           ))}
         </View>
@@ -419,60 +354,36 @@ const createStyles = (colors: ThemeColors) =>
     },
     meta: { ...TypeStyle.label, color: colors.text, marginVertical: Space.sm },
     patternCard: { width: '100%', alignItems: 'center', marginVertical: Space.sm },
-    repeatUnit: { ...TypeStyle.bodySm, color: colors.text, textAlign: 'center' },
     trainZone: {
       width: '100%',
-      minHeight: 104,
+      minHeight: 64,
       justifyContent: 'center',
       alignItems: 'center',
-      marginTop: Space.md,
       paddingHorizontal: Space.xs,
     },
     trainContainer: { flexDirection: 'row', alignItems: 'center' },
-    trainPart: { flexDirection: 'row', alignItems: 'center', position: 'relative' },
     modelText: {
       ...TypeStyle.bodySm,
       color: colors.text,
       textAlign: 'center',
       marginTop: Space.xs,
     },
-    platformCard: { width: '100%', marginVertical: Space.sm, alignItems: 'center' },
+    platformCard: { width: '100%', marginVertical: Space.sm, alignItems: 'center', zIndex: 1 },
     platformLabel: { ...TypeStyle.label, color: colors.textLight, marginBottom: Space.sm },
     platform: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'center',
-      gap: Space.base,
-      padding: Space.sm,
-      minHeight: 80,
+      gap: Space.sm,
       width: '100%',
     },
-    draggableCarriage: { zIndex: 10 },
-    carriageButton: { padding: 0, backgroundColor: 'transparent' },
-    instructions: {
+    feedback: {
       ...TypeStyle.bodySm,
-      color: colors.textLight,
+      color: colors.text,
       textAlign: 'center',
       marginTop: Space.sm,
     },
-    modalSubtitle: {
-      ...TypeStyle.bodySm,
-      color: colors.textLight,
-      textAlign: 'center',
-      marginBottom: Space.base,
-    },
     optionsList: { marginBottom: Space.sm },
     optionButton: { marginBottom: Space.sm },
-    milestoneText: {
-      ...TypeStyle.body,
-      color: colors.text,
-      textAlign: 'center',
-      marginBottom: Space.sm,
-    },
-    milestoneCount: {
-      ...TypeStyle.label,
-      color: colors.textLight,
-      textAlign: 'center',
-      marginBottom: Space.base,
-    },
+    levelButton: { marginTop: Space.sm },
   });

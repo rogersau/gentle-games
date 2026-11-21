@@ -3,14 +3,20 @@ import React, {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useId,
   useMemo,
   useRef,
+  useState,
 } from 'react';
-import { PanResponder, StyleSheet, View } from 'react-native';
-import Svg, { Circle, Defs, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg';
+import { PanResponder, Platform, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import Svg, { Circle, ClipPath, Defs, G, Polygon, Rect } from 'react-native-svg';
 import { useThemeColors } from '../utils/theme';
 import { useTranslation } from 'react-i18next';
-import { useGlitterParticles } from '../hooks/useGlitterParticles';
+import {
+  GLITTER_GLOBE_PADDING,
+  useGlitterParticles,
+  type GlitterParticle,
+} from '../hooks/useGlitterParticles';
 import { useGlitterGestures } from '../hooks/useGlitterGestures';
 import {
   DEFAULT_GLITTER_SETTINGS,
@@ -19,22 +25,8 @@ import {
   GlitterFallSettings,
 } from '../games/glitterSettings';
 
-type GlitterShape = 'circle' | 'square' | 'diamond' | 'star';
-
-interface GlitterParticle {
-  id: number;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  radius: number;
-  shape: GlitterShape;
-  color: string;
-  opacity: number;
-}
-
 export interface GlitterGlobeRef {
-  addGlitter: (count?: number) => void;
+  addGlitter: (count?: number) => boolean;
   clearGlitter: () => void;
   swirl: () => void;
   settle: () => void;
@@ -52,18 +44,11 @@ interface GlitterGlobeProps {
 }
 
 const PARTICLE_BOUNCE = 0.6;
-const GLOBE_PADDING = 10;
 const FINGER_INFLUENCE_RADIUS = 96;
-const FINGER_PUSH = 16;
+const FINGER_PUSH = 10;
+const MAX_DRAG_STEP = 12;
 const SHAKE_IMPULSE = 45;
-const LARGE_PIECE_CHANCE = 0.3;
 const WAKE_INTERVAL_MS = 45;
-const WAKE_MAX_TRAIL = 22;
-
-const PARTICLE_COLORS = ['#FF5D8F', '#6BCBFF', '#FFD166', '#B8F559', '#C792EA', '#FF9E5E'];
-const PARTICLE_SHAPES: GlitterShape[] = ['circle', 'square', 'diamond', 'star'];
-
-let particleCounter = 0;
 
 const randomInRange = (min: number, max: number) => min + Math.random() * (max - min);
 
@@ -82,47 +67,6 @@ const getStarPoints = (
     points.push(`${x},${y}`);
   }
   return points.join(' ');
-};
-
-const createParticle = (
-  width: number,
-  height: number,
-  colorCount: GlitterFallSettings['colorCount'],
-): GlitterParticle => {
-  const centerX = width / 2;
-  const centerY = height / 2;
-  const globeRadius = Math.min(width, height) / 2 - GLOBE_PADDING;
-  const spawnY = centerY - globeRadius + randomInRange(16, 42);
-  const isLargePiece = Math.random() < LARGE_PIECE_CHANCE;
-
-  return {
-    id: particleCounter++,
-    x: centerX + randomInRange(-globeRadius * 0.35, globeRadius * 0.35),
-    y: spawnY,
-    vx: randomInRange(-10, 10),
-    vy: randomInRange(4, 18),
-    radius: isLargePiece ? randomInRange(12, 18) : randomInRange(4, 7),
-    shape: PARTICLE_SHAPES[Math.floor(Math.random() * PARTICLE_SHAPES.length)],
-    color: PARTICLE_COLORS[Math.floor(Math.random() * colorCount)],
-    opacity: randomInRange(0.6, 0.95),
-  };
-};
-
-const createParticles = (
-  count: number,
-  width: number,
-  height: number,
-  colorCount: GlitterFallSettings['colorCount'],
-): GlitterParticle[] =>
-  Array.from({ length: count }, () => createParticle(width, height, colorCount));
-
-const isPointInsideGlobe = (x: number, y: number, width: number, height: number): boolean => {
-  const centerX = width / 2;
-  const centerY = height / 2;
-  const globeRadius = Math.min(width, height) / 2 - GLOBE_PADDING;
-  const dx = x - centerX;
-  const dy = y - centerY;
-  return dx * dx + dy * dy <= globeRadius * globeRadius;
 };
 
 export const resolveParticleCollisions = (particles: GlitterParticle[]): GlitterParticle[] => {
@@ -210,20 +154,9 @@ const applyFingerImpulse = (
   touchY: number,
   moveX: number,
   moveY: number,
-  width: number,
-  height: number,
 ): GlitterParticle[] => {
-  const centerX = width / 2;
-  const centerY = height / 2;
-  const globeRadius = Math.min(width, height) / 2 - GLOBE_PADDING;
-  const touchDx = touchX - centerX;
-  const touchDy = touchY - centerY;
-  const touchDistance = Math.sqrt(touchDx * touchDx + touchDy * touchDy);
-
-  if (touchDistance > globeRadius) {
-    return particles;
-  }
-
+  const step = Math.hypot(moveX, moveY);
+  const scale = Math.min(1, MAX_DRAG_STEP / (step || 1));
   return particles.map((particle) => {
     const dx = particle.x - touchX;
     const dy = particle.y - touchY;
@@ -235,14 +168,14 @@ const applyFingerImpulse = (
 
     const safeDistance = distance || 1;
     const nx = dx / safeDistance;
-    const ny = dy / safeDistance;
+    const ny = distance === 0 ? -1 : dy / safeDistance;
     const distanceWeight = 1 - distance / FINGER_INFLUENCE_RADIUS;
     const push = FINGER_PUSH * distanceWeight;
 
     return {
       ...particle,
-      vx: particle.vx + nx * push + moveX * 1.2,
-      vy: particle.vy + ny * push + moveY * 1.2,
+      vx: particle.vx + nx * push + moveX * scale * distanceWeight,
+      vy: particle.vy + ny * push + moveY * scale * distanceWeight,
     };
   });
 };
@@ -264,104 +197,83 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
     const { colors } = useThemeColors();
     const { t } = useTranslation();
     const resolvedConfig = useMemo(() => resolveGlitterSettings(config), [config]);
-    const configuredParticleCount =
-      initialCount ?? GLITTER_PARTICLE_COUNTS[resolvedConfig.particleDensity];
-    const effectiveBackgroundMotion = resolvedConfig.backgroundMotion && !reducedMotion;
-    const effectiveRipples = resolvedConfig.ripples && !reducedMotion;
-    const sizeRef = useRef({ width, height });
+    const particleCount = initialCount ?? GLITTER_PARTICLE_COUNTS[resolvedConfig.particleDensity];
+    const canAnimate = motionEnabled && !reducedMotion;
+    const showRipples = canAnimate && resolvedConfig.ripples;
+    const [settled, setSettled] = useState(false);
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = Math.max(0, Math.min(width, height) / 2 - GLITTER_GLOBE_PADDING);
+    const touchLeft = centerX - radius;
+    const touchTop = centerY - radius;
+    const clipId = `glitter-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
     const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
-    const lastWakeAtRef = useRef(0);
+    const lastWakeAtRef = useRef(-Infinity);
 
     const onInteractionRef = useRef(onInteraction);
     useEffect(() => {
       onInteractionRef.current = onInteraction;
     }, [onInteraction]);
 
-    useEffect(() => {
-      sizeRef.current = { width, height };
-    }, [width, height]);
-
     const {
       particles,
       ripples,
-      syncParticles,
+      updateParticles,
       addParticles,
       clearParticles,
       clearRipples,
-      syncRipples,
+      addRipple,
       startAnimation,
       stopAnimation,
     } = useGlitterParticles({
-      particleCount: configuredParticleCount,
+      particleCount,
       canvasWidth: width,
       canvasHeight: height,
       colorCount: resolvedConfig.colorCount,
       fallSpeed: resolvedConfig.fallSpeed,
-      backgroundMotion: effectiveBackgroundMotion,
+      backgroundMotion: canAnimate && resolvedConfig.backgroundMotion,
+      maxParticles,
       resolveCollisions: resolveParticleCollisions,
     });
 
-    const ripplesRef = useRef(ripples);
-    const syncRipplesRef = useRef(syncRipples);
     useEffect(() => {
-      ripplesRef.current = ripples;
-      syncRipplesRef.current = syncRipples;
-    });
-
-    useEffect(() => {
-      if (motionEnabled) startAnimation();
-      else stopAnimation();
+      if (canAnimate && !settled) startAnimation();
       return stopAnimation;
-    }, [motionEnabled, startAnimation, stopAnimation]);
+    }, [canAnimate, settled, startAnimation, stopAnimation]);
 
-    const handleShakeCallback = useCallback(() => {
-      onInteractionRef.current?.();
-      syncParticles(applyShakeImpulse(particles, sizeRef.current.width, sizeRef.current.height));
-    }, [particles, syncParticles]);
+    useEffect(() => {
+      clearRipples();
+    }, [clearRipples, showRipples, width, height]);
 
-    const handleWakeCallback = useCallback(() => {
-      const now = Date.now();
-      lastWakeAtRef.current = now;
+    const handleShake = useCallback(() => {
+      updateParticles((current) => applyShakeImpulse(current, width, height));
       onInteractionRef.current?.();
-      addParticles([]);
-    }, [addParticles]);
+    }, [height, updateParticles, width]);
 
     useGlitterGestures({
-      onShake: handleShakeCallback,
-      onWake: handleWakeCallback,
-      enabled: resolvedConfig.shakeResponse,
+      onShake: handleShake,
+      enabled: canAnimate && !settled && resolvedConfig.shakeResponse,
     });
 
     useImperativeHandle(
       ref,
       () => ({
         addGlitter: (count = 20) => {
-          const nextCount = Math.max(0, Math.min(count, maxParticles - particles.length));
-          if (nextCount === 0) {
-            return;
-          }
-
-          addParticles(
-            createParticles(
-              nextCount,
-              sizeRef.current.width,
-              sizeRef.current.height,
-              resolvedConfig.colorCount,
-            ),
-          );
+          const added = addParticles(count);
+          if (added && canAnimate) setSettled(false);
+          return added;
         },
         clearGlitter: () => {
           clearParticles();
           clearRipples();
         },
         swirl: () => {
-          const centerX = sizeRef.current.width / 2;
-          const centerY = sizeRef.current.height / 2;
-          syncParticles(
-            particles.map((particle) => {
+          if (!canAnimate) return;
+          updateParticles((current) =>
+            current.map((particle) => {
               const dx = particle.x - centerX;
               const dy = particle.y - centerY;
-              const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+              const distance = Math.hypot(dx, dy) || 1;
               return {
                 ...particle,
                 vx: particle.vx - (dy / distance) * 24,
@@ -369,233 +281,192 @@ export const GlitterGlobe = forwardRef<GlitterGlobeRef, GlitterGlobeProps>(
               };
             }),
           );
+          setSettled(false);
         },
         settle: () => {
-          syncParticles(
-            particles.map((particle) => ({
-              ...particle,
-              vx: particle.vx * 0.15,
-              vy: particle.vy * 0.15,
-            })),
-          );
+          updateParticles((current) => current.map((particle) => ({ ...particle, vx: 0, vy: 0 })));
+          clearRipples();
+          setSettled(true);
         },
       }),
-      [
-        maxParticles,
-        particles,
-        addParticles,
-        clearParticles,
-        clearRipples,
-        resolvedConfig.colorCount,
-        syncParticles,
-      ],
+      [addParticles, canAnimate, centerX, centerY, clearParticles, clearRipples, updateParticles],
     );
 
-    const panResponder = useMemo(
-      () =>
-        PanResponder.create({
-          onStartShouldSetPanResponder: () => true,
-          onMoveShouldSetPanResponder: () => true,
-          onPanResponderGrant: (event) => {
-            const { locationX, locationY } = event.nativeEvent;
-            lastTouchRef.current = {
-              x: locationX,
-              y: locationY,
-            };
-            if (
-              motionEnabled &&
-              effectiveRipples &&
-              isPointInsideGlobe(
-                locationX,
-                locationY,
-                sizeRef.current.width,
-                sizeRef.current.height,
-              )
-            ) {
-              const now = Date.now();
-              lastWakeAtRef.current = now;
-              onInteractionRef.current?.();
-              syncRipplesRef.current(
-                [
-                  ...ripplesRef.current,
-                  {
-                    id: `wake-${now}-start`,
-                    x: locationX,
-                    y: locationY,
-                    radius: 6,
-                    opacity: 0.34,
-                  },
-                ].slice(-WAKE_MAX_TRAIL),
-              );
-            }
-          },
-          onPanResponderMove: (event) => {
-            const point = {
-              x: event.nativeEvent.locationX,
-              y: event.nativeEvent.locationY,
-            };
-
-            const previous = lastTouchRef.current ?? point;
-            lastTouchRef.current = point;
-
-            const moveX = point.x - previous.x;
-            const moveY = point.y - previous.y;
-            if (Math.abs(moveX) + Math.abs(moveY) < 0.5) {
-              return;
-            }
-
-            const isInside = isPointInsideGlobe(
-              point.x,
-              point.y,
-              sizeRef.current.width,
-              sizeRef.current.height,
-            );
-            let newRipples = ripplesRef.current;
-            if (motionEnabled && effectiveRipples && isInside) {
-              const now = Date.now();
-              if (now - lastWakeAtRef.current >= WAKE_INTERVAL_MS) {
-                lastWakeAtRef.current = now;
-                newRipples = [
-                  ...ripplesRef.current,
-                  {
-                    id: `wake-${now}-${Math.random().toString(36).slice(2, 6)}`,
-                    x: point.x,
-                    y: point.y,
-                    radius: 5,
-                    opacity: 0.28,
-                  },
-                ].slice(-WAKE_MAX_TRAIL);
-                syncRipplesRef.current(newRipples);
-              }
-              onInteractionRef.current?.();
-            }
-
-            syncParticles(
-              applyFingerImpulse(
-                particles,
-                point.x,
-                point.y,
-                moveX,
-                moveY,
-                sizeRef.current.width,
-                sizeRef.current.height,
-              ),
-            );
-          },
-          onPanResponderRelease: () => {
-            lastTouchRef.current = null;
-            lastWakeAtRef.current = 0;
-          },
-          onPanResponderTerminate: () => {
-            lastTouchRef.current = null;
-            lastWakeAtRef.current = 0;
-          },
-        }),
-      [effectiveRipples, motionEnabled, particles, syncParticles],
-    );
-
-    const globe = useMemo(() => {
-      const radius = Math.min(width, height) / 2 - GLOBE_PADDING;
-      return {
-        centerX: width / 2,
-        centerY: height / 2,
-        radius,
+    const panResponder = useMemo(() => {
+      const isInside = (x: number, y: number) => Math.hypot(x - radius, y - radius) <= radius;
+      const resetTouch = () => {
+        lastTouchRef.current = null;
       };
-    }, [height, width]);
+      const stirAt = (x: number, y: number, moveX: number, moveY: number) => {
+        if (!isInside(x, y)) return;
+        const globeX = x + touchLeft;
+        const globeY = y + touchTop;
 
+        setSettled(false);
+        updateParticles((current) => applyFingerImpulse(current, globeX, globeY, moveX, moveY));
+        if (showRipples) {
+          const now = Date.now();
+          if (now - lastWakeAtRef.current >= WAKE_INTERVAL_MS) {
+            lastWakeAtRef.current = now;
+            addRipple(globeX, globeY);
+          }
+        }
+        onInteractionRef.current?.();
+      };
+
+      return PanResponder.create({
+        onStartShouldSetPanResponder: ({ nativeEvent }) =>
+          isInside(nativeEvent.locationX, nativeEvent.locationY),
+        onPanResponderGrant: ({ nativeEvent }) => {
+          const { locationX: x, locationY: y } = nativeEvent;
+          lastTouchRef.current = { x, y };
+          lastWakeAtRef.current = -Infinity;
+          stirAt(x, y, 0, 0);
+        },
+        onPanResponderStart: (_event, gesture) => {
+          if (gesture.numberActiveTouches > 1) resetTouch();
+        },
+        onPanResponderMove: ({ nativeEvent }) => {
+          const { locationX: x, locationY: y } = nativeEvent;
+          const previous = lastTouchRef.current;
+          if (!previous) return;
+          const moveX = x - previous.x;
+          const moveY = y - previous.y;
+          if (Math.hypot(moveX, moveY) < 0.5) return;
+          lastTouchRef.current = { x, y };
+          stirAt(x, y, moveX, moveY);
+        },
+        onPanResponderRelease: resetTouch,
+        onPanResponderTerminate: resetTouch,
+      });
+    }, [addRipple, radius, showRipples, touchLeft, touchTop, updateParticles]);
+
+    const touchStyle = [
+      styles.touchLayer,
+      {
+        left: touchLeft,
+        top: touchTop,
+        width: radius * 2,
+        height: radius * 2,
+        borderRadius: radius,
+      },
+      canAnimate && Platform.OS === 'web' && ({ touchAction: 'none' } as ViewStyle),
+    ];
     return (
       <View
         style={[styles.container, { width, height }]}
-        accessible={true}
+        accessible
+        accessibilityRole='image'
         accessibilityLabel={t('games.glitterFall.accessibility')}
       >
         <Svg width={width} height={height}>
           <Defs>
-            <RadialGradient id='globeFill' cx='50%' cy='32%' rx='65%' ry='65%'>
-              <Stop offset='0%' stopColor={colors.surfaceGame} />
-              <Stop offset='100%' stopColor={colors.surfaceGame} />
-            </RadialGradient>
+            <ClipPath id={clipId}>
+              <Circle cx={centerX} cy={centerY} r={radius} />
+            </ClipPath>
           </Defs>
-
           <Circle
-            cx={globe.centerX}
-            cy={globe.centerY}
-            r={globe.radius}
-            fill='url(#globeFill)'
+            cx={centerX}
+            cy={centerY}
+            r={radius}
+            fill={colors.surfaceGame}
             stroke={colors.primary}
             strokeWidth={3}
           />
 
-          {particles.map((particle) => {
-            if (particle.shape === 'square') {
-              const size = particle.radius * 2;
+          <G clipPath={`url(#${clipId})`}>
+            {particles.map((particle) => {
+              if (particle.shape === 'square') {
+                const size = particle.radius * 2;
+                return (
+                  <Rect
+                    key={particle.id}
+                    x={particle.x - particle.radius}
+                    y={particle.y - particle.radius}
+                    width={size}
+                    height={size}
+                    fill={particle.color}
+                    opacity={particle.opacity}
+                    rx={particle.radius * 0.25}
+                  />
+                );
+              }
+
+              if (particle.shape === 'diamond') {
+                const points = `${particle.x},${particle.y - particle.radius} ${particle.x + particle.radius},${particle.y} ${particle.x},${particle.y + particle.radius} ${particle.x - particle.radius},${particle.y}`;
+                return (
+                  <Polygon
+                    key={particle.id}
+                    points={points}
+                    fill={particle.color}
+                    opacity={particle.opacity}
+                  />
+                );
+              }
+
+              if (particle.shape === 'star') {
+                return (
+                  <Polygon
+                    key={particle.id}
+                    points={getStarPoints(
+                      particle.x,
+                      particle.y,
+                      particle.radius,
+                      particle.radius * 0.45,
+                    )}
+                    fill={particle.color}
+                    opacity={particle.opacity}
+                  />
+                );
+              }
+
               return (
-                <Rect
+                <Circle
                   key={particle.id}
-                  x={particle.x - particle.radius}
-                  y={particle.y - particle.radius}
-                  width={size}
-                  height={size}
+                  cx={particle.x}
+                  cy={particle.y}
+                  r={particle.radius}
                   fill={particle.color}
                   opacity={particle.opacity}
-                  rx={particle.radius * 0.25}
                 />
               );
-            }
-
-            if (particle.shape === 'diamond') {
-              const points = `${particle.x},${particle.y - particle.radius} ${particle.x + particle.radius},${particle.y} ${particle.x},${particle.y + particle.radius} ${particle.x - particle.radius},${particle.y}`;
-              return (
-                <Polygon
-                  key={particle.id}
-                  points={points}
-                  fill={particle.color}
-                  opacity={particle.opacity}
-                />
-              );
-            }
-
-            if (particle.shape === 'star') {
-              return (
-                <Polygon
-                  key={particle.id}
-                  points={getStarPoints(
-                    particle.x,
-                    particle.y,
-                    particle.radius,
-                    particle.radius * 0.45,
-                  )}
-                  fill={particle.color}
-                  opacity={particle.opacity}
-                />
-              );
-            }
-
-            return (
+            })}
+            {ripples.map((wake) => (
               <Circle
-                key={particle.id}
-                cx={particle.x}
-                cy={particle.y}
-                r={particle.radius}
-                fill={particle.color}
-                opacity={particle.opacity}
+                key={wake.id}
+                cx={wake.x}
+                cy={wake.y}
+                r={wake.radius}
+                fill='none'
+                stroke={colors.cardFront}
+                strokeWidth={1.5}
+                opacity={wake.opacity}
               />
-            );
-          })}
-          {ripples.map((wake) => (
-            <Circle
-              key={wake.id}
-              cx={wake.x}
-              cy={wake.y}
-              r={wake.radius}
-              fill='none'
-              stroke={colors.cardFront}
-              strokeWidth={1.5}
-              opacity={wake.opacity}
-            />
-          ))}
+            ))}
+          </G>
         </Svg>
-        <View style={styles.touchLayer} {...panResponder.panHandlers} />
+        {canAnimate ? (
+          <View style={touchStyle} {...panResponder.panHandlers} />
+        ) : (
+          <Pressable
+            testID='glitter-still-surface'
+            accessible={false}
+            focusable={false}
+            style={touchStyle}
+            onPress={({ nativeEvent }) => {
+              // Web presses carry mouse-event offsets, including clicks generated by touch.
+              const event = nativeEvent as typeof nativeEvent & {
+                offsetX?: number;
+                offsetY?: number;
+              };
+              const locationX = event.locationX ?? event.offsetX;
+              const locationY = event.locationY ?? event.offsetY;
+              if (Math.hypot(locationX - radius, locationY - radius) <= radius) {
+                addParticles(1, { x: locationX + touchLeft, y: locationY + touchTop });
+              }
+            }}
+          />
+        )}
       </View>
     );
   },
@@ -609,9 +480,5 @@ const styles = StyleSheet.create({
   },
   touchLayer: {
     position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
   },
 });

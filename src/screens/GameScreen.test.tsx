@@ -28,7 +28,12 @@ jest.mock('../context/MochiContext', () => ({
 
 const mockUpdateGameSettings = jest.fn();
 const mockUpdateSettings = jest.fn();
-const memorySettings = { pressureFreeMode: false };
+const memorySettings = {
+  pressureFreeMode: false,
+  gameSettings: {
+    'memory-snap': { pairCount: 2, previewMode: 'none', mismatchDuration: 2000, hintEnabled: true },
+  },
+};
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: memorySettings,
@@ -115,6 +120,16 @@ describe('GameScreen', () => {
     fireEvent.press(screen.getByTestId('memory-pairs-3'));
     expect(mockUpdateGameSettings).toHaveBeenCalledWith('memory-snap', { pairCount: 3 });
     expect(screen.queryByTestId('memory-pairs-3')).toBeNull();
+  });
+
+  it('closes the board chooser without saving a size that is already selected', () => {
+    const screen = render(<GameScreen />);
+    fireEvent.press(screen.getByTestId('memory-change-board'));
+    const currentSize = screen.getByTestId('memory-pairs-2');
+    expect(currentSize.props.accessibilityState).toMatchObject({ selected: true, disabled: false });
+    fireEvent.press(currentSize);
+    expect(mockUpdateGameSettings).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('memory-pairs-2')).toBeNull();
   });
 
   it('exposes Home and an in-game global sound switch', () => {

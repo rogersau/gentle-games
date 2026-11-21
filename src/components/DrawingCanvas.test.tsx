@@ -1,6 +1,7 @@
 import React from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { PanResponder, StyleSheet, View } from 'react-native';
+import { Modal, PanResponder, Platform, StyleSheet, View } from 'react-native';
+import { Circle } from 'react-native-svg';
 import { DrawingCanvas, DrawingCanvasRef, HistoryEntry } from './DrawingCanvas';
 
 const findTouchLayer = (screen: ReturnType<typeof render>) =>
@@ -147,6 +148,157 @@ describe('DrawingCanvas', () => {
     expect(containerStyle.backgroundColor).toBe('#3F444D');
   });
 
+  it('renders a tap as a dot and a tap with the eraser as a round erase mark', () => {
+    const screen = render(
+      <DrawingCanvas width={320} height={280} canvasBackgroundColor='#FFF5E6' />,
+    );
+
+    drawGesture(screen, { x: 10, y: 20 });
+    expect(screen.UNSAFE_getByType(Circle).props).toMatchObject({
+      cx: 10,
+      cy: 20,
+      r: 2.5,
+      fill: '#FF6B6B',
+    });
+
+    fireEvent.press(screen.getByLabelText('games.drawing.eraserTool'));
+    drawGesture(screen, { x: 10, y: 20 });
+    expect(screen.UNSAFE_getAllByType(Circle)[1].props).toMatchObject({
+      cx: 10,
+      cy: 20,
+      r: 15,
+      fill: '#FFF5E6',
+    });
+  });
+
+  it('discards the live preview when a gesture is interrupted', () => {
+    const ref = React.createRef<DrawingCanvasRef>();
+    const screen = render(<DrawingCanvas ref={ref} width={320} height={280} />);
+    const touchLayer = findTouchLayer(screen);
+
+    act(() =>
+      touchLayer?.props.onPanResponderGrant({ nativeEvent: { locationX: 10, locationY: 20 } }),
+    );
+    expect(screen.UNSAFE_getByType(Circle).props).toMatchObject({ cx: 10, cy: 20 });
+    expect(touchLayer?.props.onPanResponderTerminationRequest()).toBe(false);
+    act(() => {
+      touchLayer?.props.onPanResponderTerminate();
+      touchLayer?.props.onPanResponderRelease();
+    });
+
+    expect(screen.UNSAFE_queryByType(Circle)).toBeNull();
+    expect(ref.current?.getHistory()).toEqual([]);
+    expect(touchLayer?.props.onPanResponderTerminationRequest()).toBe(true);
+  });
+
+  it('keeps a stroke with the starting finger and saves the release point once', () => {
+    const ref = React.createRef<DrawingCanvasRef>();
+    const screen = render(<DrawingCanvas ref={ref} width={320} height={280} />);
+    const touchLayer = findTouchLayer(screen);
+
+    const start = { identifier: '1', locationX: 0, locationY: 20 };
+    const other = { identifier: '2', locationX: 200, locationY: 180 };
+    const move = { ...start, locationX: 12 };
+    const end = { ...start, locationX: 26 };
+    act(() => {
+      touchLayer?.props.onPanResponderGrant({ nativeEvent: { ...start, changedTouches: [start] } });
+      touchLayer?.props.onPanResponderMove({ nativeEvent: { ...other, changedTouches: [other] } });
+      touchLayer?.props.onPanResponderMove({
+        nativeEvent: { ...other, changedTouches: [other, move] },
+      });
+      touchLayer?.props.onPanResponderRelease({ nativeEvent: { ...end, changedTouches: [end] } });
+      touchLayer?.props.onPanResponderRelease({ nativeEvent: { ...end, changedTouches: [end] } });
+    });
+
+    expect(ref.current?.getHistory()).toEqual([
+      expect.objectContaining({
+        kind: 'stroke',
+        points: [
+          { x: 0, y: 20 },
+          { x: 12, y: 20 },
+          { x: 26, y: 20 },
+        ],
+      }),
+    ]);
+  });
+
+  it('uses the current canvas size when starting a mirrored gesture after resizing', () => {
+    const ref = React.createRef<DrawingCanvasRef>();
+    const screen = render(<DrawingCanvas ref={ref} width={320} height={280} />);
+    fireEvent.press(screen.getByLabelText('games.drawing.symmetry'));
+
+    screen.rerender(<DrawingCanvas ref={ref} width={240} height={280} />);
+    drawGesture(screen, { x: 20, y: 30 });
+
+    expect(ref.current?.getHistory()).toEqual([
+      expect.objectContaining({ points: [{ x: 20, y: 30 }] }),
+      expect.objectContaining({ points: [{ x: 220, y: 30 }] }),
+    ]);
+  });
+
+  it('reserves browser touches on the drawing surface for drawing', () => {
+    const platform = jest.replaceProperty(Platform, 'OS', 'web');
+    try {
+      const screen = render(<DrawingCanvas width={320} height={280} />);
+      expect(StyleSheet.flatten(findTouchLayer(screen)?.props.style).touchAction).toBe('none');
+    } finally {
+      platform.restore();
+    }
+  });
+
+  it('discards a colour preview when the system dismisses the picker', () => {
+    const screen = render(<DrawingCanvas width={320} height={280} />);
+    fireEvent.press(screen.getByLabelText('games.drawing.eraserTool'));
+    fireEvent.press(screen.getByTestId('open-color-picker'));
+    fireEvent.press(screen.getAllByTestId('color-picker-preset-button')[0]);
+
+    fireEvent(screen.UNSAFE_getByType(Modal), 'requestClose');
+
+    expect(screen.queryByTestId('confirm-custom-color')).toBeNull();
+    expect(screen.getAllByTestId('palette-color-button')).toHaveLength(9);
+    expect(screen.getByLabelText('games.drawing.eraserTool').props.accessibilityState).toEqual({
+      selected: true,
+    });
+  });
+
+  it('applies a shape and its size together only when the picker is confirmed', () => {
+    const ref = React.createRef<DrawingCanvasRef>();
+    const screen = render(<DrawingCanvas ref={ref} width={320} height={280} />);
+    const shapeButton = screen.getByLabelText(
+      'games.drawing.shapeTool, games.drawing.shape.circle',
+    );
+    fireEvent.press(shapeButton);
+    fireEvent.press(screen.getByTestId('shape-option-square'));
+    fireEvent.press(screen.getByTestId('shape-size-small'));
+    fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.getByLabelText('games.drawing.penTool').props.accessibilityState).toEqual({
+      selected: true,
+    });
+    fireEvent.press(shapeButton);
+    expect(screen.getByTestId('shape-option-circle').props.accessibilityState).toEqual({
+      selected: true,
+    });
+    expect(screen.getByTestId('shape-size-medium').props.accessibilityState).toEqual({
+      selected: true,
+    });
+    fireEvent.press(screen.getByTestId('shape-option-square'));
+    fireEvent.press(screen.getByTestId('shape-size-large'));
+    fireEvent.press(screen.getByRole('button', { name: 'common.done' }));
+
+    const touchLayer = findTouchLayer(screen);
+    act(() => {
+      touchLayer?.props.onPanResponderGrant({ nativeEvent: { locationX: 40, locationY: 50 } });
+      touchLayer?.props.onPanResponderTerminate();
+    });
+    expect(ref.current?.getHistory()).toEqual([]);
+
+    drawGesture(screen, { x: 50, y: 60 });
+    expect(ref.current?.getHistory()).toEqual([
+      expect.objectContaining({ kind: 'shape', type: 'square', size: 100, x: 50, y: 60 }),
+    ]);
+  });
+
   it('shows confirmation before clearing and clears on confirm', () => {
     const initialHistory: HistoryEntry[] = [
       { kind: 'shape', id: 'shape-1', type: 'circle', x: 40, y: 40, size: 24, color: '#FF0000' },
@@ -229,7 +381,7 @@ describe('DrawingCanvas', () => {
     fireEvent.press(
       shapeScreen.getByLabelText('games.drawing.shapeTool, games.drawing.shape.circle'),
     );
-    fireEvent.press(shapeScreen.getAllByText('games.drawing.shape.circle')[0]);
+    fireEvent.press(shapeScreen.getByRole('button', { name: 'common.done' }));
 
     drawGesture(shapeScreen, { x: 80, y: 100 });
 

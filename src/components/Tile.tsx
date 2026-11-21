@@ -1,102 +1,108 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, Animated, View, Platform } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, Animated, Platform } from 'react-native';
 import { ThemeColors, Tile as TileType } from '../types';
 import { useAnimationEnabled } from '../ui/animations';
 import { useThemeColors } from '../utils/theme';
-import { Radius } from '../ui/tokens';
+import { ON_ACCENT_TEXT, Radius } from '../ui/tokens';
 import { useTranslation } from 'react-i18next';
 
 interface TileProps {
   tile: TileType;
   onPress: () => void;
   size: number;
+  position: number;
+  locked?: boolean;
+  canDismissMismatch?: boolean;
 }
 
-const TileComponent: React.FC<TileProps> = ({ tile, onPress, size }) => {
+const TileComponent: React.FC<TileProps> = ({
+  tile,
+  onPress,
+  size,
+  position,
+  locked,
+  canDismissMismatch,
+}) => {
   const animationsEnabled = useAnimationEnabled();
   const { colors } = useThemeColors();
   const { t } = useTranslation();
   const translate = t as unknown as (key: string, options?: Record<string, unknown>) => string;
   const styles = React.useMemo(() => createStyles(colors), [colors]);
-  const scaleAnim = React.useRef(new Animated.Value(1)).current;
-
-  const emojiSize = Math.floor(size * 0.6);
-  const minEmojiSize = 20;
-  const maxEmojiSize = 60;
-  const finalEmojiSize = Math.max(minEmojiSize, Math.min(maxEmojiSize, emojiSize));
-
+  const [scaleAnim] = React.useState(() => new Animated.Value(1));
   const isFaceUp = tile.isFlipped || tile.isMatched;
-  const [showFront, setShowFront] = React.useState(!isFaceUp);
+  const wasFaceUp = React.useRef(isFaceUp);
+  const disabled = !canDismissMismatch && (locked || isFaceUp);
 
   React.useEffect(() => {
-    if (animationsEnabled) {
-      Animated.timing(scaleAnim, {
-        toValue: 0,
-        duration: 120,
-        useNativeDriver: Platform.OS !== 'web',
-      }).start(() => {
-        setShowFront(!isFaceUp);
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 120,
-          useNativeDriver: Platform.OS !== 'web',
-        }).start();
-      });
-    } else {
-      setShowFront(!isFaceUp);
+    const changed = wasFaceUp.current !== isFaceUp;
+    wasFaceUp.current = isFaceUp;
+    if (!animationsEnabled || !changed) {
       scaleAnim.setValue(1);
+      return;
     }
+    scaleAnim.setValue(0.95);
+    const animation = Animated.timing(scaleAnim, {
+      toValue: 1,
+      duration: 160,
+      useNativeDriver: Platform.OS !== 'web',
+    });
+    animation.start();
+    return () => animation.stop();
   }, [isFaceUp, animationsEnabled, scaleAnim]);
 
   const tileStyle = tile.isMatched
     ? styles.tileMatched
-    : showFront
-      ? styles.tileFront
-      : styles.tileBack;
+    : isFaceUp
+      ? styles.tileFaceUp
+      : styles.tileFaceDown;
 
   const value = tile.name
     ? translate('games.memorySnap.cardValues.' + tile.name, { defaultValue: tile.name })
     : tile.value;
   const accessibilityLabel = tile.isMatched
-    ? t('games.memorySnap.tileMatched', { value })
-    : tile.isFlipped
-      ? t('games.memorySnap.tileFaceUp', { value })
-      : t('games.memorySnap.tileFaceDown');
+    ? t('games.memorySnap.tileMatched', { position, value })
+    : isFaceUp
+      ? t('games.memorySnap.tileFaceUp', { position, value })
+      : t('games.memorySnap.tileFaceDown', { position });
+  const accessibilityHint = canDismissMismatch
+    ? t('games.memorySnap.tileDismissHint')
+    : disabled
+      ? undefined
+      : t('games.memorySnap.tileFlipHint');
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      disabled={tile.isFlipped || tile.isMatched}
+      disabled={disabled}
       style={[styles.container, { width: size, height: size }]}
       hitSlop={4}
       activeOpacity={0.8}
       accessibilityRole='button'
       accessibilityLabel={accessibilityLabel}
-      accessibilityHint={
-        !tile.isFlipped && !tile.isMatched ? t('games.memorySnap.tileFlipHint') : undefined
-      }
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled }}
     >
-      <Animated.View style={[styles.tile, tileStyle, { transform: [{ scaleX: scaleAnim }] }]}>
-        {showFront ? (
-          <View style={styles.cardBack}>
-            <View style={styles.swirlBackground}>
-              <View style={[styles.swirl, styles.swirl1]} />
-              <View style={[styles.swirl, styles.swirl2]} />
-              <View style={[styles.swirl, styles.swirl3]} />
-            </View>
-            <Text style={styles.questionMark}>?</Text>
-          </View>
-        ) : (
-          <Text
-            style={[
-              styles.emoji,
-              { fontSize: finalEmojiSize },
-              tile.isMatched ? styles.matchedEmoji : undefined,
-            ]}
-          >
-            {tile.value}
+      <Animated.View
+        style={[styles.tile, tileStyle, { transform: [{ scale: scaleAnim }] }]}
+        accessibilityElementsHidden
+        importantForAccessibility='no-hide-descendants'
+        aria-hidden
+      >
+        <Text
+          allowFontScaling={false}
+          style={
+            isFaceUp
+              ? { fontSize: Math.min(60, Math.floor(size * 0.6)) }
+              : [styles.questionMark, { fontSize: Math.min(34, Math.floor(size * 0.5)) }]
+          }
+        >
+          {isFaceUp ? tile.value : '?'}
+        </Text>
+        {tile.isMatched ? (
+          <Text allowFontScaling={false} style={styles.matchMark}>
+            ✓
           </Text>
-        )}
+        ) : null}
       </Animated.View>
     </TouchableOpacity>
   );
@@ -117,12 +123,12 @@ const createStyles = (colors: ThemeColors) =>
       alignItems: 'center',
       overflow: 'hidden',
     },
-    tileFront: {
+    tileFaceDown: {
       backgroundColor: colors.cardBack,
       borderWidth: 2,
-      borderColor: colors.matched,
+      borderColor: colors.border,
     },
-    tileBack: {
+    tileFaceUp: {
       backgroundColor: colors.cardFront,
       borderWidth: 2,
       borderColor: colors.cardBack,
@@ -131,61 +137,17 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: colors.matched,
       borderWidth: 2,
       borderColor: colors.cardBack,
-      opacity: 0.65,
-    },
-    cardBack: {
-      flex: 1,
-      width: '100%',
-      height: '100%',
-      justifyContent: 'center',
-      alignItems: 'center',
-      position: 'relative',
-    },
-    swirlBackground: {
-      position: 'absolute',
-      width: '100%',
-      height: '100%',
-      opacity: 0.4,
-    },
-    swirl: {
-      position: 'absolute',
-      borderRadius: 100,
-    },
-    swirl1: {
-      width: '80%',
-      height: '80%',
-      backgroundColor: colors.secondary,
-      top: '-20%',
-      left: '-20%',
-      transform: [{ rotate: '45deg' }],
-    },
-    swirl2: {
-      width: '60%',
-      height: '60%',
-      backgroundColor: colors.primary,
-      bottom: '-10%',
-      right: '-10%',
-      transform: [{ rotate: '-30deg' }],
-    },
-    swirl3: {
-      width: '50%',
-      height: '50%',
-      backgroundColor: colors.cardFront,
-      top: '25%',
-      left: '25%',
-      transform: [{ rotate: '60deg' }],
     },
     questionMark: {
-      fontSize: 42,
       color: colors.text,
       fontWeight: '700',
-      textShadowColor: 'rgba(255, 255, 255, 0.5)',
-      textShadowOffset: { width: 1, height: 1 },
-      textShadowRadius: 2,
-      zIndex: 10,
     },
-    emoji: {
-      fontSize: 40,
+    matchMark: {
+      position: 'absolute',
+      top: 1,
+      right: 3,
+      color: ON_ACCENT_TEXT,
+      fontSize: 12,
+      fontWeight: '700',
     },
-    matchedEmoji: {},
   });

@@ -1,7 +1,9 @@
 import {
   addBalloon,
+  BALLOON_HEIGHT_RATIO,
   createBalloon,
   flickBalloon,
+  GROUND_HEIGHT,
   GROUND_POP_DELAY_MS,
   MAX_BALLOONS,
   KeepyUppyBalloon,
@@ -12,6 +14,7 @@ import {
 import { PASTEL_COLORS, ThemeColors } from '../types';
 
 const bounds = { width: 320, height: 480 };
+const floorY = bounds.height - GROUND_HEIGHT - (34 * BALLOON_HEIGHT_RATIO) / 2;
 
 describe('keepyUppyLogic', () => {
   it('adds balloons up to the max cap of three', () => {
@@ -88,7 +91,7 @@ describe('keepyUppyLogic', () => {
     const balloon: KeepyUppyBalloon = {
       id: 'g',
       x: 160,
-      y: 480 - 34,
+      y: floorY,
       vx: 0,
       vy: 0,
       radius: 34,
@@ -306,7 +309,7 @@ describe('keepyUppyLogic', () => {
         {
           id: 'test',
           x: 160,
-          y: 446, // Just above floor (480 - 34 = 446)
+          y: floorY,
           vx: 0,
           vy: -50, // Moving up
           radius: 34,

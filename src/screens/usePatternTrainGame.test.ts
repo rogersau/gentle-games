@@ -96,7 +96,7 @@ describe('usePatternTrainGame', () => {
     act(() => result.current.actions.submitChoice('🌸'));
 
     expect(result.current.state.pattern?.choices).toEqual(['🌈', '🌸']);
-    expect(result.current.state.wrongAttempts).toBe(1);
+    expect(result.current.state.guidedRound.incorrectAttempts).toBe(1);
   });
 
   it('uses the same template with new symbols after Next', () => {
@@ -130,34 +130,39 @@ describe('usePatternTrainGame', () => {
     const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
     act(() => result.current.actions.handleDifficultySelect('easy'));
     act(() => result.current.actions.skipRound());
-    expect(result.current.state.guidedRound.phase).toBe('skipped');
-
-    act(() => result.current.actions.startNewRound());
     expect(result.current.state.guidedRound.phase).toBe('independent');
+    expect(result.current.state.guidedRound.exampleNumber).toBe(2);
+    expect(result.current.state.completedRounds).toBe(0);
   });
 
-  it('keeps normal milestones child-controlled and suppresses them in pressure-free mode', () => {
-    const { result } = renderHook(() =>
-      usePatternTrainGame({ difficulty: 'easy', t: mockT, showMilestones: true }),
-    );
-    act(() => result.current.actions.handleDifficultySelect('easy'));
+  it('accepts a correct choice once even when two submissions reach the same render', () => {
+    const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
     (patternTrainLogic.isTrainChoiceCorrect as jest.Mock).mockReturnValue(true);
+    const { submitChoice } = result.current.actions;
 
-    for (let round = 0; round < 5; round += 1) {
-      act(() => result.current.actions.submitChoice('🌈'));
-      if (round < 4) act(() => result.current.actions.startNewRound());
-    }
+    act(() => {
+      expect(submitChoice('🌈')?.isCorrect).toBe(true);
+      expect(submitChoice('🌈')).toBeNull();
+    });
 
-    expect(result.current.state.showMilestoneModal).toBe(true);
-    act(() => result.current.actions.handleMilestoneContinue());
-    expect(result.current.state.showMilestoneModal).toBe(false);
-    expect(result.current.state.guidedRound.phase).toBe('independent');
+    expect(result.current.state.completedRounds).toBe(1);
+  });
 
-    const pressureFree = renderHook(() =>
-      usePatternTrainGame({ difficulty: 'easy', t: mockT, showMilestones: false }),
-    );
-    act(() => pressureFree.result.current.actions.handleDifficultySelect('easy'));
-    act(() => pressureFree.result.current.actions.submitChoice('🌈'));
-    expect(pressureFree.result.current.state.showMilestoneModal).toBe(false);
+  it('ignores a drop callback that arrives after the child skips its train', () => {
+    const { result } = renderHook(() => usePatternTrainGame({ difficulty: 'easy', t: mockT }));
+    const { submitChoice, skipRound } = result.current.actions;
+
+    act(() => {
+      skipRound();
+      expect(submitChoice('🌈')).toBeNull();
+    });
+
+    expect(result.current.state.attachedCarriage).toBeNull();
+    expect(result.current.state.guidedRound).toMatchObject({
+      phase: 'independent',
+      exampleNumber: 2,
+    });
+    expect(result.current.state.completedRounds).toBe(0);
+    expect(patternTrainLogic.isTrainChoiceCorrect).not.toHaveBeenCalled();
   });
 });

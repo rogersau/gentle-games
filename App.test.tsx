@@ -32,6 +32,7 @@ jest.mock('./src/ui/fonts', () => ({
 }));
 
 jest.mock('./src/utils/theme', () => ({
+  useReducedMotion: () => false,
   useThemeColors: jest.fn(() => ({
     resolvedMode: 'light',
     colors: {
