@@ -1,10 +1,11 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, Animated, Platform } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, Animated, Platform, View } from 'react-native';
 import { ThemeColors, Tile as TileType } from '../types';
 import { useAnimationEnabled } from '../ui/animations';
 import { useThemeColors } from '../utils/theme';
 import { ON_ACCENT_TEXT, Radius } from '../ui/tokens';
 import { useTranslation } from 'react-i18next';
+import { ControlIcon } from '../ui/components/ControlIcon';
 
 interface TileProps {
   tile: TileType;
@@ -83,7 +84,12 @@ const TileComponent: React.FC<TileProps> = ({
       accessibilityState={{ disabled }}
     >
       <Animated.View
-        style={[styles.tile, tileStyle, { transform: [{ scale: scaleAnim }] }]}
+        style={[
+          styles.tile,
+          tileStyle,
+          canDismissMismatch && styles.tileRetry,
+          { transform: [{ scale: scaleAnim }] },
+        ]}
         accessibilityElementsHidden
         importantForAccessibility='no-hide-descendants'
         aria-hidden
@@ -102,6 +108,11 @@ const TileComponent: React.FC<TileProps> = ({
           <Text allowFontScaling={false} style={styles.matchMark}>
             ✓
           </Text>
+        ) : null}
+        {canDismissMismatch ? (
+          <View style={styles.tapCue} testID='memory-mismatch-tap-cue'>
+            <ControlIcon name='tap' color={colors.text} size={Math.min(22, size / 3)} />
+          </View>
         ) : null}
       </Animated.View>
     </TouchableOpacity>
@@ -137,6 +148,15 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: colors.matched,
       borderWidth: 2,
       borderColor: colors.cardBack,
+    },
+    tileRetry: { borderColor: colors.primary },
+    tapCue: {
+      position: 'absolute',
+      top: 2,
+      right: 2,
+      borderRadius: Radius.full,
+      backgroundColor: colors.surface,
+      padding: 2,
     },
     questionMark: {
       color: colors.text,

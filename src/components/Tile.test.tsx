@@ -31,6 +31,9 @@ describe('Tile', () => {
     const screen = render(<Tile tile={tile} onPress={onPress} size={48} position={3} locked />);
     const hidden = screen.getByRole('button', { name: 'Card 3, face down' });
     expect(hidden).toBeDisabled();
+    expect(
+      screen.queryByTestId('memory-mismatch-tap-cue', { includeHiddenElements: true }),
+    ).toBeNull();
     fireEvent.press(hidden);
     expect(onPress).not.toHaveBeenCalled();
 
@@ -46,6 +49,9 @@ describe('Tile', () => {
     );
     const revealed = screen.getByRole('button', { name: 'Card 3, bunny, face up' });
     expect(revealed).toBeEnabled();
+    expect(
+      screen.getByTestId('memory-mismatch-tap-cue', { includeHiddenElements: true }),
+    ).toBeTruthy();
     expect(revealed).toHaveProp('accessibilityHint', 'Turn both cards back over');
     fireEvent.press(revealed);
     expect(onPress).toHaveBeenCalledTimes(1);

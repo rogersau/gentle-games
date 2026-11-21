@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Carriage } from '../components/train';
 import { HitTarget } from '../ui/tokens';
+import { webGameDragSurface } from '../utils/pwaInteractionGuards';
 
 interface PatternTrainChoiceProps {
   emoji: string;
@@ -66,7 +67,6 @@ export function PatternTrainChoice({
       onPanResponderRelease: (event) => {
         const { pageX, pageY } = event.nativeEvent;
         resetPosition();
-        if (Platform.OS === 'web') event.preventDefault();
         if (!disabled) onDrop(emoji, pageX, pageY);
       },
       onPanResponderTerminationRequest: () => false,
@@ -76,6 +76,7 @@ export function PatternTrainChoice({
 
   return (
     <View
+      {...(!disabled && webGameDragSurface)}
       collapsable={false}
       style={Platform.OS === 'web' ? webDragStyle : undefined}
       {...panResponder.panHandlers}

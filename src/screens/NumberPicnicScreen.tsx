@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,8 @@ import { getNumberPicnicPoolSize, useNumberPicnicGame } from '../utils/numberPic
 import { useThemeColors } from '../utils/theme';
 import { AppScreen, GameHeader, AppCard, AppButton } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
+import { useLayout } from '../ui/useLayout';
+import { ControlIcon } from '../ui/components/ControlIcon';
 import {
   NumberPicnicChoice,
   NumberPicnicRepresentation,
@@ -22,8 +24,10 @@ export const NumberPicnicScreen: React.FC = () => {
   const { settings } = useSettings();
   const { colors } = useThemeColors();
   const { t } = useTranslation();
+  const { screenHeight } = useLayout();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const basketRef = useRef<View>(null);
+  const [showComparisonExample, setShowComparisonExample] = useState(false);
   const picnicSettings = getGameSettings(settings, 'number-picnic');
 
   const {
@@ -63,6 +67,7 @@ export const NumberPicnicScreen: React.FC = () => {
   const targetItemName = getItemName(targetCount);
   const singleItemName = getItemName(1);
   const isPlacementMode = mode === 'make-amount' || mode === 'add-one-more';
+  const compactPlacement = isPlacementMode && screenHeight <= 560;
   const initialCount = mode === 'add-one-more' ? targetCount - 1 : 0;
   const comparisonWord = comparison ? t(`games.numberPicnic.comparison.${comparison}`) : '';
   const instruction = (() => {
@@ -133,6 +138,38 @@ export const NumberPicnicScreen: React.FC = () => {
     return t('games.numberPicnic.guidance.findAmountHint', { target: targetCount });
   })();
 
+  const placementControls = isPlacementMode && (
+    <View style={[styles.controls, compactPlacement && styles.fixedControls]}>
+      <AppButton
+        label={t('games.numberPicnic.undo')}
+        onPress={handleUndo}
+        variant='ghost'
+        size={compactPlacement ? 'sm' : 'md'}
+        disabled={isDragging || basketCount === initialCount}
+        accessibilityHint={t('games.numberPicnic.undoHint')}
+        testID='number-picnic-undo'
+      />
+      <AppButton
+        label={t('games.numberPicnic.reset')}
+        onPress={handleReset}
+        variant='ghost'
+        size={compactPlacement ? 'sm' : 'md'}
+        disabled={isDragging || basketCount === initialCount}
+        accessibilityHint={t('games.numberPicnic.resetHint')}
+        testID='number-picnic-reset'
+      />
+      <AppButton
+        label={t('games.numberPicnic.nextPicnic')}
+        onPress={startNewRound}
+        disabled={isDragging}
+        size={compactPlacement ? 'sm' : 'md'}
+        variant={isComplete ? 'primary' : 'ghost'}
+        accessibilityHint={t('games.numberPicnic.nextPicnicHint')}
+        testID='number-picnic-next'
+      />
+    </View>
+  );
+
   return (
     <AppScreen
       header={
@@ -141,22 +178,73 @@ export const NumberPicnicScreen: React.FC = () => {
     >
       <ScrollView
         testID='number-picnic-scroll'
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, compactPlacement && styles.compactScroll]}
         scrollEnabled={!isDragging}
       >
-        <AppCard variant='elevated' style={styles.promptCard}>
+        <AppCard
+          variant='elevated'
+          style={compactPlacement ? styles.compactPromptCard : styles.promptCard}
+        >
           <Text style={styles.promptText}>{instruction}</Text>
           {(isPlacementMode || mode === 'match-numeral') && (
             <NumberPicnicRepresentation
               representation={representation}
               accessibilityLabel={targetLabel}
               showNumeral={isPlacementMode}
+              horizontal={compactPlacement}
               testID={
                 isPlacementMode
                   ? 'number-picnic-target-representation'
                   : 'number-picnic-match-quantity'
               }
             />
+          )}
+          {mode === 'more-fewer' && comparison && (
+            <>
+              <AppButton
+                icon='eye'
+                label={t(
+                  showComparisonExample
+                    ? 'games.numberPicnic.guidance.hideComparisonExample'
+                    : 'games.numberPicnic.guidance.showComparisonExample',
+                )}
+                variant='ghost'
+                size='sm'
+                accessibilityState={{ expanded: showComparisonExample }}
+                onPress={() => setShowComparisonExample((visible) => !visible)}
+              />
+              {showComparisonExample && (
+                <View
+                  accessible
+                  accessibilityRole='image'
+                  accessibilityLabel={t(
+                    comparison === 'more'
+                      ? 'games.numberPicnic.guidance.moreExample'
+                      : 'games.numberPicnic.guidance.fewerExample',
+                  )}
+                  style={styles.comparisonExample}
+                  testID='number-picnic-comparison-example'
+                >
+                  {[2, 6].map((quantity) => {
+                    const isExampleAnswer = quantity === (comparison === 'more' ? 6 : 2);
+                    return (
+                      <View
+                        key={quantity}
+                        aria-hidden
+                        style={[styles.exampleGroup, isExampleAnswer && styles.exampleAnswer]}
+                      >
+                        {Array.from({ length: quantity }, (_, index) => (
+                          <View key={index} style={styles.exampleDot} />
+                        ))}
+                        {isExampleAnswer && (
+                          <ControlIcon name='check' color={colors.text} size={18} />
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </>
           )}
         </AppCard>
 
@@ -173,7 +261,8 @@ export const NumberPicnicScreen: React.FC = () => {
               isDragging={isDragging}
               isDropTarget={isOverBasket}
               isSuccess={isComplete}
-              style={styles.basket}
+              compact={compactPlacement}
+              style={compactPlacement ? styles.compactBasket : styles.basket}
               accessibilityLabel={t('games.numberPicnic.basketAccessibilityLabel', {
                 count: basketCount,
                 target: targetCount,
@@ -207,35 +296,11 @@ export const NumberPicnicScreen: React.FC = () => {
               onDropEnd={handleDropEnd}
               basketRef={basketRef}
               isComplete={isComplete}
-              style={styles.blanket}
+              compact={compactPlacement}
+              style={compactPlacement ? undefined : styles.blanket}
               testID='picnic-blanket'
             />
-            <View style={styles.controls}>
-              <AppButton
-                label={t('games.numberPicnic.undo')}
-                onPress={handleUndo}
-                variant='ghost'
-                disabled={isDragging || basketCount === initialCount}
-                accessibilityHint={t('games.numberPicnic.undoHint')}
-                testID='number-picnic-undo'
-              />
-              <AppButton
-                label={t('games.numberPicnic.reset')}
-                onPress={handleReset}
-                variant='ghost'
-                disabled={isDragging || basketCount === initialCount}
-                accessibilityHint={t('games.numberPicnic.resetHint')}
-                testID='number-picnic-reset'
-              />
-              <AppButton
-                label={t('games.numberPicnic.nextPicnic')}
-                onPress={startNewRound}
-                disabled={isDragging}
-                variant={isComplete ? 'primary' : 'ghost'}
-                accessibilityHint={t('games.numberPicnic.nextPicnicHint')}
-                testID='number-picnic-next'
-              />
-            </View>
+            {!compactPlacement && placementControls}
           </>
         ) : (
           <>
@@ -307,7 +372,10 @@ export const NumberPicnicScreen: React.FC = () => {
               />
               <AppButton
                 label={t('games.numberPicnic.transfer')}
-                onPress={startNewRound}
+                onPress={() => {
+                  setShowComparisonExample(false);
+                  startNewRound();
+                }}
                 variant={isComplete ? 'primary' : 'ghost'}
                 accessibilityHint={t('games.numberPicnic.transferHint')}
                 testID='number-picnic-transfer'
@@ -316,6 +384,7 @@ export const NumberPicnicScreen: React.FC = () => {
           </>
         )}
       </ScrollView>
+      {compactPlacement && placementControls}
     </AppScreen>
   );
 };
@@ -328,6 +397,7 @@ const createStyles = (colors: ThemeColors) =>
       paddingTop: Space.base,
       paddingBottom: Space.xl,
     },
+    compactScroll: { paddingTop: Space.xs, paddingBottom: Space.sm },
     promptCard: {
       width: '100%',
       maxWidth: 432,
@@ -335,8 +405,16 @@ const createStyles = (colors: ThemeColors) =>
       marginBottom: Space.md,
       gap: Space.xs,
     },
+    compactPromptCard: {
+      width: '100%',
+      maxWidth: 432,
+      alignItems: 'center',
+      marginBottom: Space.xs,
+      padding: Space.xs,
+    },
     promptText: { ...TypeStyle.body, color: colors.text, textAlign: 'center' },
     basket: { marginBottom: Space.lg, zIndex: 1 },
+    compactBasket: { marginBottom: Space.base, zIndex: 1 },
     blanket: { marginBottom: Space.md },
     feedback: {
       ...TypeStyle.bodySm,
@@ -352,6 +430,14 @@ const createStyles = (colors: ThemeColors) =>
       justifyContent: 'center',
       gap: Space.sm,
     },
+    fixedControls: {
+      alignSelf: 'center',
+      paddingVertical: Space.xs,
+      paddingHorizontal: Space.xs,
+      backgroundColor: colors.background,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderSubtle,
+    },
     choices: {
       width: '100%',
       maxWidth: 568,
@@ -362,4 +448,17 @@ const createStyles = (colors: ThemeColors) =>
       marginBottom: Space.md,
     },
     model: { alignItems: 'center', marginBottom: Space.sm },
+    comparisonExample: { alignItems: 'stretch', gap: Space.xs },
+    exampleGroup: {
+      minHeight: 32,
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: 'transparent',
+      borderRadius: 12,
+      paddingHorizontal: Space.sm,
+      gap: Space.xs,
+    },
+    exampleAnswer: { borderColor: colors.primary },
+    exampleDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.textLight },
   });

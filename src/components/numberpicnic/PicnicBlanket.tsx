@@ -11,9 +11,10 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Space, Radius } from '../../ui/tokens';
+import { Space, Radius, HitTarget } from '../../ui/tokens';
 import type { ThemeColors } from '../../types';
 import { useThemeColors } from '../../utils/theme';
+import { webGameDragSurface } from '../../utils/pwaInteractionGuards';
 
 interface WindowRect {
   x: number;
@@ -100,6 +101,7 @@ interface PicnicBlanketProps {
   onDropEnd: () => void;
   basketRef: React.RefObject<View | null>;
   isComplete: boolean;
+  compact?: boolean;
   style?: ViewStyle;
   testID?: string;
 }
@@ -119,6 +121,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
   onDropEnd,
   basketRef,
   isComplete,
+  compact = false,
   style,
   testID,
 }) => {
@@ -238,9 +241,11 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
   );
 
   return (
-    <View style={[styles.container, style]} testID={testID}>
+    <View style={[styles.container, compact && styles.containerCompact, style]} testID={testID}>
       <View style={styles.itemsContainer}>
         {slots.map(({ itemId, responder }) => {
+          const available = availableIds.has(itemId);
+          if (compact && !available) return null;
           const isDragging = itemId === draggingId;
           return (
             <View
@@ -251,12 +256,17 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
               collapsable={false}
               // Pressable owns its own responder callbacks, so the slot handles drag.
               {...responder.panHandlers}
-              style={[styles.slot, isDragging && styles.draggingSlot]}
+              style={[
+                styles.slot,
+                compact && styles.slotCompact,
+                isDragging && styles.draggingSlot,
+              ]}
               testID={`picnic-drag-${itemId}`}
             >
-              {availableIds.has(itemId) ? (
+              {available ? (
                 <Pressable
-                  style={[styles.item, !isComplete && webDragStyle]}
+                  {...(!isComplete && webGameDragSurface)}
+                  style={[styles.item, compact && styles.itemCompact, !isComplete && webDragStyle]}
                   onPress={() => {
                     if (!activeDrag.current) onItemDrop(itemId);
                   }}
@@ -272,7 +282,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
                   <Animated.View
                     style={isDragging && { transform: position.getTranslateTransform() }}
                   >
-                    <Text style={styles.emoji} selectable={false}>
+                    <Text style={[styles.emoji, compact && styles.emojiCompact]} selectable={false}>
                       {itemEmoji}
                     </Text>
                   </Animated.View>
@@ -300,12 +310,14 @@ const createStyles = (colors: ThemeColors) =>
       borderColor: colors.border,
       padding: Space.sm,
     },
+    containerCompact: { padding: Space.xs },
     itemsContainer: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'center',
     },
     slot: { margin: Space.xs },
+    slotCompact: { margin: Space.xxs },
     draggingSlot: { zIndex: 1 },
     item: {
       width: 56,
@@ -313,7 +325,9 @@ const createStyles = (colors: ThemeColors) =>
       justifyContent: 'center',
       alignItems: 'center',
     },
+    itemCompact: { width: HitTarget.min, height: HitTarget.min },
     emoji: { fontSize: 36, textAlign: 'center' },
+    emojiCompact: { fontSize: 30 },
     placeholder: {
       width: 56,
       height: 56,

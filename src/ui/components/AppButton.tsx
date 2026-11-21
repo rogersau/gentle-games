@@ -79,6 +79,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
         accessibilityHint={accessibilityHint}
         accessibilityState={{ ...accessibilityState, disabled }}
         aria-checked={ariaChecked}
+        aria-expanded={accessibilityState?.expanded}
         testID={testID}
       >
         {icon ? <ControlIcon name={icon} color={styles.label.color} /> : null}

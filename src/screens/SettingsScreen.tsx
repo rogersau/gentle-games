@@ -13,6 +13,7 @@ import {
 import { GAME_REGISTRY } from '../games/registry';
 import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { LANGUAGE_OPTIONS } from '../types/i18n';
+import { useNumberPicnicSpeechAvailable } from '../utils/numberPicnicNarration';
 import {
   AppScreen,
   AppHeader,
@@ -51,6 +52,7 @@ export const SettingsScreen: React.FC = () => {
   const memorySettings = getGameSettings(settings, 'memory-snap');
   const categorySettings = getGameSettings(settings, 'category-match');
   const numberPicnicSettings = getGameSettings(settings, 'number-picnic');
+  const picnicSpeechAvailable = useNumberPicnicSpeechAvailable(settings.language);
 
   const memoryPairOptions: { value: MemorySnapPairCount; label: string }[] = [
     { value: 2, label: t('settings.memorySnap.pairs.two') },
@@ -282,7 +284,11 @@ export const SettingsScreen: React.FC = () => {
           <Text style={styles.description}>{t('settings.numberPicnic.mode.description')}</Text>
           <SettingToggle
             label={t('settings.numberPicnic.spokenCounting.label')}
-            description={t('settings.numberPicnic.spokenCounting.description')}
+            description={t(
+              picnicSpeechAvailable
+                ? 'settings.numberPicnic.spokenCounting.description'
+                : 'settings.numberPicnic.spokenCounting.unavailable',
+            )}
             value={numberPicnicSettings.spokenCounting}
             onValueChange={(spokenCounting) =>
               updateGameSettings('number-picnic', { spokenCounting })

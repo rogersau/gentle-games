@@ -214,6 +214,7 @@ describe('CategoryMatchBoard', () => {
 
     choose('category-zone-toys');
     expect(screen.getByTestId('category-match-feedback')).toHaveTextContent('Try another group.');
+    expect(screen.getByTestId('category-match-retry-cue')).toBeTruthy();
     choose('category-zone-toys');
     expect(screen.getByText('Model: apple belongs in Food. Now place it there.')).toBeTruthy();
     expect(StyleSheet.flatten(screen.getByTestId('category-zone-food').props.style)).toMatchObject({

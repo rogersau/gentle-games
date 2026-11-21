@@ -345,11 +345,15 @@ describe('UI Components', () => {
 
     it('calls onValueChange when toggled', () => {
       const onValueChange = jest.fn();
-      const { getByRole } = render(
+      const { getAllByRole, getByText } = render(
         <SettingToggle label='Toggle' value={false} onValueChange={onValueChange} />,
       );
-      fireEvent(getByRole('switch'), 'valueChange', true);
-      expect(onValueChange).toHaveBeenCalledWith(true);
+      const switches = getAllByRole('switch', { name: 'Toggle' });
+      expect(switches).toHaveLength(1);
+      expect(switches[0]).not.toBeChecked();
+      fireEvent.press(getByText('Toggle'));
+      expect(onValueChange).toHaveBeenCalledTimes(1);
+      expect(onValueChange).toHaveBeenLastCalledWith(true);
     });
 
     it('renders when disabled', () => {
@@ -357,6 +361,7 @@ describe('UI Components', () => {
         <SettingToggle label='Disabled' value={true} onValueChange={jest.fn()} disabled />,
       );
       expect(getByRole('switch')).toBeTruthy();
+      expect(getByRole('switch')).toBeDisabled();
     });
   });
 });

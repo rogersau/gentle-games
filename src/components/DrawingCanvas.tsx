@@ -24,6 +24,7 @@ import { useTranslation } from 'react-i18next';
 import Svg, { Path, Circle, Rect, Polygon, Line } from 'react-native-svg';
 import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
+import { webGameDragSurface } from '../utils/pwaInteractionGuards';
 import { Space, Radius, TypeStyle, ON_ACCENT_TEXT } from '../ui/tokens';
 import type { TranslationKey } from '../i18n/types';
 import {
@@ -253,8 +254,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     const { colors } = useThemeColors();
     const { t } = useTranslation();
     const themedStyles = useMemo(() => createThemedStyles(colors), [colors]);
-    const [history, setHistory] = useState(() => compactDrawingHistory(initialHistory));
-    const historyRef = useRef(history);
+    const [drawing, setDrawing] = useState(() => ({
+      history: compactDrawingHistory(initialHistory),
+      beforeClear: null as HistoryEntry[] | null,
+    }));
+    const { history, beforeClear } = drawing;
+    const drawingRef = useRef(drawing);
     const initialHistoryRef = useRef(initialHistory);
     const nextActionIdRef = useRef(0);
     const [activeGesture, setActiveGesture] = useState<DrawingGesture | null>(null);
@@ -277,10 +282,14 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     }, [width, height, selectedColor, tool, shape, symmetryMode]);
 
     // Responder events and navigation can arrive before React renders the preceding update.
-    const replaceHistory = useCallback((next: HistoryEntry[]) => {
-      historyRef.current = next;
-      setHistory(next);
-    }, []);
+    const replaceHistory = useCallback(
+      (history: HistoryEntry[], beforeClear = drawingRef.current.beforeClear) => {
+        const next = { history, beforeClear };
+        drawingRef.current = next;
+        setDrawing(next);
+      },
+      [],
+    );
     const replaceActiveGesture = useCallback((next: DrawingGesture | null) => {
       activeGestureRef.current = next;
       setActiveGesture(next);
@@ -290,7 +299,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
       if (initialHistoryRef.current === initialHistory) return;
       initialHistoryRef.current = initialHistory;
       replaceActiveGesture(null);
-      replaceHistory(compactDrawingHistory(initialHistory));
+      replaceHistory(compactDrawingHistory(initialHistory), null);
     }, [initialHistory, replaceActiveGesture, replaceHistory]);
 
     useEffect(() => {
@@ -299,14 +308,15 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
     const clearCanvas = useCallback(() => {
       replaceActiveGesture(null);
-      replaceHistory([]);
+      const { history } = drawingRef.current;
+      if (history.length > 0) replaceHistory([], history);
     }, [replaceActiveGesture, replaceHistory]);
 
     useImperativeHandle(
       ref,
       () => ({
         clear: clearCanvas,
-        getHistory: () => historyRef.current,
+        getHistory: () => drawingRef.current.history,
       }),
       [clearCanvas],
     );
@@ -367,7 +377,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
           replaceActiveGesture(null);
           const entries = getGestureEntries(appendPoint(gesture, event));
-          replaceHistory(compactDrawingHistory([...historyRef.current, ...entries]));
+          replaceHistory(compactDrawingHistory([...drawingRef.current.history, ...entries]));
         },
         onPanResponderTerminate: () => replaceActiveGesture(null),
       });
@@ -387,8 +397,11 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
     };
 
     const handleUndo = () => {
-      const previous = historyRef.current;
-      if (previous.length === 0) return;
+      const { history: previous, beforeClear } = drawingRef.current;
+      if (previous.length === 0) {
+        if (beforeClear) replaceHistory(beforeClear, null);
+        return;
+      }
 
       const lastEntry = previous[previous.length - 1];
       let cutoff = previous.length - 1;
@@ -526,7 +539,8 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
       [canvasBackgroundColor],
     );
 
-    const canUndo = history.length > 0;
+    const canClear = history.length > 0;
+    const canUndo = canClear || beforeClear !== null;
 
     // Path construction is memoized so pointer movement only renders the live preview.
     const renderedHistory = useMemo(
@@ -609,6 +623,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           </Svg>
 
           <View
+            {...webGameDragSurface}
             collapsable={false}
             style={[
               styles.touchOverlay,
@@ -642,6 +657,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                   accessibilityLabel={getColorLabel(color, isCustomColor)}
                   accessibilityHint={colorButtonHint}
                   accessibilityState={{ selected: isSelected }}
+                  {...{ 'aria-pressed': isSelected }}
                 />
               );
             })}
@@ -776,14 +792,14 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               style={[
                 styles.toolButton,
                 themedStyles.toolButton,
-                !canUndo && styles.toolButtonDisabled,
+                !canClear && styles.toolButtonDisabled,
               ]}
               onPress={handleClear}
-              disabled={!canUndo}
+              disabled={!canClear}
               accessibilityRole='button'
               accessibilityLabel={t('games.drawing.clearCanvas')}
               accessibilityHint={t('games.drawing.clearHint')}
-              accessibilityState={{ disabled: !canUndo }}
+              accessibilityState={{ disabled: !canClear }}
             >
               <Text style={styles.toolButtonText}>🗑️</Text>
               <Text style={[styles.toolLabel, { color: colors.text }]}>
@@ -834,14 +850,32 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           title={t('games.drawing.pickColour')}
           showClose={false}
           dismissOnBackdropPress={false}
+          headerContent={
+            <View style={styles.previewContainer}>
+              <View style={[styles.colorPreview, { backgroundColor: pickerColor }]} />
+              <Text style={[styles.colorHex, themedStyles.modalText]}>
+                {pickerColor.toUpperCase()}
+              </Text>
+            </View>
+          }
+          footer={
+            <View style={[styles.modalButtons, styles.pickerFooter]}>
+              <AppButton
+                label={t('common.cancel')}
+                variant='secondary'
+                size='sm'
+                onPress={handleCloseColorPicker}
+              />
+              <AppButton
+                label={t('games.drawing.useColour')}
+                variant='primary'
+                size='sm'
+                onPress={handleCustomColorSelect}
+                testID='confirm-custom-color'
+              />
+            </View>
+          }
         >
-          <View style={styles.previewContainer}>
-            <View style={[styles.colorPreview, { backgroundColor: pickerColor }]} />
-            <Text style={[styles.colorHex, themedStyles.modalText]}>
-              {pickerColor.toUpperCase()}
-            </Text>
-          </View>
-
           <View style={styles.colorGrid}>
             {PRESET_COLORS.map((color) => {
               const isSelected = pickerColor === color;
@@ -860,23 +894,10 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                   accessibilityLabel={getColorLabel(color, false)}
                   accessibilityHint={t('games.drawing.colourPickerPresetHint')}
                   accessibilityState={{ selected: isSelected }}
+                  {...{ 'aria-pressed': isSelected }}
                 />
               );
             })}
-          </View>
-
-          <View style={styles.modalButtons}>
-            <AppButton
-              label={t('common.cancel')}
-              variant='secondary'
-              onPress={handleCloseColorPicker}
-            />
-            <AppButton
-              label={t('games.drawing.useColour')}
-              variant='primary'
-              onPress={handleCustomColorSelect}
-              testID='confirm-custom-color'
-            />
           </View>
         </AppModal>
 
@@ -1138,16 +1159,18 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   previewContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'center',
+    gap: Space.sm,
+    marginBottom: Space.md,
   },
   colorPreview: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 4,
     borderColor: '#E8E4E1',
-    marginBottom: 8,
   },
   colorHex: {
     fontSize: 14,
@@ -1179,6 +1202,7 @@ const styles = StyleSheet.create({
     gap: 12,
     justifyContent: 'center',
   },
+  pickerFooter: { marginTop: Space.sm },
   cancelButton: {
     backgroundColor: '#E8E4E1',
     paddingHorizontal: 24,

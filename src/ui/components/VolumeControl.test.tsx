@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { VolumeControl } from './VolumeControl';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { HitTarget } from '../tokens';
 
 describe('VolumeControl', () => {
@@ -61,6 +61,21 @@ describe('VolumeControl', () => {
     fireEvent(track, 'layout', { nativeEvent: { layout: { width: 200 } } });
     fireEvent.press(track, { nativeEvent: { locationX: 140 } });
     expect(mockOnValueChange).toHaveBeenCalledWith(0.7);
+  });
+
+  it('uses viewport coordinates relative to the web track rather than the clicked child', () => {
+    const platform = jest.replaceProperty(Platform, 'OS', 'web');
+    try {
+      const { getByRole } = render(<VolumeControl value={0.5} onValueChange={mockOnValueChange} />);
+      const track = getByRole('adjustable');
+      const currentTarget = { getBoundingClientRect: () => ({ left: 60, width: 200 }) };
+      fireEvent.press(track, { currentTarget, nativeEvent: { detail: 1, clientX: 100 } });
+      fireEvent.press(track, { currentTarget, nativeEvent: { detail: 1, clientX: 220 } });
+      fireEvent.press(track, { currentTarget, nativeEvent: { detail: 0, clientX: 0 } });
+      expect(mockOnValueChange.mock.calls).toEqual([[0.2], [0.8]]);
+    } finally {
+      platform.restore();
+    }
   });
 
   it('offers screen-reader adjustments and keeps every interactive control at the touch-target minimum', () => {

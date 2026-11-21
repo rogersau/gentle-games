@@ -137,7 +137,7 @@ describe('SettingsScreen', () => {
     fireEvent.press(screen.getByRole('radio', { name: 'Find the amount' }));
     expect(mockUpdateSettings).toHaveBeenCalledWith('number-picnic', { mode: 'find-amount' });
 
-    fireEvent(screen.getByRole('switch', { name: /Speak each count/i }), 'valueChange', true);
+    fireEvent.press(screen.getByRole('switch', { name: /Speak each count/i }));
     expect(mockUpdateSettings).toHaveBeenCalledWith('number-picnic', { spokenCounting: true });
   });
 
@@ -151,7 +151,7 @@ describe('SettingsScreen', () => {
   it('toggles Keepy Uppy easy mode setting', () => {
     const screen = render(React.createElement(SettingsScreen));
     const keepyUppySwitch = screen.getByRole('switch', { name: /Keepy Uppy Easy Mode/i });
-    fireEvent(keepyUppySwitch, 'valueChange', false);
+    fireEvent.press(keepyUppySwitch);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith('keepy-uppy', { liftMode: 'precise' });
   });
@@ -163,11 +163,7 @@ describe('SettingsScreen', () => {
     };
     const screen = render(<SettingsScreen />);
 
-    fireEvent(
-      screen.getByRole('switch', { name: /settings.glitterFall.ripples/i }),
-      'valueChange',
-      false,
-    );
+    fireEvent.press(screen.getByRole('switch', { name: /settings.glitterFall.ripples/i }));
     expect(mockUpdateSettings).toHaveBeenCalledWith('glitter-fall', { ripples: false });
   });
 
@@ -216,7 +212,7 @@ describe('SettingsScreen', () => {
   it('toggles game visibility via switch', () => {
     const screen = render(React.createElement(SettingsScreen));
     const memorySnapSwitch = screen.getByRole('switch', { name: /Memory Snap/i });
-    fireEvent(memorySnapSwitch, 'valueChange', false);
+    fireEvent.press(memorySnapSwitch);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({
       hiddenGames: ['memory-snap'],
@@ -236,7 +232,7 @@ describe('SettingsScreen', () => {
 
     const screen = render(React.createElement(SettingsScreen));
     const memorySnapSwitch = screen.getByRole('switch', { name: /Memory Snap/i });
-    fireEvent(memorySnapSwitch, 'valueChange', true);
+    fireEvent.press(memorySnapSwitch);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({
       hiddenGames: [],
@@ -253,15 +249,15 @@ describe('SettingsScreen', () => {
   it('toggles animations setting', () => {
     const screen = render(React.createElement(SettingsScreen));
     const animationsSwitch = screen.getByRole('switch', { name: /Animations/i });
-    fireEvent(animationsSwitch, 'valueChange', false);
+    fireEvent.press(animationsSwitch);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({ animationsEnabled: false });
   });
 
   it('toggles sound setting', () => {
     const screen = render(React.createElement(SettingsScreen));
-    const soundSwitch = screen.getByRole('switch', { name: /^Sound,/i });
-    fireEvent(soundSwitch, 'valueChange', false);
+    const soundSwitch = screen.getByRole('switch', { name: 'Sound' });
+    fireEvent.press(soundSwitch);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({ soundEnabled: false });
   });
@@ -289,7 +285,7 @@ describe('SettingsScreen', () => {
     const telemetryOffSwitch = firstScreen.getByRole('switch', {
       name: /Share anonymous app updates/i,
     });
-    fireEvent(telemetryOffSwitch, 'valueChange', true);
+    fireEvent.press(telemetryOffSwitch);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({ telemetryEnabled: true });
 
@@ -300,7 +296,7 @@ describe('SettingsScreen', () => {
     const telemetryOnSwitch = secondScreen.getByRole('switch', {
       name: /Share anonymous app updates/i,
     });
-    fireEvent(telemetryOnSwitch, 'valueChange', false);
+    fireEvent.press(telemetryOnSwitch);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({ telemetryEnabled: false });
   });
@@ -322,7 +318,7 @@ describe('SettingsScreen', () => {
   it('toggles pressure-free play mode', () => {
     const screen = render(React.createElement(SettingsScreen));
     const pressureSwitch = screen.getByRole('switch', { name: /pressureFreeMode.label/i });
-    fireEvent(pressureSwitch, 'valueChange', true);
+    fireEvent.press(pressureSwitch);
     expect(mockUpdateSettings).toHaveBeenCalledWith({ pressureFreeMode: true });
   });
 });

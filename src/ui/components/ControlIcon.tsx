@@ -12,15 +12,18 @@ const paths = {
   swirl: 'M12 12c4-5 10 1 6 6-5 6-15 1-14-6 1-7 8-10 14-6',
   eye: 'M2 12Q12 0 22 12Q12 24 2 12Z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
   cards: 'M3 4h7v16H3Z M14 4h7v16h-7Z',
+  check: 'M5 12l4 4 10-9',
+  tap: 'M8 13V7a2 2 0 0 1 4 0v5h5a2 2 0 0 1 2 2v3l-2 4h-6l-5-6a2 2 0 0 1 2-2Z M4 6l-2-1 M10 2V1 M16 6l2-1',
 } as const;
 
 export type ControlIconName = keyof typeof paths;
 
-export const ControlIcon: React.FC<{ name: ControlIconName; color: string }> = ({
+export const ControlIcon: React.FC<{ name: ControlIconName; color: string; size?: number }> = ({
   name,
   color,
+  size = 22,
 }) => (
-  <Svg width={22} height={22} viewBox='0 0 24 24' aria-hidden accessible={false}>
+  <Svg width={size} height={size} viewBox='0 0 24 24' aria-hidden accessible={false}>
     <Path
       d={paths[name]}
       stroke={color}

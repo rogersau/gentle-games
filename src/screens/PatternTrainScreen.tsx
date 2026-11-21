@@ -28,6 +28,7 @@ import { TrainEngine, Carriage } from '../components/train';
 import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 import { usePatternTrainGame } from './usePatternTrainGame';
 import { PatternTrainChoice } from './PatternTrainChoice';
+import { ControlIcon } from '../ui/components/ControlIcon';
 
 const pictureKeys: Record<string, string> = {
   '🚂': 'engine',
@@ -248,7 +249,16 @@ export const PatternTrainScreen: React.FC = () => {
             ))}
           </View>
           <View aria-live='polite'>
-            {feedback ? <Text style={styles.feedback}>{feedback}</Text> : null}
+            {feedback ? (
+              <View style={styles.feedbackRow}>
+                {!isComplete && guidedRound.incorrectAttempts > 0 && (
+                  <View testID='pattern-train-retry-cue'>
+                    <ControlIcon name='repeat' color={colors.text} size={18} />
+                  </View>
+                )}
+                <Text style={styles.feedback}>{feedback}</Text>
+              </View>
+            ) : null}
           </View>
         </AppCard>
 
@@ -381,6 +391,13 @@ const createStyles = (colors: ThemeColors) =>
       ...TypeStyle.bodySm,
       color: colors.text,
       textAlign: 'center',
+      flexShrink: 1,
+    },
+    feedbackRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: Space.xs,
       marginTop: Space.sm,
     },
     optionsList: { marginBottom: Space.sm },

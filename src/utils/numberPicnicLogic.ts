@@ -10,7 +10,8 @@ import type {
 import { NUMBER_PICNIC_ITEMS } from '../types';
 import type { Settings } from '../types';
 import { createGuidedRoundController, GuidedRoundState } from '../guided-practice/controller';
-import { narrateNumberPicnicCount } from './numberPicnicNarration';
+import { narrateNumberPicnicCount, stopNumberPicnicNarration } from './numberPicnicNarration';
+import { DEFAULT_LANGUAGE } from '../types/i18n';
 
 export const NUMBER_PICNIC_EXTRA_ITEMS = 2;
 
@@ -274,7 +275,7 @@ export const numberPicnicReducer = (
 export interface UseNumberPicnicGameOptions {
   mode?: NumberPicnicMode;
   rng?: () => number;
-  settings?: Pick<Settings, 'soundEnabled'>;
+  settings?: Pick<Settings, 'soundEnabled'> & Partial<Pick<Settings, 'soundVolume' | 'language'>>;
   spokenCounting?: boolean;
   narrateCount?: (count: number) => void;
 }
@@ -321,6 +322,10 @@ export const useNumberPicnicGame = (
     controllerRef.current.getState(),
   );
   const previousConfigRef = useRef({ stage, mode });
+  const spokenCounting = options.spokenCounting === true;
+  const soundEnabled = options.settings?.soundEnabled === true;
+  const volume = options.settings?.soundVolume ?? 0.5;
+  const locale = options.settings?.language ?? DEFAULT_LANGUAGE;
 
   const dispatchGame = useCallback((action: NumberPicnicAction) => {
     const next = numberPicnicReducer(stateRef.current, action);
@@ -347,6 +352,11 @@ export const useNumberPicnicGame = (
   }, [dispatchGame, mode, resetGuidance, rng, stage]);
 
   useEffect(() => () => controllerRef.current.dispose(), []);
+  useEffect(() => {
+    if (isPlacementMode && spokenCounting && soundEnabled && volume > 0) {
+      return stopNumberPicnicNarration;
+    }
+  }, [isPlacementMode, spokenCounting, soundEnabled, volume, locale]);
 
   const handleItemDrop = useCallback(
     (itemId: number) => {
@@ -355,16 +365,20 @@ export const useNumberPicnicGame = (
       dispatchGame({ type: 'add', itemId });
       if (current === stateRef.current) return;
       narrateNumberPicnicCount(stateRef.current.placedItemIds.length, {
-        spokenCounting: options.spokenCounting === true,
-        soundEnabled: options.settings?.soundEnabled !== false,
+        spokenCounting,
+        soundEnabled,
+        volume,
+        locale,
         narrate: options.narrateCount,
       });
     },
     [
       dispatchGame,
       isPlacementMode,
-      options.spokenCounting,
-      options.settings?.soundEnabled,
+      spokenCounting,
+      soundEnabled,
+      volume,
+      locale,
       options.narrateCount,
     ],
   );

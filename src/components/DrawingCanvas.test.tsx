@@ -299,22 +299,31 @@ describe('DrawingCanvas', () => {
     ]);
   });
 
-  it('shows confirmation before clearing and clears on confirm', () => {
+  it('leaves the drawing on cancel and makes a confirmed clear one undoable action', () => {
     const initialHistory: HistoryEntry[] = [
       { kind: 'shape', id: 'shape-1', type: 'circle', x: 40, y: 40, size: 24, color: '#FF0000' },
+      { kind: 'erase', id: 'erase-1', points: [{ x: 42, y: 40 }], width: 6 },
     ];
     const ref = React.createRef<DrawingCanvasRef>();
 
-    const { getByTestId } = render(
+    const { getByTestId, getByLabelText } = render(
       <DrawingCanvas ref={ref} width={320} height={280} initialHistory={initialHistory} />,
     );
 
-    expect(ref.current?.getHistory()).toHaveLength(1);
+    const undo = () => getByLabelText('games.drawing.undo');
     fireEvent.press(getByTestId('clear-drawing-button'));
-    expect(getByTestId('clear-confirm-accept')).toBeTruthy();
+    fireEvent.press(getByTestId('clear-confirm-cancel'));
+    expect(ref.current?.getHistory()).toEqual(initialHistory);
+    fireEvent.press(getByTestId('clear-drawing-button'));
     fireEvent.press(getByTestId('clear-confirm-accept'));
 
     expect(ref.current?.getHistory()).toHaveLength(0);
+    expect(getByTestId('clear-drawing-button')).toBeDisabled();
+    expect(undo()).toBeEnabled();
+    fireEvent.press(undo());
+    expect(ref.current?.getHistory()).toEqual(initialHistory);
+    fireEvent.press(undo());
+    expect(ref.current?.getHistory()).toEqual(initialHistory.slice(0, 1));
   });
 
   it('undoes the full mirrored stroke batch in half symmetry mode', () => {

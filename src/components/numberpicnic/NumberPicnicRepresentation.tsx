@@ -9,6 +9,7 @@ interface NumberPicnicRepresentationProps {
   representation: Representation;
   accessibilityLabel?: string;
   showNumeral?: boolean;
+  horizontal?: boolean;
   style?: ViewStyle;
   testID?: string;
 }
@@ -17,6 +18,7 @@ export const NumberPicnicRepresentation: React.FC<NumberPicnicRepresentationProp
   representation,
   accessibilityLabel,
   showNumeral = true,
+  horizontal = false,
   style,
   testID,
 }) => {
@@ -33,7 +35,7 @@ export const NumberPicnicRepresentation: React.FC<NumberPicnicRepresentationProp
 
   return (
     <View
-      style={[styles.container, style]}
+      style={[styles.container, horizontal && styles.horizontal, style]}
       accessible={Boolean(accessibilityLabel)}
       accessibilityElementsHidden={!accessibilityLabel}
       importantForAccessibility={accessibilityLabel ? 'auto' : 'no-hide-descendants'}
@@ -72,6 +74,7 @@ export const NumberPicnicRepresentation: React.FC<NumberPicnicRepresentationProp
 
 const styles = StyleSheet.create({
   container: { alignItems: 'center', gap: Space.xs },
+  horizontal: { flexDirection: 'row', gap: Space.md },
   numeral: { ...TypeStyle.h2, fontWeight: 'bold' },
   frame: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', maxWidth: 110 },
   tenFrame: { width: 110 },

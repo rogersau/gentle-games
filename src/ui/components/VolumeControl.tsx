@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Pressable } from 'react-native';
+import { Platform, StyleSheet, View, Text, TouchableOpacity, Pressable } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
 import { Space, Radius, TypeStyle, HitTarget } from '../tokens';
 import { ThemeColors } from '../../types';
@@ -21,6 +21,7 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
   const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const [trackWidth, setTrackWidth] = useState(0);
+  const percent = Math.round(value * 100);
 
   const stepValues = Array.from({ length: steps }, (_, i) => (i + 1) / steps);
 
@@ -32,6 +33,29 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
   const increase = () => {
     const newVal = Math.min(1, Math.round((value + 1 / steps) * steps) / steps);
     onValueChange(newVal);
+  };
+  const webKeyboard = Platform.OS === 'web' && {
+    onKeyDown: (event: React.KeyboardEvent) => {
+      switch (event.key) {
+        case 'ArrowLeft':
+        case 'ArrowDown':
+          decrease();
+          break;
+        case 'ArrowRight':
+        case 'ArrowUp':
+          increase();
+          break;
+        case 'Home':
+          onValueChange(0);
+          break;
+        case 'End':
+          onValueChange(1);
+          break;
+        default:
+          return;
+      }
+      event.preventDefault();
+    },
   };
 
   return (
@@ -47,20 +71,33 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
       </TouchableOpacity>
 
       <Pressable
+        {...webKeyboard}
         style={styles.barTrack}
         onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}
         onPress={(event) => {
-          if (trackWidth <= 0) return;
-          const step = Math.max(
-            0,
-            Math.min(steps, Math.round((event.nativeEvent.locationX / trackWidth) * steps)),
-          );
+          let width = trackWidth;
+          let x = event.nativeEvent.locationX;
+          if (Platform.OS === 'web') {
+            const { nativeEvent, currentTarget } = event as unknown as React.MouseEvent;
+            // RN Web's onPress uses a click. Measure against the full track,
+            // independently of the segment the pointer hit.
+            if (!nativeEvent.detail || typeof currentTarget?.getBoundingClientRect !== 'function')
+              return;
+            const bounds = currentTarget.getBoundingClientRect();
+            width = bounds.width;
+            x = nativeEvent.clientX - bounds.left;
+          }
+          if (width <= 0 || !Number.isFinite(x)) return;
+          const step = Math.max(0, Math.min(steps, Math.round((x / width) * steps)));
           onValueChange(step / steps);
         }}
         accessibilityRole='adjustable'
-        accessibilityLabel={t('settings.volume.current', { percent: Math.round(value * 100) })}
+        accessibilityLabel={t('settings.volume.current', { percent })}
         accessibilityHint={t('settings.volume.adjustHint')}
-        accessibilityValue={{ min: 0, max: 100, now: Math.round(value * 100) }}
+        accessibilityValue={{ min: 0, max: 100, now: percent }}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
         accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
         onAccessibilityAction={(event) => {
           if (event.nativeEvent.actionName === 'increment') increase();
@@ -71,6 +108,7 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
           <View
             key={step}
             style={[styles.segment, value >= step && styles.segmentFilled]}
+            pointerEvents='none'
             accessible={false}
           />
         ))}

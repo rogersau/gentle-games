@@ -102,13 +102,23 @@ describe('NumberPicnicScreen', () => {
 
   it('uses both More or Fewer cards as the answer controls and confirms a correct selection', () => {
     mockMode = 'more-fewer';
-    const { getAllByRole, getByRole, getByText, queryByText } = render(<NumberPicnicScreen />);
+    const { getAllByRole, getByRole, getByText, queryByText, queryByTestId } = render(
+      <NumberPicnicScreen />,
+    );
 
     const left = getByRole('button', { name: 'Left group showing 1 item' });
     const right = getByRole('button', { name: 'Right group showing 2 items' });
     expect(within(left).getByText('Left group')).toBeTruthy();
     expect(within(right).getByText('Right group')).toBeTruthy();
     expect(getAllByRole('button', { name: /group showing/ })).toHaveLength(2);
+
+    expect(queryByTestId('number-picnic-comparison-example')).toBeNull();
+    fireEvent.press(getByRole('button', { name: 'Show an example' }));
+    expect(getByRole('image', { name: /six is more/i })).toBeTruthy();
+    expect(left).toBeEnabled();
+    expect(right).toBeEnabled();
+    fireEvent.press(getByRole('button', { name: 'Hide the example' }));
+    expect(queryByTestId('number-picnic-comparison-example')).toBeNull();
 
     fireEvent.press(left);
     expect(getByText('That group does not have more items. You can try again.')).toBeTruthy();

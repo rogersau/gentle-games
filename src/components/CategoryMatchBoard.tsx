@@ -26,6 +26,8 @@ import { playMatchSound } from '../utils/sounds';
 import { Radius, Space, TypeStyle } from '../ui/tokens';
 import { createGuidedRoundController } from '../guided-practice/controller';
 import { GuidedPracticePrompt } from '../ui/components/GuidedPracticePrompt';
+import { ControlIcon } from '../ui/components/ControlIcon';
+import { webGameDragSurface } from '../utils/pwaInteractionGuards';
 import { AppButton } from '../ui/components';
 
 interface CategoryMatchBoardProps {
@@ -252,6 +254,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
 
       <View>
         <View
+          {...(!roundFinished && webGameDragSurface)}
           testID='category-drag-surface'
           onLayout={({ nativeEvent }) => {
             tokenLayout.current = nativeEvent.layout;
@@ -340,9 +343,16 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
 
       <View accessibilityLiveRegion={Platform.OS === 'ios' ? undefined : 'polite'}>
         {feedback ? (
-          <Text testID='category-match-feedback' style={styles.feedback}>
-            {feedback}
-          </Text>
+          <View style={styles.feedbackRow}>
+            {!roundFinished && guidedRound.incorrectAttempts > 0 && (
+              <View testID='category-match-retry-cue'>
+                <ControlIcon name='repeat' color={colors.text} size={18} />
+              </View>
+            )}
+            <Text testID='category-match-feedback' style={styles.feedback}>
+              {feedback}
+            </Text>
+          </View>
         ) : null}
       </View>
 
@@ -404,6 +414,13 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) => {
       ...TypeStyle.bodySm,
       color: colors.text,
       textAlign: 'center',
+      flexShrink: 1,
+    },
+    feedbackRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: Space.xs,
       marginTop: Space.sm,
     },
     dragSurface: { alignSelf: 'center', zIndex: 1, elevation: 1 },

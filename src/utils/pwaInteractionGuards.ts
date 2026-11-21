@@ -41,6 +41,10 @@ type ClosestCapableTarget = EventTarget & {
 
 const NON_PASSIVE_LISTENER: AddEventListenerOptions = { passive: false };
 const EDITABLE_SELECTOR = 'input, textarea, select, [contenteditable="true"]';
+const GAME_DRAG_SELECTOR = '[data-game-drag-surface="true"]';
+
+export const webGameDragSurface =
+  Platform.OS === 'web' ? { dataSet: { gameDragSurface: 'true' } } : {};
 
 const hasClosest = (target?: EventTarget | null): target is ClosestCapableTarget =>
   typeof (target as ClosestCapableTarget | null)?.closest === 'function';
@@ -100,6 +104,17 @@ export const installPwaInteractionGuards = (
     event.preventDefault();
   };
 
+  const preventBrowserDrag = (event: GuardEvent) => {
+    // These surfaces already use touch-action: none and implement their own
+    // drag. Cancel the browser's gesture on the first move so it cannot
+    // suppress the click from a separate touch immediately after the drag.
+    if (hasClosest(event.target) && event.target.closest(GAME_DRAG_SELECTOR)) {
+      event.preventDefault();
+      return;
+    }
+    preventMultiTouchZoom(event);
+  };
+
   const preventTrackpadZoom = (event: GuardEvent) => {
     if (!event.ctrlKey) {
       return;
@@ -115,7 +130,7 @@ export const installPwaInteractionGuards = (
   addListener('gesturechange', preventBrowserUi, NON_PASSIVE_LISTENER);
   addListener('gestureend', preventBrowserUi, NON_PASSIVE_LISTENER);
   addListener('touchstart', preventMultiTouchZoom, NON_PASSIVE_LISTENER);
-  addListener('touchmove', preventMultiTouchZoom, NON_PASSIVE_LISTENER);
+  addListener('touchmove', preventBrowserDrag, NON_PASSIVE_LISTENER);
   addListener('wheel', preventTrackpadZoom, NON_PASSIVE_LISTENER);
 
   return () => {

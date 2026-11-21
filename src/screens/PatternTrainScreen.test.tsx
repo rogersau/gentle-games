@@ -418,6 +418,7 @@ describe('PatternTrainScreen', () => {
 
     fireEvent.press(await screen.findByLabelText('Carriage with flower'));
 
+    expect(screen.getByTestId('pattern-train-retry-cue')).toBeTruthy();
     expect(playFlipSound).not.toHaveBeenCalled();
   });
 

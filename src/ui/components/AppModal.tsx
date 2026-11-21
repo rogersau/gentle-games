@@ -19,7 +19,9 @@ interface AppModalProps {
   visible: boolean;
   onClose: () => void;
   title?: string;
+  headerContent?: React.ReactNode;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   /** Additional style for the content area */
   contentStyle?: ViewStyle;
   /** Whether to show the close button */
@@ -36,7 +38,9 @@ export const AppModal: React.FC<AppModalProps> = ({
   visible,
   onClose,
   title,
+  headerContent,
   children,
+  footer,
   contentStyle,
   showClose = true,
   closeLabel,
@@ -80,6 +84,7 @@ export const AppModal: React.FC<AppModalProps> = ({
               {title}
             </Text>
           )}
+          {headerContent}
           <ScrollView
             style={styles.body}
             contentContainerStyle={styles.bodyContent}
@@ -89,6 +94,7 @@ export const AppModal: React.FC<AppModalProps> = ({
           >
             {children}
           </ScrollView>
+          {footer}
           {showClose && (
             <TouchableOpacity
               style={[styles.closeButton, disabled && styles.disabled]}

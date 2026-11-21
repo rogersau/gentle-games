@@ -620,6 +620,10 @@
         "findAmountHint": "Count the filled spaces in each frame. Look for {{target}}.",
         "matchNumeralHint": "Count the filled spaces, then choose that numeral.",
         "comparisonHint": "Compare the frames. Look for the group with {{comparison}} filled spaces.",
+        "showComparisonExample": "Show an example",
+        "hideComparisonExample": "Hide the example",
+        "moreExample": "Example: two dots and six dots. Six is more.",
+        "fewerExample": "Example: two dots and six dots. Two is fewer.",
         "hintButton": "Show a hint"
       },
       "modes": {
@@ -801,7 +805,8 @@
       },
       "spokenCounting": {
         "label": "Speak each count",
-        "description": "Speak the new count after each item is placed. Sound must also be on."
+        "description": "Speak the new count after each item is placed. Sound must also be on.",
+        "unavailable": "An offline voice is unavailable in this browser. You can still see the count in the basket."
       },
       "maximumQuantity": {
         "title": "Largest number",

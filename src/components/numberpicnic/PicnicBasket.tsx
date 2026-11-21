@@ -16,6 +16,7 @@ interface PicnicBasketProps {
   isDropTarget?: boolean;
   isDragging?: boolean;
   isSuccess?: boolean;
+  compact?: boolean;
   style?: ViewStyle;
   accessibilityLabel?: string;
   testID?: string;
@@ -32,6 +33,7 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
   isDropTarget = false,
   isDragging = false,
   isSuccess = false,
+  compact = false,
   style,
   accessibilityLabel,
   testID,
@@ -48,20 +50,21 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
 
   return (
     <View style={[styles.container, style]} accessible={false}>
-      <View style={styles.handle} />
+      <View style={[styles.handle, compact && styles.handleCompact]} />
       <View
         ref={dropZoneRef}
         collapsable={false}
         testID={testID ? `${testID}-drop-zone` : undefined}
         style={[
           styles.basket,
+          compact && styles.basketCompact,
           isDropTarget && styles.basketTarget,
           isSuccess && styles.basketCorrect,
           isFull && !isSuccess && styles.basketFull,
         ]}
       >
         <View style={styles.rim} />
-        <View style={styles.itemsArea}>
+        <View style={[styles.itemsArea, compact && styles.itemsAreaCompact]}>
           {displayedItems.length > 0 ? (
             <View style={styles.itemsGrid}>
               {displayedItems.map((emoji, index) => {
@@ -137,6 +140,7 @@ const createStyles = (colors: ThemeColors) =>
       marginBottom: -15,
       zIndex: 1,
     },
+    handleCompact: { height: 20, marginBottom: -10 },
     basket: {
       width: '100%',
       maxWidth: 280,
@@ -150,6 +154,7 @@ const createStyles = (colors: ThemeColors) =>
       paddingBottom: Space.md,
       position: 'relative',
     },
+    basketCompact: { minHeight: 106, paddingTop: Space.sm, paddingBottom: Space.md },
     basketTarget: {
       borderColor: colors.primary,
     },
@@ -175,6 +180,7 @@ const createStyles = (colors: ThemeColors) =>
       justifyContent: 'center',
       alignItems: 'center',
     },
+    itemsAreaCompact: { minHeight: 68 },
     itemsGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',

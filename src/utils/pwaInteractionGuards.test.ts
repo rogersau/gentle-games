@@ -107,4 +107,19 @@ describe('pwaInteractionGuards', () => {
 
     expect(preventDefault).not.toHaveBeenCalled();
   });
+
+  it('cancels the first move on a game drag surface while keeping taps native', () => {
+    const { browser, document } = createMockBrowser();
+    installPwaInteractionGuards('web', browser);
+    const preventDefault = jest.fn();
+    const target = {
+      closest: (selector: string) => (selector.includes('data-game-drag-surface') ? {} : null),
+    } as unknown as EventTarget;
+    const event = { target, preventDefault, touches: [{}] };
+
+    getListener(document, 'touchstart')?.(event);
+    expect(preventDefault).not.toHaveBeenCalled();
+    getListener(document, 'touchmove')?.(event);
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+  });
 });
