@@ -97,8 +97,8 @@ export const generateMemorySnapTiles = (
   } else if (theme === 'shapes') {
     availableItems = shuffle(MEMORY_SNAP_OBJECTS, random);
   } else {
-    const animalPairs = Math.ceil(pairs * 0.75);
-    const shapePairs = Math.max(0, pairs - animalPairs);
+    const shapePairs = Math.max(1, Math.floor(pairs * 0.25));
+    const animalPairs = pairs - shapePairs;
     availableItems = shuffle(
       [
         ...shuffle(ANIMALS, random).slice(0, animalPairs),

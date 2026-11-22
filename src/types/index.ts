@@ -119,12 +119,22 @@ export interface NumberPicnicPrompt {
   comparison: 'more' | 'fewer' | null;
 }
 
-export type CategoryMatchCategory = 'food' | 'toys' | 'clothes';
+export type CategoryMatchCategory =
+  | 'food'
+  | 'toys'
+  | 'clothes'
+  | 'vehicles'
+  | 'buildings'
+  | 'instruments'
+  | 'animals'
+  | 'plants'
+  | 'sky';
+export type CategoryMatchPack = 'everyday' | 'town' | 'outdoors';
 export type CategoryMatchCategoryCount = 2 | 3;
 
 export interface CategoryMatchCategoryConfig {
   id: CategoryMatchCategory;
-  icon: string;
+  example: CategoryMatchItem;
 }
 
 export interface CategoryMatchItem {
@@ -134,19 +144,6 @@ export interface CategoryMatchItem {
   color: string;
   category: CategoryMatchCategory;
 }
-
-export const CATEGORY_MATCH_CATEGORIES_2: CategoryMatchCategoryConfig[] = [
-  { id: 'food', icon: '🍎' },
-  { id: 'toys', icon: '🧸' },
-];
-
-export const CATEGORY_MATCH_CATEGORIES_3: CategoryMatchCategoryConfig[] = [
-  ...CATEGORY_MATCH_CATEGORIES_2,
-  { id: 'clothes', icon: '👕' },
-];
-
-// The starter rule is deliberately limited to two concrete, familiar groups.
-export const CATEGORY_MATCH_CATEGORIES = CATEGORY_MATCH_CATEGORIES_2;
 
 export const ANIMALS = [
   { emoji: '🐰', name: 'bunny', color: '#FFB6C1' },
@@ -200,48 +197,6 @@ export const ANIMALS = [
   { emoji: '🐿️', name: 'chipmunk', color: '#D2691E' },
 ];
 
-// Memory Snap's non-animal pool contains familiar places, objects, food, and nature.
-export const MEMORY_SNAP_OBJECTS = [
-  { emoji: '🏠', name: 'house', color: '#FFE4C4' },
-  { emoji: '🏫', name: 'school', color: '#F5DEB3' },
-  { emoji: '🏰', name: 'castle', color: '#E6E6FA' },
-  { emoji: '🏥', name: 'hospital', color: '#F0F8FF' },
-  { emoji: '🏡', name: 'home-garden', color: '#FFE4E1' },
-  { emoji: '🛖', name: 'hut', color: '#DEB887' },
-  { emoji: '🚗', name: 'car', color: '#ADD8E6' },
-  { emoji: '🚌', name: 'bus', color: '#FFDAB9' },
-  { emoji: '🚂', name: 'train', color: '#D3D3D3' },
-  { emoji: '🚜', name: 'tractor', color: '#F0E68C' },
-  { emoji: '🚲', name: 'bike', color: '#B0E0E6' },
-  { emoji: '🚤', name: 'boat', color: '#87CEEB' },
-  { emoji: '🛸', name: 'ufo', color: '#E6E6FA' },
-  { emoji: '🚁', name: 'helicopter', color: '#C0C0C0' },
-  { emoji: '✈️', name: 'airplane', color: '#E0FFFF' },
-  { emoji: '🎈', name: 'balloon', color: '#FFB6C1' },
-  { emoji: '🎀', name: 'ribbon', color: '#FFC0CB' },
-  { emoji: '🔔', name: 'bell', color: '#FFD700' },
-  { emoji: '🪁', name: 'kite', color: '#E6E6FA' },
-  { emoji: '🎁', name: 'gift', color: '#FFB6C1' },
-  { emoji: '🧸', name: 'teddy', color: '#DEB887' },
-  { emoji: '🪀', name: 'yo-yo', color: '#DDA0DD' },
-  { emoji: '⚽', name: 'ball', color: '#F5F5F5' },
-  { emoji: '🧩', name: 'puzzle', color: '#FFDAB9' },
-  { emoji: '📚', name: 'books', color: '#ADD8E6' },
-  { emoji: '🖍️', name: 'crayon', color: '#FFA07A' },
-  { emoji: '🧃', name: 'juice', color: '#FFFACD' },
-  { emoji: '🍎', name: 'apple', color: '#FFB6C1' },
-  { emoji: '🥕', name: 'carrot', color: '#FFDAB9' },
-  { emoji: '🌙', name: 'moon', color: '#E6E6FA' },
-  { emoji: '☀️', name: 'sun', color: '#FFFACD' },
-  { emoji: '☁️', name: 'cloud', color: '#F0F8FF' },
-  { emoji: '🌸', name: 'flower', color: '#FFE4E1' },
-  { emoji: '🍀', name: 'clover', color: '#98FB98' },
-  { emoji: '🍁', name: 'leaf', color: '#FFDAB9' },
-  { emoji: '🌈', name: 'rainbow', color: '#E6E6FA' },
-  { emoji: '⚡', name: 'lightning', color: '#FFFACD' },
-  { emoji: '❄️', name: 'snowflake', color: '#E0FFFF' },
-];
-
 export const CATEGORY_MATCH_FOOD: CategoryMatchItem[] = [
   { id: 'apple', emoji: '🍎', name: 'apple', color: '#FFB6C1', category: 'food' },
   { id: 'banana', emoji: '🍌', name: 'banana', color: '#FFFACD', category: 'food' },
@@ -249,6 +204,8 @@ export const CATEGORY_MATCH_FOOD: CategoryMatchItem[] = [
   { id: 'bread', emoji: '🍞', name: 'bread', color: '#DEB887', category: 'food' },
   { id: 'cheese', emoji: '🧀', name: 'cheese', color: '#FFD700', category: 'food' },
   { id: 'cookie', emoji: '🍪', name: 'cookie', color: '#D2B48C', category: 'food' },
+  { id: 'strawberry', emoji: '🍓', name: 'strawberry', color: '#DA8278', category: 'food' },
+  { id: 'pear', emoji: '🍐', name: 'pear', color: '#B6C883', category: 'food' },
 ];
 
 export const CATEGORY_MATCH_TOYS: CategoryMatchItem[] = [
@@ -258,6 +215,8 @@ export const CATEGORY_MATCH_TOYS: CategoryMatchItem[] = [
   { id: 'kite', emoji: '🪁', name: 'kite', color: '#E6E6FA', category: 'toys' },
   { id: 'yo-yo', emoji: '🪀', name: 'yo-yo', color: '#DDA0DD', category: 'toys' },
   { id: 'game', emoji: '🎮', name: 'game', color: '#B0C4DE', category: 'toys' },
+  { id: 'train', emoji: '🚂', name: 'train', color: '#CE956D', category: 'toys' },
+  { id: 'rubber-duck', emoji: '🐤', name: 'rubber-duck', color: '#ECCA75', category: 'toys' },
 ];
 
 export const CATEGORY_MATCH_CLOTHES: CategoryMatchItem[] = [
@@ -267,13 +226,153 @@ export const CATEGORY_MATCH_CLOTHES: CategoryMatchItem[] = [
   { id: 'shoe', emoji: '👟', name: 'shoe', color: '#D3D3D3', category: 'clothes' },
   { id: 'dress', emoji: '👗', name: 'dress', color: '#FFB6C1', category: 'clothes' },
   { id: 'coat', emoji: '🧥', name: 'coat', color: '#D2B48C', category: 'clothes' },
+  { id: 'mitten', emoji: '🧤', name: 'mitten', color: '#DB9D86', category: 'clothes' },
+  { id: 'scarf', emoji: '🧣', name: 'scarf', color: '#9EBAC7', category: 'clothes' },
 ];
+
+export const CATEGORY_MATCH_CATEGORIES_2: CategoryMatchCategoryConfig[] = [
+  { id: 'food', example: CATEGORY_MATCH_FOOD[0] },
+  { id: 'toys', example: CATEGORY_MATCH_TOYS[0] },
+];
+
+export const CATEGORY_MATCH_CATEGORIES_3: CategoryMatchCategoryConfig[] = [
+  ...CATEGORY_MATCH_CATEGORIES_2,
+  { id: 'clothes', example: CATEGORY_MATCH_CLOTHES[0] },
+];
+
+// The starter rule is deliberately limited to two concrete, familiar groups.
+export const CATEGORY_MATCH_CATEGORIES = CATEGORY_MATCH_CATEGORIES_2;
+
+// Memory Snap's non-animal pool contains familiar places, objects, food, and nature.
+const familiarObjects = [
+  { emoji: '🏠', name: 'house', color: '#FFE4C4' },
+  { emoji: '🏫', name: 'school', color: '#F5DEB3' },
+  { emoji: '🏰', name: 'castle', color: '#E6E6FA' },
+  { emoji: '🏥', name: 'hospital', color: '#F0F8FF' },
+  { emoji: '🏡', name: 'home-garden', color: '#FFE4E1' },
+  { emoji: '🛖', name: 'hut', color: '#DEB887' },
+  { emoji: '🚗', name: 'car', color: '#ADD8E6' },
+  { emoji: '🚌', name: 'bus', color: '#FFDAB9' },
+  { emoji: '🚜', name: 'tractor', color: '#F0E68C' },
+  { emoji: '🚲', name: 'bike', color: '#B0E0E6' },
+  { emoji: '🚤', name: 'boat', color: '#87CEEB' },
+  { emoji: '🛸', name: 'ufo', color: '#E6E6FA' },
+  { emoji: '🚁', name: 'helicopter', color: '#C0C0C0' },
+  { emoji: '✈️', name: 'airplane', color: '#E0FFFF' },
+  { emoji: '🎈', name: 'balloon', color: '#FFB6C1' },
+  { emoji: '🎀', name: 'ribbon', color: '#FFC0CB' },
+  { emoji: '🔔', name: 'bell', color: '#FFD700' },
+  { emoji: '🎁', name: 'gift', color: '#FFB6C1' },
+  { emoji: '📚', name: 'books', color: '#ADD8E6' },
+  { emoji: '🖍️', name: 'crayon', color: '#FFA07A' },
+  { emoji: '🧃', name: 'juice', color: '#FFFACD' },
+  { emoji: '🌙', name: 'moon', color: '#E6E6FA' },
+  { emoji: '☀️', name: 'sun', color: '#FFFACD' },
+  { emoji: '☁️', name: 'cloud', color: '#F0F8FF' },
+  { emoji: '🌸', name: 'flower', color: '#FFE4E1' },
+  { emoji: '🍀', name: 'clover', color: '#98FB98' },
+  { emoji: '🍁', name: 'leaf', color: '#FFDAB9' },
+  { emoji: '🌈', name: 'rainbow', color: '#E6E6FA' },
+  { emoji: '⚡', name: 'lightning', color: '#FFFACD' },
+  { emoji: '❄️', name: 'snowflake', color: '#E0FFFF' },
+  { emoji: '🎸', name: 'guitar', color: '#C7C5AB' },
+  { emoji: '🥁', name: 'drum', color: '#C7C5AB' },
+  { emoji: 'tambourine', name: 'tambourine', color: '#C7C5AB' },
+  { emoji: 'xylophone', name: 'xylophone', color: '#C7C5AB' },
+  { emoji: '🎺', name: 'trumpet', color: '#C7C5AB' },
+  { emoji: '🪗', name: 'accordion', color: '#C7C5AB' },
+  { emoji: '🌱', name: 'seedling', color: '#C7C5AB' },
+  { emoji: 'pine-cone', name: 'pine-cone', color: '#C7C5AB' },
+  { emoji: 'acorn', name: 'acorn', color: '#C7C5AB' },
+  { emoji: '🌼', name: 'daisy', color: '#C7C5AB' },
+  { emoji: '⭐', name: 'star', color: '#C7C5AB' },
+  { emoji: 'watering-can', name: 'watering-can', color: '#C7C5AB' },
+  { emoji: 'trowel', name: 'trowel', color: '#C7C5AB' },
+  { emoji: 'beehive', name: 'beehive', color: '#C7C5AB' },
+  { emoji: '⌛', name: 'hourglass', color: '#C7C5AB' },
+  { emoji: '✏️', name: 'pencil', color: '#C7C5AB' },
+  { emoji: '⏰', name: 'alarm-clock', color: '#C7C5AB' },
+  { emoji: '🫧', name: 'bubbles', color: '#C7C5AB' },
+];
+
+type PictureItem = (typeof familiarObjects)[number];
+
+function sortingGroup(
+  category: CategoryMatchCategory,
+  pictures: PictureItem[],
+): CategoryMatchItem[] {
+  return pictures.map((picture) => ({ ...picture, id: picture.name, category }));
+}
+
+const vehicles = sortingGroup(
+  'vehicles',
+  familiarObjects.filter((picture) =>
+    ['car', 'bus', 'tractor', 'bike', 'boat', 'airplane', 'helicopter'].includes(picture.name),
+  ),
+);
+const buildings = sortingGroup(
+  'buildings',
+  familiarObjects.filter((picture) =>
+    ['house', 'school', 'castle', 'hospital', 'home-garden', 'hut'].includes(picture.name),
+  ),
+);
+const instruments = sortingGroup(
+  'instruments',
+  familiarObjects.filter((picture) =>
+    ['guitar', 'drum', 'tambourine', 'xylophone', 'trumpet', 'accordion'].includes(picture.name),
+  ),
+);
+const animals = sortingGroup(
+  'animals',
+  ANIMALS.filter((picture) =>
+    ['bunny', 'koala', 'fox', 'frog', 'giraffe', 'turtle', 'owl', 'butterfly'].includes(
+      picture.name,
+    ),
+  ),
+);
+const plants = sortingGroup(
+  'plants',
+  familiarObjects.filter((picture) =>
+    ['flower', 'clover', 'leaf', 'seedling', 'pine-cone', 'acorn', 'daisy'].includes(picture.name),
+  ),
+);
+const sky = sortingGroup(
+  'sky',
+  familiarObjects.filter((picture) =>
+    ['moon', 'sun', 'cloud', 'rainbow', 'lightning', 'snowflake', 'star'].includes(picture.name),
+  ),
+);
+
+export const CATEGORY_MATCH_PACKS: Record<CategoryMatchPack, CategoryMatchCategoryConfig[]> = {
+  everyday: CATEGORY_MATCH_CATEGORIES_3,
+  town: [vehicles, buildings, instruments].map(([example]) => ({ id: example.category, example })),
+  outdoors: [animals, plants, sky].map(([example]) => ({ id: example.category, example })),
+};
 
 export const CATEGORY_MATCH_ITEMS: CategoryMatchItem[] = [
   ...CATEGORY_MATCH_FOOD,
   ...CATEGORY_MATCH_TOYS,
   ...CATEGORY_MATCH_CLOTHES,
+  ...vehicles,
+  ...buildings,
+  ...instruments,
+  ...animals,
+  ...plants,
+  ...sky,
 ];
+
+export const MEMORY_SNAP_OBJECTS = [
+  ...CATEGORY_MATCH_FOOD,
+  ...CATEGORY_MATCH_TOYS,
+  ...CATEGORY_MATCH_CLOTHES,
+  ...familiarObjects,
+];
+
+// Some older rounds store a symbol without a picture name.
+export const pictureNameByValue = new Map(
+  [...ANIMALS, ...MEMORY_SNAP_OBJECTS].map(({ emoji, name }) => [emoji, name]),
+);
+pictureNameByValue.set('🌟', 'star');
 
 export const PATTERN_TRAIN_EMOJIS = ['🚂', '🌟', '🌈', '🌸', '☁️', '🫧', '🍓', '🧸'];
 

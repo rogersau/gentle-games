@@ -1,3 +1,4 @@
+import { GamePicture } from '../../ui/components/GamePicture';
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
@@ -69,11 +70,7 @@ export const PicnicBasket: React.FC<PicnicBasketProps> = ({
             <View style={styles.itemsGrid}>
               {displayedItems.map((emoji, index) => {
                 const itemId = ids[index] ?? index;
-                const item = (
-                  <Text style={styles.itemEmoji} selectable={false}>
-                    {emoji}
-                  </Text>
-                );
+                const item = <GamePicture name={emoji} size={24} />;
                 if (!onItemPress || !removableIds.has(itemId)) {
                   return (
                     <View
@@ -193,10 +190,6 @@ const createStyles = (colors: ThemeColors) =>
       minHeight: HitTarget.min,
       justifyContent: 'center',
       alignItems: 'center',
-    },
-    itemEmoji: {
-      fontSize: 24,
-      textAlign: 'center',
     },
     moreIndicator: {
       ...TypeStyle.bodySm,

@@ -1,5 +1,12 @@
+import { gamePictures } from '../assets/game-pictures';
 import {
   CATEGORY_MATCH_ITEMS,
+  MEMORY_SNAP_OBJECTS,
+  ANIMALS,
+  CATEGORY_MATCH_PACKS,
+  pictureNameByValue,
+  PATTERN_TRAIN_EMOJIS,
+  NUMBER_PICNIC_ITEMS,
   CATEGORY_MATCH_CATEGORIES_2,
   CATEGORY_MATCH_CATEGORIES_3,
 } from '../types';
@@ -11,12 +18,22 @@ import {
 
 describe('categoryMatchLogic', () => {
   it('keeps every reviewed item in exactly one explicit category with metadata', () => {
-    expect(CATEGORY_MATCH_ITEMS).toHaveLength(18);
-    expect(new Set(CATEGORY_MATCH_ITEMS.map((item) => item.id)).size).toBe(18);
+    const memory = [...ANIMALS, ...MEMORY_SNAP_OBJECTS];
+    expect(Object.keys(gamePictures).sort()).toEqual(memory.map((item) => item.name).sort());
+    expect(new Set(CATEGORY_MATCH_ITEMS.map((item) => item.id)).size).toBe(
+      CATEGORY_MATCH_ITEMS.length,
+    );
     for (const item of CATEGORY_MATCH_ITEMS) {
       expect(item.id).toBe(item.name);
-      expect(item.emoji).toBeTruthy();
-      expect(item.category).toMatch(/^(food|toys|clothes)$/);
+      expect(gamePictures[item.name]).toBeDefined();
+      expect(memory.filter((card) => card.emoji === item.emoji).map((card) => card.name)).toEqual([
+        item.name,
+      ]);
+      expect(
+        Object.values(CATEGORY_MATCH_PACKS)
+          .flat()
+          .some((group) => group.id === item.category),
+      ).toBe(true);
       expect(item.color).toMatch(/^#/);
     }
   });
@@ -24,7 +41,7 @@ describe('categoryMatchLogic', () => {
   it('uses exactly two unambiguous starter groups and keeps clothes advanced-only', () => {
     expect(CATEGORY_MATCH_CATEGORIES_2.map((category) => category.id)).toEqual(['food', 'toys']);
     expect(getCategoryMatchItems(2).every((item) => item.category !== 'clothes')).toBe(true);
-    expect(getCategoryMatchItems(2)).toHaveLength(12);
+    expect(getCategoryMatchItems(2)).toHaveLength(16);
   });
 
   it('adds the third group only for the explicit three-group setting', () => {
@@ -33,7 +50,7 @@ describe('categoryMatchLogic', () => {
       'toys',
       'clothes',
     ]);
-    expect(getCategoryMatchItems(3)).toHaveLength(18);
+    expect(getCategoryMatchItems(3)).toHaveLength(24);
   });
 
   it('returns the sorting attribute and current categories before every round', () => {
@@ -59,6 +76,38 @@ describe('categoryMatchLogic', () => {
       ),
     );
     expect(new Set(laterItems.map((round) => round.item.id)).size).toBeGreaterThan(1);
+  });
+
+  it('uses only the selected picture set and visible groups for sorting', () => {
+    for (const pack of ['town', 'outdoors', 'everyday'] as const) {
+      for (const count of [2, 3] as const) {
+        const groups = CATEGORY_MATCH_PACKS[pack].slice(0, count);
+        const items = getCategoryMatchItems(count, pack);
+        expect(new Set(items.map((item) => item.category))).toEqual(
+          new Set(groups.map((group) => group.id)),
+        );
+        items.forEach((item, i) => {
+          const round = createCategoryMatchRound(
+            undefined,
+            0,
+            () => (i + 0.5) / items.length,
+            count,
+            pack,
+          );
+          expect(round.item).toEqual(item);
+          expect(round.categories).toEqual(groups);
+        });
+      }
+    }
+  });
+
+  it('provides app artwork for every train and picnic piece', () => {
+    for (const symbol of [
+      ...PATTERN_TRAIN_EMOJIS,
+      ...NUMBER_PICNIC_ITEMS.map((item) => item.emoji),
+    ]) {
+      expect(gamePictures[pictureNameByValue.get(symbol)!]).toBeDefined();
+    }
   });
 
   it('shares one membership answer function for every category', () => {

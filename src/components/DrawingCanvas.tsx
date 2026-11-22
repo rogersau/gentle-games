@@ -1,3 +1,5 @@
+import { ControlIcon } from '../ui/components/ControlIcon';
+import { GamePicture } from '../ui/components/GamePicture';
 import React, {
   useState,
   useRef,
@@ -96,10 +98,6 @@ const SHAPE_TRANSLATION_KEYS: Record<ShapeType, TranslationKey> = {
   triangle: 'games.drawing.shape.triangle',
 };
 
-const SHAPE_ICONS = { circle: '🔴', square: '🟦', triangle: '🔺' } satisfies Record<
-  ShapeType,
-  string
->;
 const SHAPES = ['circle', 'square', 'triangle'] as const;
 const SHAPE_SIZES = [
   { size: 30, label: 'games.drawing.sizeSmall', name: 'small' },
@@ -687,7 +685,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               accessibilityLabel={t('games.drawing.penTool')}
               accessibilityState={{ selected: tool === 'pen' }}
             >
-              <Text style={styles.toolButtonText}>✏️</Text>
+              <GamePicture name='pencil' size={26} />
               <Text
                 style={[styles.toolLabel, { color: tool === 'pen' ? ON_ACCENT_TEXT : colors.text }]}
               >
@@ -706,7 +704,11 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               accessibilityLabel={`${t('games.drawing.shapeTool')}, ${t(SHAPE_TRANSLATION_KEYS[shape.type])}`}
               accessibilityState={{ selected: tool === 'shape' }}
             >
-              <Text style={styles.toolButtonText}>{SHAPE_ICONS[shape.type]}</Text>
+              <ControlIcon
+                name={shape.type}
+                color={tool === 'shape' ? ON_ACCENT_TEXT : colors.text}
+                size={26}
+              />
               <Text
                 style={[
                   styles.toolLabel,
@@ -730,11 +732,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               })}
               accessibilityHint={t('games.drawing.symmetryHint')}
             >
-              <Text style={styles.toolButtonText}>
-                {symmetryMode === 'none' && '🦋'}
-                {symmetryMode === 'half' && '🦋'}
-                {symmetryMode === 'quarter' && '🦋'}
-              </Text>
+              <GamePicture name='butterfly' size={26} />
               <Text
                 style={[
                   styles.toolLabel,
@@ -756,7 +754,11 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               accessibilityLabel={t('games.drawing.eraserTool')}
               accessibilityState={{ selected: tool === 'eraser' }}
             >
-              <Text style={styles.toolButtonText}>🧹</Text>
+              <ControlIcon
+                name='eraser'
+                color={tool === 'eraser' ? ON_ACCENT_TEXT : colors.text}
+                size={26}
+              />
               <Text
                 style={[
                   styles.toolLabel,
@@ -779,9 +781,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               accessibilityLabel={t('games.drawing.undo')}
               accessibilityState={{ disabled: !canUndo }}
             >
-              <Text style={[styles.toolButtonText, !canUndo ? styles.disabledText : undefined]}>
-                ↩️
-              </Text>
+              <ControlIcon name='undo' color={colors.text} size={26} />
               <Text style={[styles.toolLabel, { color: colors.text }]}>
                 {t('games.drawing.undo')}
               </Text>
@@ -801,7 +801,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               accessibilityHint={t('games.drawing.clearHint')}
               accessibilityState={{ disabled: !canClear }}
             >
-              <Text style={styles.toolButtonText}>🗑️</Text>
+              <ControlIcon name='bin' color={colors.text} size={26} />
               <Text style={[styles.toolLabel, { color: colors.text }]}>
                 {t('games.drawing.tools.clear')}
               </Text>
@@ -928,7 +928,11 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
                   accessibilityLabel={label}
                   accessibilityState={{ selected }}
                 >
-                  <Text style={styles.shapeIcon}>{SHAPE_ICONS[type]}</Text>
+                  <ControlIcon
+                    name={type}
+                    color={selected ? ON_ACCENT_TEXT : colors.text}
+                    size={32}
+                  />
                   <Text
                     style={[
                       styles.shapeLabel,
@@ -1093,12 +1097,6 @@ const styles = StyleSheet.create({
   },
   drawingInstruction: { ...TypeStyle.bodySm, textAlign: 'center', marginTop: Space.sm },
   toolLabel: { ...TypeStyle.bodySm, color: ON_ACCENT_TEXT, textAlign: 'center' },
-  toolButtonText: {
-    fontSize: 18,
-  },
-  disabledText: {
-    opacity: 0.3,
-  },
   toolIndicator: {
     marginTop: 8,
     alignItems: 'center',
@@ -1242,10 +1240,6 @@ const styles = StyleSheet.create({
     minWidth: 80,
     minHeight: 104,
     justifyContent: 'center',
-  },
-  shapeIcon: {
-    fontSize: 36,
-    marginBottom: 8,
   },
   shapeLabel: {
     fontSize: 14,

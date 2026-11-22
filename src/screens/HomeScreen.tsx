@@ -119,7 +119,6 @@ export const HomeScreen: React.FC = () => {
                 <View key={game.id}>
                   <GameCard
                     gameId={game.id}
-                    icon={game.icon}
                     title={t(game.nameKey)}
                     description={t(game.descriptionKey)}
                     onPress={() => handleGameSelect(game)}
@@ -138,6 +137,7 @@ export const HomeScreen: React.FC = () => {
 
         <View style={styles.footer}>
           <AppButton
+            icon='settings'
             label={t('home.settingsButton')}
             variant='ghost'
             size='lg'

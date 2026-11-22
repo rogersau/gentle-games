@@ -1,3 +1,4 @@
+import { GamePicture } from '../../ui/components/GamePicture';
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
@@ -5,7 +6,6 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   View,
   type PanResponderGestureState,
   type ViewStyle,
@@ -282,9 +282,7 @@ export const PicnicBlanket: React.FC<PicnicBlanketProps> = ({
                   <Animated.View
                     style={isDragging && { transform: position.getTranslateTransform() }}
                   >
-                    <Text style={[styles.emoji, compact && styles.emojiCompact]} selectable={false}>
-                      {itemEmoji}
-                    </Text>
+                    <GamePicture name={itemEmoji} size={compact ? 30 : 36} />
                   </Animated.View>
                 </Pressable>
               ) : (
@@ -326,8 +324,6 @@ const createStyles = (colors: ThemeColors) =>
       alignItems: 'center',
     },
     itemCompact: { width: HitTarget.min, height: HitTarget.min },
-    emoji: { fontSize: 36, textAlign: 'center' },
-    emojiCompact: { fontSize: 30 },
     placeholder: {
       width: 56,
       height: 56,

@@ -111,10 +111,17 @@ describe('SettingsScreen', () => {
 
   it('keeps Category Match at two groups by default and allows the explicit third group', () => {
     const screen = render(React.createElement(SettingsScreen));
-    expect(screen.getByRole('radio', { name: '2 groups: Food and Toys' })).toBeTruthy();
-    fireEvent.press(screen.getByRole('radio', { name: '3 groups: Food, Toys, and Clothes' }));
+    expect(screen.getByRole('radio', { name: 'Two groups' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('radio', { name: 'Three groups' }));
 
     expect(mockUpdateSettings).toHaveBeenCalledWith('category-match', { categoryCount: 3 });
+  });
+
+  it('selects an Outdoors picture set independently of the group count', () => {
+    const screen = render(<SettingsScreen />);
+    expect(screen.getByRole('radio', { name: 'Everyday things' })).toBeChecked();
+    fireEvent.press(screen.getByRole('radio', { name: 'Outdoors' }));
+    expect(mockUpdateSettings).toHaveBeenCalledWith('category-match', { pack: 'outdoors' });
   });
 
   it('persists Number Picnic quantity independently from global difficulty', () => {

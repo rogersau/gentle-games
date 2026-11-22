@@ -365,10 +365,10 @@ describe('PatternTrainScreen', () => {
 
     const wrongChoice = await screen.findByLabelText('Carriage with flower');
     fireEvent.press(wrongChoice);
-    expect(await screen.findByText('Show the pattern: 🌟 🌈 repeats.')).toBeTruthy();
+    expect(await screen.findByText('Show the pattern: star, rainbow repeats.')).toBeTruthy();
 
     fireEvent.press(wrongChoice);
-    expect(await screen.findByText('Model: 🌟 🌈 🌟 🌈')).toBeTruthy();
+    expect(await screen.findByText('Model: star, rainbow, star, rainbow')).toBeTruthy();
     expect(screen.queryByTestId('pattern-train-next')).toBeNull();
 
     fireEvent.press(await screen.findByLabelText('Carriage with rainbow'));
@@ -380,7 +380,7 @@ describe('PatternTrainScreen', () => {
 
     fireEvent.press(await screen.findByText('Show the pattern'));
 
-    expect(await screen.findByText('Show the pattern: 🌟 🌈 repeats.')).toBeTruthy();
+    expect(await screen.findByText('Show the pattern: star, rainbow repeats.')).toBeTruthy();
     expect(screen.getByLabelText('Carriage with rainbow')).toBeEnabled();
   });
 

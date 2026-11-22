@@ -1,3 +1,4 @@
+import { CategoryMatchPackPicker } from '../components/CategoryMatchPackPicker';
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -16,6 +17,7 @@ import { LANGUAGE_OPTIONS } from '../types/i18n';
 import { useNumberPicnicSpeechAvailable } from '../utils/numberPicnicNarration';
 import {
   AppScreen,
+  GameArtwork,
   AppHeader,
   SettingToggle,
   SegmentedControl,
@@ -237,6 +239,8 @@ export const SettingsScreen: React.FC = () => {
         {/* Category Match */}
         <View style={styles.section}>
           <SectionHeader title={t('settings.categoryMatch.title')} />
+          <Text style={styles.controlLabel}>{t('settings.categoryMatch.pack.title')}</Text>
+          <CategoryMatchPackPicker />
           <Text style={styles.controlLabel}>{t('settings.categoryMatch.categories.title')}</Text>
           <SegmentedControl
             options={categoryCountOptions}
@@ -436,7 +440,8 @@ export const SettingsScreen: React.FC = () => {
               return (
                 <SettingToggle
                   key={game.id}
-                  label={`${game.icon}  ${t(game.nameKey)}`}
+                  label={t(game.nameKey)}
+                  artwork={<GameArtwork gameId={game.id} size={32} />}
                   value={isVisible}
                   onValueChange={(value) => {
                     const updated = value

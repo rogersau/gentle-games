@@ -1,13 +1,6 @@
+import { GamePicture } from '../../ui/components/GamePicture';
 import React, { useEffect, useRef, useMemo } from 'react';
-import {
-  Animated,
-  TouchableOpacity,
-  StyleSheet,
-  Text,
-  View,
-  ViewStyle,
-  Easing,
-} from 'react-native';
+import { Animated, TouchableOpacity, StyleSheet, View, ViewStyle, Easing } from 'react-native';
 import { Space } from '../../ui/tokens';
 import { useAnimationEnabled } from '../../ui/animations';
 
@@ -96,9 +89,7 @@ export const PicnicItem: React.FC<PicnicItemProps> = ({
       testID={testID}
     >
       <Animated.View style={[styles.container, animatedStyle, style]}>
-        <Text style={styles.emoji} selectable={false}>
-          {emoji}
-        </Text>
+        <GamePicture name={emoji} size={36} />
       </Animated.View>
     </TouchableOpacity>
   );
@@ -121,10 +112,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     margin: Space.xs,
-  },
-  emoji: {
-    fontSize: 36,
-    textAlign: 'center',
   },
   placeholder: {
     backgroundColor: 'rgba(0, 0, 0, 0.03)',

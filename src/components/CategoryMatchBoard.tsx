@@ -9,11 +9,13 @@ import {
   Text,
   View,
 } from 'react-native';
+import { GamePicture } from '../ui/components/GamePicture';
 import type { GestureResponderEvent, LayoutRectangle, ViewStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type {
   CategoryMatchCategory,
   CategoryMatchCategoryCount,
+  CategoryMatchPack,
   CategoryMatchItem,
   ThemeColors,
 } from '../types';
@@ -33,6 +35,7 @@ import { AppButton } from '../ui/components';
 interface CategoryMatchBoardProps {
   width: number;
   height: number;
+  pack?: CategoryMatchPack;
   categoryCount?: CategoryMatchCategoryCount;
   onCorrectMatch?: (item: CategoryMatchItem, category: CategoryMatchCategory) => void;
   onIncorrectMatch?: () => void;
@@ -54,6 +57,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   width,
   height,
   categoryCount = 2,
+  pack = 'everyday',
   onCorrectMatch,
   onIncorrectMatch,
 }) => {
@@ -65,7 +69,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
   const [controller] = useState(() => createGuidedRoundController({ hintAfter: 1, modelAfter: 2 }));
   const [guidedRound, setGuidedRound] = useState(controller.getState);
   const [round, setRound] = useState(() =>
-    createCategoryMatchRound(undefined, 0, Math.random, categoryCount),
+    createCategoryMatchRound(undefined, 0, Math.random, categoryCount, pack),
   );
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isTokenSelected, setIsTokenSelected] = useState(false);
@@ -151,7 +155,13 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
     const nextState = controller.startNextExample();
     setGuidedRound(nextState);
     setRound(
-      createCategoryMatchRound(round.item, nextState.exampleNumber, Math.random, categoryCount),
+      createCategoryMatchRound(
+        round.item,
+        nextState.exampleNumber,
+        Math.random,
+        categoryCount,
+        pack,
+      ),
     );
     setFeedback(null);
   };
@@ -282,9 +292,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
                 { transform: dragPosition.getTranslateTransform() },
               ]}
             >
-              <Text aria-hidden style={{ fontSize: Math.floor(tokenSize * 0.5) }}>
-                {round.item.emoji}
-              </Text>
+              <GamePicture name={round.item.name} size={Math.floor(tokenSize * 0.6)} />
             </Animated.View>
           </Pressable>
         </View>
@@ -296,7 +304,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
             rowLayout.current = nativeEvent.layout;
           }}
         >
-          {round.categories.map(({ id, icon }) => {
+          {round.categories.map(({ id, example }) => {
             const label = t(`games.categoryMatch.categories.${id}`);
             const isMatch = id === round.item.category;
             const isMatched = isMatch && guidedRound.phase === 'corrected';
@@ -331,9 +339,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
                     ✓
                   </Text>
                 ) : null}
-                <Text aria-hidden style={styles.zoneIcon}>
-                  {icon}
-                </Text>
+                <GamePicture name={example.name} size={34} />
                 <Text style={styles.zoneLabel}>{label}</Text>
               </Pressable>
             );
@@ -456,7 +462,6 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) => {
     zoneCardActive: { borderColor: cardText },
     zoneCardModelled: { borderColor: cardText, borderStyle: 'dashed' },
     zoneCardMatched: { borderColor: cardText, backgroundColor: colors.success },
-    zoneIcon: { fontSize: 30, textAlign: 'center' },
     zoneLabel: {
       ...TypeStyle.buttonSm,
       color: cardText,

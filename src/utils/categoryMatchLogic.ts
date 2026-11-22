@@ -1,6 +1,6 @@
 import {
-  CATEGORY_MATCH_CATEGORIES_2,
-  CATEGORY_MATCH_CATEGORIES_3,
+  CATEGORY_MATCH_PACKS,
+  CategoryMatchPack,
   CATEGORY_MATCH_ITEMS,
   CategoryMatchCategory,
   CategoryMatchCategoryConfig,
@@ -14,13 +14,18 @@ export interface CategoryMatchRound {
   sortingAttribute: 'type';
 }
 
-const getCategories = (categoryCount: CategoryMatchCategoryCount): CategoryMatchCategoryConfig[] =>
-  categoryCount === 3 ? [...CATEGORY_MATCH_CATEGORIES_3] : [...CATEGORY_MATCH_CATEGORIES_2];
+export const getCategoryMatchCategories = (
+  categoryCount: CategoryMatchCategoryCount,
+  pack: CategoryMatchPack = 'everyday',
+): CategoryMatchCategoryConfig[] => CATEGORY_MATCH_PACKS[pack].slice(0, categoryCount);
 
 export const getCategoryMatchItems = (
   categoryCount: CategoryMatchCategoryCount = 2,
+  pack: CategoryMatchPack = 'everyday',
 ): CategoryMatchItem[] => {
-  const categoryIds = new Set(getCategories(categoryCount).map((category) => category.id));
+  const categoryIds = new Set(
+    getCategoryMatchCategories(categoryCount, pack).map((category) => category.id),
+  );
   return CATEGORY_MATCH_ITEMS.filter((item) => categoryIds.has(item.category));
 };
 
@@ -29,13 +34,16 @@ export const createCategoryMatchRound = (
   _roundsCompleted = 0,
   random: () => number = Math.random,
   categoryCount: CategoryMatchCategoryCount = 2,
+  pack: CategoryMatchPack = 'everyday',
 ): CategoryMatchRound => {
-  const pool = getCategoryMatchItems(categoryCount).filter((item) => item.id !== previousItem?.id);
-  const availableItems = pool.length > 0 ? pool : getCategoryMatchItems(categoryCount);
+  const pool = getCategoryMatchItems(categoryCount, pack).filter(
+    (item) => item.id !== previousItem?.id,
+  );
+  const availableItems = pool.length > 0 ? pool : getCategoryMatchItems(categoryCount, pack);
 
   return {
     item: availableItems[Math.floor(random() * availableItems.length)],
-    categories: getCategories(categoryCount),
+    categories: getCategoryMatchCategories(categoryCount, pack),
     sortingAttribute: 'type',
   };
 };

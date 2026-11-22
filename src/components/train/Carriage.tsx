@@ -1,3 +1,4 @@
+import { GamePicture } from '../../ui/components/GamePicture';
 import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import Svg, { Rect, Circle } from 'react-native-svg';
@@ -77,9 +78,13 @@ export const Carriage: React.FC<CarriageProps> = ({
 
       {content && (
         <View style={styles.contentContainer}>
-          <Text allowFontScaling={false} style={[styles.contentText, { fontSize: size * 0.4 }]}>
-            {content}
-          </Text>
+          {isMissing || content === '?' ? (
+            <Text allowFontScaling={false} style={[styles.contentText, { fontSize: size * 0.4 }]}>
+              ?
+            </Text>
+          ) : (
+            <GamePicture name={content} size={size * 0.43} />
+          )}
         </View>
       )}
     </View>

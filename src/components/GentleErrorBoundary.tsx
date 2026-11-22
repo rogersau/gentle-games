@@ -1,3 +1,4 @@
+import { GamePicture } from '../ui/components/GamePicture';
 import React, { Component, ReactNode } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -39,9 +40,9 @@ const GentleErrorFallback: React.FC<{ onReset: () => void }> = ({ onReset }) => 
   return (
     <View style={styles.container} testID='error-boundary-fallback'>
       <View style={styles.content}>
-        <Text style={styles.icon} accessibilityLabel={t('errorBoundary.iconAccessibilityLabel')}>
-          ☁️
-        </Text>
+        <View style={styles.icon}>
+          <GamePicture name='cloud' size={64} label={t('errorBoundary.iconAccessibilityLabel')} />
+        </View>
         <Text style={styles.title} accessibilityRole='header'>
           {t('errorBoundary.title')}
         </Text>
@@ -109,7 +110,6 @@ const createStyles = (colors: ThemeColors) =>
       maxWidth: 400,
     },
     icon: {
-      fontSize: 64,
       marginBottom: Space.lg,
       opacity: 0.8,
     },

@@ -1,13 +1,15 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
 import { Radius, Shadow } from '../tokens';
 import { ThemeColors } from '../../types';
 
+import { GamePicture } from './GamePicture';
+
 type BadgeSize = 'sm' | 'md' | 'lg';
 
 interface IconBadgeProps {
-  /** Emoji or short text to display */
+  /** Catalogue picture name or a supported legacy game symbol */
   icon: string;
   /** Background color for the badge circle */
   backgroundColor?: string;
@@ -17,11 +19,12 @@ interface IconBadgeProps {
   accessibilityLabel?: string;
 }
 
-const sizeMap: Record<BadgeSize, { container: number; fontSize: number; borderWidth: number }> = {
-  sm: { container: 36, fontSize: 18, borderWidth: 2 },
-  md: { container: 52, fontSize: 28, borderWidth: 3 },
-  lg: { container: 68, fontSize: 38, borderWidth: 3 },
-};
+const sizeMap: Record<BadgeSize, { container: number; pictureSize: number; borderWidth: number }> =
+  {
+    sm: { container: 36, pictureSize: 18, borderWidth: 2 },
+    md: { container: 52, pictureSize: 28, borderWidth: 3 },
+    lg: { container: 68, pictureSize: 38, borderWidth: 3 },
+  };
 
 export const IconBadge: React.FC<IconBadgeProps> = ({
   icon,
@@ -43,7 +46,7 @@ export const IconBadge: React.FC<IconBadgeProps> = ({
       accessibilityRole='image'
     >
       <View style={styles.innerCircle}>
-        <Text style={styles.icon}>{icon}</Text>
+        <GamePicture name={icon} size={sizeMap[size].pictureSize} />
       </View>
     </View>
   );
@@ -77,10 +80,6 @@ const createStyles = (
       backgroundColor: bg,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    icon: {
-      fontSize: s.fontSize,
-      textAlign: 'center',
     },
   });
 };

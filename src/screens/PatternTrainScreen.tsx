@@ -1,3 +1,4 @@
+import { GamePicture } from '../ui/components/GamePicture';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
@@ -161,8 +162,16 @@ export const PatternTrainScreen: React.FC = () => {
     setShowInstructions(!showInstructions);
   };
   const ruleLabel = translate(`games.patternTrain.rules.${pattern.templateId}`);
+  const pictureStrip = (values: string[]) => (
+    <View style={styles.pictureStrip} aria-hidden accessible={false}>
+      {values.map((value, index) => (
+        <GamePicture key={index} name={value} size={26} />
+      ))}
+    </View>
+  );
   const model = (
     <View>
+      {pictureStrip(pattern.carriages.map((carriage) => carriage.emoji))}
       <Text
         style={styles.modelText}
         accessibilityLabel={t('games.patternTrain.guidance.modelAccessibilityLabel', {
@@ -170,12 +179,12 @@ export const PatternTrainScreen: React.FC = () => {
         })}
       >
         {t('games.patternTrain.guidance.model', {
-          sequence: pattern.carriages.map((carriage) => carriage.emoji).join(' '),
+          sequence: pattern.carriages.map((carriage) => pictureName(carriage.emoji)).join(', '),
         })}
       </Text>
       <Text style={styles.modelText}>
         {t('games.patternTrain.repeatUnit', {
-          unit: pattern.repeatUnit.join(' '),
+          unit: pattern.repeatUnit.map(pictureName).join(', '),
           rule: ruleLabel,
         })}
       </Text>
@@ -282,8 +291,9 @@ export const PatternTrainScreen: React.FC = () => {
             state={guidedRound}
             instruction={showInstructions ? t('games.patternTrain.instructions') : undefined}
             hint={t('games.patternTrain.guidance.showPattern', {
-              unit: pattern.repeatUnit.join(' '),
+              unit: pattern.repeatUnit.map(pictureName).join(', '),
             })}
+            hintPicture={pictureStrip(pattern.repeatUnit)}
             model={model}
             hintLabel={t('games.patternTrain.guidance.showPatternButton')}
             replayLabel={t(
@@ -372,6 +382,12 @@ const createStyles = (colors: ThemeColors) =>
       paddingHorizontal: Space.xs,
     },
     trainContainer: { flexDirection: 'row', alignItems: 'center' },
+    pictureStrip: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      flexWrap: 'wrap',
+      gap: Space.xs,
+    },
     modelText: {
       ...TypeStyle.bodySm,
       color: colors.text,

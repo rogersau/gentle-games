@@ -88,7 +88,7 @@ jest.mock('react-i18next', () => ({
         'home.title': 'Gentle Games',
         'home.subtitle': 'Choose something gentle',
         'home.emptyGames': 'All games are hidden. Enable one in Settings.',
-        'home.settingsButton': '⚙️  Settings',
+        'home.settingsButton': 'Settings',
         'home.settingsHint': 'Opens app settings',
         'home.websiteLink': 'Visit gentlegames.org',
         'common.save': 'Save',
@@ -255,8 +255,11 @@ jest.mock('react-i18next', () => ({
         'games.categoryMatch.categories.clothes': 'Clothes',
         'settings.categoryMatch.title': 'Category Match',
         'settings.categoryMatch.categories.title': 'Number of groups',
-        'settings.categoryMatch.categories.two': '2 groups: Food and Toys',
-        'settings.categoryMatch.categories.three': '3 groups: Food, Toys, and Clothes',
+        'settings.categoryMatch.pack.everyday': 'Everyday things',
+        'settings.categoryMatch.pack.outdoors': 'Outdoors',
+        'settings.categoryMatch.pack.town': 'Around town',
+        'settings.categoryMatch.categories.two': 'Two groups',
+        'settings.categoryMatch.categories.three': 'Three groups',
         'settings.categoryMatch.categories.description':
           'Start with two clear groups. Three groups adds Clothes for later practice.',
         // Memory Snap

@@ -2,6 +2,7 @@ import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { CategoryMatchScreen } from './CategoryMatchScreen';
 
+const mockUpdateGameSettings = jest.fn();
 const mockGoBack = jest.fn();
 let mockSettings: any = {
   pressureFreeMode: true,
@@ -45,6 +46,9 @@ jest.mock('react-i18next', () => ({
           'The sorting rule is item type. Choose the matching group.',
         'games.categoryMatch.startSorting': 'Start Sorting',
         'games.categoryMatch.startSortingHint': 'Begin the category sorting game',
+        'settings.categoryMatch.pack.town': 'Around town',
+        'games.categoryMatch.categories.vehicles': 'Vehicles',
+        'games.categoryMatch.categories.buildings': 'Buildings',
         'games.categoryMatch.categories.food': 'Food',
         'games.categoryMatch.categories.toys': 'Toys',
         'games.categoryMatch.categories.clothes': 'Clothes',
@@ -57,7 +61,7 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 jest.mock('../context/SettingsContext', () => ({
-  useSettings: () => ({ settings: mockSettings }),
+  useSettings: () => ({ settings: mockSettings, updateGameSettings: mockUpdateGameSettings }),
 }));
 
 jest.mock('../components/CategoryMatchBoard', () => {
@@ -87,6 +91,17 @@ describe('CategoryMatchScreen', () => {
     expect(screen.queryByText('Clothes')).toBeNull();
     expect(screen.queryByText(/Correct/i)).toBeNull();
     expect(screen.queryByText(/streak/i)).toBeNull();
+  });
+
+  it('lets a player choose a set from the preview and see its groups', () => {
+    const screen = render(<CategoryMatchScreen />);
+    fireEvent.press(screen.getByRole('radio', { name: 'Around town' }));
+    expect(mockUpdateGameSettings).toHaveBeenCalledWith('category-match', { pack: 'town' });
+    mockSettings.gameSettings['category-match'].pack = 'town';
+    screen.rerender(<CategoryMatchScreen />);
+    expect(screen.getByText('Vehicles')).toBeTruthy();
+    expect(screen.getByText('Buildings')).toBeTruthy();
+    expect(screen.queryByText('Food')).toBeNull();
   });
 
   it('starts the configured two-group game and preserves the single back path', () => {

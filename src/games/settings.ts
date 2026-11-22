@@ -1,5 +1,6 @@
 import type {
   CategoryMatchCategoryCount,
+  CategoryMatchPack,
   Difficulty,
   NumberPicnicMode,
   NumberPicnicStage,
@@ -29,6 +30,7 @@ export type NumberPicnicMaxQuantity = 3 | 5 | 8 | 10;
 export type BreathingSessionLength = 3 | 5 | 10 | 'open-ended';
 export interface CategoryMatchSettings {
   categoryCount: CategoryMatchCategoryCount;
+  pack: CategoryMatchPack;
   showPreview: boolean;
 }
 
@@ -64,7 +66,7 @@ export const DEFAULT_GAME_SETTINGS: GameSettingsMap = {
   drawing: {},
   'glitter-fall': DEFAULT_GLITTER_SETTINGS,
   'bubble-pop': { motion: 'still', density: 'sparse' },
-  'category-match': { categoryCount: 2, showPreview: true },
+  'category-match': { pack: 'everyday', categoryCount: 2, showPreview: true },
   'keepy-uppy': { liftMode: 'gentle' },
   'breathing-garden': { sessionLength: 'open-ended', visualCue: true },
   'pattern-train': { level: 'starter' },
@@ -210,6 +212,7 @@ export function sanitizeGameSettings(
             : 'sparse',
     },
     'category-match': {
+      pack: category.pack === 'town' || category.pack === 'outdoors' ? category.pack : 'everyday',
       categoryCount:
         categoryCount === 2 || categoryCount === 3
           ? categoryCount

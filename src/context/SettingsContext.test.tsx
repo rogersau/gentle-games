@@ -456,6 +456,7 @@ describe('SettingsContext', () => {
     expect(screen.getByTestId('category-count').props.children).toBe('2');
     const migrated = JSON.parse(storage.setItem.mock.calls[0][1]);
     expect(migrated.gameSettings['category-match']).toEqual({
+      pack: 'everyday',
       categoryCount: 2,
       showPreview: false,
     });

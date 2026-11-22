@@ -4,14 +4,12 @@ import { useThemeColors, ResolvedThemeMode } from '../../utils/theme';
 import { Space, TypeStyle } from '../tokens';
 import { ThemeColors } from '../../types';
 import { AppCard } from './AppCard';
-import { IconBadge } from './IconBadge';
 import { GameArtwork } from './GameArtwork';
 import { useTranslation } from 'react-i18next';
 import type { GameId } from '../../games/registry';
 
 interface GameCardProps {
-  gameId?: GameId;
-  icon: string;
+  gameId: GameId;
   title: string;
   description: string;
   onPress: () => void;
@@ -25,7 +23,6 @@ interface GameCardProps {
 
 export const GameCard: React.FC<GameCardProps> = ({
   gameId,
-  icon,
   title,
   description,
   onPress,
@@ -59,17 +56,7 @@ export const GameCard: React.FC<GameCardProps> = ({
           accessibilityLabel={title}
           accessibilityRole='image'
         >
-          {gameId ? (
-            <GameArtwork gameId={gameId} fallbackColor={accentColor} size={62} />
-          ) : (
-            <IconBadge
-              icon={icon}
-              size='md'
-              showBorder={false}
-              backgroundColor='transparent'
-              accessibilityLabel={title}
-            />
-          )}
+          <GameArtwork gameId={gameId} fallbackColor={accentColor} size={62} />
         </View>
         <View style={styles.info}>
           <Text style={styles.title} numberOfLines={2}>

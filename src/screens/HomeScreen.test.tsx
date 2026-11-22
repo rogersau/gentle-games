@@ -204,7 +204,7 @@ describe('HomeScreen', () => {
   it('navigates to Settings through the shared app route contract', () => {
     const screen = render(<HomeScreen />);
 
-    fireEvent.press(screen.getByLabelText('⚙️  Settings'));
+    fireEvent.press(screen.getByLabelText('Settings'));
 
     expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Settings);
   });

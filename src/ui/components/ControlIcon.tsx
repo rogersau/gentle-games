@@ -2,6 +2,14 @@ import React from 'react';
 import Svg, { Path } from 'react-native-svg';
 
 const paths = {
+  settings:
+    'M3 6h5 M13 6h8 M3 12h11 M19 12h2 M3 18h3 M11 18h10 M13 6a2.5 2.5 0 1 1-5 0 2.5 2.5 0 1 1 5 0 M19 12a2.5 2.5 0 1 1-5 0 2.5 2.5 0 1 1 5 0 M11 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 1 1 5 0',
+  eraser: 'M3 13l9-9a2 2 0 0 1 3 0l5 5a2 2 0 0 1 0 3l-8 8H8l-5-5a2 2 0 0 1 0-2Z M7 9l8 8 M12 20h9',
+  undo: 'M9 4L3 10l6 5 M4 10h9c5 0 8 3 8 8v2',
+  bin: 'M4 6h16 M9 6V3h6v3 M6 6l1 15h10l1-15 M10 10v6 M14 10v6',
+  square: 'M4 4h16v16H4Z',
+  triangle: 'M12 3l10 17H2Z',
+  circle: 'M21 12a9 9 0 1 1-18 0 9 9 0 1 1 18 0Z',
   play: 'M8 4 20 12 8 20Z',
   pause: 'M8 4v16 M16 4v16',
   stop: 'M5 5h14v14H5Z',

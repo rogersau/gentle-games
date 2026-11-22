@@ -1,5 +1,6 @@
 import React from 'react';
-import { Text, Modal } from 'react-native';
+import { gamePictures } from '../../assets/game-pictures';
+import { Text, Modal, Image } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { AppButton } from './AppButton';
 import { AppCard } from './AppCard';
@@ -216,7 +217,7 @@ describe('UI Components', () => {
     it('renders game info', () => {
       const { getByText } = render(
         <GameCard
-          icon='🎮'
+          gameId='memory-snap'
           title='Game Title'
           description='Game description'
           onPress={jest.fn()}
@@ -229,7 +230,7 @@ describe('UI Components', () => {
     it('calls onPress when pressed', () => {
       const onPress = jest.fn();
       const { getByText } = render(
-        <GameCard icon='🎮' title='Game' description='Desc' onPress={onPress} />,
+        <GameCard gameId='memory-snap' title='Game' description='Desc' onPress={onPress} />,
       );
       fireEvent.press(getByText('Game'));
       expect(onPress).toHaveBeenCalled();
@@ -239,7 +240,6 @@ describe('UI Components', () => {
       const { getByText, getByTestId } = render(
         <GameCard
           gameId='memory-snap'
-          icon='🎮'
           title='Game'
           description='Desc'
           onPress={jest.fn()}
@@ -263,23 +263,23 @@ describe('UI Components', () => {
 
   describe('IconBadge', () => {
     it('renders icon', () => {
-      const { getByText } = render(<IconBadge icon='🎮' />);
-      expect(getByText('🎮')).toBeTruthy();
+      const screen = render(<IconBadge icon='🎮' />);
+      expect(screen.UNSAFE_getByType(Image).props.source).toEqual(gamePictures.game);
     });
 
     it('renders different sizes', () => {
-      const { getByText } = render(<IconBadge icon='🎮' size='sm' />);
-      expect(getByText('🎮')).toBeTruthy();
+      const screen = render(<IconBadge icon='🎮' size='sm' />);
+      expect(screen.UNSAFE_getByType(Image).props.source).toEqual(gamePictures.game);
     });
 
     it('renders without border', () => {
-      const { getByText } = render(<IconBadge icon='🎮' showBorder={false} />);
-      expect(getByText('🎮')).toBeTruthy();
+      const screen = render(<IconBadge icon='🎮' showBorder={false} />);
+      expect(screen.UNSAFE_getByType(Image).props.source).toEqual(gamePictures.game);
     });
 
     it('applies custom background color', () => {
-      const { getByText } = render(<IconBadge icon='🎮' backgroundColor='#FF0000' />);
-      expect(getByText('🎮')).toBeTruthy();
+      const screen = render(<IconBadge icon='🎮' backgroundColor='#FF0000' />);
+      expect(screen.UNSAFE_getByType(Image).props.source).toEqual(gamePictures.game);
     });
   });
 

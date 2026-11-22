@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, Animated, Platform, View } from 'react-native';
+import { GamePicture } from '../ui/components/GamePicture';
 import { ThemeColors, Tile as TileType } from '../types';
 import { useAnimationEnabled } from '../ui/animations';
 import { useThemeColors } from '../utils/theme';
@@ -94,16 +95,16 @@ const TileComponent: React.FC<TileProps> = ({
         importantForAccessibility='no-hide-descendants'
         aria-hidden
       >
-        <Text
-          allowFontScaling={false}
-          style={
-            isFaceUp
-              ? { fontSize: Math.min(60, Math.floor(size * 0.6)) }
-              : [styles.questionMark, { fontSize: Math.min(34, Math.floor(size * 0.5)) }]
-          }
-        >
-          {isFaceUp ? tile.value : '?'}
-        </Text>
+        {isFaceUp ? (
+          <GamePicture name={tile.name ?? tile.value} size={Math.min(60, Math.floor(size * 0.6))} />
+        ) : (
+          <Text
+            allowFontScaling={false}
+            style={[styles.questionMark, { fontSize: Math.min(34, Math.floor(size * 0.5)) }]}
+          >
+            ?
+          </Text>
+        )}
         {tile.isMatched ? (
           <Text allowFontScaling={false} style={styles.matchMark}>
             ✓

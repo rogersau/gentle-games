@@ -85,6 +85,12 @@ describe('gameLogic', () => {
     expect(board.height).toBeGreaterThan(320 - 220);
   });
 
+  it('includes an object pair on the smallest mixed board', () => {
+    const tiles = generateMemorySnapTiles(2, 'mixed');
+    expect(tiles.filter((tile) => tile.type === 'shape')).toHaveLength(2);
+    expect(tiles.filter((tile) => tile.type === 'animal')).toHaveLength(2);
+  });
+
   it('prioritizes animals in mixed theme', () => {
     const tiles = generateTiles('medium', 'mixed');
     const animalTiles = tiles.filter((tile) => tile.type === 'animal').length;

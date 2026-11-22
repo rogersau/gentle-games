@@ -26,7 +26,6 @@ export interface GameDefinition {
   route: AppRouteName;
   nameKey: TranslationKey;
   descriptionKey: TranslationKey;
-  icon: string;
   accentColor: string;
   isUnfinished: boolean;
   launchMode: GameLaunchMode;
@@ -39,7 +38,6 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     route: APP_ROUTES.Game,
     nameKey: 'games.memorySnap.name',
     descriptionKey: 'games.memorySnap.description',
-    icon: '🧩',
     accentColor: PASTEL_COLORS.primary,
     isUnfinished: false,
     launchMode: 'direct',
@@ -50,7 +48,6 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     route: APP_ROUTES.Drawing,
     nameKey: 'games.drawing.name',
     descriptionKey: 'games.drawing.description',
-    icon: '🎨',
     accentColor: PASTEL_COLORS.secondary,
     isUnfinished: false,
     launchMode: 'direct',
@@ -61,7 +58,6 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     route: APP_ROUTES.Glitter,
     nameKey: 'games.glitterFall.name',
     descriptionKey: 'games.glitterFall.description',
-    icon: '✨',
     accentColor: PASTEL_COLORS.accent,
     isUnfinished: false,
     launchMode: 'direct',
@@ -72,7 +68,6 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     route: APP_ROUTES.Bubble,
     nameKey: 'games.bubblePop.name',
     descriptionKey: 'games.bubblePop.description',
-    icon: '🫧',
     accentColor: PASTEL_COLORS.success,
     isUnfinished: false,
     launchMode: 'direct',
@@ -83,7 +78,6 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     route: APP_ROUTES.CategoryMatch,
     nameKey: 'games.categoryMatch.name',
     descriptionKey: 'games.categoryMatch.description',
-    icon: '🗂️',
     accentColor: PASTEL_COLORS.cardBack,
     isUnfinished: false,
     launchMode: 'direct',
@@ -94,7 +88,6 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     route: APP_ROUTES.KeepyUppy,
     nameKey: 'games.keepyUppy.name',
     descriptionKey: 'games.keepyUppy.description',
-    icon: '🎈',
     accentColor: PASTEL_COLORS.secondary,
     isUnfinished: false,
     launchMode: 'direct',
@@ -105,7 +98,6 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     route: APP_ROUTES.BreathingGarden,
     nameKey: 'games.breathingGarden.name',
     descriptionKey: 'games.breathingGarden.description',
-    icon: '🌸',
     accentColor: PASTEL_COLORS.accent,
     isUnfinished: false,
     launchMode: 'direct',
@@ -116,7 +108,6 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     route: APP_ROUTES.PatternTrain,
     nameKey: 'games.patternTrain.name',
     descriptionKey: 'games.patternTrain.description',
-    icon: '🚂',
     accentColor: PASTEL_COLORS.primary,
     isUnfinished: false,
     launchMode: 'direct',
@@ -127,7 +118,6 @@ export const GAME_REGISTRY: readonly GameDefinition[] = [
     route: APP_ROUTES.NumberPicnic,
     nameKey: 'games.numberPicnic.name',
     descriptionKey: 'games.numberPicnic.description',
-    icon: '🧺',
     accentColor: PASTEL_COLORS.success,
     isUnfinished: true,
     launchMode: 'direct',

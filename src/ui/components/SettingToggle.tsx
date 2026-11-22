@@ -7,6 +7,7 @@ import { ThemeColors } from '../../types';
 interface SettingToggleProps {
   label: string;
   description?: string;
+  artwork?: React.ReactNode;
   value: boolean;
   onValueChange: (value: boolean) => void;
   disabled?: boolean;
@@ -15,6 +16,7 @@ interface SettingToggleProps {
 export const SettingToggle: React.FC<SettingToggleProps> = ({
   label,
   description,
+  artwork,
   value,
   onValueChange,
   disabled = false,
@@ -44,6 +46,7 @@ export const SettingToggle: React.FC<SettingToggleProps> = ({
       aria-describedby={description ? descriptionId : undefined}
       accessibilityState={{ checked: value, disabled }}
     >
+      {artwork}
       <View style={styles.labelContainer}>
         <Text style={styles.label}>{label}</Text>
         {description && (

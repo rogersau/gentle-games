@@ -1,8 +1,10 @@
+import { GamePicture } from '../ui/components/GamePicture';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   AppState,
+  View,
   Animated,
   Keyboard,
   KeyboardAvoidingView,
@@ -371,7 +373,9 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
             contentContainerStyle={styles.lockContainer}
             keyboardShouldPersistTaps='handled'
           >
-            <Text style={styles.lockIcon}>⏰</Text>
+            <View style={styles.lockIcon}>
+              <GamePicture name='alarm-clock' size={64} />
+            </View>
             <Text style={styles.lockTitle}>{t('parentTimer.lockTitle')}</Text>
             <Text style={styles.lockSubtitle}>{t('parentTimer.lockSubtitle')}</Text>
 
@@ -450,7 +454,6 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       padding: 32,
     },
     lockIcon: {
-      fontSize: 64,
       marginBottom: 16,
     },
     lockTitle: {

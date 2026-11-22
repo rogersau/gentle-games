@@ -10,6 +10,7 @@ interface GuidedPracticePromptProps {
   instruction?: string;
   neutralFeedback?: string;
   hint?: string;
+  hintPicture?: React.ReactNode;
   model?: React.ReactNode;
   hintLabel?: string;
   replayLabel: string;
@@ -24,6 +25,7 @@ export const GuidedPracticePrompt: React.FC<GuidedPracticePromptProps> = ({
   instruction,
   neutralFeedback,
   hint,
+  hintPicture,
   model,
   hintLabel,
   replayLabel,
@@ -50,6 +52,7 @@ export const GuidedPracticePrompt: React.FC<GuidedPracticePromptProps> = ({
           {neutralFeedback}
         </Text>
       ) : null}
+      {supportText && hintPicture}
       {supportText ? (
         <Text style={[styles.support, { color: colors.text }]} accessibilityLiveRegion='polite'>
           {supportText}

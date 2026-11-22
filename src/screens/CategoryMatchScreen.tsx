@@ -1,5 +1,7 @@
+import { CategoryMatchPackPicker } from '../components/CategoryMatchPackPicker';
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { GamePicture } from '../ui/components/GamePicture';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import type { ThemeColors } from '../types';
@@ -10,7 +12,7 @@ import { AppScreen, GameHeader, AppButton, AppCard } from '../ui/components';
 import { Space, TypeStyle } from '../ui/tokens';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
 import { getGameSettings } from '../games/settings';
-import { getCategoryMatchItems } from '../utils/categoryMatchLogic';
+import { getCategoryMatchCategories } from '../utils/categoryMatchLogic';
 
 export const CategoryMatchScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -33,20 +35,10 @@ export const CategoryMatchScreen: React.FC = () => {
     [viewport],
   );
 
-  const categories = useMemo(
-    () =>
-      categorySettings.categoryCount === 3
-        ? (['food', 'toys', 'clothes'] as const)
-        : (['food', 'toys'] as const),
-    [categorySettings.categoryCount],
+  const categories = getCategoryMatchCategories(
+    categorySettings.categoryCount,
+    categorySettings.pack,
   );
-  const examples = useMemo(() => {
-    const items = getCategoryMatchItems(categorySettings.categoryCount);
-    return categories.map((category) => ({
-      category,
-      example: items.find((item) => item.category === category)?.emoji ?? '',
-    }));
-  }, [categories, categorySettings.categoryCount]);
 
   return (
     <AppScreen
@@ -64,12 +56,19 @@ export const CategoryMatchScreen: React.FC = () => {
               {t('games.categoryMatch.quickPreview')}
             </Text>
             <Text style={styles.previewText}>{t('games.categoryMatch.previewInstruction')}</Text>
-            {examples.map(({ category, example }) => (
+            <CategoryMatchPackPicker />
+            {categories.map(({ id: category, example }) => (
               <View key={category} style={styles.previewRow}>
                 <Text style={styles.previewCategoryLabel}>
                   {t(`games.categoryMatch.categories.${category}`)}
                 </Text>
-                <Text style={styles.previewExamples}>{example}</Text>
+                <GamePicture
+                  name={example.name}
+                  size={32}
+                  label={t(`games.categoryMatch.items.${example.name}`, {
+                    defaultValue: example.name,
+                  })}
+                />
               </View>
             ))}
             <AppButton
@@ -86,6 +85,8 @@ export const CategoryMatchScreen: React.FC = () => {
             <CategoryMatchBoard
               width={boardSize.width}
               height={boardSize.height}
+              key={categorySettings.pack + categorySettings.categoryCount}
+              pack={categorySettings.pack}
               categoryCount={categorySettings.categoryCount}
             />
           </View>
@@ -123,5 +124,4 @@ const createStyles = (colors: ThemeColors) =>
       paddingVertical: Space.xs,
     },
     previewCategoryLabel: { ...TypeStyle.bodyMedium, color: colors.text },
-    previewExamples: { fontSize: 20, color: colors.text },
   });

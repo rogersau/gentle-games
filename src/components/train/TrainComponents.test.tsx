@@ -1,6 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { View, Text } from 'react-native';
+import { gamePictures } from '../../assets/game-pictures';
+import { View, Image } from 'react-native';
 import { Carriage } from './Carriage';
 import { TrainEngine } from './TrainEngine';
 import { TrainTrack } from './TrainTrack';
@@ -21,12 +22,7 @@ describe('Carriage', () => {
   it('renders with content', () => {
     const screen = render(<Carriage content='🚂' size={56} />);
 
-    const textElements = screen.UNSAFE_getAllByType(Text);
-    expect(textElements.length).toBeGreaterThan(0);
-
-    // Check emoji is rendered
-    const hasEmoji = textElements.some((el) => el.props.children === '🚂');
-    expect(hasEmoji).toBe(true);
+    expect(screen.UNSAFE_getByType(Image).props.source).toEqual(gamePictures.train);
   });
 
   it('renders as missing carriage with dashed border', () => {
