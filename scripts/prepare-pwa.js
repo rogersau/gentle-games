@@ -46,8 +46,8 @@ const ensureExists = (filePath, label) => {
 };
 
 const getCacheName = () => `gentle-games-${buildVersion}`;
-const getManifestTag = () => `./manifest.webmanifest?v=${buildVersion}`;
-const getServiceWorkerTag = () => `./sw.js?v=${buildVersion}`;
+const getManifestTag = () => './manifest.webmanifest';
+const getServiceWorkerTag = () => './sw.js';
 
 const PRECACHE_EXTENSIONS = new Set([
   '.html',
@@ -100,62 +100,30 @@ const NAVIGATION_FALLBACK = './index.html';
 const APP_SHELL = ${JSON.stringify(cacheEntries, null, 2)};
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
-  self.skipWaiting();
+  const requests = APP_SHELL.map((url) => new Request(url, {
+    cache: /[a-f0-9]{32}/.test(url) ? 'default' : 'reload',
+  }));
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(requests)));
+  // The browser activates this release once all windows using the old one close.
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
-    )
+    caches.keys().then((keys) => Promise.all(
+      keys.filter((key) => key.startsWith('gentle-games-') && key !== CACHE_NAME)
+        .map((key) => caches.delete(key))
+    )).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') {
-    return;
-  }
+  const { request } = event;
+  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
 
-  const requestUrl = new URL(event.request.url);
-  const isNavigationRequest = event.request.mode === 'navigate';
-  const isIndexRequest = requestUrl.pathname.endsWith('/index.html');
-
-  if (isNavigationRequest || isIndexRequest) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          if (response && response.ok) {
-            const copy = response.clone();
-            return caches
-              .open(CACHE_NAME)
-              .then((cache) => cache.put('./index.html', copy))
-              .then(() => response);
-          }
-          return response;
-        })
-        .catch(() => caches.match(NAVIGATION_FALLBACK))
-    );
-    return;
-  }
-
+  // Serve the HTML and its assets from the same, fully installed release.
+  const key = event.request.mode === 'navigate' ? NAVIGATION_FALLBACK : request;
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) {
-        return cached;
-      }
-
-      return fetch(event.request)
-        .then((response) => {
-          if (response && response.status === 200 && response.type === 'basic') {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-          }
-          return response;
-        })
-        .catch(() => caches.match(event.request));
-    })
+    caches.match(key, { cacheName: CACHE_NAME }).then((cached) => cached || fetch(request))
   );
 });
 `;
@@ -216,17 +184,29 @@ const patchIndexHtml = () => {
     );
   }
 
-  if (html.includes('serviceWorker.register(')) {
-    html = html.replace(
-      /serviceWorker\.register\([^)]*\)/,
-      `serviceWorker.register('${getServiceWorkerTag()}')`,
-    );
-  } else {
-    html = html.replace(
-      '</body>',
-      `  <script>\n    if ('serviceWorker' in navigator) {\n      window.addEventListener('load', function () {\n        navigator.serviceWorker.register('${getServiceWorkerTag()}');\n      });\n    }\n  </script>\n</body>`,
-    );
-  }
+  // Replace the generated registration block when preparing an existing export again.
+  html = html.replace(/<script id="pwa-updates">[\s\S]*?<\/script>/g, '');
+  const registration = `<script id="pwa-updates">
+    if ('serviceWorker' in navigator) {
+      let checking = false;
+      async function checkForUpdate() {
+        if (checking || document.visibilityState === 'hidden') return;
+        checking = true;
+        try {
+          const registration = await navigator.serviceWorker.register('${getServiceWorkerTag()}', { updateViaCache: 'none' });
+          if (registration.active && !registration.installing) await registration.update();
+        } catch {
+          // Keep the installed release available offline. Retry on return or reconnection.
+        } finally {
+          checking = false;
+        }
+      }
+      window.addEventListener('load', checkForUpdate);
+      window.addEventListener('online', checkForUpdate);
+      document.addEventListener('visibilitychange', checkForUpdate);
+    }
+  </script>`;
+  html = html.replace('</body>', registration + '\n</body>');
 
   fs.writeFileSync(indexPath, html);
 };

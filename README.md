@@ -95,7 +95,7 @@ The easiest way to explore the project is the web app:
 
 **[Open Gentle Games](https://games.gentlegames.org/)**
 
-On supported browsers, it can also be installed to the home screen as a Progressive Web App (PWA).
+On supported browsers, you can install Gentle Games on your home screen. The installed app checks for updates when you open it online, return to it, or reconnect. You can keep playing while a release downloads. Once it is ready, close the app and any Gentle Games tabs, then reopen it to use the new version. Your settings and saved drawings carry over.
 
 ## Contributing
 

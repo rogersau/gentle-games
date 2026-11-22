@@ -77,8 +77,8 @@ describe('prepare-pwa', () => {
       pwa = require('./prepare-pwa');
 
       expect(pwa.getCacheName()).toBe('gentle-games-abc123');
-      expect(pwa.getManifestTag()).toBe('./manifest.webmanifest?v=abc123');
-      expect(pwa.getServiceWorkerTag()).toBe('./sw.js?v=abc123');
+      expect(pwa.getManifestTag()).toBe('./manifest.webmanifest');
+      expect(pwa.getServiceWorkerTag()).toBe('./sw.js');
     });
 
     it('falls back to timestamp-based version when GITHUB_SHA is missing', () => {
@@ -87,8 +87,8 @@ describe('prepare-pwa', () => {
       pwa = require('./prepare-pwa');
 
       expect(pwa.getCacheName()).toMatch(/^gentle-games-\d+$/);
-      expect(pwa.getManifestTag()).toMatch(/^\.\/manifest\.webmanifest\?v=\d+$/);
-      expect(pwa.getServiceWorkerTag()).toMatch(/^\.\/sw\.js\?v=\d+$/);
+      expect(pwa.getManifestTag()).toBe('./manifest.webmanifest');
+      expect(pwa.getServiceWorkerTag()).toBe('./sw.js');
     });
   });
 
@@ -158,7 +158,7 @@ describe('prepare-pwa', () => {
 
       const swContent = mockWriteFileSync.mock.calls[0][1];
       expect(swContent).toContain("self.addEventListener('install'");
-      expect(swContent).toContain('skipWaiting');
+      expect(swContent).not.toContain('skipWaiting');
     });
 
     it('includes activate event handler', () => {
@@ -251,7 +251,7 @@ describe('prepare-pwa', () => {
       pwa.patchIndexHtml();
 
       const writtenContent = mockWriteFileSync.mock.calls[0][1];
-      expect(writtenContent).toContain('manifest.webmanifest?v=');
+      expect(writtenContent).toContain('href="./manifest.webmanifest"');
     });
 
     it('updates an existing viewport tag instead of duplicating it', () => {
@@ -280,13 +280,15 @@ describe('prepare-pwa', () => {
 
     it('updates existing service worker registration', () => {
       mockReadFileSync.mockReturnValue(
-        '<html><head></head><body><script>serviceWorker.register("sw.js")</script></body></html>',
+        '<html><head></head><body><script id="pwa-updates">navigator.serviceWorker.register("sw.js")</script></body></html>',
       );
 
       pwa.patchIndexHtml();
 
       const writtenContent = mockWriteFileSync.mock.calls[0][1];
-      expect(writtenContent).toMatch(/serviceWorker\.register\('.*sw\.js\?v=.*'\)/);
+      expect(writtenContent.match(/serviceWorker\.register\(/g)).toHaveLength(1);
+      expect(writtenContent).toContain("register('./sw.js', { updateViaCache: 'none' })");
+      expect(writtenContent).toContain('registration.update()');
     });
 
     it('preserves existing content when adding manifest', () => {
