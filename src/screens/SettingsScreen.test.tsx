@@ -7,17 +7,6 @@ import { TranslationKey } from '../i18n/types';
 import { DEFAULT_GAME_SETTINGS } from '../games/settings';
 import { GLITTER_PRESETS } from '../games/glitterSettings';
 
-jest.mock('../games/registry', () => {
-  const actual = jest.requireActual('../games/registry');
-
-  return {
-    ...actual,
-    GAME_REGISTRY: actual.GAME_REGISTRY.map((game: { id: string }) =>
-      game.id === 'number-picnic' ? { ...game, isUnfinished: false } : game,
-    ),
-  };
-});
-
 const mockGoBack = jest.fn();
 const mockUpdateSettings = jest.fn();
 let mockIsSaving = false;
@@ -226,12 +215,17 @@ describe('SettingsScreen', () => {
     });
   });
 
-  it('shows games based on registry unfinished flags', () => {
+  it('shows Number Picnic controls and the home screen switch only after opting in', () => {
     mockSettings.enableUnfinishedGames = false;
+    const screen = render(<SettingsScreen />);
 
-    const screen = render(React.createElement(SettingsScreen));
+    expect(screen.queryByRole('switch', { name: 'Number Picnic' })).toBeNull();
+    expect(screen.queryByRole('radio', { name: '6–10' })).toBeNull();
 
-    expect(screen.getByRole('switch', { name: /Number Picnic/i })).toBeTruthy();
+    mockSettings.enableUnfinishedGames = true;
+    screen.rerender(<SettingsScreen />);
+    expect(screen.getByRole('switch', { name: 'Number Picnic' })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: '6–10' })).toBeTruthy();
   });
 
   it('removes a game from hidden games when re-enabled', () => {

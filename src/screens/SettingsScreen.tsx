@@ -254,51 +254,64 @@ export const SettingsScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* Number Picnic */}
+        {/* Enable Unfinished Games */}
         <View style={styles.section}>
-          <SectionHeader title={t('settings.numberPicnic.title')} />
-          <Text style={styles.controlLabel}>{t('settings.numberPicnic.stage.title')}</Text>
-          <SegmentedControl
-            options={numberPicnicStageOptions}
-            value={numberPicnicSettings.stage}
-            onValueChange={(stage) =>
-              updateGameSettings('number-picnic', {
-                stage,
-                maxQuantity: stageToMaxQuantity(stage),
-                mode:
-                  stage === '6-10'
-                    ? numberPicnicSettings.mode
-                    : numberPicnicSettings.mode === 'add-one-more'
-                      ? 'make-amount'
-                      : numberPicnicSettings.mode,
-              })
-            }
-            wrap
-          />
-          <Text style={styles.description}>{t('settings.numberPicnic.stage.description')}</Text>
-          <Text style={styles.controlLabel}>{t('settings.numberPicnic.mode.title')}</Text>
-          <SegmentedControl
-            options={numberPicnicModeOptions.filter(
-              (option) => option.value !== 'add-one-more' || numberPicnicSettings.stage === '6-10',
-            )}
-            value={numberPicnicSettings.mode}
-            onValueChange={(mode) => updateGameSettings('number-picnic', { mode })}
-            wrap
-          />
-          <Text style={styles.description}>{t('settings.numberPicnic.mode.description')}</Text>
           <SettingToggle
-            label={t('settings.numberPicnic.spokenCounting.label')}
-            description={t(
-              picnicSpeechAvailable
-                ? 'settings.numberPicnic.spokenCounting.description'
-                : 'settings.numberPicnic.spokenCounting.unavailable',
-            )}
-            value={numberPicnicSettings.spokenCounting}
-            onValueChange={(spokenCounting) =>
-              updateGameSettings('number-picnic', { spokenCounting })
-            }
+            label={t('settings.unfinishedGames.label')}
+            description={t('settings.unfinishedGames.description')}
+            value={!!settings.enableUnfinishedGames}
+            onValueChange={(value) => updateSettings({ enableUnfinishedGames: value })}
           />
         </View>
+
+        {/* Number Picnic */}
+        {settings.enableUnfinishedGames && (
+          <View style={styles.section}>
+            <SectionHeader title={t('settings.numberPicnic.title')} />
+            <Text style={styles.controlLabel}>{t('settings.numberPicnic.stage.title')}</Text>
+            <SegmentedControl
+              options={numberPicnicStageOptions}
+              value={numberPicnicSettings.stage}
+              onValueChange={(stage) =>
+                updateGameSettings('number-picnic', {
+                  stage,
+                  maxQuantity: stageToMaxQuantity(stage),
+                  mode:
+                    stage === '6-10'
+                      ? numberPicnicSettings.mode
+                      : numberPicnicSettings.mode === 'add-one-more'
+                        ? 'make-amount'
+                        : numberPicnicSettings.mode,
+                })
+              }
+              wrap
+            />
+            <Text style={styles.description}>{t('settings.numberPicnic.stage.description')}</Text>
+            <Text style={styles.controlLabel}>{t('settings.numberPicnic.mode.title')}</Text>
+            <SegmentedControl
+              options={numberPicnicModeOptions.filter(
+                (option) =>
+                  option.value !== 'add-one-more' || numberPicnicSettings.stage === '6-10',
+              )}
+              value={numberPicnicSettings.mode}
+              onValueChange={(mode) => updateGameSettings('number-picnic', { mode })}
+              wrap
+            />
+            <Text style={styles.description}>{t('settings.numberPicnic.mode.description')}</Text>
+            <SettingToggle
+              label={t('settings.numberPicnic.spokenCounting.label')}
+              description={t(
+                picnicSpeechAvailable
+                  ? 'settings.numberPicnic.spokenCounting.description'
+                  : 'settings.numberPicnic.spokenCounting.unavailable',
+              )}
+              value={numberPicnicSettings.spokenCounting}
+              onValueChange={(spokenCounting) =>
+                updateGameSettings('number-picnic', { spokenCounting })
+              }
+            />
+          </View>
+        )}
 
         {/* Animations */}
         <View style={styles.section}>
@@ -396,16 +409,6 @@ export const SettingsScreen: React.FC = () => {
             onPress={() =>
               updateGameSettings('glitter-fall', GLITTER_PRESETS[glitterSettings.preset])
             }
-          />
-        </View>
-
-        {/* Enable Unfinished Games */}
-        <View style={styles.section}>
-          <SettingToggle
-            label={t('settings.unfinishedGames.label')}
-            description={t('settings.unfinishedGames.description')}
-            value={!!settings.enableUnfinishedGames}
-            onValueChange={(value) => updateSettings({ enableUnfinishedGames: value })}
           />
         </View>
 

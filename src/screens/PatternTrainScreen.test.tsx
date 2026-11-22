@@ -46,8 +46,6 @@ jest.mock('react-i18next', () => ({
         'games.patternTrain.guidance.replay': 'Show instructions',
         'games.patternTrain.guidance.hideInstructions': 'Hide instructions',
         'games.patternTrain.guidance.skip': 'Skip',
-        'games.patternTrain.guidance.next': 'Next',
-        'games.patternTrain.guidance.nextHint': 'Next pattern',
         'games.patternTrain.guidance.matchCue':
           'Tap the {{picture}} to match the picture in the gap.',
         'games.patternTrain.guidance.modelAccessibilityLabel': 'Complete pattern: {{sequence}}.',
@@ -131,7 +129,7 @@ jest.mock('../utils/theme', () => ({
 const patternSettings = {
   pressureFreeMode: false,
   reducedMotionEnabled: false,
-  animationsEnabled: true,
+  animationsEnabled: false,
   difficulty: 'easy' as const,
 };
 
@@ -154,7 +152,8 @@ jest.mock('../utils/sounds', () => ({
 }));
 
 jest.mock('../ui/animations', () => ({
-  useAnimationEnabled: () => false,
+  useAnimationEnabled: () =>
+    patternSettings.animationsEnabled && !patternSettings.reducedMotionEnabled,
   useGentleBounce: () => ({
     scale: { __getValue: () => 1 },
     bounce: jest.fn(),
@@ -180,12 +179,13 @@ describe('PatternTrainScreen', () => {
     jest.clearAllMocks();
     patternSettings.pressureFreeMode = false;
     patternSettings.reducedMotionEnabled = false;
+    patternSettings.animationsEnabled = false;
     // Mock Animated.timing to execute immediately
     jest.spyOn(Animated, 'timing').mockImplementation(
       () =>
         ({
-          start: (callback?: () => void) => {
-            if (callback) callback();
+          start: (callback?: (result: { finished: boolean }) => void) => {
+            callback?.({ finished: true });
           },
           stop: jest.fn(),
           reset: jest.fn(),
@@ -224,6 +224,7 @@ describe('PatternTrainScreen', () => {
   });
 
   afterEach(() => {
+    jest.useRealTimers();
     jest.restoreAllMocks();
   });
 
@@ -301,14 +302,14 @@ describe('PatternTrainScreen', () => {
     act(() => drag.onPanResponderGrant?.(touchEvent(100, 245), movement));
     act(() => drag.onPanResponderRelease?.(release, movement));
     fireEvent.press(screen.getByLabelText('Carriage with rainbow'), { nativeEvent: { detail: 1 } });
-    expect(screen.queryByTestId('pattern-train-next')).toBeNull();
+    expect(screen.queryByText('Correct.')).toBeNull();
     expect(screen.queryByText('Try again.')).toBeNull();
 
     zoneTop = 110;
     act(() => drag.onPanResponderGrant?.(touchEvent(100, 245), movement));
     act(() => drag.onPanResponderRelease?.(release, movement));
     expect(measure).toHaveBeenCalledTimes(2);
-    expect(screen.getByTestId('pattern-train-next')).toBeTruthy();
+    expect(screen.getByText('Correct.')).toBeTruthy();
     expect(playMatchSound).toHaveBeenCalledTimes(1);
   });
 
@@ -325,7 +326,7 @@ describe('PatternTrainScreen', () => {
     expect(setPosition).toHaveBeenLastCalledWith({ x: 15, y: -35 });
     act(() => drag.onPanResponderTerminate?.(event, movement));
     expect(setPosition).toHaveBeenLastCalledWith({ x: 0, y: 0 });
-    expect(screen.queryByTestId('pattern-train-next')).toBeNull();
+    expect(screen.queryByText('Correct.')).toBeNull();
     expect(playMatchSound).not.toHaveBeenCalled();
   });
 
@@ -340,7 +341,8 @@ describe('PatternTrainScreen', () => {
     ).toBe(true);
   });
 
-  it('submits a choice through the accessible tap path and exposes child-controlled Next', async () => {
+  it('fills the gap and brings in the next train after showing the result', () => {
+    jest.useFakeTimers();
     const screen = render(<PatternTrainScreen />);
 
     expect(
@@ -348,10 +350,9 @@ describe('PatternTrainScreen', () => {
         name: 'Train carriages in order. star, missing carriage, star, rainbow.',
       }),
     ).toBeTruthy();
-    const carriage = await screen.findByLabelText('Carriage with rainbow');
+    const carriage = screen.getByRole('button', { name: 'Carriage with rainbow' });
     fireEvent.press(carriage);
 
-    expect(await screen.findByTestId('pattern-train-next')).toBeTruthy();
     expect(screen.getByText('Correct.')).toBeTruthy();
     expect(
       screen.getByRole('image', {
@@ -359,9 +360,12 @@ describe('PatternTrainScreen', () => {
       }),
     ).toBeTruthy();
     expect(carriage).toBeDisabled();
+    act(() => jest.advanceTimersByTime(1200));
+    expect(screen.getByRole('button', { name: 'Carriage with rainbow' })).toBeEnabled();
+    expect(screen.queryByText('Correct.')).toBeNull();
   });
 
-  it('shows the staged hint and model before accepting corrected Next', async () => {
+  it('shows the staged hint and model before accepting the correct choice', async () => {
     const screen = render(<PatternTrainScreen />);
 
     const wrongChoice = await screen.findByLabelText('Carriage with flower');
@@ -376,10 +380,10 @@ describe('PatternTrainScreen', () => {
     expect(carriage.mock.calls.some(([props]) => props.isMissing && props.content === '🌈')).toBe(
       true,
     );
-    expect(screen.queryByTestId('pattern-train-next')).toBeNull();
+    expect(screen.queryByText('Correct.')).toBeNull();
 
     fireEvent.press(await screen.findByLabelText('Carriage with rainbow'));
-    expect(await screen.findByTestId('pattern-train-next')).toBeTruthy();
+    expect(screen.getByText('Correct.')).toBeTruthy();
   });
 
   it('lets the child show the pattern before making a choice', async () => {
@@ -403,19 +407,20 @@ describe('PatternTrainScreen', () => {
   });
 
   it.each([false, true])(
-    'keeps Next available at a milestone with pressure-free mode set to %s',
+    'advances at milestones with pressure-free mode set to %s',
     (pressureFreeMode) => {
+      jest.useFakeTimers();
       patternSettings.pressureFreeMode = pressureFreeMode;
       const screen = render(<PatternTrainScreen />);
 
       for (let round = 0; round < 5; round += 1) {
         fireEvent.press(screen.getByRole('button', { name: 'Carriage with rainbow' }));
-        if (round < 4) fireEvent.press(screen.getByTestId('pattern-train-next'));
+        if (round < 4) act(() => jest.advanceTimersByTime(1200));
       }
 
       expect(screen.queryByText("You've completed 5 trains") !== null).toBe(!pressureFreeMode);
       expect(screen.getByRole('button', { name: 'Carriage with rainbow' })).toBeDisabled();
-      fireEvent.press(screen.getByTestId('pattern-train-next'));
+      act(() => jest.advanceTimersByTime(1200));
       expect(screen.getByRole('button', { name: 'Carriage with rainbow' })).toBeEnabled();
     },
   );
@@ -429,12 +434,38 @@ describe('PatternTrainScreen', () => {
     expect(playFlipSound).not.toHaveBeenCalled();
   });
 
-  it('uses an immediate reduced-motion path without auto-advancing', async () => {
-    patternSettings.reducedMotionEnabled = true;
+  it.each([false, true])('respects reduced motion set to %s during departure', (reducedMotion) => {
+    jest.useFakeTimers();
+    patternSettings.animationsEnabled = true;
+    patternSettings.reducedMotionEnabled = reducedMotion;
     const screen = render(<PatternTrainScreen />);
+    fireEvent.press(screen.getByRole('button', { name: 'Carriage with rainbow' }));
+    expect(Animated.timing).not.toHaveBeenCalled();
 
-    expect(await screen.findByLabelText('Carriage with rainbow')).toBeTruthy();
-    expect(screen.queryByTestId('pattern-train-next')).toBeNull();
+    act(() => jest.advanceTimersByTime(1200));
+    if (reducedMotion) {
+      expect(Animated.timing).not.toHaveBeenCalled();
+    } else {
+      expect(Animated.timing).toHaveBeenCalledWith(
+        expect.any(Animated.Value),
+        expect.objectContaining({ toValue: 1, duration: 750 }),
+      );
+    }
+    expect(screen.getByRole('button', { name: 'Carriage with rainbow' })).toBeEnabled();
+  });
+
+  it('holds departure while the level picker is open', () => {
+    jest.useFakeTimers();
+    const screen = render(<PatternTrainScreen />);
+    fireEvent.press(screen.getByRole('button', { name: 'Carriage with rainbow' }));
+    fireEvent.press(screen.getByTestId('pattern-train-level'));
+
+    const { generateTransferPattern } = jest.requireMock('../utils/patternTrainLogic');
+    act(() => jest.advanceTimersByTime(2400));
+    expect(generateTransferPattern).not.toHaveBeenCalled();
+    fireEvent.press(screen.getByText('Cancel'));
+    act(() => jest.advanceTimersByTime(1200));
+    expect(generateTransferPattern).toHaveBeenCalledTimes(1);
   });
 
   it('hides completed-round stats in pressure-free mode', async () => {

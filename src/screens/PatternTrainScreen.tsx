@@ -1,7 +1,9 @@
 import { GamePicture } from '../ui/components/GamePicture';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
+  Animated,
+  Easing,
   Platform,
   StyleSheet,
   Text,
@@ -41,6 +43,9 @@ const pictureKeys: Record<string, string> = {
   '🍓': 'strawberry',
   '🧸': 'teddy',
 };
+
+const COMPLETION_PAUSE_MS = 1200;
+const DEPARTURE_DURATION_MS = 750;
 
 export const PatternTrainScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -82,6 +87,37 @@ export const PatternTrainScreen: React.FC = () => {
   const trainZoneRef = useRef<View>(null);
   const [measuredTrainWidth, setMeasuredTrainWidth] = useState<number>();
   const trainWidth = measuredTrainWidth ?? Math.min(windowWidth, 760) - 2 * (Space.md + Space.lg);
+  const [departure] = useState(() => new Animated.Value(0));
+  const isComplete = guidedRound.phase === 'corrected';
+
+  useEffect(() => {
+    if (!isComplete || showDifficultySelector) return;
+
+    let animation: Animated.CompositeAnimation | undefined;
+    const timer = setTimeout(() => {
+      if (!animationsEnabled) {
+        startNewRound();
+        return;
+      }
+
+      animation = Animated.timing(departure, {
+        toValue: 1,
+        duration: DEPARTURE_DURATION_MS,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: Platform.OS !== 'web',
+        isInteraction: false,
+      });
+      animation.start(({ finished }) => {
+        if (finished) startNewRound();
+      });
+    }, COMPLETION_PAUSE_MS);
+
+    return () => {
+      clearTimeout(timer);
+      animation?.stop();
+      departure.setValue(0);
+    };
+  }, [animationsEnabled, departure, isComplete, showDifficultySelector, startNewRound]);
 
   const difficultyOptions: { value: Difficulty; label: string }[] = [
     { value: 'easy', label: t('games.patternTrain.difficulty.easy.label') },
@@ -189,7 +225,10 @@ export const PatternTrainScreen: React.FC = () => {
   const choiceWidth =
     (trainWidth - Space.sm * (pattern.choices.length - 1)) / pattern.choices.length;
   const choiceSize = Math.max(HitTarget.min, Math.min(84, Math.floor(choiceWidth)));
-  const isComplete = guidedRound.phase === 'corrected';
+  const trainOffset = departure.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -trainWidth],
+  });
 
   return (
     <AppScreen
@@ -220,33 +259,40 @@ export const PatternTrainScreen: React.FC = () => {
             accessibilityRole='image'
             testID='pattern-train-zone'
           >
-            {rows.map((row, rowIndex) => (
-              <View
-                key={rowIndex}
-                style={[
-                  styles.trainContainer,
-                  { width: engineWidth + rows[0].length * carriageSize, alignSelf: 'center' },
-                ]}
-              >
-                {rowIndex === 0 ? (
-                  <TrainEngine size={engineWidth} />
-                ) : (
-                  <View style={{ width: engineWidth }} />
-                )}
-                {row.map((carriage, index) => (
-                  <Carriage
-                    key={index}
-                    size={carriageSize}
-                    isMissing={carriage.isMissing && !attachedCarriage}
-                    content={
-                      carriage.isMissing && !attachedCarriage && !showingAnswer
-                        ? '?'
-                        : carriage.emoji
-                    }
-                  />
-                ))}
-              </View>
-            ))}
+            <Animated.View
+              style={[
+                styles.trainRows,
+                { transform: [{ translateX: isComplete ? trainOffset : 0 }] },
+              ]}
+            >
+              {rows.map((row, rowIndex) => (
+                <View
+                  key={rowIndex}
+                  style={[
+                    styles.trainContainer,
+                    { width: engineWidth + rows[0].length * carriageSize },
+                  ]}
+                >
+                  {rowIndex === 0 ? (
+                    <TrainEngine size={engineWidth} />
+                  ) : (
+                    <View style={{ width: engineWidth }} />
+                  )}
+                  {row.map((carriage, index) => (
+                    <Carriage
+                      key={index}
+                      size={carriageSize}
+                      isMissing={carriage.isMissing && !attachedCarriage}
+                      content={
+                        carriage.isMissing && !attachedCarriage && !showingAnswer
+                          ? '?'
+                          : carriage.emoji
+                      }
+                    />
+                  ))}
+                </View>
+              ))}
+            </Animated.View>
           </View>
           {!isComplete && (
             <Text style={styles.platformLabel}>{t('games.patternTrain.platform.label')}</Text>
@@ -282,22 +328,12 @@ export const PatternTrainScreen: React.FC = () => {
           </View>
         </AppCard>
 
-        {isComplete ? (
-          <>
-            <AppButton
-              icon='next'
-              label={t('games.patternTrain.guidance.next')}
-              onPress={startNewRound}
-              accessibilityHint={t('games.patternTrain.guidance.nextHint')}
-              testID='pattern-train-next'
-            />
-            {showMilestone ? (
-              <Text style={styles.meta}>
-                {t('games.patternTrain.milestone.rounds', { count: completedRounds })}
-              </Text>
-            ) : null}
-          </>
-        ) : (
+        {showMilestone && (
+          <Text style={styles.meta}>
+            {t('games.patternTrain.milestone.rounds', { count: completedRounds })}
+          </Text>
+        )}
+        {!isComplete && (
           <GuidedPracticePrompt
             state={guidedRound}
             instruction={showInstructions ? t('games.patternTrain.instructions') : undefined}
@@ -394,11 +430,11 @@ const createStyles = (colors: ThemeColors) =>
       width: '100%',
       minHeight: 64,
       justifyContent: 'center',
-      alignItems: 'flex-start',
-      alignSelf: 'center',
-      gap: Space.xs,
+      alignItems: 'center',
+      overflow: 'hidden',
       paddingHorizontal: Space.xs,
     },
+    trainRows: { gap: Space.xs },
     trainContainer: { flexDirection: 'row', alignItems: 'center' },
     pictureStrip: {
       flexDirection: 'row',
