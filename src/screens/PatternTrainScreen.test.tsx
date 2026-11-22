@@ -48,7 +48,8 @@ jest.mock('react-i18next', () => ({
         'games.patternTrain.guidance.skip': 'Skip',
         'games.patternTrain.guidance.next': 'Next',
         'games.patternTrain.guidance.nextHint': 'Next pattern',
-        'games.patternTrain.guidance.model': 'Model: {{sequence}}',
+        'games.patternTrain.guidance.matchCue':
+          'Tap the {{picture}} to match the picture in the gap.',
         'games.patternTrain.guidance.modelAccessibilityLabel': 'Complete pattern: {{sequence}}.',
         'games.patternTrain.repeatUnit': 'Repeat {{unit}} for the {{rule}}.',
         'games.patternTrain.repeatUnitAccessibilityLabel': 'Repeat {{unit}}. Rule {{rule}}.',
@@ -368,7 +369,13 @@ describe('PatternTrainScreen', () => {
     expect(await screen.findByText('Show the pattern: star, rainbow repeats.')).toBeTruthy();
 
     fireEvent.press(wrongChoice);
-    expect(await screen.findByText('Model: star, rainbow, star, rainbow')).toBeTruthy();
+    expect(
+      await screen.findByText('Tap the rainbow to match the picture in the gap.'),
+    ).toBeTruthy();
+    const carriage = jest.requireMock('../components/train').Carriage as jest.Mock;
+    expect(carriage.mock.calls.some(([props]) => props.isMissing && props.content === '🌈')).toBe(
+      true,
+    );
     expect(screen.queryByTestId('pattern-train-next')).toBeNull();
 
     fireEvent.press(await screen.findByLabelText('Carriage with rainbow'));

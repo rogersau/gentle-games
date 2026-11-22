@@ -161,7 +161,7 @@ export const PatternTrainScreen: React.FC = () => {
     }
     setShowInstructions(!showInstructions);
   };
-  const ruleLabel = translate(`games.patternTrain.rules.${pattern.templateId}`);
+  const showingAnswer = guidedRound.phase === 'modelled';
   const pictureStrip = (values: string[]) => (
     <View style={styles.pictureStrip} aria-hidden accessible={false}>
       {values.map((value, index) => (
@@ -171,32 +171,24 @@ export const PatternTrainScreen: React.FC = () => {
   );
   const model = (
     <View>
-      {pictureStrip(pattern.carriages.map((carriage) => carriage.emoji))}
-      <Text
-        style={styles.modelText}
-        accessibilityLabel={t('games.patternTrain.guidance.modelAccessibilityLabel', {
-          sequence: pattern.carriages.map((carriage) => pictureName(carriage.emoji)).join(', '),
-        })}
-      >
-        {t('games.patternTrain.guidance.model', {
-          sequence: pattern.carriages.map((carriage) => pictureName(carriage.emoji)).join(', '),
-        })}
-      </Text>
       <Text style={styles.modelText}>
-        {t('games.patternTrain.repeatUnit', {
-          unit: pattern.repeatUnit.map(pictureName).join(', '),
-          rule: ruleLabel,
-        })}
+        {t('games.patternTrain.guidance.matchCue', { picture: pictureName(pattern.answer) })}
       </Text>
     </View>
   );
-  const trainScale = Math.min(
-    1,
-    Math.max(1, trainWidth - Space.sm) / (64 + pattern.carriages.length * 56),
-  );
+  const usableWidth = Math.max(1, trainWidth - Space.sm);
+  const engineWidth = Math.min(36, usableWidth / 5);
+  const split = (usableWidth - engineWidth) / pattern.carriages.length < 52;
+  const rows = split
+    ? [
+        pattern.carriages.slice(0, pattern.repeatUnit.length),
+        pattern.carriages.slice(pattern.repeatUnit.length),
+      ]
+    : [pattern.carriages];
+  const carriageSize = Math.min(76, (usableWidth - engineWidth) / rows[0].length);
   const choiceWidth =
     (trainWidth - Space.sm * (pattern.choices.length - 1)) / pattern.choices.length;
-  const choiceSize = Math.max(HitTarget.min, Math.min(64, Math.floor(choiceWidth)));
+  const choiceSize = Math.max(HitTarget.min, Math.min(84, Math.floor(choiceWidth)));
   const isComplete = guidedRound.phase === 'corrected';
 
   return (
@@ -207,8 +199,12 @@ export const PatternTrainScreen: React.FC = () => {
       }
     >
       <View style={styles.content}>
-        <Text style={styles.subtitle} accessibilityRole='header'>
-          {t('games.patternTrain.guidance.instruction')}
+        <Text style={styles.subtitle} accessibilityRole='header' accessibilityLiveRegion='polite'>
+          {t(
+            isComplete
+              ? 'games.patternTrain.feedback.correct'
+              : 'games.patternTrain.guidance.instruction',
+          )}
         </Text>
 
         <AppCard variant='elevated' style={styles.patternCard}>
@@ -224,22 +220,37 @@ export const PatternTrainScreen: React.FC = () => {
             accessibilityRole='image'
             testID='pattern-train-zone'
           >
-            <View style={styles.trainContainer}>
-              <TrainEngine size={64 * trainScale} />
-              {pattern.carriages.map((carriage, index) => (
-                <Carriage
-                  key={index}
-                  size={56 * trainScale}
-                  isMissing={carriage.isMissing && !attachedCarriage}
-                  content={carriage.isMissing ? (attachedCarriage ?? '?') : carriage.emoji}
-                />
-              ))}
-            </View>
+            {rows.map((row, rowIndex) => (
+              <View
+                key={rowIndex}
+                style={[
+                  styles.trainContainer,
+                  { width: engineWidth + rows[0].length * carriageSize, alignSelf: 'center' },
+                ]}
+              >
+                {rowIndex === 0 ? (
+                  <TrainEngine size={engineWidth} />
+                ) : (
+                  <View style={{ width: engineWidth }} />
+                )}
+                {row.map((carriage, index) => (
+                  <Carriage
+                    key={index}
+                    size={carriageSize}
+                    isMissing={carriage.isMissing && !attachedCarriage}
+                    content={
+                      carriage.isMissing && !attachedCarriage && !showingAnswer
+                        ? '?'
+                        : carriage.emoji
+                    }
+                  />
+                ))}
+              </View>
+            ))}
           </View>
-        </AppCard>
-
-        <AppCard variant='elevated' style={styles.platformCard}>
-          <Text style={styles.platformLabel}>{t('games.patternTrain.platform.label')}</Text>
+          {!isComplete && (
+            <Text style={styles.platformLabel}>{t('games.patternTrain.platform.label')}</Text>
+          )}
           <View style={styles.platform}>
             {pattern.choices.map((emoji) => (
               <PatternTrainChoice
@@ -258,7 +269,7 @@ export const PatternTrainScreen: React.FC = () => {
             ))}
           </View>
           <View aria-live='polite'>
-            {feedback ? (
+            {feedback && !isComplete ? (
               <View style={styles.feedbackRow}>
                 {!isComplete && guidedRound.incorrectAttempts > 0 && (
                   <View testID='pattern-train-retry-cue'>
@@ -373,12 +384,19 @@ const createStyles = (colors: ThemeColors) =>
       marginBottom: Space.sm,
     },
     meta: { ...TypeStyle.label, color: colors.text, marginVertical: Space.sm },
-    patternCard: { width: '100%', alignItems: 'center', marginVertical: Space.sm },
+    patternCard: {
+      width: '100%',
+      alignItems: 'center',
+      marginVertical: Space.sm,
+      padding: Space.md,
+    },
     trainZone: {
       width: '100%',
       minHeight: 64,
       justifyContent: 'center',
-      alignItems: 'center',
+      alignItems: 'flex-start',
+      alignSelf: 'center',
+      gap: Space.xs,
       paddingHorizontal: Space.xs,
     },
     trainContainer: { flexDirection: 'row', alignItems: 'center' },
@@ -394,8 +412,7 @@ const createStyles = (colors: ThemeColors) =>
       textAlign: 'center',
       marginTop: Space.xs,
     },
-    platformCard: { width: '100%', marginVertical: Space.sm, alignItems: 'center', zIndex: 1 },
-    platformLabel: { ...TypeStyle.label, color: colors.textLight, marginBottom: Space.sm },
+    platformLabel: { ...TypeStyle.label, color: colors.text, marginVertical: Space.sm },
     platform: {
       flexDirection: 'row',
       flexWrap: 'wrap',

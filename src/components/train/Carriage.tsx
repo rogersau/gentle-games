@@ -27,7 +27,7 @@ export const Carriage: React.FC<CarriageProps> = ({
       style={[
         styles.container,
         { width: size, height: size * 0.8 },
-        isMissing && styles.missingContainer,
+
         isHighlighted && styles.highlightedContainer,
       ]}
     >
@@ -35,12 +35,12 @@ export const Carriage: React.FC<CarriageProps> = ({
         {/* Main carriage body - outline style */}
         <Rect
           x='5'
-          y='10'
+          y='3'
           width='60'
-          height='36'
+          height='40'
           rx='6'
-          fill='transparent'
-          stroke={isMissing ? colors.primary : carriageColor}
+          fill={isMissing ? colors.surfaceElevated : colors.surfaceGame}
+          stroke={isMissing ? colors.text : carriageColor}
           strokeWidth={isMissing ? 3 : 2}
           strokeDasharray={isMissing ? '8,4' : undefined}
         />
@@ -59,7 +59,7 @@ export const Carriage: React.FC<CarriageProps> = ({
           height='12'
           rx='2'
           fill='transparent'
-          stroke={isMissing ? colors.primary : carriageColor}
+          stroke={isMissing ? colors.text : carriageColor}
           strokeWidth={isMissing ? 2 : 1}
         />
 
@@ -71,19 +71,22 @@ export const Carriage: React.FC<CarriageProps> = ({
           height='12'
           rx='2'
           fill='transparent'
-          stroke={isMissing ? colors.primary : carriageColor}
+          stroke={isMissing ? colors.text : carriageColor}
           strokeWidth={isMissing ? 2 : 1}
         />
       </Svg>
 
       {content && (
         <View style={styles.contentContainer}>
-          {isMissing || content === '?' ? (
-            <Text allowFontScaling={false} style={[styles.contentText, { fontSize: size * 0.4 }]}>
+          {content === '?' ? (
+            <Text
+              allowFontScaling={false}
+              style={[styles.contentText, { fontSize: size * 0.41, color: colors.text }]}
+            >
               ?
             </Text>
           ) : (
-            <GamePicture name={content} size={size * 0.43} />
+            <GamePicture name={content} size={size * 0.55} />
           )}
         </View>
       )}
@@ -97,15 +100,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
-  missingContainer: {
-    opacity: 0.7,
-  },
   highlightedContainer: {
     transform: [{ scale: 1.05 }],
   },
   contentContainer: {
     position: 'absolute',
-    top: '15%',
+    top: '3%',
     left: 0,
     right: 0,
     alignItems: 'center',

@@ -8,7 +8,8 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { Carriage } from '../components/train';
+import { GamePicture } from '../ui/components/GamePicture';
+import { useThemeColors } from '../utils/theme';
 import { HitTarget } from '../ui/tokens';
 import { webGameDragSurface } from '../utils/pwaInteractionGuards';
 
@@ -34,6 +35,7 @@ export function PatternTrainChoice({
   onDrop,
 }: PatternTrainChoiceProps) {
   const [position] = useState(() => new Animated.ValueXY());
+  const { colors } = useThemeColors();
   const dragged = useRef(false);
   const panResponder = useMemo(() => {
     const resetPosition = () => {
@@ -107,7 +109,19 @@ export function PatternTrainChoice({
           pointerEvents='none'
           style={{ transform: [{ translateX: position.x }, { translateY: position.y }] }}
         >
-          <Carriage content={emoji} size={size} />
+          <View
+            style={[
+              styles.picture,
+              {
+                width: size,
+                height: size,
+                backgroundColor: colors.surfaceElevated,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <GamePicture name={emoji} size={Math.round(size * 0.75)} />
+          </View>
         </Animated.View>
       </Pressable>
     </View>
@@ -118,5 +132,6 @@ const webDragStyle = { touchAction: 'none' } as ViewStyle;
 
 const styles = StyleSheet.create({
   button: { minHeight: HitTarget.min, justifyContent: 'center' },
+  picture: { alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 2 },
   pressed: { opacity: 0.85 },
 });

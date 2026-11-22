@@ -545,7 +545,7 @@
         "arrived": "A train has arrived. Pattern: {{pattern}}. Drag or tap a carriage to complete the train."
       },
       "platform": {
-        "label": "Choose a picture",
+        "label": "Tap a picture",
         "accessibilityLabel": "Platform with {{count}} carriages available"
       },
       "carriage": {
@@ -576,40 +576,41 @@
       },
       "feedback": {
         "initial": "Find the missing carriage.",
-        "correct": "Correct.",
+        "correct": "The train is complete.",
         "correctAnnouncement": "Correct.",
         "incorrectAnnouncement": "Try again.",
         "revealAnnouncement": "The pattern is shown.",
         "correctOptions": ["Correct.", "That matches."],
-        "incorrect": "Try again.",
+        "incorrect": "Look at the pictures that repeat.",
         "incorrectOptions": ["Try again.", "That does not match. Try again."],
         "reveal": "The pattern is shown."
       },
       "guidance": {
-        "instruction": "Find the missing picture.",
+        "instruction": "Which picture goes in the empty carriage?",
         "showPatternButton": "Show the pattern",
-        "showPattern": "Show the pattern: {{unit}} repeats.",
+        "showPattern": "These pictures repeat: {{unit}}.",
         "model": "Model: {{sequence}}. Now choose the missing carriage.",
         "modelAccessibilityLabel": "Complete pattern: {{sequence}}.",
         "replay": "Show instructions",
         "hideInstructions": "Hide instructions",
         "skip": "Skip",
-        "next": "Next",
+        "next": "Next train",
         "nextHint": "Show the next train",
-        "modelledFeedback": "Watch the model, then choose the missing carriage."
+        "modelledFeedback": "Watch the model, then choose the missing carriage.",
+        "matchCue": "Tap the {{picture}} to match the picture in the gap."
       },
       "difficulty": {
         "easy": {
           "label": "Starter",
-          "description": "Simple AB patterns (3 carriages)"
+          "description": "Two pictures take turns."
         },
         "medium": {
           "label": "Growing",
-          "description": "ABC and AAB patterns (4 carriages)"
+          "description": "A group of three pictures repeats."
         },
         "hard": {
           "label": "Challenge",
-          "description": "AABB and complex patterns (5 carriages)"
+          "description": "A group of four pictures repeats."
         }
       },
       "milestone": {

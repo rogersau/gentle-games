@@ -29,6 +29,8 @@ describe('patternTrainLogic', () => {
     expect(pattern.patternLabel).toContain('AB');
     expect(pattern.repeatUnit).toHaveLength(2);
     expect(pattern.carriages).toHaveLength(4);
+    expect(pattern.missingIndex).toBe(3);
+    expect(new Set(pattern.choices)).toEqual(new Set(pattern.repeatUnit));
   });
 
   it('shows the complete repeating unit for rules with repeated symbols', () => {
@@ -108,6 +110,7 @@ describe('patternTrainLogic', () => {
         for (const gapSample of samples) {
           const pattern = generateTransferPattern(source, () => gapSample);
 
+          expect(pattern.missingIndex).toBeGreaterThanOrEqual(pattern.repeatUnit.length);
           expect(
             pattern.carriages.some(
               ({ emoji, isMissing }) => emoji === pattern.answer && !isMissing,

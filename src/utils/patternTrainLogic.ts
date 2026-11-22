@@ -13,34 +13,30 @@ export interface PatternTemplate {
   id: string;
   label: string;
   indexes: number[];
-  unitLength: number;
 }
 
 const PATTERN_POOLS: Record<Difficulty, PatternTemplate[]> = {
-  easy: [{ id: 'ab', label: 'AB pattern', indexes: [0, 1, 0, 1], unitLength: 2 }],
+  easy: [{ id: 'ab', label: 'AB pattern', indexes: [0, 1] }],
   medium: [
-    { id: 'abc', label: 'ABC pattern', indexes: [0, 1, 2, 0, 1], unitLength: 3 },
-    { id: 'aab', label: 'AAB pattern', indexes: [0, 0, 1, 0, 0], unitLength: 3 },
-    { id: 'abb', label: 'ABB pattern', indexes: [0, 1, 1, 0, 1], unitLength: 3 },
+    { id: 'abc', label: 'ABC pattern', indexes: [0, 1, 2] },
+    { id: 'aab', label: 'AAB pattern', indexes: [0, 0, 1] },
+    { id: 'abb', label: 'ABB pattern', indexes: [0, 1, 1] },
   ],
   hard: [
     {
       id: 'aabb',
       label: 'AABB pattern',
-      indexes: [0, 0, 1, 1, 0, 0],
-      unitLength: 4,
+      indexes: [0, 0, 1, 1],
     },
     {
       id: 'abba',
       label: 'ABBA pattern',
-      indexes: [0, 1, 1, 0, 0, 1],
-      unitLength: 4,
+      indexes: [0, 1, 1, 0],
     },
     {
       id: 'abcb',
       label: 'ABCB pattern',
-      indexes: [0, 1, 2, 1, 0, 1],
-      unitLength: 4,
+      indexes: [0, 1, 2, 1],
     },
   ],
 };
@@ -69,11 +65,10 @@ const getRandomPatternTemplate = (difficulty: Difficulty, rng: () => number): Pa
 };
 
 const getMissingIndex = (template: PatternTemplate, rng: () => number): number => {
-  // Keep the first carriage and at least one visible copy of the missing picture.
-  const positions = template.indexes.flatMap((symbol, index, sequence) =>
-    index > 0 && sequence.indexOf(symbol) !== sequence.lastIndexOf(symbol) ? [index] : [],
-  );
-  return positions[Math.min(positions.length - 1, Math.floor(rng() * positions.length))];
+  // Let children see the whole repeating unit before they need to fill a gap.
+  const length = template.indexes.length;
+  if (template.id === 'ab') return 2 * length - 1;
+  return length + Math.min(length - 1, Math.floor(rng() * length));
 };
 
 const chooseTokens = (
@@ -93,20 +88,24 @@ const createPattern = (
 ): TrainPattern => {
   const tokenCount = Math.max(...template.indexes) + 1;
   const tokens = chooseTokens(tokenCount, rng, excludedTokens);
-  const sequence = template.indexes.map((index) => tokens[index]);
+  const repeatUnit = template.indexes.map((index) => tokens[index]);
+  const sequence = [...repeatUnit, ...repeatUnit];
   const missingIndex = getMissingIndex(template, rng);
   const answer = sequence[missingIndex];
-  const distractors = shuffle(
-    PATTERN_TRAIN_EMOJIS.filter((emoji) => emoji !== answer),
-    rng,
-  ).slice(0, CHOICE_COUNTS[difficulty] - 1);
+  const distractors =
+    difficulty === 'easy'
+      ? tokens.filter((token) => token !== answer)
+      : shuffle(
+          PATTERN_TRAIN_EMOJIS.filter((emoji) => emoji !== answer),
+          rng,
+        ).slice(0, CHOICE_COUNTS[difficulty] - 1);
 
   return {
     carriages: sequence.map((emoji, index) => ({ emoji, isMissing: index === missingIndex })),
     answer,
     choices: shuffle([answer, ...distractors], rng),
     patternLabel: template.label,
-    repeatUnit: template.indexes.slice(0, template.unitLength).map((index) => tokens[index]),
+    repeatUnit,
     templateId: template.id,
     missingIndex,
     difficulty,
