@@ -5,9 +5,16 @@ import { CategoryMatchBoard } from './CategoryMatchBoard';
 
 const mockPlayMatchSound = jest.fn();
 
+const mockBoardSettings = {
+  soundEnabled: true,
+  soundVolume: 0.5,
+  animationsEnabled: false,
+  autoAdvance: true,
+};
+
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
-    settings: { soundEnabled: true, soundVolume: 0.5, animationsEnabled: false },
+    settings: mockBoardSettings,
   }),
 }));
 
@@ -102,6 +109,7 @@ const layOutDragTargets = (screen: ReturnType<typeof render>) => {
 describe('CategoryMatchBoard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockBoardSettings.autoAdvance = true;
     jest.spyOn(Math, 'random').mockReturnValue(0);
     jest
       .spyOn(PanResponder, 'create')
@@ -232,7 +240,20 @@ describe('CategoryMatchBoard', () => {
     expect(screen.getByTestId('category-zone-clothes')).toBeTruthy();
   });
 
-  it('allows Skip and Next without scoring, streaks, or item elimination', () => {
+  it('automatically advances to the next item after a correct match by default', () => {
+    jest.useFakeTimers();
+    const screen = render(<CategoryMatchBoard width={360} height={480} />);
+    fireEvent.press(screen.getByTestId('category-zone-food'));
+    expect(screen.getByTestId('category-match-feedback').props.children).toBe(
+      'apple belongs in Food.',
+    );
+    act(() => jest.advanceTimersByTime(1400));
+    expect(screen.queryByTestId('category-match-feedback')).toBeNull();
+    jest.useRealTimers();
+  });
+
+  it('allows Skip and Next without scoring, streaks, or item elimination when auto-advance is off', () => {
+    mockBoardSettings.autoAdvance = false;
     const screen = render(<CategoryMatchBoard width={360} height={480} />);
     fireEvent.press(screen.getByText('Skip'));
     expect(screen.getByTestId('category-match-feedback').props.children).toContain(

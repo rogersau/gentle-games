@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   Animated,
@@ -57,6 +57,7 @@ interface DragStart {
 
 const DRAG_THRESHOLD = 8;
 const DRAG_HOME = { x: 0, y: 0 };
+const AUTO_ADVANCE_DELAY_MS = 1400;
 const webDragStyle = Platform.OS === 'web' ? ({ touchAction: 'none' } as ViewStyle) : undefined;
 
 export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
@@ -157,7 +158,7 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
     ],
   );
 
-  const handleNextRound = () => {
+  const handleNextRound = useCallback(() => {
     if (!roundFinished || controller.getState() !== guidedRound) return;
     const nextState = controller.startNextExample();
     setGuidedRound(nextState);
@@ -171,7 +172,14 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
       ),
     );
     setFeedback(null);
-  };
+  }, [categoryCount, controller, guidedRound, pack, round.item, roundFinished]);
+
+  const autoAdvance = settings.autoAdvance !== false;
+  useEffect(() => {
+    if (!autoAdvance || guidedRound.phase !== 'corrected') return;
+    const timer = setTimeout(handleNextRound, AUTO_ADVANCE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [autoAdvance, guidedRound.phase, handleNextRound]);
 
   const handleHint = () => {
     setGuidedRound(controller.showHint());
@@ -184,10 +192,26 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
 
   const handleSkip = () => {
     if (roundFinished || controller.getState() !== guidedRound) return;
-    setGuidedRound(controller.skip());
+    const skippedState = controller.skip();
     setIsTokenSelected(false);
     resetDrag(false);
-    showFeedback(t('games.categoryMatch.skippedFeedback', { item: itemLabel }));
+    if (autoAdvance) {
+      const nextState = controller.startNextExample();
+      setGuidedRound(nextState);
+      setRound(
+        createCategoryMatchRound(
+          round.item,
+          nextState.exampleNumber,
+          Math.random,
+          categoryCount,
+          pack,
+        ),
+      );
+      setFeedback(null);
+    } else {
+      setGuidedRound(skippedState);
+      showFeedback(t('games.categoryMatch.skippedFeedback', { item: itemLabel }));
+    }
   };
 
   const panResponder = useMemo(() => {

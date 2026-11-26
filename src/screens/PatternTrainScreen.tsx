@@ -83,30 +83,44 @@ export const PatternTrainScreen: React.FC = () => {
   const trainWidth = measuredTrainWidth ?? Math.min(windowWidth, 760) - 2 * (Space.md + Space.lg);
   const [departure] = useState(() => new Animated.Value(0));
   const isComplete = guidedRound.phase === 'corrected';
+  const autoAdvance = settings.autoAdvance !== false;
 
   useEffect(() => {
     if (!isComplete || showDifficultySelector) return;
 
     let animation: Animated.CompositeAnimation | undefined;
+    let advanceTimer: ReturnType<typeof setTimeout> | undefined;
     const timer = setTimeout(() => {
-      if (!animationsEnabled) return;
-
-      animation = Animated.timing(departure, {
-        toValue: 1,
-        duration: DEPARTURE_DURATION_MS,
-        easing: Easing.inOut(Easing.quad),
-        useNativeDriver: Platform.OS !== 'web',
-        isInteraction: false,
-      });
-      animation.start();
+      if (animationsEnabled) {
+        animation = Animated.timing(departure, {
+          toValue: 1,
+          duration: DEPARTURE_DURATION_MS,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: Platform.OS !== 'web',
+          isInteraction: false,
+        });
+        animation.start(({ finished }) => {
+          if (finished && autoAdvance) startNewRound();
+        });
+      } else if (autoAdvance) {
+        advanceTimer = setTimeout(startNewRound, 400);
+      }
     }, COMPLETION_PAUSE_MS);
 
     return () => {
       clearTimeout(timer);
+      if (advanceTimer !== undefined) clearTimeout(advanceTimer);
       animation?.stop();
       departure.setValue(0);
     };
-  }, [animationsEnabled, departure, isComplete, showDifficultySelector]);
+  }, [
+    animationsEnabled,
+    autoAdvance,
+    departure,
+    isComplete,
+    showDifficultySelector,
+    startNewRound,
+  ]);
 
   const difficultyOptions: { value: Difficulty; label: string }[] = [
     { value: 'easy', label: t('games.patternTrain.difficulty.easy.label') },
@@ -225,7 +239,9 @@ export const PatternTrainScreen: React.FC = () => {
       onHome={() => navigation.goBack()}
       prompt={t(
         isComplete
-          ? 'common.againPrompt'
+          ? autoAdvance
+            ? 'games.patternTrain.feedback.correct'
+            : 'common.againPrompt'
           : showInstructions
             ? 'games.patternTrain.instructions'
             : 'games.patternTrain.guidance.instruction',
@@ -387,7 +403,7 @@ export const PatternTrainScreen: React.FC = () => {
           hideActions
         />
       )}
-      {isComplete && (
+      {isComplete && !autoAdvance && (
         <GameCompletion
           message={t('games.patternTrain.feedback.correct')}
           onReplay={startNewRound}

@@ -1,5 +1,5 @@
 import { GamePrompt } from '../ui/components/GameShell';
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -30,6 +30,7 @@ export const NumberPicnicScreen: React.FC = () => {
   const basketRef = useRef<View>(null);
   const [showComparisonExample, setShowComparisonExample] = useState(false);
   const picnicSettings = getGameSettings(settings, 'number-picnic');
+  const autoAdvance = settings.autoAdvance !== false;
 
   const {
     prompt,
@@ -59,6 +60,14 @@ export const NumberPicnicScreen: React.FC = () => {
   });
 
   const { mode, targetCount, representation, comparison } = prompt;
+  useEffect(() => {
+    if (!autoAdvance || !isComplete) return;
+    const timer = setTimeout(() => {
+      setShowComparisonExample(false);
+      startNewRound();
+    }, 1600);
+    return () => clearTimeout(timer);
+  }, [autoAdvance, isComplete, startNewRound]);
   const getItemName = (count: number) =>
     t(
       `games.numberPicnic.${count === 1 ? 'itemsSingular' : 'items'}.${prompt.itemName}` as TranslationKey,

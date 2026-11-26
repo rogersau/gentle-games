@@ -132,7 +132,6 @@ describe('responsive game screens', () => {
 
   it('keeps Category Match interaction areas separated in a landscape scroll view', () => {
     const screen = render(<CategoryMatchScreen />);
-    fireEvent.press(screen.getByText('Start Sorting'));
     layout(screen, 480, 320);
     expect(mockCategoryProps.width).toBe(437);
     expect(mockCategoryProps.height).toBe(300);

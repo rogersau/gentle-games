@@ -66,7 +66,7 @@ export const DEFAULT_GAME_SETTINGS: GameSettingsMap = {
   drawing: {},
   'glitter-fall': DEFAULT_GLITTER_SETTINGS,
   'bubble-pop': { motion: 'still', density: 'sparse' },
-  'category-match': { pack: 'everyday', categoryCount: 2, showPreview: true },
+  'category-match': { pack: 'everyday', categoryCount: 2, showPreview: false },
   'keepy-uppy': { liftMode: 'gentle' },
   'breathing-garden': { sessionLength: 5, visualCue: true },
   'pattern-train': { level: 'starter' },

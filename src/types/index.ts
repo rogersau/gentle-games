@@ -51,6 +51,8 @@ export interface Settings {
   settingsVersion?: number;
   movement: Movement;
   grownUpsHoldGate: boolean;
+  /** When enabled, round-based games move to the next round automatically after a gentle pause. */
+  autoAdvance?: boolean;
   soundEnabled: boolean;
   soundVolume: number;
   difficulty: Difficulty;

@@ -990,6 +990,10 @@
       "label": "Grown-ups hold gate",
       "description": "Hold the Grown-ups button for three seconds to open these settings."
     },
+    "autoAdvance": {
+      "label": "Automatic next round",
+      "description": "Move to the next round after a gentle pause, without needing to tap Next."
+    },
     "games": {
       "title": "Games",
       "description": "Show, hide and adjust each game.",

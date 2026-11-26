@@ -184,6 +184,13 @@ export const SettingsScreen: React.FC = () => {
             />
           </Group>
           <Group title={t('settings.play')}>
+            <SettingToggle
+              label={t('settings.autoAdvance.label')}
+              description={t('settings.autoAdvance.description')}
+              artwork={<RowIcon icon='next' fill={colors.sage} ink={colors.sageInk} />}
+              value={settings.autoAdvance !== false}
+              onValueChange={(autoAdvance) => updateSettings({ autoAdvance })}
+            />
             <SettingsRow
               label={t('settings.parentTimer.title')}
               artwork={<RowIcon icon='pause' fill={colors.peach} ink={colors.peachInk} />}

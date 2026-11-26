@@ -132,6 +132,7 @@ const patternSettings = {
   pressureFreeMode: false,
   osReducedMotion: false,
   movement: 'gentle',
+  autoAdvance: true,
   difficulty: 'easy' as const,
 };
 
@@ -182,6 +183,7 @@ describe('PatternTrainScreen', () => {
     patternSettings.pressureFreeMode = false;
     patternSettings.osReducedMotion = false;
     patternSettings.movement = 'gentle';
+    patternSettings.autoAdvance = true;
     // Mock Animated.timing to execute immediately
     jest.spyOn(Animated, 'timing').mockImplementation(
       () =>
@@ -345,7 +347,7 @@ describe('PatternTrainScreen', () => {
     ).toBe(true);
   });
 
-  it('fills the gap and waits for Play again before bringing in the next train', () => {
+  it('automatically advances to the next train after a gentle pause by default', () => {
     jest.useFakeTimers();
     const screen = render(<PatternTrainScreen />);
 
@@ -354,17 +356,28 @@ describe('PatternTrainScreen', () => {
         name: 'Train carriages in order. star, missing carriage, star, rainbow.',
       }),
     ).toBeTruthy();
-    const carriage = screen.getByRole('button', { name: 'Carriage with rainbow' });
-    fireEvent.press(carriage);
+    fireEvent.press(screen.getByRole('button', { name: 'Carriage with rainbow' }));
 
     expect(screen.getByText('Correct.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Play again' })).toBeNull();
     expect(
       screen.getByRole('image', {
         name: 'Train carriages in order. star, rainbow, star, rainbow.',
       }),
     ).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Carriage with rainbow' })).toBeNull();
-    act(() => jest.advanceTimersByTime(1200));
+    act(() => jest.advanceTimersByTime(1600));
+    expect(screen.getByRole('button', { name: 'Carriage with rainbow' })).toBeEnabled();
+    expect(screen.queryByText('Correct.')).toBeNull();
+  });
+
+  it('fills the gap and waits for Play again when automatic next round is off', () => {
+    jest.useFakeTimers();
+    patternSettings.autoAdvance = false;
+    const screen = render(<PatternTrainScreen />);
+
+    fireEvent.press(screen.getByRole('button', { name: 'Carriage with rainbow' }));
+    expect(screen.getByText('Correct.')).toBeTruthy();
+    act(() => jest.advanceTimersByTime(2400));
     expect(screen.getByText('Correct.')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Play again' }));
     expect(screen.getByRole('button', { name: 'Carriage with rainbow' })).toBeEnabled();
@@ -419,6 +432,7 @@ describe('PatternTrainScreen', () => {
     (pressureFreeMode) => {
       jest.useFakeTimers();
       patternSettings.pressureFreeMode = pressureFreeMode;
+      patternSettings.autoAdvance = false;
       const screen = render(<PatternTrainScreen />);
 
       for (let round = 0; round < 5; round += 1) {
@@ -446,6 +460,7 @@ describe('PatternTrainScreen', () => {
     jest.useFakeTimers();
     patternSettings.movement = 'lively';
     patternSettings.osReducedMotion = reducedMotion;
+    patternSettings.autoAdvance = false;
     const screen = render(<PatternTrainScreen />);
     fireEvent.press(screen.getByRole('button', { name: 'Carriage with rainbow' }));
     expect(Animated.timing).not.toHaveBeenCalled();
@@ -473,9 +488,7 @@ describe('PatternTrainScreen', () => {
     act(() => jest.advanceTimersByTime(2400));
     expect(generateTransferPattern).not.toHaveBeenCalled();
     fireEvent.press(screen.getAllByText('common.close').at(-1)!);
-    act(() => jest.advanceTimersByTime(1200));
-    expect(generateTransferPattern).not.toHaveBeenCalled();
-    fireEvent.press(screen.getByRole('button', { name: 'Play again' }));
+    act(() => jest.advanceTimersByTime(1600));
     expect(generateTransferPattern).toHaveBeenCalledTimes(1);
   });
 
