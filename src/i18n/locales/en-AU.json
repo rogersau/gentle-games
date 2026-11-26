@@ -229,7 +229,7 @@
       "boardSize_one": "{{count}} pair",
       "boardSize_other": "{{count}} pairs",
       "boardChangeHint": "A different size starts a new board.",
-      "hintUnavailable": "Show one card · turn a card first"
+      "hintUnavailable": "Turn a card first"
     },
     "drawing": {
       "name": "Drawing Pad",

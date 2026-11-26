@@ -26,10 +26,10 @@ import {
   SettingToggle,
   SegmentedControl,
   VolumeControl,
-  SectionHeader,
   AppButton,
 } from '../ui/components';
-import { Radius, Space, TypeStyle } from '../ui/tokens';
+import { ControlIconName } from '../ui/components/ControlIcon';
+import { Radius, Shadow, Space, TypeStyle } from '../ui/tokens';
 import {
   getGameSettings,
   MemorySnapMismatchDuration,
@@ -124,50 +124,61 @@ export const SettingsScreen: React.FC = () => {
       {page === 'hub' && (
         <>
           <Group title={t('settings.comfort')}>
-            <SettingToggle
-              label={t('settings.sound.label')}
-              value={settings.soundEnabled}
-              onValueChange={(soundEnabled) => updateSettings({ soundEnabled })}
-            />
-            {settings.soundEnabled && (
-              <VolumeControl
-                value={settings.soundVolume}
-                onValueChange={(soundVolume) => updateSettings({ soundVolume })}
+            <View style={styles.groupItem}>
+              <SettingToggle
+                label={t('settings.sound.label')}
+                artwork={<RowIcon icon='sound' fill={colors.sky} ink={colors.skyInk} />}
+                value={settings.soundEnabled}
+                onValueChange={(soundEnabled) => updateSettings({ soundEnabled })}
               />
-            )}
-            <Text style={[styles.controlLabel, { color: colors.text }]}>
-              {t('settings.movement.title')}
-            </Text>
-            <Text style={[styles.description, { color: colors.textLight }]}>
-              {t(systemReduced ? 'settings.movement.device' : 'settings.movement.description')}
-            </Text>
-            <SegmentedControl<Movement>
-              options={(['still', 'gentle', 'lively'] as const).map((value) => ({
-                value,
-                label: t(`settings.movement.${value}`),
-              }))}
-              value={settings.movement}
-              onValueChange={(movement) => updateSettings({ movement })}
-            />
+              {settings.soundEnabled && (
+                <View style={styles.volumeWrap}>
+                  <VolumeControl
+                    value={settings.soundVolume}
+                    onValueChange={(soundVolume) => updateSettings({ soundVolume })}
+                  />
+                </View>
+              )}
+            </View>
+            <View style={styles.groupSegment}>
+              <Text style={[styles.controlLabel, { color: colors.text }]}>
+                {t('settings.movement.title')}
+              </Text>
+              <Text style={[styles.description, { color: colors.textLight }]}>
+                {t(systemReduced ? 'settings.movement.device' : 'settings.movement.description')}
+              </Text>
+              <SegmentedControl<Movement>
+                options={(['still', 'gentle', 'lively'] as const).map((value) => ({
+                  value,
+                  label: t(`settings.movement.${value}`),
+                }))}
+                value={settings.movement}
+                onValueChange={(movement) => updateSettings({ movement })}
+              />
+            </View>
             <SettingsRow
               label={t('settings.appearance.title')}
+              artwork={<RowIcon icon='eye' fill={colors.lavender} ink={colors.lavenderInk} />}
               value={currentAppearance}
               onPress={() => open('appearance')}
             />
             <SettingToggle
               label={t('settings.pressureFreeMode.label')}
               description={t('settings.pressureFreeMode.description')}
+              artwork={<RowIcon icon='check' fill={colors.sage} ink={colors.sageInk} />}
               value={settings.pressureFreeMode !== false}
               onValueChange={(pressureFreeMode) => updateSettings({ pressureFreeMode })}
             />
             <SettingToggle
               label={t('settings.showMochiInGames.label')}
+              artwork={<RowIcon icon='circle' fill={colors.rose} ink={colors.peachInk} />}
               value={settings.showMochiInGames}
               onValueChange={(showMochiInGames) => updateSettings({ showMochiInGames })}
             />
             <SettingToggle
               label={t('settings.grownUpsHoldGate.label')}
               description={t('settings.grownUpsHoldGate.description')}
+              artwork={<RowIcon icon='lock' fill={colors.sky} ink={colors.skyInk} />}
               value={settings.grownUpsHoldGate !== false}
               onValueChange={(grownUpsHoldGate) => updateSettings({ grownUpsHoldGate })}
             />
@@ -175,12 +186,15 @@ export const SettingsScreen: React.FC = () => {
           <Group title={t('settings.play')}>
             <SettingsRow
               label={t('settings.parentTimer.title')}
+              artwork={<RowIcon icon='pause' fill={colors.peach} ink={colors.peachInk} />}
               value={timerLabel(settings.parentTimerMinutes)}
               onPress={() => open('break')}
             />
             <SettingsRow
               label={t('settings.games.title')}
               description={t('settings.games.description')}
+              artwork={<RowIcon icon='cards' fill={colors.butter} ink={colors.peachInk} />}
+              value={String(games.length)}
               onPress={() => open('games')}
             />
           </Group>
@@ -299,10 +313,15 @@ export const SettingsScreen: React.FC = () => {
       {page === 'game' && game && (
         <>
           <View style={styles.hero}>
-            <GameArtwork gameId={game.id} size={80} />
-            <Text style={[TypeStyle.body, { color: colors.text, flex: 1 }]}>
-              {t(game.descriptionKey)}
-            </Text>
+            <View style={[styles.heroTile, { backgroundColor: colors.sky }]}>
+              <GameArtwork gameId={game.id} size={64} />
+            </View>
+            <View style={styles.heroCopy}>
+              <Text style={[TypeStyle.title, { color: colors.text }]}>{t(game.nameKey)}</Text>
+              <Text style={[TypeStyle.body, { color: colors.textLight }]}>
+                {t(game.descriptionKey)}
+              </Text>
+            </View>
           </View>
           <Group title={t('settings.games.onHome')}>
             <SettingToggle
@@ -324,15 +343,46 @@ export const SettingsScreen: React.FC = () => {
   );
 };
 
+const RowIcon: React.FC<{ icon: ControlIconName; fill: string; ink: string }> = ({
+  icon,
+  fill,
+  ink,
+}) => (
+  <View
+    style={[styles.rowIcon, { backgroundColor: fill }]}
+    accessibilityElementsHidden
+    importantForAccessibility='no-hide-descendants'
+    aria-hidden
+  >
+    <ControlIcon name={icon} size={17} color={ink} />
+  </View>
+);
+
 const Group: React.FC<{ title?: string; children: React.ReactNode }> = ({ title, children }) => {
   const { colors } = useThemeColors();
+  const items = React.Children.toArray(children).filter(Boolean);
   return (
     <View style={styles.group}>
-      {title && <SectionHeader title={title} />}
+      {title && (
+        <Text accessibilityRole='header' style={[styles.groupTitle, { color: colors.textLight }]}>
+          {title}
+        </Text>
+      )}
       <View
-        style={[styles.groupBody, { backgroundColor: colors.surface, borderColor: colors.line }]}
+        style={[
+          styles.groupBody,
+          Shadow.sm,
+          { backgroundColor: colors.surface, borderColor: colors.line },
+        ]}
       >
-        {children}
+        {items.map((child, index) => (
+          <View
+            key={index}
+            style={index > 0 ? [styles.divider, { borderTopColor: colors.line }] : undefined}
+          >
+            {child}
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -355,7 +405,7 @@ const SettingsRow: React.FC<{
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
-        { borderTopColor: colors.line, backgroundColor: pressed ? colors.sunken : colors.surface },
+        { backgroundColor: pressed ? colors.sunken : 'transparent' },
       ]}
     >
       {artwork}
@@ -365,7 +415,7 @@ const SettingsRow: React.FC<{
           <Text style={[TypeStyle.helper, { color: colors.textLight }]}>{description}</Text>
         )}
       </View>
-      {value && <Text style={[TypeStyle.helper, { color: colors.textLight }]}>{value}</Text>}
+      {value && <Text style={[styles.rowValue, { color: colors.textLight }]}>{value}</Text>}
       <View style={!link && styles.chevron}>
         <ControlIcon name={link ? 'next' : 'back'} size={16} color={colors.textLight} />
       </View>
@@ -718,35 +768,70 @@ const GameOptions: React.FC<{ gameId: GameId }> = ({ gameId }) => {
 };
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.md },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Space.sm,
+    paddingHorizontal: Space.base,
+    paddingVertical: Space.sm,
+  },
   headerTitle: { flex: 1 },
   content: {
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
-    padding: Space.base,
-    gap: Space.md,
+    paddingHorizontal: Space.base,
+    paddingTop: Space.xs,
+    paddingBottom: Space.xl,
+    gap: Space.base,
   },
-  group: { gap: Space.xs },
+  group: { gap: Space.xs + 2 },
+  groupTitle: {
+    ...TypeStyle.helper,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginLeft: Space.xs,
+  },
   groupBody: {
     borderWidth: 1.5,
     borderRadius: Radius.xl,
     paddingHorizontal: Space.md,
-    paddingVertical: Space.xs,
-    gap: Space.xs,
+    overflow: 'hidden',
   },
+  divider: { borderTopWidth: 1 },
+  groupItem: { paddingBottom: Space.xs },
+  volumeWrap: { paddingBottom: Space.sm },
+  groupSegment: { paddingVertical: Space.md, gap: Space.xs },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Space.sm,
-    minHeight: 52,
-    paddingVertical: Space.xs,
-    borderTopWidth: 1,
+    gap: Space.md,
+    minHeight: 54,
+    paddingVertical: Space.sm,
+  },
+  rowIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   rowCopy: { flex: 1, gap: 2 },
+  rowValue: { ...TypeStyle.helper, fontSize: 14, fontWeight: '700' },
   chevron: { transform: [{ rotate: '180deg' }] },
-  hero: { flexDirection: 'row', alignItems: 'center', gap: Space.md },
-  controlLabel: { ...TypeStyle.label, marginTop: Space.sm },
-  description: { ...TypeStyle.helper, marginVertical: Space.xs },
+  hero: { flexDirection: 'row', alignItems: 'center', gap: Space.md, paddingHorizontal: Space.xs },
+  heroTile: {
+    width: 76,
+    height: 76,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroCopy: { flex: 1, gap: 2 },
+  controlLabel: { ...TypeStyle.label },
+  description: { ...TypeStyle.helper, marginBottom: Space.xs },
   error: { borderRadius: Radius.md, padding: Space.md },
 });

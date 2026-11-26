@@ -7,7 +7,7 @@ import { useSettings } from '../context/SettingsContext';
 import { APP_ROUTES, AppStackParamList } from '../types/navigation';
 import { useThemeColors } from '../utils/theme';
 import { AppScreen, GameCard } from '../ui/components';
-import { GrownUpsGate } from '../ui/components/GrownUpsGate';
+import { useGrownUpsGate } from '../ui/components/GrownUpsGate';
 import { Mochi } from '../components/Mochi';
 import { getGameRoute, getVisibleGames } from '../games/registry';
 import { Breakpoint, Space, TypeStyle } from '../ui/tokens';
@@ -55,6 +55,12 @@ export const HomeScreen: React.FC = () => {
     }
   };
 
+  const { pill: grownUpsPill, overlays: grownUpsOverlays } = useGrownUpsGate({
+    enabled: settings.grownUpsHoldGate !== false,
+    active,
+    onOpen: () => launch(APP_ROUTES.Settings),
+  });
+
   return (
     <AppScreen testID='home-screen'>
       <ScrollView
@@ -79,6 +85,7 @@ export const HomeScreen: React.FC = () => {
               {t('home.invitation')}
             </Text>
           </View>
+          <View style={styles.gateWrap}>{grownUpsPill}</View>
         </View>
         {rows.map((row) => (
           <View key={row[0].id} style={styles.row}>
@@ -89,7 +96,7 @@ export const HomeScreen: React.FC = () => {
                   title={t(game.nameKey)}
                   description={t(game.descriptionKey)}
                   onPress={() => launch(getGameRoute(game.id))}
-                  artworkSize={columns > 2 ? 96 : 90}
+                  artworkSize={columns > 2 ? 96 : 88}
                   disabled={isLaunching}
                   accessibilityState={{ busy: isLaunching }}
                   testID={`home-game-${game.id}`}
@@ -105,11 +112,7 @@ export const HomeScreen: React.FC = () => {
           <Text style={[TypeStyle.body, { color: colors.textLight }]}>{t('home.emptyGames')}</Text>
         )}
       </ScrollView>
-      <GrownUpsGate
-        enabled={settings.grownUpsHoldGate !== false}
-        active={active}
-        onOpen={() => launch(APP_ROUTES.Settings)}
-      />
+      {grownUpsOverlays}
     </AppScreen>
   );
 };
@@ -122,17 +125,17 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: Space.base,
     paddingTop: Space.sm,
-    paddingBottom: Space.base,
-    gap: Space.sm,
+    paddingBottom: Space.lg,
+    gap: Space.md,
   },
   greeting: {
-    minHeight: 75,
-    paddingRight: 125,
+    minHeight: 72,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Space.sm,
   },
   copy: { flex: 1 },
-  row: { flexDirection: 'row', gap: Space.sm },
+  gateWrap: { alignSelf: 'flex-start', paddingTop: Space.xs },
+  row: { flexDirection: 'row', gap: Space.md },
   cell: { flex: 1, minWidth: 0 },
 });

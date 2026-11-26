@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
 import { useScalePress } from '../animations';
-import { Space, Radius, TypeStyle, HitTarget, ON_ACCENT_TEXT } from '../tokens';
+import { Space, Radius, Shadow, TypeStyle, HitTarget, ON_ACCENT_TEXT } from '../tokens';
 import { ThemeColors } from '../../types';
 import { ResolvedThemeMode } from '../../utils/theme';
 import { ControlIcon, ControlIconName } from './ControlIcon';
@@ -100,7 +100,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
 };
 
 const sizeMap = {
-  sm: { paddingVertical: Space.sm, paddingHorizontal: Space.md, minHeight: HitTarget.min },
+  sm: { paddingVertical: Space.sm, paddingHorizontal: Space.lg, minHeight: HitTarget.min },
   md: { paddingVertical: Space.md, paddingHorizontal: Space.xl, minHeight: HitTarget.min },
   lg: {
     paddingVertical: Space.base,
@@ -117,19 +117,34 @@ const createStyles = (
 ) => {
   const sizeValues = sizeMap[size];
 
-  const variantStyles: Record<ButtonVariant, { bg: string; text: string; border: string }> = {
+  const variantStyles: Record<
+    ButtonVariant,
+    { bg: string; text: string; border: string; borderWidth: number }
+  > = {
     primary: {
       bg: colors.primary,
       text: resolvedMode === 'dark' ? ON_ACCENT_TEXT : colors.text,
-      border: resolvedMode === 'dark' ? colors.primary : colors.skyInk,
+      border: 'transparent',
+      borderWidth: 0,
     },
-    secondary: { bg: colors.lavender, text: colors.lavenderInk, border: colors.lavenderInk },
+    secondary: {
+      bg: colors.lavender,
+      text: colors.lavenderInk,
+      border: resolvedMode === 'dark' ? colors.line : '#D6C6E8',
+      borderWidth: 1.5,
+    },
     ghost: {
       bg: colors.surface,
       text: colors.text,
-      border: colors.outline,
+      border: colors.line,
+      borderWidth: 1.5,
     },
-    danger: { bg: colors.peach, text: colors.peachInk, border: colors.peachInk },
+    danger: {
+      bg: colors.peach,
+      text: colors.peachInk,
+      border: resolvedMode === 'dark' ? colors.line : '#E9C9B6',
+      borderWidth: 1.5,
+    },
   };
 
   const v = variantStyles[variant];
@@ -138,12 +153,13 @@ const createStyles = (
     button: {
       backgroundColor: v.bg,
       borderRadius: Radius.full,
-      borderWidth: 1.5,
+      borderWidth: v.borderWidth,
       borderColor: v.border,
       flexDirection: 'row',
       gap: Space.sm,
       alignItems: 'center',
       justifyContent: 'center',
+      ...(variant === 'ghost' ? Shadow.sm : undefined),
       ...sizeValues,
     },
     label: {
@@ -154,7 +170,8 @@ const createStyles = (
     },
     disabled: {
       backgroundColor: colors.sunken,
-      borderColor: colors.outline,
+      borderColor: colors.line,
+      borderWidth: 1.5,
     },
     fullWidth: {
       width: '100%',

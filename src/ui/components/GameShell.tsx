@@ -1,5 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AppState, LayoutChangeEvent, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import {
+  AppState,
+  LayoutChangeEvent,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  ViewStyle,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../../context/SettingsContext';
 import {
@@ -8,10 +16,11 @@ import {
   useOfflineSpeechAvailable,
 } from '../../utils/offlineNarration';
 import { useThemeColors } from '../../utils/theme';
-import { Radius, Space, TypeStyle } from '../tokens';
+import { Radius, Shadow, Space, TypeStyle } from '../tokens';
 import { AppButton } from './AppButton';
 import { AppModal } from './AppModal';
 import { AppScreen } from './AppScreen';
+import { ControlIcon } from './ControlIcon';
 import { GameHeader } from './GameHeader';
 
 interface GameShellProps {
@@ -86,7 +95,8 @@ export const GameShell: React.FC<GameShellProps> = ({
       <View
         style={[
           styles.stage,
-          { backgroundColor: colors.surface, borderColor: colors.outline },
+          Shadow.sm,
+          { backgroundColor: colors.surface, borderColor: colors.line },
           stageStyle,
         ]}
         testID='game-play-surface'
@@ -126,16 +136,27 @@ export const GamePrompt: React.FC<{ prompt: string }> = ({ prompt }) => {
   }, [owner, prompt, audible, settings.language]);
 
   return (
-    <View style={[styles.prompt, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+    <View
+      style={[
+        styles.prompt,
+        Shadow.sm,
+        { backgroundColor: colors.surface, borderColor: colors.line },
+      ]}
+    >
       {speechAvailable && (
-        <AppButton
-          size='sm'
-          variant='secondary'
-          icon='sound'
-          label={t('common.hearIt')}
+        <Pressable
+          style={({ pressed }) => [
+            styles.hearButton,
+            { backgroundColor: colors.lavender, opacity: pressed ? 0.85 : 1 },
+          ]}
+          hitSlop={4}
+          accessibilityRole='button'
+          accessibilityLabel={t('common.hearIt')}
           testID='game-hear-prompt'
           onPress={() => speakOffline(prompt, settings.language, settings.soundVolume, owner)}
-        />
+        >
+          <ControlIcon name='sound' color={colors.lavenderInk} size={20} />
+        </Pressable>
       )}
       <Text
         style={[TypeStyle.prompt, styles.promptText, { color: colors.text }]}
@@ -175,21 +196,34 @@ export const GameCompletion: React.FC<{
 };
 
 const styles = StyleSheet.create({
-  body: { alignItems: 'center', paddingHorizontal: Space.md, paddingBottom: Space.sm },
-  promptWrap: { paddingHorizontal: Space.md },
+  body: {
+    alignItems: 'center',
+    paddingHorizontal: Space.md,
+    paddingTop: Space.xs,
+    paddingBottom: Space.md,
+  },
+  promptWrap: { paddingHorizontal: Space.md, paddingTop: Space.xs },
   prompt: {
     width: '100%',
     maxWidth: 760,
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Space.sm,
-    borderRadius: Radius.lg,
+    gap: Space.md,
+    borderRadius: Radius.xl,
     borderWidth: 1.5,
     paddingHorizontal: Space.md,
     minHeight: 54,
-    paddingVertical: Space.xs,
+    paddingVertical: Space.sm,
     marginBottom: Space.sm,
+  },
+  hearButton: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   promptText: { flex: 1 },
   stage: {
@@ -197,7 +231,7 @@ const styles = StyleSheet.create({
     maxWidth: 760,
     borderRadius: Radius.playSurface,
     borderWidth: 1.5,
-    padding: Space.sm,
+    padding: Space.base,
     alignItems: 'center',
     overflow: 'hidden',
   },
@@ -210,7 +244,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: Space.sm,
-    padding: Space.md,
+    paddingHorizontal: Space.base,
+    paddingTop: Space.sm,
+    paddingBottom: Space.base,
   },
   sheetItems: { gap: Space.sm },
   completion: {

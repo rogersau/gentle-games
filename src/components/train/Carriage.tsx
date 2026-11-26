@@ -39,8 +39,8 @@ export const Carriage: React.FC<CarriageProps> = ({
           width='60'
           height='40'
           rx='6'
-          fill={isMissing ? colors.surfaceElevated : colors.surfaceGame}
-          stroke={isMissing ? colors.text : carriageColor}
+          fill={isMissing ? colors.sky : colors.surfaceGame}
+          stroke={isMissing ? colors.skyInk : carriageColor}
           strokeWidth={isMissing ? 3 : 2}
           strokeDasharray={isMissing ? '8,4' : undefined}
         />
@@ -59,7 +59,7 @@ export const Carriage: React.FC<CarriageProps> = ({
           height='12'
           rx='2'
           fill='transparent'
-          stroke={isMissing ? colors.text : carriageColor}
+          stroke={isMissing ? colors.skyInk : carriageColor}
           strokeWidth={isMissing ? 2 : 1}
         />
 
@@ -71,7 +71,7 @@ export const Carriage: React.FC<CarriageProps> = ({
           height='12'
           rx='2'
           fill='transparent'
-          stroke={isMissing ? colors.text : carriageColor}
+          stroke={isMissing ? colors.skyInk : carriageColor}
           strokeWidth={isMissing ? 2 : 1}
         />
       </Svg>
@@ -83,7 +83,7 @@ export const Carriage: React.FC<CarriageProps> = ({
               allowFontScaling={false}
               style={[
                 styles.contentText,
-                { fontSize: Math.max(15, size * 0.41), color: colors.text },
+                { fontSize: Math.max(15, size * 0.41), color: colors.skyInk },
               ]}
             >
               ?

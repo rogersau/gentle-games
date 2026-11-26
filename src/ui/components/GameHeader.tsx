@@ -4,7 +4,7 @@ import Svg, { Path } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../../context/SettingsContext';
 import { useThemeColors } from '../../utils/theme';
-import { Space, TypeStyle } from '../tokens';
+import { Shadow, Space, TypeStyle } from '../tokens';
 
 /** The same visible exit and sound control in every activity. */
 export const GameHeader: React.FC<{ title: string; onBack: () => void }> = ({ title, onBack }) => {
@@ -15,16 +15,12 @@ export const GameHeader: React.FC<{ title: string; onBack: () => void }> = ({ ti
   const soundInk = soundEnabled ? colors.skyInk : colors.text;
   const controlStyle = [
     styles.control,
-    { backgroundColor: colors.surface, borderColor: colors.border },
+    Shadow.sm,
+    { backgroundColor: colors.surface, borderColor: colors.line },
   ];
 
   return (
-    <View
-      style={[
-        styles.header,
-        { backgroundColor: colors.background, borderBottomColor: colors.borderSubtle },
-      ]}
-    >
+    <View style={[styles.header, { backgroundColor: colors.background }]}>
       <TouchableOpacity
         onPress={onBack}
         style={controlStyle}
@@ -92,24 +88,25 @@ export const GameHeader: React.FC<{ title: string; onBack: () => void }> = ({ ti
 
 const styles = StyleSheet.create({
   header: {
-    minHeight: 68,
+    minHeight: 64,
     flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Space.sm,
-    paddingVertical: Space.xs,
-    borderBottomWidth: 1,
+    paddingHorizontal: Space.md,
+    paddingTop: Space.xs,
+    paddingBottom: Space.sm,
     gap: Space.xs,
   },
   control: {
-    minWidth: 68,
-    minHeight: 56,
+    minWidth: 66,
+    minHeight: 52,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 16,
-    borderWidth: 1,
-    padding: Space.xs,
+    borderWidth: 1.5,
+    paddingHorizontal: Space.sm,
+    paddingVertical: Space.xs,
   },
-  label: { ...TypeStyle.buttonSm, textAlign: 'center' },
-  title: { ...TypeStyle.title, flex: 1, textAlign: 'center' },
+  label: { ...TypeStyle.buttonSm, fontSize: 13, lineHeight: 16, textAlign: 'center' },
+  title: { ...TypeStyle.title, fontSize: 20, lineHeight: 26, flex: 1, textAlign: 'center' },
 });

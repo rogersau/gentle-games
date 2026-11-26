@@ -20,14 +20,19 @@ import { Radius, Space, TypeStyle } from '../tokens';
 
 const HOLD_MS = 3000;
 const RING_LENGTH = 2 * Math.PI * 45;
+const PILL_HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 };
 
-export const GrownUpsGate: React.FC<{ enabled: boolean; onOpen: () => void; active?: boolean }> = ({
+export const useGrownUpsGate = ({
   enabled,
   onOpen,
   active = true,
+}: {
+  enabled: boolean;
+  onOpen: () => void;
+  active?: boolean;
 }) => {
   const { t } = useTranslation();
-  const { colors } = useThemeColors();
+  const { colors, resolvedMode } = useThemeColors();
   const [screenReader, setScreenReader] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [challenge, setChallenge] = useState<ReturnType<typeof generateMathQuestion> | null>(null);
@@ -118,46 +123,71 @@ export const GrownUpsGate: React.FC<{ enabled: boolean; onOpen: () => void; acti
         }
       : {};
 
-  return (
-    <>
-      <Pressable
-        {...webKeyboard}
-        style={[styles.pill, { backgroundColor: colors.sunken, borderColor: colors.outline }]}
-        accessibilityRole='button'
-        accessibilityLabel={t('settings.title')}
-        accessibilityHint={
-          enabled ? t(screenReader ? 'home.gateSumHint' : 'home.gateHoldHint') : undefined
-        }
-        onPress={(event) => {
-          // Keyboard and assistive technology generate an activation without a physical click.
-          const webActivation =
-            Platform.OS === 'web' &&
-            (event.nativeEvent as { detail?: number } | undefined)?.detail === 0;
-          if (!enabled || screenReader || webActivation) openChallenge();
-        }}
-        onAccessibilityTap={openChallenge}
-        accessibilityActions={[{ name: 'activate', label: t('settings.title') }]}
-        onAccessibilityAction={(event) => {
-          if (event.nativeEvent.actionName === 'activate') openChallenge();
-        }}
-        onPressIn={startHold}
-        onPressOut={cancelHold}
-        onLongPress={
-          enabled && !screenReader
-            ? () => {
-                if (timer.current !== null) {
-                  cancelHold();
-                  onOpen();
-                }
+  const holdVeilColor =
+    resolvedMode === 'dark' ? 'rgba(38, 42, 49, 0.94)' : 'rgba(251, 248, 241, 0.94)';
+
+  const renderPill = (floating = false) => (
+    <Pressable
+      {...webKeyboard}
+      hitSlop={PILL_HIT_SLOP}
+      style={({ pressed }) => [
+        styles.pill,
+        floating && styles.pillFloating,
+        {
+          backgroundColor: progress !== null ? colors.sky : colors.sunken,
+          borderColor: progress !== null ? colors.skyInk : 'transparent',
+          opacity: pressed && progress === null ? 0.85 : 1,
+        },
+      ]}
+      accessibilityRole='button'
+      accessibilityLabel={t('settings.title')}
+      accessibilityHint={
+        enabled ? t(screenReader ? 'home.gateSumHint' : 'home.gateHoldHint') : undefined
+      }
+      onPress={(event) => {
+        // Keyboard and assistive technology generate an activation without a physical click.
+        const webActivation =
+          Platform.OS === 'web' &&
+          (event.nativeEvent as { detail?: number } | undefined)?.detail === 0;
+        if (!enabled || screenReader || webActivation) openChallenge();
+      }}
+      onAccessibilityTap={openChallenge}
+      accessibilityActions={[{ name: 'activate', label: t('settings.title') }]}
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === 'activate') openChallenge();
+      }}
+      onPressIn={startHold}
+      onPressOut={cancelHold}
+      onLongPress={
+        enabled && !screenReader
+          ? () => {
+              if (timer.current !== null) {
+                cancelHold();
+                onOpen();
               }
-            : undefined
-        }
-        delayLongPress={HOLD_MS}
-        testID='home-grown-ups'
+            }
+          : undefined
+      }
+      delayLongPress={HOLD_MS}
+      testID='home-grown-ups'
+    >
+      {enabled && (
+        <ControlIcon
+          name='lock'
+          color={progress !== null ? colors.skyInk : colors.textLight}
+          size={14}
+        />
+      )}
+      <Text
+        style={[styles.pillLabel, { color: progress !== null ? colors.skyInk : colors.textLight }]}
       >
-        {enabled && <ControlIcon name='lock' color={colors.textLight} size={17} />}
-        <Text style={[TypeStyle.buttonSm, { color: colors.text }]}>{t('settings.title')}</Text>
-      </Pressable>
+        {t('settings.title')}
+      </Text>
+    </Pressable>
+  );
+
+  const overlays = (
+    <>
       <AppModal
         visible={challenge !== null}
         title={t('parentTimer.challengeLabel')}
@@ -204,7 +234,7 @@ export const GrownUpsGate: React.FC<{ enabled: boolean; onOpen: () => void; acti
       {progress !== null && (
         <View
           pointerEvents='none'
-          style={[styles.hold, { backgroundColor: colors.background }]}
+          style={[styles.hold, { backgroundColor: holdVeilColor }]}
           aria-hidden
           accessibilityElementsHidden
           importantForAccessibility='no-hide-descendants'
@@ -245,21 +275,44 @@ export const GrownUpsGate: React.FC<{ enabled: boolean; onOpen: () => void; acti
       )}
     </>
   );
+
+  return { pill: renderPill(false), floatingPill: renderPill(true), overlays };
+};
+
+export const GrownUpsGate: React.FC<{ enabled: boolean; onOpen: () => void; active?: boolean }> = ({
+  enabled,
+  onOpen,
+  active = true,
+}) => {
+  const { floatingPill, overlays } = useGrownUpsGate({ enabled, onOpen, active });
+  return (
+    <>
+      {floatingPill}
+      {overlays}
+    </>
+  );
 };
 
 const styles = StyleSheet.create({
   pill: {
     flexDirection: 'row',
-    gap: Space.xs,
+    gap: 5,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
     borderRadius: Radius.full,
     paddingHorizontal: Space.md,
-    minHeight: 48,
+    paddingVertical: Space.sm,
+    minHeight: 36,
+  },
+  pillFloating: {
     position: 'absolute',
     right: Space.base,
     top: Space.sm,
+  },
+  pillLabel: {
+    ...TypeStyle.helper,
+    fontWeight: '700',
   },
   hold: {
     ...StyleSheet.absoluteFillObject,

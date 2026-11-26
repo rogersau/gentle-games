@@ -42,8 +42,10 @@ export const GameCard: React.FC<GameCardProps> = ({
   disabled,
   testID,
 }) => {
-  const { colors } = useThemeColors();
+  const { colors, resolvedMode } = useThemeColors();
   const { t } = useTranslation();
+  const subtleBorder =
+    resolvedMode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(61, 68, 77, 0.07)';
 
   return (
     <Pressable
@@ -52,7 +54,8 @@ export const GameCard: React.FC<GameCardProps> = ({
         styles.card,
         {
           backgroundColor: colors[tileColors[gameId]],
-          borderColor: pressed ? colors.text : colors.outline,
+          borderColor: pressed ? colors.skyInk : subtleBorder,
+          opacity: pressed ? 0.92 : 1,
         },
         style,
       ]}
@@ -73,11 +76,11 @@ const styles = StyleSheet.create({
   card: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Space.xs,
+    gap: Space.xs + 2,
     borderRadius: 22,
     borderWidth: 1.5,
-    paddingVertical: Space.sm,
-    paddingHorizontal: Space.xs,
+    paddingVertical: Space.md,
+    paddingHorizontal: Space.sm,
     flex: 1,
   },
   title: { fontSize: 15, lineHeight: 20, textAlign: 'center' },

@@ -783,7 +783,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               style={[
                 styles.toolButton,
                 themedStyles.toolButton,
-                !canUndo && { backgroundColor: colors.sunken, borderColor: colors.outline },
+                !canUndo && { backgroundColor: colors.sunken, borderColor: colors.line },
               ]}
               onPress={handleUndo}
               disabled={!canUndo}
@@ -794,8 +794,11 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               accessibilityState={{ disabled: !canUndo }}
             >
               <ControlIcon name='undo' color={canUndo ? colors.text : colors.textLight} size={26} />
-              <Text style={[styles.toolLabel, { color: canUndo ? colors.text : colors.textLight }]}>
-                {t(!canUndo && hideClear ? 'games.drawing.undoUnavailable' : 'games.drawing.undo')}
+              <Text
+                numberOfLines={1}
+                style={[styles.toolLabel, { color: canUndo ? colors.text : colors.textLight }]}
+              >
+                {t('games.drawing.undo')}
               </Text>
             </TouchableOpacity>
 
