@@ -318,7 +318,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
     board: {
       borderRadius: 20,
       overflow: 'hidden',
-      backgroundColor: colors.primary,
+      backgroundColor: colors.sky,
       position: 'relative',
     },
     sun: {
@@ -328,7 +328,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       width: 38,
       height: 38,
       borderRadius: 19,
-      backgroundColor: colors.success,
+      backgroundColor: colors.butter,
       opacity: 0.9,
       borderWidth: 3,
       borderColor: `${colors.success}80`,
@@ -362,7 +362,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) =>
       right: 0,
       bottom: 0,
       height: GROUND_HEIGHT,
-      backgroundColor: colors.success,
+      backgroundColor: colors.sage,
       borderTopWidth: 3,
       borderTopColor: colors.cardBack,
     },

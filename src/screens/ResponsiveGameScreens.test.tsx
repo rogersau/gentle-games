@@ -7,6 +7,12 @@ import { GlitterScreen } from './GlitterScreen';
 import { KeepyUppyScreen } from './KeepyUppyScreen';
 
 const mockGoBack = jest.fn();
+type MockRenderShell = (
+  prompt: string,
+  action: React.ReactNode,
+  board: React.ReactNode,
+) => React.ReactNode;
+
 let mockBubbleProps: Record<string, unknown> = {};
 let mockCategoryProps: Record<string, unknown> = {};
 let mockKeepyProps: Record<string, unknown> = {};
@@ -43,8 +49,8 @@ jest.mock('../utils/theme', () => ({
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: {
-      animationsEnabled: false,
-      reducedMotionEnabled: false,
+      movement: 'still' as 'lively' | 'gentle' | 'still',
+
       soundEnabled: false,
       soundVolume: 0.5,
       showMochiInGames: false,
@@ -81,7 +87,8 @@ jest.mock('../components/CategoryMatchBoard', () => ({
   CategoryMatchBoard: (props: Record<string, unknown>) => {
     mockCategoryProps = props;
     const { View: MockView } = require('react-native');
-    return <MockView testID='category-board' />;
+    const shell = props.renderShell as MockRenderShell;
+    return shell('Sort the pictures.', null, <MockView testID='category-board' />);
   },
 }));
 jest.mock('../components/KeepyUppyBoard', () => ({
@@ -119,32 +126,33 @@ describe('responsive game screens', () => {
   it('fits Bubble Pop to a short narrow measured viewport', () => {
     const screen = render(<BubbleScreen />);
     layout(screen, 240, 300);
-    expect(mockBubbleProps.width).toBe(216);
-    expect(mockBubbleProps.height).toBe(220);
+    expect(mockBubbleProps.width).toBe(197);
+    expect(mockBubbleProps.height).toBe(232);
   });
 
   it('keeps Category Match interaction areas separated in a landscape scroll view', () => {
     const screen = render(<CategoryMatchScreen />);
     fireEvent.press(screen.getByText('Start Sorting'));
     layout(screen, 480, 320);
-    expect(mockCategoryProps.width).toBe(456);
-    expect(mockCategoryProps.height).toBe(540);
+    expect(mockCategoryProps.width).toBe(437);
+    expect(mockCategoryProps.height).toBe(300);
   });
 
   it('fits Keepy Uppy to a compact measured viewport', () => {
     const screen = render(<KeepyUppyScreen />);
     layout(screen, 260, 320);
     const bounds = mockKeepyProps.bounds as { width: number; height: number };
-    expect(bounds.width).toBe(236);
-    expect(bounds.height).toBe(220);
+    expect(bounds.width).toBe(217);
+    expect(bounds.height).toBe(236);
   });
 
   it('keeps Glitter controls rendered while the globe shrinks', () => {
     const screen = render(<GlitterScreen />);
     layout(screen, 240, 300);
-    expect(mockGlitterProps.width).toBe(180);
+    expect(mockGlitterProps.width).toBe(197);
     expect(screen.getByTestId('glitter-controls')).toBeTruthy();
-    expect(screen.getByTestId('glitter-clear-button')).toBeTruthy();
-    expect(screen.getByTestId('glitter-add-button')).toBeTruthy();
+    expect(screen.getByTestId('glitter-add-few-button')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('game-more'));
+    expect(screen.getByTestId('glitter-settle-button')).toBeTruthy();
   });
 });

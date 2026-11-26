@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["CalmNarrationModule"] },
+  "android": { "modules": ["expo.modules.calmnarration.CalmNarrationModule"] }
+}

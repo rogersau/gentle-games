@@ -23,19 +23,33 @@
     "soundOn": "Sound on",
     "soundOff": "Sound off",
     "enableSound": "Turn sound on",
-    "muteSound": "Turn sound off"
+    "muteSound": "Turn sound off",
+    "more": "More",
+    "playAgain": "Play again",
+    "hearIt": "Hear it",
+    "backPlain": "Back",
+    "pause": "Pause",
+    "resume": "Resume",
+    "againPrompt": "Would you like another go?"
   },
   "home": {
     "title": "Gentle Games",
     "subtitle": "Choose something gentle",
-    "emptyGames": "All games are hidden. Enable one in Settings.",
+    "emptyGames": "No games are on the shelf. A grown-up can add them back.",
     "settingsButton": "Settings",
     "settingsHint": "Opens app settings",
     "websiteLink": "Visit gentlegames.org",
     "websiteLinkFallback": {
       "title": "Website unavailable",
       "message": "We couldn't open the Gentle Games website right now. Please try again later."
-    }
+    },
+    "greeting": "Hello!",
+    "invitation": "What shall we play?",
+    "gateHoldHint": "Press and hold for three seconds to open grown-up settings.",
+    "gateSumHint": "Double-tap to open a quick sum.",
+    "gateHolding": "Keep holding…",
+    "gateHoldingDescription": "Hold for three seconds to open grown-up settings. Let go to return to the games.",
+    "gateQuestion": "{{question}} = ?"
   },
   "errorBoundary": {
     "iconAccessibilityLabel": "Gentle cloud icon",
@@ -214,7 +228,8 @@
       "chooseBoard": "Choose your cards",
       "boardSize_one": "{{count}} pair",
       "boardSize_other": "{{count}} pairs",
-      "boardChangeHint": "A different size starts a new board."
+      "boardChangeHint": "A different size starts a new board.",
+      "hintUnavailable": "Show one card · turn a card first"
     },
     "drawing": {
       "name": "Drawing Pad",
@@ -317,7 +332,9 @@
         "none": "Mirror off",
         "half": "Mirror ×2",
         "quarter": "Mirror ×4"
-      }
+      },
+      "undoUnavailable": "Undo · nothing yet",
+      "clearUnavailable": "Clear · nothing yet"
     },
     "glitterFall": {
       "name": "Glitter Fall",
@@ -370,7 +387,7 @@
       "startSorting": "Start Sorting",
       "startSortingHint": "Begin the category sorting game",
       "accessibilityLabel": "Category matching game",
-      "quickPreview": "Quick Preview",
+      "quickPreview": "Ready to sort?",
       "previewInstruction": "Put each picture with the group it belongs to.",
       "sortingInstruction": "Put the picture with things like it.",
       "interactionInstruction": "Tap a group, or drag the picture to it.",
@@ -466,7 +483,8 @@
         "lightning": "lightning",
         "snowflake": "snowflake",
         "star": "star"
-      }
+      },
+      "choosePictureSet": "Choose a picture set"
     },
     "keepyUppy": {
       "name": "Keepy Uppy",
@@ -482,7 +500,8 @@
       "popped": "Popped: {{count}}",
       "balloonAccessibility": "Balloon {{number}}",
       "liftHint": "Gives the balloon a lift",
-      "moveHint": "Moves the balloon to a different height"
+      "moveHint": "Moves the balloon to a different height",
+      "balloonLimit": "Balloon space is full"
     },
     "breathingGarden": {
       "name": "Breathing Garden",
@@ -493,7 +512,7 @@
       "resetSession": "Reset Session",
       "inhale": "Breathe In",
       "exhale": "Breathe Out",
-      "changeColor": "Change Color",
+      "changeColor": "Color",
       "breaths": "Breaths: {{count}}",
       "musicOn": "Play music",
       "musicOff": "Stop music",
@@ -509,8 +528,8 @@
       "soundOn": "Sound on",
       "soundOff": "Sound off",
       "visualLabel": "Breathing ball",
-      "visualOn": "Show breathing ball",
-      "visualOff": "Hide breathing ball",
+      "visualOn": "Show ball",
+      "visualOff": "Hide ball",
       "watching": "You can watch one breath.",
       "normalMessage": "Breathe in your own comfortable way. There is no pace to follow.",
       "finished": "Finished for now. You can start again or leave.",
@@ -519,7 +538,8 @@
       "session": {
         "title": "Choose a session",
         "breaths": "{{count}} breaths",
-        "openEnded": "Open-ended"
+        "openEnded": "Open-ended",
+        "chip": "{{length}} ▾"
       },
       "paused": "Paused — take your time"
     },
@@ -586,8 +606,8 @@
         "reveal": "The pattern is shown."
       },
       "guidance": {
-        "instruction": "Which picture goes in the empty carriage?",
-        "showPatternButton": "Show the pattern",
+        "instruction": "Which picture fills the gap?",
+        "showPatternButton": "Show me",
         "showPattern": "These pictures repeat: {{unit}}.",
         "model": "Model: {{sequence}}. Now choose the missing carriage.",
         "modelAccessibilityLabel": "Complete pattern: {{sequence}}.",
@@ -753,7 +773,7 @@
     }
   },
   "settings": {
-    "title": "Settings",
+    "title": "Grown-ups",
     "saving": "Saving…",
     "saved": "Saved",
     "persistenceError": "Settings could not be saved. Your changes are still shown, but may be lost if you close the app.",
@@ -763,7 +783,7 @@
       "colourMode": "Color Mode",
       "light": "Light",
       "dark": "Dark",
-      "system": "System",
+      "system": "Match device",
       "description": "Soft pastel tones are used in both light and dark modes"
     },
     "cardPreview": {
@@ -821,7 +841,8 @@
         "everyday": "Everyday things",
         "town": "Around town",
         "outdoors": "Outdoors"
-      }
+      },
+      "showPreview": "Show picture groups before play"
     },
     "animations": {
       "label": "Animations",
@@ -927,7 +948,7 @@
       "description": "Hide games you don't want on the home screen"
     },
     "parentTimer": {
-      "title": "Parent Timer",
+      "title": "Break reminder",
       "off": "Off",
       "duration": "{{count}} min",
       "duration_one": "{{count}} min",
@@ -936,19 +957,55 @@
     },
     "language": {
       "title": "Language",
-      "description": "Choose your preferred language"
+      "description": "Choose your preferred language",
+      "en-AU": "English (Australia)",
+      "en-US": "English (United States)"
     },
     "telemetry": {
       "label": "Share anonymous app updates",
       "description": "Analytics and crash reports stay off until you turn this on."
     },
     "showMochiInGames": {
-      "label": "Show Mochi in games",
+      "label": "Mochi cheers in games",
       "description": "Mochi appears to celebrate milestones and encourage during games. Turn off for a quieter experience."
     },
     "pressureFreeMode": {
       "label": "Pressure-free play",
       "description": "Hide scores, timers, counters, streaks, and milestone celebrations while keeping essential game guidance."
+    },
+    "comfort": "Comfort",
+    "play": "Play",
+    "app": "App",
+    "challenge": "Challenge",
+    "help": "Help",
+    "movement": {
+      "title": "Movement",
+      "still": "Still",
+      "gentle": "Gentle",
+      "lively": "Lively",
+      "description": "Still keeps games steady. Gentle allows play movement. Lively adds animated feedback.",
+      "device": "Your device’s reduced-motion setting keeps games still."
+    },
+    "grownUpsHoldGate": {
+      "label": "Grown-ups hold gate",
+      "description": "Hold the Grown-ups button for three seconds to open these settings."
+    },
+    "games": {
+      "title": "Games",
+      "description": "Show, hide and adjust each game.",
+      "onHome": "On Home",
+      "showOnHome": "Show this game on Home",
+      "shown": "Shown",
+      "hidden": "Hidden"
+    },
+    "privacy": {
+      "title": "Privacy & about",
+      "websiteLink": "Visit gentlegames.org",
+      "websiteFallback": {
+        "title": "Website unavailable",
+        "message": "We couldn't open the Gentle Games website right now. Please try again later."
+      },
+      "version": "Version {{version}}"
     }
   },
   "parentTimer": {
@@ -963,7 +1020,8 @@
     "holdToContinueHint": "Press and hold for three seconds to start a new session. With a screen reader, use the Continue Playing action."
   },
   "accessibility": {
-    "gameCardHint": "Double tap to play this game"
+    "gameCardHint": "Double tap to play this game",
+    "gameCardLabel": "{{title}}. {{description}}"
   },
   "mascot": {
     "greeting": "Hello, friend!",

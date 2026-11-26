@@ -12,6 +12,7 @@ export const GameHeader: React.FC<{ title: string; onBack: () => void }> = ({ ti
   const { colors } = useThemeColors();
   const { settings, updateSettings } = useSettings();
   const soundEnabled = settings.soundEnabled === true;
+  const soundInk = soundEnabled ? colors.skyInk : colors.text;
   const controlStyle = [
     styles.control,
     { backgroundColor: colors.surface, borderColor: colors.border },
@@ -52,7 +53,14 @@ export const GameHeader: React.FC<{ title: string; onBack: () => void }> = ({ ti
       </Text>
       <TouchableOpacity
         onPress={() => void updateSettings({ soundEnabled: !soundEnabled })}
-        style={controlStyle}
+        style={[
+          controlStyle,
+          soundEnabled && {
+            backgroundColor: colors.sky,
+            borderColor: colors.skyInk,
+            borderWidth: 2,
+          },
+        ]}
         accessibilityRole='switch'
         accessibilityState={{ checked: soundEnabled }}
         aria-checked={soundEnabled}
@@ -64,21 +72,19 @@ export const GameHeader: React.FC<{ title: string; onBack: () => void }> = ({ ti
           <Path
             d='M3 9h4l5-5v16l-5-5H3Z'
             fill='none'
-            stroke={colors.text}
+            stroke={soundInk}
             strokeWidth={1.8}
             strokeLinejoin='round'
           />
           <Path
             d={soundEnabled ? 'M16 8q4 4 0 8 M19 4q7 8 0 16' : 'M16 9l6 6 M22 9l-6 6'}
             fill='none'
-            stroke={colors.text}
+            stroke={soundInk}
             strokeWidth={1.8}
             strokeLinecap='round'
           />
         </Svg>
-        <Text style={[styles.label, { color: colors.text }]}>
-          {t(soundEnabled ? 'common.soundOn' : 'common.soundOff')}
-        </Text>
+        <Text style={[styles.label, { color: soundInk }]}>{t('settings.sound.label')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -104,6 +110,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: Space.xs,
   },
-  label: { ...TypeStyle.buttonSm, fontSize: 12, textAlign: 'center' },
-  title: { ...TypeStyle.h3, fontSize: 19, flex: 1, textAlign: 'center' },
+  label: { ...TypeStyle.buttonSm, textAlign: 'center' },
+  title: { ...TypeStyle.title, flex: 1, textAlign: 'center' },
 });

@@ -25,8 +25,7 @@ import { initializeSounds, unloadSounds } from './src/utils/sounds';
 import { installPwaBackNavigationGuard } from './src/utils/pwaBackGuard';
 import { trackScreenView } from './src/utils/analytics';
 import { PASTEL_COLORS } from './src/types';
-import { useThemeColors } from './src/utils/theme';
-import { useAnimationEnabled } from './src/ui/animations';
+import { SystemMotionProvider, useReducedMotion, useThemeColors } from './src/utils/theme';
 import { useFonts } from './src/ui/fonts';
 import { GentleErrorBoundary } from './src/components/GentleErrorBoundary';
 import { installPwaInteractionGuards } from './src/utils/pwaInteractionGuards';
@@ -58,13 +57,13 @@ function getActiveRouteName(state: NavigationState | undefined): string | undefi
 }
 
 const AppNavigator: React.FC = () => {
-  const { resolvedMode } = useThemeColors();
-  const animationEnabled = useAnimationEnabled();
+  const { colors, resolvedMode } = useThemeColors();
+  const reducedMotion = useReducedMotion();
   const routeNameRef = useRef<AppRouteName | undefined>(undefined);
 
   useEffect(() => {
     if (Platform.OS === 'web') {
-      const themeColor = resolvedMode === 'dark' ? '#2F333B' : '#FFFEF7';
+      const themeColor = colors.background;
       const metaTag = document.querySelector('meta[name="theme-color"]');
       if (metaTag) {
         metaTag.setAttribute('content', themeColor);
@@ -75,7 +74,7 @@ const AppNavigator: React.FC = () => {
         document.head.appendChild(newMeta);
       }
     }
-  }, [resolvedMode]);
+  }, [colors.background]);
 
   const handleStateChange = useCallback((state: NavigationState | undefined) => {
     const currentRouteName = getActiveRouteName(state);
@@ -94,8 +93,9 @@ const AppNavigator: React.FC = () => {
         <Stack.Navigator
           screenOptions={{
             headerShown: false,
-            animation: animationEnabled ? 'default' : 'none',
-            cardStyle: { flex: 1, minHeight: 0 },
+            animation: reducedMotion ? 'none' : 'fade',
+            gestureEnabled: false,
+            cardStyle: { flex: 1, minHeight: 0, backgroundColor: colors.background },
           }}
         >
           <Stack.Screen name={APP_ROUTES.Home}>
@@ -215,11 +215,13 @@ export const AppContent: React.FC = () => {
   }
 
   return (
-    <ParentTimerProvider>
-      <MochiProvider>
-        <AppNavigator />
-      </MochiProvider>
-    </ParentTimerProvider>
+    <SystemMotionProvider>
+      <ParentTimerProvider>
+        <MochiProvider>
+          <AppNavigator />
+        </MochiProvider>
+      </ParentTimerProvider>
+    </SystemMotionProvider>
   );
 };
 

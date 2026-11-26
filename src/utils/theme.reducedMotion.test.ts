@@ -3,8 +3,8 @@ import { AccessibilityInfo } from 'react-native';
 import { useReducedMotion } from './theme';
 
 let mockSettings = {
+  movement: 'gentle',
   colorMode: 'system' as const,
-  reducedMotionEnabled: false,
 };
 
 jest.mock('../context/SettingsContext', () => ({
@@ -17,8 +17,8 @@ describe('useReducedMotion', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSettings = {
+      movement: 'gentle',
       colorMode: 'system',
-      reducedMotionEnabled: false,
     };
   });
 
@@ -36,7 +36,7 @@ describe('useReducedMotion', () => {
   });
 
   it('returns true when user explicitly enables reduced motion', async () => {
-    mockSettings.reducedMotionEnabled = true;
+    mockSettings.movement = 'still';
     jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(false);
     jest.spyOn(AccessibilityInfo, 'addEventListener').mockReturnValue({
       remove: jest.fn(),

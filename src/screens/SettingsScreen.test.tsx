@@ -1,18 +1,28 @@
 import React from 'react';
-import { Text } from 'react-native';
-import { fireEvent, render } from '@testing-library/react-native';
-import { useTranslation } from 'react-i18next';
+import { AccessibilityInfo } from 'react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { SettingsScreen } from './SettingsScreen';
-import { TranslationKey } from '../i18n/types';
+import type { GameId } from '../games/registry';
+import type { AppStackParamList, SettingsPage } from '../types/navigation';
+import { openExternalUrl } from '../utils/externalLinks';
 import { DEFAULT_GAME_SETTINGS } from '../games/settings';
 import { GLITTER_PRESETS } from '../games/glitterSettings';
 
 const mockGoBack = jest.fn();
+const mockPush = jest.fn();
+const mockDone = jest.fn();
+let mockParams: AppStackParamList['Settings'];
+jest.mock('../utils/externalLinks', () => ({ openExternalUrl: jest.fn() }));
+const renderPage = (page: SettingsPage, gameId?: GameId) => {
+  mockParams = { page, gameId };
+  return render(<SettingsScreen />);
+};
 const mockUpdateSettings = jest.fn();
 let mockIsSaving = false;
 let mockPersistenceError: string | null = null;
 let mockSettings: any = {
-  animationsEnabled: true,
+  movement: 'lively',
+  grownUpsHoldGate: true,
   soundEnabled: true,
   soundVolume: 0.5,
   difficulty: 'medium' as const,
@@ -24,21 +34,18 @@ let mockSettings: any = {
   parentTimerMinutes: 0,
   enableUnfinishedGames: true,
   language: 'en-AU' as const,
-  reducedMotionEnabled: false,
   telemetryEnabled: false,
   showMochiInGames: true,
   pressureFreeMode: false,
 };
 
-const TranslationProbe = ({ translationKey }: { translationKey: TranslationKey }) => {
-  const { t } = useTranslation();
-  return <Text>{t(translationKey)}</Text>;
-};
-
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     goBack: mockGoBack,
+    push: mockPush,
+    popToTop: mockDone,
   }),
+  useRoute: () => ({ params: mockParams }),
 }));
 
 jest.mock('../context/SettingsContext', () => ({
@@ -54,10 +61,12 @@ jest.mock('../context/SettingsContext', () => ({
 describe('SettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockParams = undefined;
     mockIsSaving = false;
     mockPersistenceError = null;
     mockSettings = {
-      animationsEnabled: true,
+      movement: 'lively',
+      grownUpsHoldGate: true,
       soundEnabled: true,
       soundVolume: 0.5,
       difficulty: 'medium',
@@ -69,7 +78,6 @@ describe('SettingsScreen', () => {
       parentTimerMinutes: 0,
       enableUnfinishedGames: true,
       language: 'en-AU',
-      reducedMotionEnabled: false,
       telemetryEnabled: false,
       showMochiInGames: true,
       pressureFreeMode: false,
@@ -77,7 +85,7 @@ describe('SettingsScreen', () => {
   });
 
   it('updates color mode from appearance options', () => {
-    const screen = render(React.createElement(SettingsScreen));
+    const screen = renderPage('appearance');
     fireEvent.press(screen.getByText('Dark'));
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({ colorMode: 'dark' });
@@ -92,14 +100,14 @@ describe('SettingsScreen', () => {
   });
 
   it('updates Memory Snap preview setting', () => {
-    const screen = render(React.createElement(SettingsScreen));
+    const screen = renderPage('game', 'memory-snap');
     fireEvent.press(screen.getByRole('radio', { name: 'None' }));
 
     expect(mockUpdateSettings).toHaveBeenCalledWith('memory-snap', { previewMode: 'none' });
   });
 
   it('keeps Category Match at two groups by default and allows the explicit third group', () => {
-    const screen = render(React.createElement(SettingsScreen));
+    const screen = renderPage('game', 'category-match');
     expect(screen.getByRole('radio', { name: 'Two groups' })).toBeTruthy();
     fireEvent.press(screen.getByRole('radio', { name: 'Three groups' }));
 
@@ -107,7 +115,7 @@ describe('SettingsScreen', () => {
   });
 
   it('selects an Outdoors picture set independently of the group count', () => {
-    const screen = render(<SettingsScreen />);
+    const screen = renderPage('game', 'category-match');
     expect(screen.getByRole('radio', { name: 'Everyday things' })).toBeChecked();
     fireEvent.press(screen.getByRole('radio', { name: 'Outdoors' }));
     expect(mockUpdateSettings).toHaveBeenCalledWith('category-match', { pack: 'outdoors' });
@@ -115,7 +123,7 @@ describe('SettingsScreen', () => {
 
   it('persists Number Picnic quantity independently from global difficulty', () => {
     mockSettings.gameSettings = { ...DEFAULT_GAME_SETTINGS };
-    const screen = render(React.createElement(SettingsScreen));
+    const screen = renderPage('game', 'number-picnic');
 
     fireEvent.press(screen.getByRole('radio', { name: '6–10' }));
 
@@ -128,7 +136,7 @@ describe('SettingsScreen', () => {
 
   it('selects a Number Picnic mode and optional spoken counting independently', () => {
     mockSettings.gameSettings = { ...DEFAULT_GAME_SETTINGS };
-    const screen = render(React.createElement(SettingsScreen));
+    const screen = renderPage('game', 'number-picnic');
 
     fireEvent.press(screen.getByRole('radio', { name: 'Find the amount' }));
     expect(mockUpdateSettings).toHaveBeenCalledWith('number-picnic', { mode: 'find-amount' });
@@ -145,7 +153,7 @@ describe('SettingsScreen', () => {
   });
 
   it('toggles Keepy Uppy easy mode setting', () => {
-    const screen = render(React.createElement(SettingsScreen));
+    const screen = renderPage('game', 'keepy-uppy');
     const keepyUppySwitch = screen.getByRole('switch', { name: /Keepy Uppy Easy Mode/i });
     fireEvent.press(keepyUppySwitch);
 
@@ -157,7 +165,7 @@ describe('SettingsScreen', () => {
       ...DEFAULT_GAME_SETTINGS,
       'glitter-fall': GLITTER_PRESETS.explore,
     };
-    const screen = render(<SettingsScreen />);
+    const screen = renderPage('game', 'glitter-fall');
 
     fireEvent.press(screen.getByRole('switch', { name: /settings.glitterFall.ripples/i }));
     expect(mockUpdateSettings).toHaveBeenCalledWith('glitter-fall', { ripples: false });
@@ -168,46 +176,40 @@ describe('SettingsScreen', () => {
       ...DEFAULT_GAME_SETTINGS,
       'glitter-fall': { ...GLITTER_PRESETS.watch, colorCount: 6, ripples: true },
     };
-    const screen = render(<SettingsScreen />);
+    const screen = renderPage('game', 'glitter-fall');
 
     fireEvent.press(screen.getByText('settings.glitterFall.resetPreset'));
     expect(mockUpdateSettings).toHaveBeenCalledWith('glitter-fall', GLITTER_PRESETS.watch);
   });
 
-  it('autosaves changes without a Save action and has one clear back path', () => {
-    const screen = render(React.createElement(SettingsScreen));
-
+  it('gives the hub a single Done action and opens Games as a child page', () => {
+    const screen = render(<SettingsScreen />);
     expect(screen.queryByText('Save')).toBeNull();
-    expect(screen.getAllByText('← Back')).toHaveLength(1);
-
-    fireEvent.press(screen.getByText('← Back'));
-    expect(mockGoBack).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Back')).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Games' }));
+    expect(mockPush).toHaveBeenCalledWith('Settings', { page: 'games', gameId: undefined });
+    fireEvent.press(screen.getByRole('button', { name: 'Done' }));
+    expect(mockDone).toHaveBeenCalledTimes(1);
   });
 
-  it('shows accessible autosave status without announcing every update', () => {
-    const screen = render(React.createElement(SettingsScreen));
-
-    expect(screen.getByTestId('settings-persistence-status').props.children).toBe('Saved');
-    expect(screen.getByTestId('settings-persistence-status').props.accessibilityLiveRegion).toBe(
-      'none',
-    );
-
+  it('only shows an accessible persistence banner on failure', () => {
+    const screen = render(<SettingsScreen />);
+    expect(screen.queryByTestId('settings-persistence-status')).toBeNull();
     mockIsSaving = true;
-    screen.rerender(React.createElement(SettingsScreen));
-    expect(screen.getByTestId('settings-persistence-status').props.children).toBe('Saving…');
-
+    screen.rerender(<SettingsScreen />);
+    expect(screen.queryByTestId('settings-persistence-status')).toBeNull();
     mockIsSaving = false;
     mockPersistenceError = 'storage failed';
-    screen.rerender(React.createElement(SettingsScreen));
-    expect(screen.getByTestId('settings-persistence-status').props.children).toContain(
-      'Settings could not be saved',
+    screen.rerender(<SettingsScreen />);
+    expect(screen.getByTestId('settings-persistence-status')).toHaveTextContent(
+      /Settings could not be saved/,
     );
     expect(screen.getByTestId('settings-persistence-status').props.accessibilityRole).toBe('alert');
   });
 
   it('toggles game visibility via switch', () => {
-    const screen = render(React.createElement(SettingsScreen));
-    const memorySnapSwitch = screen.getByRole('switch', { name: /Memory Snap/i });
+    const screen = renderPage('game', 'memory-snap');
+    const memorySnapSwitch = screen.getByRole('switch', { name: 'Show this game on Home' });
     fireEvent.press(memorySnapSwitch);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({
@@ -215,24 +217,24 @@ describe('SettingsScreen', () => {
     });
   });
 
-  it('shows Number Picnic controls and the home screen switch only after opting in', () => {
+  it('only lists Number Picnic after opting in and opens its separate detail', () => {
     mockSettings.enableUnfinishedGames = false;
-    const screen = render(<SettingsScreen />);
-
-    expect(screen.queryByRole('switch', { name: 'Number Picnic' })).toBeNull();
-    expect(screen.queryByRole('radio', { name: '6–10' })).toBeNull();
-
+    const screen = renderPage('games');
+    expect(screen.queryByRole('button', { name: 'Number Picnic' })).toBeNull();
     mockSettings.enableUnfinishedGames = true;
     screen.rerender(<SettingsScreen />);
-    expect(screen.getByRole('switch', { name: 'Number Picnic' })).toBeTruthy();
-    expect(screen.getByRole('radio', { name: '6–10' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Number Picnic' }));
+    expect(mockPush).toHaveBeenCalledWith('Settings', { page: 'game', gameId: 'number-picnic' });
+    expect(screen.queryByRole('radio', { name: '6–10' })).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(mockGoBack).toHaveBeenCalled();
   });
 
   it('removes a game from hidden games when re-enabled', () => {
     mockSettings.hiddenGames = ['memory-snap'];
 
-    const screen = render(React.createElement(SettingsScreen));
-    const memorySnapSwitch = screen.getByRole('switch', { name: /Memory Snap/i });
+    const screen = renderPage('game', 'memory-snap');
+    const memorySnapSwitch = screen.getByRole('switch', { name: 'Show this game on Home' });
     fireEvent.press(memorySnapSwitch);
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({
@@ -241,18 +243,27 @@ describe('SettingsScreen', () => {
   });
 
   it('selects parent timer duration', () => {
-    const screen = render(React.createElement(SettingsScreen));
+    const screen = renderPage('break');
     fireEvent.press(screen.getByText('15 min'));
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({ parentTimerMinutes: 15 });
   });
 
-  it('toggles animations setting', () => {
-    const screen = render(React.createElement(SettingsScreen));
-    const animationsSwitch = screen.getByRole('switch', { name: /Animations/i });
-    fireEvent.press(animationsSwitch);
+  it('saves one movement preference, with a visible current state and OS override notice', async () => {
+    const motion = jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
+    const screen = render(<SettingsScreen />);
+    expect(screen.getByRole('radio', { name: 'Lively' })).toBeChecked();
+    expect(screen.queryByRole('switch', { name: 'Animations' })).toBeNull();
+    fireEvent.press(screen.getByRole('radio', { name: 'Still' }));
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ movement: 'still' });
+    await screen.findByText(/device’s reduced-motion setting/);
+    motion.mockRestore();
+  });
 
-    expect(mockUpdateSettings).toHaveBeenCalledWith({ animationsEnabled: false });
+  it('allows a family to turn the hold gate off', () => {
+    const screen = render(<SettingsScreen />);
+    fireEvent.press(screen.getByRole('switch', { name: 'Grown-ups hold gate' }));
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ grownUpsHoldGate: false });
   });
 
   it('toggles sound setting', () => {
@@ -273,7 +284,7 @@ describe('SettingsScreen', () => {
   });
 
   it('shows a telemetry toggle with calm localized privacy copy', () => {
-    const screen = render(React.createElement(SettingsScreen));
+    const screen = renderPage('privacy');
 
     expect(screen.getByText('Share anonymous app updates')).toBeTruthy();
     expect(
@@ -282,7 +293,7 @@ describe('SettingsScreen', () => {
   });
 
   it('toggles telemetry consent on and off', () => {
-    const firstScreen = render(React.createElement(SettingsScreen));
+    const firstScreen = renderPage('privacy');
     const telemetryOffSwitch = firstScreen.getByRole('switch', {
       name: /Share anonymous app updates/i,
     });
@@ -293,7 +304,7 @@ describe('SettingsScreen', () => {
     mockUpdateSettings.mockClear();
     mockSettings.telemetryEnabled = true;
 
-    const secondScreen = render(React.createElement(SettingsScreen));
+    const secondScreen = renderPage('privacy');
     const telemetryOnSwitch = secondScreen.getByRole('switch', {
       name: /Share anonymous app updates/i,
     });
@@ -302,23 +313,19 @@ describe('SettingsScreen', () => {
     expect(mockUpdateSettings).toHaveBeenCalledWith({ telemetryEnabled: false });
   });
 
-  it('provides localized website fallback strings for downstream reuse', () => {
-    const titleProbe = render(<TranslationProbe translationKey='home.websiteLinkFallback.title' />);
-    const messageProbe = render(
-      <TranslationProbe translationKey='home.websiteLinkFallback.message' />,
-    );
-
-    expect(titleProbe.getByText('Website unavailable')).toBeTruthy();
-    expect(
-      messageProbe.getByText(
-        "We couldn't open the Gentle Games website right now. Please try again later.",
-      ),
-    ).toBeTruthy();
+  it('keeps the website in Privacy & about and explains offline failures', async () => {
+    jest.mocked(openExternalUrl).mockResolvedValueOnce('failed');
+    const screen = renderPage('privacy');
+    fireEvent.press(screen.getByRole('link', { name: 'Visit gentlegames.org' }));
+    expect(openExternalUrl).toHaveBeenCalledWith('https://gentlegames.org');
+    await waitFor(() => expect(screen.getByText('Website unavailable')).toBeTruthy());
+    fireEvent.press(screen.getByText('Close'));
+    expect(screen.getByText(/^Version /)).toBeTruthy();
   });
 
   it('toggles pressure-free play mode', () => {
     const screen = render(React.createElement(SettingsScreen));
-    const pressureSwitch = screen.getByRole('switch', { name: /pressureFreeMode.label/i });
+    const pressureSwitch = screen.getByRole('switch', { name: /pressure-free play/i });
     fireEvent.press(pressureSwitch);
     expect(mockUpdateSettings).toHaveBeenCalledWith({ pressureFreeMode: true });
   });

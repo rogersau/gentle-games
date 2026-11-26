@@ -1,5 +1,5 @@
 import { DARK_PASTEL_COLORS, PASTEL_COLORS } from '../types';
-import { ON_ACCENT_TEXT } from './tokens';
+import { ON_ACCENT_TEXT, SWITCH_ON_THUMB, SWITCH_ON_TRACK } from './tokens';
 
 const luminance = (hex: string) => {
   const channels = hex
@@ -18,17 +18,34 @@ const contrast = (foreground: string, background: string) => {
 };
 
 describe.each([
-  ['light', PASTEL_COLORS],
-  ['dark', DARK_PASTEL_COLORS],
-] as const)('%s theme readability', (_name, colors) => {
-  it.each(['primary', 'secondary', 'danger'] as const)(
-    'keeps %s button labels readable',
-    (fill) => {
-      expect(contrast(ON_ACCENT_TEXT, colors[fill])).toBeGreaterThanOrEqual(4.5);
-    },
-  );
-  it('keeps secondary instructions readable on game surfaces', () => {
-    expect(contrast(colors.textLight, colors.background)).toBeGreaterThanOrEqual(4.5);
-    expect(contrast(colors.textLight, colors.surfaceGame)).toBeGreaterThanOrEqual(4.5);
+  ['light', PASTEL_COLORS, PASTEL_COLORS.text],
+  ['dark', DARK_PASTEL_COLORS, ON_ACCENT_TEXT],
+] as const)('%s theme readability', (_name, colors, primaryButtonText) => {
+  it.each([
+    ['skyInk', 'sky'],
+    ['lavenderInk', 'lavender'],
+    ['sageInk', 'sage'],
+    ['peachInk', 'peach'],
+    ['text', 'background'],
+    ['text', 'surface'],
+    ['textLight', 'background'],
+    ['textLight', 'surfaceGame'],
+    ['textLight', 'sunken'],
+    ['text', 'rose'],
+    ['text', 'butter'],
+  ] as const)('gives %s text on %s at least 4.5:1 contrast', (ink, fill) => {
+    expect(contrast(colors[ink], colors[fill])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('keeps the primary button label readable', () => {
+    expect(contrast(primaryButtonText, colors.primary)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('keeps the switch track, switch thumb and selected border perceivable', () => {
+    expect(contrast(colors.outline, colors.background)).toBeGreaterThanOrEqual(3);
+    expect(contrast(colors.outline, colors.surface)).toBeGreaterThanOrEqual(3);
+    expect(contrast(colors.skyInk, colors.surface)).toBeGreaterThanOrEqual(3);
+    expect(contrast(colors.skyInk, colors.sky)).toBeGreaterThanOrEqual(3);
+    expect(contrast(SWITCH_ON_THUMB, SWITCH_ON_TRACK)).toBeGreaterThanOrEqual(3);
   });
 });

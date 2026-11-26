@@ -61,14 +61,14 @@ jest.mock('./src/context/SettingsContext', () => {
         theme: 'animals',
         soundEnabled: true,
         soundVolume: 0.7,
-        animationsEnabled: true,
+        movement: 'lively',
+        grownUpsHoldGate: true,
         colorMode: 'light' as const,
         showCardPreview: false,
         keepyUppyEasyMode: true,
         hiddenGames: [],
         parentTimerMinutes: 0,
         language: 'en-AU',
-        reducedMotionEnabled: false,
         telemetryEnabled: false,
       },
       updateSettings: jest.fn(),
@@ -87,7 +87,7 @@ jest.mock('react-i18next', () => ({
       const translations: Record<string, string> = {
         'home.title': 'Gentle Games',
         'home.subtitle': 'Choose something gentle',
-        'home.emptyGames': 'All games are hidden. Enable one in Settings.',
+        'home.emptyGames': 'No games are on the shelf. A grown-up can add them back.',
         'home.settingsButton': 'Settings',
         'home.settingsHint': 'Opens app settings',
         'home.websiteLink': 'Visit gentlegames.org',
@@ -145,7 +145,7 @@ jest.mock('react-i18next', () => ({
         'difficulty.easy.label': 'Easy',
         'difficulty.medium.label': 'Medium',
         'difficulty.hard.label': 'Hard',
-        'settings.title': 'Settings',
+        'settings.title': 'Grown-ups',
         'settings.saving': 'Saving…',
         'settings.saved': 'Saved',
         'settings.persistenceError':
@@ -212,6 +212,7 @@ jest.mock('react-i18next', () => ({
         'settings.memorySnap.hint.description':
           'Allow a quiet look at one card you have seen before',
         'settings.animations.label': 'Animations',
+        'settings.pressureFreeMode.label': 'Pressure-free play',
         'settings.keepyUppyEasyMode.label': 'Keepy Uppy Easy Mode',
         'settings.sound.label': 'Sound',
         'settings.telemetry.label': 'Share anonymous app updates',
@@ -219,7 +220,7 @@ jest.mock('react-i18next', () => ({
           'Analytics and crash reports stay off until you turn this on.',
         'settings.volume.title': 'Volume',
         'settings.gamesOnHomeScreen.title': 'Games on Home Screen',
-        'settings.parentTimer.title': 'Parent Timer',
+        'settings.parentTimer.title': 'Break reminder',
         'settings.parentTimer.off': 'Off',
         'settings.parentTimer.duration': '{{count}} min',
         'games.keepyUppy.addBalloon': '+ Balloon',
@@ -245,7 +246,7 @@ jest.mock('react-i18next', () => ({
         'games.keepyUppy.popped': 'Popped: {{count}}',
         // Category Match
         'games.categoryMatch.title': 'Category Match',
-        'games.categoryMatch.quickPreview': 'Quick Preview',
+        'games.categoryMatch.quickPreview': 'Ready to sort?',
         'games.categoryMatch.dragInstruction': 'Drag each item to the correct category box',
         'games.categoryMatch.startSortingHint': 'Begin the category sorting game',
         'games.categoryMatch.previewInstruction':
@@ -326,7 +327,26 @@ jest.mock('react-i18next', () => ({
         'games.breathingGarden.breaths': 'Breaths',
       };
 
-      const translation = translations[key] || key;
+      const localeValue = key
+        .split('.')
+        .reduce<unknown>(
+          (value, part) =>
+            value && typeof value === 'object'
+              ? (value as Record<string, unknown>)[part]
+              : undefined,
+          require('./src/i18n/locales/en-AU.json'),
+        );
+      const translation =
+        translations[key] ||
+        (typeof localeValue === 'string' &&
+        (/^settings\.(comfort|play|app|games\.|challenge|help|privacy\.|movement\.|grownUpsHoldGate\.)/.test(
+          key,
+        ) ||
+          /^common\.(more|playAgain|hearIt|backPlain|pause|resume|done)$/.test(key) ||
+          /^home\.(greeting|invitation|gate)/.test(key) ||
+          key === 'accessibility.gameCardLabel')
+          ? localeValue
+          : key);
 
       // Simple interpolation for values like {{letter}}
       if (options && typeof options === 'object') {

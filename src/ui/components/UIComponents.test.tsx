@@ -215,7 +215,7 @@ describe('UI Components', () => {
 
   describe('GameCard', () => {
     it('renders game info', () => {
-      const { getByText } = render(
+      const { getByText, queryByText, getByRole } = render(
         <GameCard
           gameId='memory-snap'
           title='Game Title'
@@ -224,7 +224,8 @@ describe('UI Components', () => {
         />,
       );
       expect(getByText('Game Title')).toBeTruthy();
-      expect(getByText('Game description')).toBeTruthy();
+      expect(queryByText('Game description')).toBeNull();
+      expect(getByRole('button', { name: 'Game Title. Game description' })).toBeTruthy();
     });
 
     it('calls onPress when pressed', () => {
@@ -238,13 +239,7 @@ describe('UI Components', () => {
 
     it('applies accent color', () => {
       const { getByText, getByTestId } = render(
-        <GameCard
-          gameId='memory-snap'
-          title='Game'
-          description='Desc'
-          onPress={jest.fn()}
-          accentColor='#FF0000'
-        />,
+        <GameCard gameId='memory-snap' title='Game' description='Desc' onPress={jest.fn()} />,
       );
       expect(getByText('Game')).toBeTruthy();
       expect(getByTestId('game-artwork-memory-snap')).toBeTruthy();

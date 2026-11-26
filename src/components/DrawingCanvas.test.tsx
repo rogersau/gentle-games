@@ -284,7 +284,7 @@ describe('DrawingCanvas', () => {
     });
     fireEvent.press(screen.getByTestId('shape-option-square'));
     fireEvent.press(screen.getByTestId('shape-size-large'));
-    fireEvent.press(screen.getByRole('button', { name: 'common.done' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Done' }));
 
     const touchLayer = findTouchLayer(screen);
     act(() => {
@@ -390,7 +390,7 @@ describe('DrawingCanvas', () => {
     fireEvent.press(
       shapeScreen.getByLabelText('games.drawing.shapeTool, games.drawing.shape.circle'),
     );
-    fireEvent.press(shapeScreen.getByRole('button', { name: 'common.done' }));
+    fireEvent.press(shapeScreen.getByRole('button', { name: 'Done' }));
 
     drawGesture(shapeScreen, { x: 80, y: 100 });
 

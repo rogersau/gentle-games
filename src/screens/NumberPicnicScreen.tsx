@@ -1,3 +1,4 @@
+import { GamePrompt } from '../ui/components/GameShell';
 import React, { useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -185,7 +186,7 @@ export const NumberPicnicScreen: React.FC = () => {
           variant='elevated'
           style={compactPlacement ? styles.compactPromptCard : styles.promptCard}
         >
-          <Text style={styles.promptText}>{instruction}</Text>
+          <GamePrompt prompt={instruction} />
           {(isPlacementMode || mode === 'match-numeral') && (
             <NumberPicnicRepresentation
               representation={representation}
@@ -346,7 +347,7 @@ export const NumberPicnicScreen: React.FC = () => {
             )}
             {phase === 'modelled' && (
               <View style={styles.model}>
-                {modelGroup && <Text style={styles.promptText}>{groupTitle(modelGroup.id)}</Text>}
+                {modelGroup && <Text style={styles.feedback}>{groupTitle(modelGroup.id)}</Text>}
                 <NumberPicnicRepresentation
                   representation={modelGroup?.representation ?? representation}
                   accessibilityLabel={
@@ -412,7 +413,6 @@ const createStyles = (colors: ThemeColors) =>
       marginBottom: Space.xs,
       padding: Space.xs,
     },
-    promptText: { ...TypeStyle.body, color: colors.text, textAlign: 'center' },
     basket: { marginBottom: Space.lg, zIndex: 1 },
     compactBasket: { marginBottom: Space.base, zIndex: 1 },
     blanket: { marginBottom: Space.md },

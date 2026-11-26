@@ -1,7 +1,18 @@
+import type { GameId } from '../games/registry';
+
+export type SettingsPage =
+  | 'hub'
+  | 'games'
+  | 'game'
+  | 'break'
+  | 'language'
+  | 'privacy'
+  | 'appearance';
+
 export type AppStackParamList = {
   Home: undefined;
   Game: undefined;
-  Settings: undefined;
+  Settings: { page: SettingsPage; gameId?: GameId } | undefined;
   Drawing: undefined;
   Glitter: undefined;
   Bubble: undefined;

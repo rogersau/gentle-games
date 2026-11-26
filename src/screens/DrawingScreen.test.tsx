@@ -82,8 +82,8 @@ jest.mock('react-native-safe-area-context', () => {
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: {
-      animationsEnabled: false,
-      reducedMotionEnabled: false,
+      movement: 'still' as 'lively' | 'gentle' | 'still',
+
       showMochiInGames: true,
     },
   }),
@@ -101,6 +101,7 @@ jest.mock('../context/MochiContext', () => ({
 import {
   DrawingScreen,
   DRAWING_HEADER_HEIGHT,
+  DRAWING_SHELL_CHROME_HEIGHT,
   DRAWING_LAYOUT_PADDING,
   DRAWING_TOOLBAR_HEIGHT,
   DRAWING_SAVE_DEBOUNCE_MS,
@@ -158,6 +159,7 @@ describe('DrawingScreen', () => {
         500 -
         500 -
         DRAWING_HEADER_HEIGHT -
+        DRAWING_SHELL_CHROME_HEIGHT -
         DRAWING_TOOLBAR_HEIGHT -
         DRAWING_LAYOUT_PADDING,
     );
@@ -184,12 +186,13 @@ describe('DrawingScreen', () => {
         44 -
         34 -
         DRAWING_HEADER_HEIGHT -
+        DRAWING_SHELL_CHROME_HEIGHT -
         DRAWING_TOOLBAR_HEIGHT -
         DRAWING_LAYOUT_PADDING,
     );
 
     expect(latestProps.height).toBe(expectedRemainingHeight);
-    expect(latestProps.height).toBeGreaterThanOrEqual(260);
+    expect(latestProps.height).toBeGreaterThan(160);
   });
 
   it('shows loading state initially', () => {

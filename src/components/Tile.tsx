@@ -100,7 +100,10 @@ const TileComponent: React.FC<TileProps> = ({
         ) : (
           <Text
             allowFontScaling={false}
-            style={[styles.questionMark, { fontSize: Math.min(34, Math.floor(size * 0.5)) }]}
+            style={[
+              styles.questionMark,
+              { fontSize: Math.max(15, Math.min(34, Math.floor(size * 0.5))) },
+            ]}
           >
             ?
           </Text>
@@ -168,7 +171,7 @@ const createStyles = (colors: ThemeColors) =>
       top: 1,
       right: 3,
       color: ON_ACCENT_TEXT,
-      fontSize: 12,
+      fontSize: 15,
       fontWeight: '700',
     },
   });

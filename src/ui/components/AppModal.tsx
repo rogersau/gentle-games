@@ -17,6 +17,7 @@ import { useAnimationEnabled } from '../animations';
 
 interface AppModalProps {
   visible: boolean;
+  placement?: 'center' | 'bottom';
   onClose: () => void;
   title?: string;
   headerContent?: React.ReactNode;
@@ -36,6 +37,7 @@ interface AppModalProps {
 
 export const AppModal: React.FC<AppModalProps> = ({
   visible,
+  placement = 'center',
   onClose,
   title,
   headerContent,
@@ -66,19 +68,24 @@ export const AppModal: React.FC<AppModalProps> = ({
       onRequestClose={disabled ? () => undefined : onClose}
       accessibilityViewIsModal
     >
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, placement === 'bottom' && styles.sheetOverlay]}>
         {dismissOnBackdropPress && (
           <TouchableOpacity
             style={StyleSheet.absoluteFill}
             onPress={onClose}
             disabled={disabled}
             activeOpacity={1}
-            accessibilityLabel={t('common.close')}
-            accessibilityRole='button'
+            accessible={!showClose}
+            aria-hidden={showClose}
+            accessibilityLabel={showClose ? undefined : t('common.close')}
+            accessibilityRole={showClose ? undefined : 'button'}
             accessibilityState={{ ...accessibilityState, disabled }}
           />
         )}
-        <View style={[styles.content, contentStyle]}>
+        <View
+          style={[styles.content, placement === 'bottom' && styles.sheet, contentStyle]}
+          accessibilityViewIsModal
+        >
           {title && (
             <Text style={styles.title} accessibilityRole='header'>
               {title}
@@ -121,6 +128,14 @@ const createStyles = (colors: ThemeColors) =>
       justifyContent: 'center',
       alignItems: 'center',
       padding: Space.lg,
+    },
+    sheetOverlay: { justifyContent: 'flex-end', padding: 0 },
+    sheet: {
+      maxWidth: 760,
+      maxHeight: '85%',
+      borderBottomLeftRadius: 0,
+      borderBottomRightRadius: 0,
+      paddingBottom: Space['2xl'],
     },
     content: {
       backgroundColor: colors.background,

@@ -36,7 +36,8 @@ interface SettingsContextType {
 
 export const defaultSettings: Settings = {
   settingsVersion: SETTINGS_VERSION,
-  animationsEnabled: false,
+  movement: 'gentle',
+  grownUpsHoldGate: true,
   soundEnabled: false,
   soundVolume: 0.5,
   difficulty: 'easy',
@@ -48,7 +49,6 @@ export const defaultSettings: Settings = {
   parentTimerMinutes: 0,
   enableUnfinishedGames: false,
   language: DEFAULT_LANGUAGE,
-  reducedMotionEnabled: false,
   telemetryEnabled: false,
   showMochiInGames: false,
   pressureFreeMode: true,
@@ -109,11 +109,22 @@ const sanitizeSettings = (candidate: unknown): Settings => {
   }
 
   const parsed = candidate as Record<string, unknown>;
-  const isLegacy = parsed.settingsVersion !== SETTINGS_VERSION;
+  // Pressure-free play was introduced in v4. Do not reapply that migration to v4 profiles.
+  const isLegacy = typeof parsed.settingsVersion !== 'number' || parsed.settingsVersion < 4;
+  // An explicit legacy opt-out stays Still, even though Gentle is the new default.
+  const movement =
+    parsed.movement === 'still' || parsed.movement === 'gentle' || parsed.movement === 'lively'
+      ? parsed.movement
+      : toBoolean(parsed.reducedMotionEnabled, false) || !toBoolean(parsed.animationsEnabled, true)
+        ? 'still'
+        : toBoolean(parsed.animationsEnabled, false)
+          ? 'lively'
+          : defaultSettings.movement;
 
   return {
     settingsVersion: SETTINGS_VERSION,
-    animationsEnabled: toBoolean(parsed.animationsEnabled, defaultSettings.animationsEnabled),
+    movement,
+    grownUpsHoldGate: toBoolean(parsed.grownUpsHoldGate, defaultSettings.grownUpsHoldGate),
     soundEnabled: toBoolean(parsed.soundEnabled, defaultSettings.soundEnabled),
     soundVolume: toVolume(parsed.soundVolume, defaultSettings.soundVolume),
     difficulty: toDifficulty(parsed.difficulty, defaultSettings.difficulty),
@@ -128,10 +139,6 @@ const sanitizeSettings = (candidate: unknown): Settings => {
       defaultSettings.enableUnfinishedGames,
     ),
     language: toLanguage(parsed.language),
-    reducedMotionEnabled: toBoolean(
-      parsed.reducedMotionEnabled,
-      defaultSettings.reducedMotionEnabled,
-    ),
     telemetryEnabled: toBoolean(parsed.telemetryEnabled, defaultSettings.telemetryEnabled),
     showMochiInGames: toBoolean(parsed.showMochiInGames, defaultSettings.showMochiInGames),
     pressureFreeMode: toBoolean(

@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
-import { Space, Radius, TypeStyle, HitTarget, ON_ACCENT_TEXT } from '../tokens';
+import { Space, Radius, TypeStyle, HitTarget } from '../tokens';
 import { ThemeColors } from '../../types';
-import { ResolvedThemeMode } from '../../utils/theme';
 
 interface SegmentOption<T extends string | number> {
   value: T;
   label: string;
+  testID?: string;
 }
 
 interface SegmentedControlProps<T extends string | number> {
@@ -24,8 +24,8 @@ export const SegmentedControl = <T extends string | number>({
   onValueChange,
   wrap = false,
 }: SegmentedControlProps<T>) => {
-  const { colors, resolvedMode } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
+  const { colors } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <View style={[styles.container, wrap && styles.containerWrap]} accessibilityRole='radiogroup'>
@@ -34,6 +34,7 @@ export const SegmentedControl = <T extends string | number>({
         return (
           <TouchableOpacity
             key={String(option.value)}
+            testID={option.testID}
             style={[styles.segment, isActive && styles.segmentActive, !wrap && styles.segmentFlex]}
             onPress={() => onValueChange(option.value)}
             accessibilityLabel={option.label}
@@ -41,7 +42,14 @@ export const SegmentedControl = <T extends string | number>({
             accessibilityState={{ checked: isActive }}
             aria-checked={isActive}
           >
-            <Text style={[styles.label, isActive && styles.labelActive]}>{option.label}</Text>
+            <View style={styles.optionContent}>
+              {isActive && (
+                <Text style={styles.check} aria-hidden>
+                  ✓
+                </Text>
+              )}
+              <Text style={[styles.label, isActive && styles.labelActive]}>{option.label}</Text>
+            </View>
           </TouchableOpacity>
         );
       })}
@@ -49,7 +57,7 @@ export const SegmentedControl = <T extends string | number>({
   );
 };
 
-const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
+const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
       flexDirection: 'row',
@@ -64,7 +72,8 @@ const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
       borderColor: colors.border,
       borderRadius: Radius.md,
       paddingVertical: Space.sm + 2,
-      paddingHorizontal: Space.md,
+      paddingHorizontal: Space.sm,
+      minWidth: HitTarget.min,
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: HitTarget.min,
@@ -73,14 +82,23 @@ const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
       flex: 1,
     },
     segmentActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: colors.sky,
+      borderColor: colors.skyInk,
     },
+    optionContent: {
+      flexDirection: 'row',
+      gap: Space.xs,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    check: { ...TypeStyle.buttonSm, color: colors.skyInk },
     label: {
+      flexShrink: 1,
+      textAlign: 'center',
       ...TypeStyle.buttonSm,
       color: colors.text,
     },
     labelActive: {
-      color: ON_ACCENT_TEXT,
+      color: colors.skyInk,
     },
   });

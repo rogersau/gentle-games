@@ -1,17 +1,16 @@
 import React from 'react';
-import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
-import { Linking, StyleSheet } from 'react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
+import { StyleSheet, AccessibilityInfo } from 'react-native';
 import { HomeScreen } from './HomeScreen';
 import * as registry from '../games/registry';
 import { APP_ROUTES } from '../types/navigation';
-import { openExternalUrl } from '../utils/externalLinks';
 
 const mockNavigate = jest.fn();
 let mockFocusCallback: (() => void) | undefined;
 const mockUpdateSettings = jest.fn().mockResolvedValue(undefined);
-const mockOpenExternalUrl = openExternalUrl as jest.MockedFunction<typeof openExternalUrl>;
 let mockSettings = {
-  animationsEnabled: true,
+  movement: 'lively' as 'lively' | 'gentle' | 'still',
+  grownUpsHoldGate: true,
   soundEnabled: true,
   soundVolume: 0.5,
   difficulty: 'medium' as const,
@@ -48,10 +47,6 @@ jest.mock('../utils/theme', () => ({
   useReducedMotion: () => false,
 }));
 
-jest.mock('../utils/externalLinks', () => ({
-  openExternalUrl: jest.fn(),
-}));
-
 jest.mock('../games/registry', () => {
   const actual = jest.requireActual('../games/registry');
 
@@ -80,13 +75,12 @@ const mockGetGameRoute = jest.mocked(registry.getGameRoute);
 describe('HomeScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockOpenExternalUrl.mockResolvedValue('opened');
     mockUpdateSettings.mockResolvedValue(undefined);
     mockGetVisibleGames.mockImplementation(actualRegistry.getVisibleGames);
     mockGetGameRoute.mockImplementation(actualRegistry.getGameRoute);
-    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     mockSettings = {
-      animationsEnabled: true,
+      movement: 'lively' as 'lively' | 'gentle' | 'still',
+      grownUpsHoldGate: true,
       soundEnabled: true,
       soundVolume: 0.5,
       difficulty: 'medium',
@@ -100,17 +94,15 @@ describe('HomeScreen', () => {
     };
   });
 
-  it('presents the calm single-column home introduction', () => {
+  it('presents the picture shelf without tile descriptions or an external link', () => {
+    mockSettings.enableUnfinishedGames = false;
     const screen = render(<HomeScreen />);
-
-    expect(screen.getByRole('header', { name: 'Gentle Games' })).toBeTruthy();
-    expect(screen.getByText('Choose something gentle')).toBeTruthy();
-
-    const drawingCard = screen.getByTestId('home-game-drawing');
-    expect(StyleSheet.flatten(drawingCard.props.style)).toMatchObject({
-      minHeight: 100,
-      borderWidth: 1,
-    });
+    expect(screen.getByRole('header', { name: 'Hello!' })).toBeTruthy();
+    expect(screen.getByText('What shall we play?')).toBeTruthy();
+    expect(screen.getAllByTestId(/^home-game-/)).toHaveLength(8);
+    expect(screen.getByRole('button', { name: 'Memory Snap. Find matching pairs' })).toBeTruthy();
+    expect(screen.queryByText('Find matching pairs')).toBeNull();
+    expect(screen.queryByRole('link')).toBeNull();
   });
 
   it('navigates directly to Drawing screen when Drawing Pad is selected', () => {
@@ -201,11 +193,56 @@ describe('HomeScreen', () => {
     expect(screen.queryByText(/Select difficulty/)).toBeNull();
   });
 
-  it('navigates to Settings through the shared app route contract', () => {
+  it('cancels an early release and opens settings only after the hold', () => {
+    jest.useFakeTimers();
+    try {
+      const screen = render(<HomeScreen />);
+      const gate = screen.getByTestId('home-grown-ups');
+      fireEvent(gate, 'pressIn');
+      act(() => jest.advanceTimersByTime(1000));
+      expect(screen.getByText('Keep holding…', { includeHiddenElements: true })).toBeTruthy();
+      fireEvent(gate, 'pressOut');
+      fireEvent.press(gate);
+      expect(mockNavigate).not.toHaveBeenCalled();
+      expect(screen.queryByText('Keep holding…', { includeHiddenElements: true })).toBeNull();
+      fireEvent(gate, 'pressIn');
+      act(() => jest.advanceTimersByTime(3000));
+      expect(gate.props).toBeDefined();
+      fireEvent(gate, 'longPress');
+      expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Settings);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('supports accessible activation with a quick sum and no time limit', async () => {
+    const screenReader = jest
+      .spyOn(AccessibilityInfo, 'isScreenReaderEnabled')
+      .mockResolvedValue(true);
+    const random = jest.spyOn(Math, 'random').mockReturnValue(0.5);
+    try {
+      const screen = render(<HomeScreen />);
+      const gate = screen.getByTestId('home-grown-ups');
+      await act(async () => {});
+      fireEvent.press(gate);
+      expect(screen.getByText('32 + 26 = ?')).toBeTruthy();
+      const input = screen.getByTestId('grown-ups-answer');
+      fireEvent.changeText(input, '0');
+      fireEvent(input, 'submitEditing');
+      expect(mockNavigate).not.toHaveBeenCalled();
+      fireEvent.changeText(input, '58');
+      fireEvent(input, 'submitEditing');
+      expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Settings);
+    } finally {
+      screenReader.mockRestore();
+      random.mockRestore();
+    }
+  });
+
+  it('opens settings on a tap for a family that turns the gate off', () => {
+    mockSettings.grownUpsHoldGate = false;
     const screen = render(<HomeScreen />);
-
-    fireEvent.press(screen.getByLabelText('Settings'));
-
+    fireEvent.press(screen.getByTestId('home-grown-ups'));
     expect(mockNavigate).toHaveBeenCalledWith(APP_ROUTES.Settings);
   });
 
@@ -228,7 +265,9 @@ describe('HomeScreen', () => {
     };
     const screen = render(<HomeScreen />);
 
-    expect(screen.getByText('All games are hidden. Enable one in Settings.')).toBeTruthy();
+    expect(
+      screen.getByText('No games are on the shelf. A grown-up can add them back.'),
+    ).toBeTruthy();
     expect(screen.queryByTestId('home-game-memory-snap')).toBeNull();
   });
 
@@ -240,37 +279,4 @@ describe('HomeScreen', () => {
     expect(flex).toBe(1);
     expect(maxHeight).toBeUndefined();
   });
-
-  it('routes website link presses through openExternalUrl', async () => {
-    const screen = render(<HomeScreen />);
-
-    fireEvent.press(screen.getByRole('link'));
-
-    await waitFor(() => {
-      expect(mockOpenExternalUrl).toHaveBeenCalledWith('https://gentlegames.org');
-    });
-    expect(Linking.openURL).not.toHaveBeenCalled();
-  });
-
-  it.each(['unsupported', 'failed'] as const)(
-    'shows a calm website fallback modal when the helper returns %s',
-    async (result) => {
-      mockOpenExternalUrl.mockResolvedValue(result);
-      const screen = render(<HomeScreen />);
-
-      fireEvent.press(screen.getByRole('link'));
-
-      await waitFor(() => {
-        expect(screen.getByText('Website unavailable')).toBeTruthy();
-        expect(
-          screen.getByText(
-            "We couldn't open the Gentle Games website right now. Please try again later.",
-          ),
-        ).toBeTruthy();
-      });
-
-      expect(screen.queryByText(/exploded|Error:|TypeError/i)).toBeNull();
-      expect(Linking.openURL).not.toHaveBeenCalled();
-    },
-  );
 });

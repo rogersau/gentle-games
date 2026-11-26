@@ -3,7 +3,7 @@ import { AccessibilityInfo, Animated } from 'react-native';
 import { useAnimationEnabled, useFadeIn, useGentleBounce, useScalePress } from './animations';
 
 let mockSettings = {
-  animationsEnabled: true,
+  movement: 'lively' as 'lively' | 'gentle' | 'still',
 };
 
 jest.mock('../context/SettingsContext', () => ({
@@ -15,7 +15,7 @@ jest.mock('../context/SettingsContext', () => ({
 describe('ui animations hooks', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockSettings = { animationsEnabled: true };
+    mockSettings = { movement: 'lively' };
 
     jest.spyOn(Animated, 'timing').mockImplementation(
       () =>
@@ -41,7 +41,7 @@ describe('ui animations hooks', () => {
   });
 
   it('returns animation-enabled flag from settings', () => {
-    mockSettings.animationsEnabled = false;
+    mockSettings.movement = 'still';
     const { result } = renderHook(() => useAnimationEnabled());
     expect(result.current).toBe(false);
   });
@@ -68,7 +68,7 @@ describe('ui animations hooks', () => {
   });
 
   it('fadeIn sets opacity immediately when animations are disabled', () => {
-    mockSettings.animationsEnabled = false;
+    mockSettings.movement = 'still';
     const setValueSpy = jest.spyOn(Animated.Value.prototype, 'setValue');
     const { result } = renderHook(() => useFadeIn());
 
@@ -97,7 +97,7 @@ describe('ui animations hooks', () => {
   });
 
   it('gentle bounce does nothing when disabled', () => {
-    mockSettings.animationsEnabled = false;
+    mockSettings.movement = 'still';
     const { result } = renderHook(() => useGentleBounce());
 
     act(() => {

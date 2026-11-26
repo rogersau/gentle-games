@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { resources } from '../i18n';
-import { LANGUAGE_OPTIONS } from '../types/i18n';
+import { SUPPORTED_LANGUAGES } from '../types/i18n';
 import { validateTranslation } from '../i18n/types';
 
 const localeDirectory = join(__dirname, '../i18n/locales');
@@ -43,7 +43,7 @@ describe('Translation validation across every locale', () => {
   it('registers every locale file and exposes it as a supported language', () => {
     const languages = Object.keys(locales).sort();
     expect(Object.keys(resources).sort()).toEqual(languages);
-    expect(LANGUAGE_OPTIONS.map(({ value }) => value).sort()).toEqual(languages);
+    expect([...SUPPORTED_LANGUAGES].sort()).toEqual(languages);
   });
 
   for (const [language, translations] of Object.entries(locales)) {

@@ -7,10 +7,10 @@ import { useMochi } from '../hooks/useMochi';
 import { KeepyUppyBoard, KeepyUppyBoardRef } from '../components/KeepyUppyBoard';
 import { KeepyUppyBounds, MAX_BALLOONS } from '../utils/keepyUppyLogic';
 import { ThemeColors } from '../types';
-import { useThemeColors } from '../utils/theme';
-import { AppScreen, GameHeader, AppButton } from '../ui/components';
+import { useReducedMotion, useThemeColors } from '../utils/theme';
+import { AppButton } from '../ui/components';
+import { GameShell } from '../ui/components/GameShell';
 import { Space, TypeStyle } from '../ui/tokens';
-import { useAnimationEnabled } from '../ui/animations';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
 import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
 import { getGameSettings } from '../games/settings';
@@ -22,7 +22,7 @@ export const KeepyUppyScreen: React.FC = () => {
   const { settings } = useSettings();
   const { showPressureMetrics, showMilestoneCelebrations } = getGamePresentationPolicy(settings);
   const { colors } = useThemeColors();
-  const canAnimate = useAnimationEnabled();
+  const canAnimate = !useReducedMotion();
   const [paused, setPaused] = useState(false);
   const motionEnabled = canAnimate && !paused;
   const { t } = useTranslation();
@@ -60,57 +60,32 @@ export const KeepyUppyScreen: React.FC = () => {
 
   const bounds = useMemo<KeepyUppyBounds>(() => {
     return calculateGameBoardSize(viewport, {
-      horizontalPadding: Space.md * 2,
-      verticalReserve: 148,
+      horizontalPadding: (Space.md + Space.sm) * 2 + 3,
+      verticalReserve: showPressureMetrics ? 84 : 28,
       compactMinHeight: 220,
-      maxHeightRatio: 0.68,
+      maxHeightRatio: 0.96,
     });
-  }, [viewport]);
+  }, [viewport, showPressureMetrics]);
 
   const handleAddBalloon = () => {
     boardRef.current?.addBalloon();
   };
 
   return (
-    <AppScreen
-      scroll
+    <GameShell
       onLayout={onLayout}
       testID='keepy-uppy-screen'
-      header={<GameHeader title={t('games.keepyUppy.title')} onBack={() => navigation.goBack()} />}
-    >
-      <View style={styles.content}>
-        <Text style={styles.subtitle} accessibilityRole='text'>
-          {t(
-            !motionEnabled
-              ? 'games.keepyUppy.stillSubtitle'
-              : showPressureMetrics
-                ? 'games.keepyUppy.subtitle'
-                : 'games.keepyUppy.restSubtitle',
-          )}
-        </Text>
-        {showPressureMetrics ? (
-          <View style={styles.statsRow}>
-            <Text
-              style={styles.statText}
-              accessibilityLabel={t('games.keepyUppy.taps', { count: score })}
-            >
-              {t('games.keepyUppy.taps', { count: score })}
-            </Text>
-            <Text
-              style={styles.statText}
-              accessibilityLabel={t('games.keepyUppy.balloons', { count: balloonCount })}
-            >
-              {t('games.keepyUppy.balloons', { count: balloonCount })}
-            </Text>
-            <Text
-              style={styles.statText}
-              accessibilityLabel={t('games.keepyUppy.popped', { count: popped })}
-            >
-              {t('games.keepyUppy.popped', { count: popped })}
-            </Text>
-          </View>
-        ) : null}
-        <View style={styles.controls}>
+      title={t('games.keepyUppy.title')}
+      onHome={() => navigation.goBack()}
+      prompt={t(
+        !motionEnabled
+          ? 'games.keepyUppy.stillSubtitle'
+          : showPressureMetrics
+            ? 'games.keepyUppy.subtitle'
+            : 'games.keepyUppy.restSubtitle',
+      )}
+      actions={
+        <>
           <AppButton
             icon='add'
             label={t('games.keepyUppy.addBalloon')}
@@ -118,59 +93,61 @@ export const KeepyUppyScreen: React.FC = () => {
             size='sm'
             onPress={handleAddBalloon}
             disabled={balloonCount >= MAX_BALLOONS}
+            disabledLabel={t('games.keepyUppy.balloonLimit')}
             accessibilityHint={t('games.keepyUppy.addBalloonHint')}
           />
           {canAnimate ? (
             <AppButton
               icon={paused ? 'play' : 'pause'}
-              label={t(paused ? 'common.resumeMovement' : 'common.pauseMovement')}
+              label={t(paused ? 'common.resume' : 'common.pause')}
+              accessibilityLabel={t(paused ? 'common.resumeMovement' : 'common.pauseMovement')}
               variant='ghost'
               size='sm'
               onPress={() => setPaused((current) => !current)}
             />
           ) : null}
+        </>
+      }
+    >
+      {showPressureMetrics ? (
+        <View style={styles.statsRow}>
+          <Text
+            style={styles.statText}
+            accessibilityLabel={t('games.keepyUppy.taps', { count: score })}
+          >
+            {t('games.keepyUppy.taps', { count: score })}
+          </Text>
+          <Text
+            style={styles.statText}
+            accessibilityLabel={t('games.keepyUppy.balloons', { count: balloonCount })}
+          >
+            {t('games.keepyUppy.balloons', { count: balloonCount })}
+          </Text>
+          <Text
+            style={styles.statText}
+            accessibilityLabel={t('games.keepyUppy.popped', { count: popped })}
+          >
+            {t('games.keepyUppy.popped', { count: popped })}
+          </Text>
         </View>
+      ) : null}
 
-        <KeepyUppyBoard
-          ref={boardRef}
-          bounds={bounds}
-          onScoreChange={handleScoreChange}
-          onBalloonCountChange={setBalloonCount}
-          onPoppedChange={setPopped}
-          easyMode={getGameSettings(settings, 'keepy-uppy').liftMode === 'gentle'}
-          motionEnabled={motionEnabled}
-          allowPopping={showPressureMetrics}
-        />
-      </View>
-    </AppScreen>
+      <KeepyUppyBoard
+        ref={boardRef}
+        bounds={bounds}
+        onScoreChange={handleScoreChange}
+        onBalloonCountChange={setBalloonCount}
+        onPoppedChange={setPopped}
+        easyMode={getGameSettings(settings, 'keepy-uppy').liftMode === 'gentle'}
+        motionEnabled={motionEnabled}
+        allowPopping={showPressureMetrics}
+      />
+    </GameShell>
   );
 };
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    content: {
-      width: '100%',
-      maxWidth: 760,
-      alignSelf: 'center',
-      flex: 1,
-      alignItems: 'center',
-      paddingHorizontal: Space.md,
-      paddingTop: Space.base,
-      paddingBottom: Space.md,
-    },
-    subtitle: {
-      ...TypeStyle.bodySm,
-      color: colors.textLight,
-      textAlign: 'center',
-      marginBottom: Space.sm,
-    },
-    controls: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'center',
-      gap: Space.sm,
-      marginBottom: Space.sm,
-    },
     statsRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',

@@ -37,7 +37,8 @@ const TestConsumer = () => {
 
   return (
     <View>
-      <Text testID='animations'>{String(settings.animationsEnabled)}</Text>
+      <Text testID='movement'>{settings.movement}</Text>
+      <Text testID='gate'>{String(settings.grownUpsHoldGate)}</Text>
       <Text testID='sound'>{String(settings.soundEnabled)}</Text>
       <Text testID='volume'>{String(settings.soundVolume)}</Text>
       <Text testID='difficulty'>{settings.difficulty}</Text>
@@ -167,7 +168,7 @@ describe('SettingsContext', () => {
 
     expect(screen.getByTestId('telemetry').props.children).toBe('false');
     expect(screen.getByTestId('sound').props.children).toBe('false');
-    expect(screen.getByTestId('animations').props.children).toBe('false');
+    expect(screen.getByTestId('movement').props.children).toBe('gentle');
     expect(defaultSettings.showMochiInGames).toBe(false);
     expect(screen.getByTestId('pressure-free').props.children).toBe('true');
     expect(screen.getByTestId('difficulty').props.children).toBe('easy');
@@ -179,7 +180,7 @@ describe('SettingsContext', () => {
     expect(screen.getByTestId('number-picnic-spoken').props.children).toBe('false');
     expect(screen.getByTestId('pattern-level').props.children).toBe('starter');
     expect(screen.getByTestId('glitter-preset').props.children).toBe('settle');
-    expect(screen.getByTestId('breathing-session').props.children).toBe('open-ended');
+    expect(screen.getByTestId('breathing-session').props.children).toBe('5');
   });
 
   it('hides unfinished games on fresh installs', async () => {
@@ -216,7 +217,7 @@ describe('SettingsContext', () => {
     expect(screen.getByTestId('number-picnic-mode').props.children).toBe('make-amount');
     expect(screen.getByTestId('number-picnic-spoken').props.children).toBe('false');
     expect(JSON.parse(storage.setItem.mock.calls[0][1])).toMatchObject({
-      settingsVersion: 4,
+      settingsVersion: 5,
       gameSettings: {
         'number-picnic': {
           maxQuantity: 8,
@@ -226,6 +227,62 @@ describe('SettingsContext', () => {
         },
       },
     });
+  });
+
+  it.each([
+    [false, false, 'still'],
+    [true, false, 'lively'],
+    [true, true, 'still'],
+    [false, true, 'still'],
+  ])(
+    'migrates v4 animation=%s and reduced motion=%s to %s',
+    async (animationsEnabled, reducedMotionEnabled, expected) => {
+      storage.getItem.mockResolvedValueOnce(
+        JSON.stringify({
+          settingsVersion: 4,
+          animationsEnabled,
+          reducedMotionEnabled,
+          pressureFreeMode: true,
+          gameSettings: { 'breathing-garden': { sessionLength: 'open-ended', visualCue: false } },
+        }),
+      );
+      const screen = render(
+        <SettingsProvider>
+          <TestConsumer />
+        </SettingsProvider>,
+      );
+      await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+      expect(screen.getByTestId('movement')).toHaveTextContent(expected);
+      expect(screen.getByTestId('gate')).toHaveTextContent('true');
+      const saved = JSON.parse(storage.setItem.mock.calls.at(-1)[1]);
+      expect(saved).toMatchObject({
+        settingsVersion: 5,
+        movement: expected,
+        grownUpsHoldGate: true,
+        pressureFreeMode: true,
+        gameSettings: { 'breathing-garden': { sessionLength: 'open-ended', visualCue: false } },
+      });
+      expect(saved).not.toHaveProperty('animationsEnabled');
+      expect(saved).not.toHaveProperty('reducedMotionEnabled');
+    },
+  );
+
+  it('preserves explicitly stored Movement and hold gate preferences', async () => {
+    storage.getItem.mockResolvedValueOnce(
+      JSON.stringify({
+        settingsVersion: 5,
+        movement: 'still',
+        grownUpsHoldGate: false,
+      }),
+    );
+    const screen = render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+    await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
+    expect(screen.getByTestId('movement')).toHaveTextContent('still');
+    expect(screen.getByTestId('gate')).toHaveTextContent('false');
   });
 
   it('sanitizes invalid persisted telemetryEnabled values back to false', async () => {
@@ -250,7 +307,7 @@ describe('SettingsContext', () => {
 
     await waitFor(() => expect(screen.queryByTestId('loading')).toBeNull());
 
-    expect(screen.getByTestId('animations').props.children).toBe('false');
+    expect(screen.getByTestId('movement').props.children).toBe('still');
     expect(screen.getByTestId('sound').props.children).toBe('true');
     expect(screen.getByTestId('volume').props.children).toBe('1');
     expect(screen.getByTestId('difficulty').props.children).toBe('easy');
@@ -278,7 +335,7 @@ describe('SettingsContext', () => {
     expect(screen.getByTestId('hiddenGames').props.children).toBe('memory-snap,bubble-pop');
     const migrated = JSON.parse(storage.setItem.mock.calls[0][1]);
     expect(migrated).toMatchObject({
-      settingsVersion: 4,
+      settingsVersion: 5,
       hiddenGames: ['memory-snap', 'bubble-pop'],
       pressureFreeMode: false,
       gameSettings: {
@@ -567,7 +624,7 @@ describe('SettingsContext', () => {
     await waitFor(() => expect(screen.getByTestId('glitter-ripples').props.children).toBe('true'));
     const saved = JSON.parse(storage.setItem.mock.calls.at(-1)[1]);
     expect(saved.gameSettings['glitter-fall'].ripples).toBe(true);
-    expect(saved.gameSettings['breathing-garden'].sessionLength).toBe('open-ended');
+    expect(saved.gameSettings['breathing-garden'].sessionLength).toBe(5);
 
     fireEvent.press(screen.getByTestId('reset-glitter'));
     await waitFor(() => expect(screen.getByTestId('glitter-ripples').props.children).toBe('false'));

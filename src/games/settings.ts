@@ -13,7 +13,7 @@ import {
   resolveGlitterSettings,
 } from './glitterSettings';
 
-export const SETTINGS_VERSION = 4;
+export const SETTINGS_VERSION = 5;
 
 export type MemorySnapPairCount = 2 | 3 | 4 | 6 | 10 | 15;
 export type MemorySnapPreviewMode = 'none' | 'until-ready' | '4-seconds' | '8-seconds';
@@ -68,7 +68,7 @@ export const DEFAULT_GAME_SETTINGS: GameSettingsMap = {
   'bubble-pop': { motion: 'still', density: 'sparse' },
   'category-match': { pack: 'everyday', categoryCount: 2, showPreview: true },
   'keepy-uppy': { liftMode: 'gentle' },
-  'breathing-garden': { sessionLength: 'open-ended', visualCue: true },
+  'breathing-garden': { sessionLength: 5, visualCue: true },
   'pattern-train': { level: 'starter' },
   'number-picnic': {
     maxQuantity: 5,
@@ -237,7 +237,7 @@ export function sanitizeGameSettings(
         breathing.sessionLength === 10 ||
         breathing.sessionLength === 'open-ended'
           ? breathing.sessionLength
-          : 'open-ended',
+          : DEFAULT_GAME_SETTINGS['breathing-garden'].sessionLength,
       visualCue: typeof breathing.visualCue === 'boolean' ? breathing.visualCue : true,
     },
     'pattern-train': {

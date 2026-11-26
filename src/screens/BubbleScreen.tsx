@@ -8,7 +8,8 @@ import { useSettings } from '../context/SettingsContext';
 import { useMochi } from '../hooks/useMochi';
 import { playBubblePopSound } from '../utils/sounds';
 import { useReducedMotion, useThemeColors } from '../utils/theme';
-import { AppScreen, GameHeader, AppButton } from '../ui/components';
+import { AppButton } from '../ui/components';
+import { GameShell } from '../ui/components/GameShell';
 import { Space, TypeStyle } from '../ui/tokens';
 import { calculateGameBoardSize, useMeasuredGameViewport } from '../ui/gameLayout';
 import { getGamePresentationPolicy } from '../utils/gamePresentationPolicy';
@@ -43,12 +44,12 @@ export const BubbleScreen: React.FC = () => {
 
   const boardSize = useMemo(() => {
     return calculateGameBoardSize(viewport, {
-      horizontalPadding: Space.md * 2,
-      verticalReserve: 148,
+      horizontalPadding: (Space.md + Space.sm) * 2 + 3,
+      verticalReserve: showPressureMetrics ? 68 : 28,
       compactMinHeight: 220,
-      maxHeightRatio: 0.72,
+      maxHeightRatio: 0.96,
     });
-  }, [viewport]);
+  }, [viewport, showPressureMetrics]);
 
   const pickPhrase = (phrases: string[], lastIndex: number): { phrase: string; index: number } => {
     let idx: number;
@@ -77,17 +78,14 @@ export const BubbleScreen: React.FC = () => {
   }, [settings, showMilestoneCelebrations, showMochi, t]);
 
   return (
-    <AppScreen
-      scroll
+    <GameShell
       onLayout={onLayout}
       testID='bubble-screen'
-      header={<GameHeader title={t('games.bubblePop.title')} onBack={() => navigation.goBack()} />}
-    >
-      <View style={styles.content}>
-        <Text style={styles.subtitle} accessibilityRole='text'>
-          {t('games.bubblePop.subtitle')}
-        </Text>
-        {motionEnabled ? (
+      title={t('games.bubblePop.title')}
+      prompt={t('games.bubblePop.subtitle')}
+      onHome={() => navigation.goBack()}
+      actions={
+        motionEnabled ? (
           <AppButton
             icon={stillBubbles ? 'play' : 'pause'}
             label={t(
@@ -97,55 +95,39 @@ export const BubbleScreen: React.FC = () => {
             size='sm'
             testID='bubble-motion-toggle'
             onPress={() => setStillBubbles((current) => !current)}
-            style={{ marginBottom: Space.sm }}
           />
-        ) : null}
-        {showPressureMetrics ? (
-          <Text
-            style={styles.counter}
-            accessibilityLabel={t('games.bubblePop.popped', {
-              count: poppedCount,
-            })}
-          >
-            {t('games.bubblePop.popped', { count: poppedCount })}
-          </Text>
-        ) : null}
+        ) : null
+      }
+    >
+      {showPressureMetrics ? (
+        <Text
+          style={styles.counter}
+          accessibilityLabel={t('games.bubblePop.popped', {
+            count: poppedCount,
+          })}
+        >
+          {t('games.bubblePop.popped', { count: poppedCount })}
+        </Text>
+      ) : null}
 
-        <View style={styles.boardWrap}>
-          <BubbleField
-            width={boardSize.width}
-            height={boardSize.height}
-            minActiveBubbles={bubbleSettings.density === 'sparse' ? 1 : 2}
-            maxActiveBubbles={bubbleSettings.density === 'sparse' ? 4 : 12}
-            onBubblePop={handleBubblePop}
-            motionEnabled={motionEnabled && !stillBubbles}
-            showModeToggle={false}
-            isFocused={isFocused}
-          />
-        </View>
+      <View style={styles.boardWrap}>
+        <BubbleField
+          width={boardSize.width}
+          height={boardSize.height}
+          minActiveBubbles={bubbleSettings.density === 'sparse' ? 1 : 2}
+          maxActiveBubbles={bubbleSettings.density === 'sparse' ? 4 : 12}
+          onBubblePop={handleBubblePop}
+          motionEnabled={motionEnabled && !stillBubbles}
+          showModeToggle={false}
+          isFocused={isFocused}
+        />
       </View>
-    </AppScreen>
+    </GameShell>
   );
 };
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    content: {
-      width: '100%',
-      maxWidth: 760,
-      alignSelf: 'center',
-      flex: 1,
-      alignItems: 'center',
-      paddingHorizontal: Space.md,
-      paddingTop: Space.base,
-      paddingBottom: Space.md,
-    },
-    subtitle: {
-      ...TypeStyle.bodySm,
-      color: colors.textLight,
-      textAlign: 'center',
-      marginBottom: Space.sm,
-    },
     counter: {
       ...TypeStyle.label,
       color: colors.text,

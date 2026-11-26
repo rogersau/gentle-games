@@ -5,7 +5,7 @@ import { GameBoard } from './GameBoard';
 import { calculateGridDimensions, generateTiles } from '../utils/gameLogic';
 
 const mockSettings = {
-  animationsEnabled: false,
+  movement: 'still' as 'lively' | 'gentle' | 'still',
   soundEnabled: true,
   soundVolume: 0.5,
   difficulty: 'easy' as 'easy' | 'medium' | 'hard',
@@ -300,7 +300,7 @@ describe('GameBoard', () => {
     expect(screen.getByTestId('memory-complete')).toBeTruthy();
     expect(screen.getByTestId('memory-board')).toBeTruthy();
     expect(screen.queryByTestId('memory-snap-hint')).toBeNull();
-    fireEvent.press(screen.getByText('games.memorySnap.playAgain'));
+    fireEvent.press(screen.getByText('Play again'));
     expect(screen.queryByTestId('memory-complete')).toBeNull();
     expect(screen.getAllByText('?')).toHaveLength(2);
     expect(screen.queryByText(/games\.memorySnap\.completedIn/)).toBeNull();
@@ -622,7 +622,7 @@ describe('GameBoard', () => {
     expect(screen.getByTestId('memory-complete')).toBeTruthy();
     expect(screen.getByTestId('memory-board')).toBeTruthy();
     expect(screen.queryByTestId('memory-snap-hint')).toBeNull();
-    fireEvent.press(screen.getByText('games.memorySnap.playAgain'));
+    fireEvent.press(screen.getByText('Play again'));
     expect(screen.queryByTestId('memory-complete')).toBeNull();
     expect(screen.getAllByText('?')).toHaveLength(2);
     expect(screen.queryByText(/moves/i)).toBeNull();

@@ -4,8 +4,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { PicnicItem, PicnicItemPlaceholder } from './PicnicItem';
 
 let mockSettings = {
-  animationsEnabled: true,
-  reducedMotionEnabled: false,
+  movement: 'lively' as 'lively' | 'gentle' | 'still',
 };
 
 jest.mock('../../context/SettingsContext', () => ({
@@ -18,8 +17,7 @@ describe('PicnicItem', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSettings = {
-      animationsEnabled: true,
-      reducedMotionEnabled: false,
+      movement: 'lively' as 'lively' | 'gentle' | 'still',
     };
 
     jest.spyOn(Animated, 'timing').mockImplementation(
@@ -82,7 +80,7 @@ describe('PicnicItem', () => {
   });
 
   it('uses reduced timing when animations are disabled', () => {
-    mockSettings.animationsEnabled = false;
+    mockSettings.movement = 'still';
 
     render(<PicnicItem emoji='🍇' onPress={jest.fn()} isAnimating />);
 

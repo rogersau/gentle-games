@@ -13,6 +13,7 @@ import { Tile } from './Tile';
 import { useSettings } from '../context/SettingsContext';
 import { useThemeColors } from '../utils/theme';
 import { AppButton } from '../ui/components';
+import { GameCompletion } from '../ui/components/GameShell';
 import { Space, TypeStyle } from '../ui/tokens';
 import { useTranslation } from 'react-i18next';
 import { useTrackedTimeouts } from '../utils/useTrackedTimeouts';
@@ -24,6 +25,11 @@ interface GameBoardProps {
   bottomInset?: number;
   renderStats?: (stats: { time: string; moves: number }) => React.ReactNode;
   onPositiveEvent?: () => void;
+  renderShell?: (
+    prompt: string,
+    action: React.ReactNode,
+    board: React.ReactNode,
+  ) => React.ReactNode;
 }
 
 const previewDuration = (mode: MemorySnapPreviewMode): number | null => {
@@ -60,6 +66,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   bottomInset = 0,
   renderStats,
   onPositiveEvent,
+  renderShell,
 }) => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const { settings } = useSettings();
@@ -97,7 +104,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     width: boardWidth,
     height: boardHeight,
   } = calculateMemorySnapBoardSize(
-    { width: screenWidth, height: screenHeight },
+    { width: screenWidth - (renderShell ? 20 : 0), height: screenHeight },
     pairCount,
     bottomInset,
   );
@@ -246,7 +253,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   } else if (selectedTileIds.length === 1) {
     instruction = t('games.memorySnap.chooseSecond');
   } else if (isGameComplete) {
-    instruction = t('games.memorySnap.completed');
+    instruction = t('common.againPrompt');
   }
   const defaultStats = ({ time, moves: moveCount }: { time: string; moves: number }) => (
     <View style={styles.headerInfo}>
@@ -267,18 +274,44 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     </View>
   );
 
-  return (
+  const action = (
+    <>
+      {isPreview ? (
+        <AppButton
+          icon='play'
+          label={t('games.memorySnap.ready')}
+          onPress={handleReady}
+          accessibilityHint={t('games.memorySnap.readyHint')}
+          testID='memory-snap-ready'
+        />
+      ) : null}
+      {!isPreview && !isGameComplete && hintEnabled ? (
+        <AppButton
+          label={t('games.memorySnap.hint')}
+          variant='secondary'
+          onPress={handleHint}
+          disabled={!hintCandidate}
+          disabledLabel={renderShell ? t('games.memorySnap.hintUnavailable') : undefined}
+          accessibilityHint={t('games.memorySnap.hintHint')}
+          testID='memory-snap-hint'
+        />
+      ) : null}
+    </>
+  );
+  const board = (
     <View style={styles.container}>
       {renderStats
         ? renderStats({ time: timeString, moves })
         : !pressureFreeMode
           ? defaultStats({ time: timeString, moves })
           : null}
-      <View style={styles.instructionArea}>
-        <Text style={styles.instruction} accessibilityLiveRegion='polite' aria-live='polite'>
-          {instruction}
-        </Text>
-      </View>
+      {!renderShell && (
+        <View style={styles.instructionArea}>
+          <Text style={styles.instruction} accessibilityLiveRegion='polite' aria-live='polite'>
+            {instruction}
+          </Text>
+        </View>
+      )}
       <View
         style={[styles.board, { width: boardWidth, height: boardHeight }]}
         testID='memory-board'
@@ -295,53 +328,22 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           />
         ))}
       </View>
-      <View style={styles.controls}>
-        {isPreview ? (
-          <AppButton
-            icon='play'
-            label={t('games.memorySnap.ready')}
-            onPress={handleReady}
-            accessibilityHint={t('games.memorySnap.readyHint')}
-            testID='memory-snap-ready'
-          />
-        ) : null}
-        {!isPreview && !isGameComplete && hintEnabled ? (
-          <AppButton
-            label={t('games.memorySnap.hint')}
-            variant='ghost'
-            onPress={handleHint}
-            disabled={!hintCandidate}
-            accessibilityHint={t('games.memorySnap.hintHint')}
-            testID='memory-snap-hint'
-          />
-        ) : null}
-      </View>
+      {!renderShell && <View style={styles.controls}>{action}</View>}
 
       {isGameComplete ? (
-        <View testID='memory-complete' style={styles.completion}>
-          {pressureFreeMode ? null : (
-            <Text style={styles.completeText} accessibilityLiveRegion='polite'>
-              {t('games.memorySnap.completedIn', { time: formatTime(elapsed) })}
-            </Text>
+        <GameCompletion
+          testID='memory-complete'
+          message={t(
+            pressureFreeMode ? 'games.memorySnap.completed' : 'games.memorySnap.completedIn',
+            { time: formatTime(elapsed) },
           )}
-          <View style={styles.buttonRow}>
-            <AppButton
-              label={t('games.memorySnap.goHome')}
-              variant='secondary'
-              onPress={() => onBackPress?.()}
-              accessibilityHint={t('games.memorySnap.goHomeHint')}
-            />
-            <AppButton
-              icon='repeat'
-              label={t('games.memorySnap.playAgain')}
-              onPress={startNewGame}
-              accessibilityHint={t('games.memorySnap.playAgainHint')}
-            />
-          </View>
-        </View>
+          onHome={() => onBackPress?.()}
+          onReplay={startNewGame}
+        />
       ) : null}
     </View>
   );
+  return renderShell ? renderShell(instruction, action, board) : board;
 };
 
 const createStyles = (colors: ThemeColors) =>
@@ -366,19 +368,5 @@ const createStyles = (colors: ThemeColors) =>
       justifyContent: 'center',
       alignItems: 'center',
       paddingTop: Space.sm,
-    },
-    completeText: {
-      ...TypeStyle.body,
-      color: colors.text,
-      textAlign: 'center',
-      marginBottom: Space.lg,
-    },
-    completion: { alignItems: 'center', paddingBottom: Space.md },
-    buttonRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: Space.md,
-      justifyContent: 'center',
-      alignItems: 'center',
     },
   });

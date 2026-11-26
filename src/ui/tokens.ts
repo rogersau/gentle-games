@@ -24,13 +24,15 @@ export const Radius = {
   lg: 16,
   xl: 20,
   '2xl': 24,
+  playSurface: 26,
   full: 9999,
 } as const;
 
 // ─── Typography ──────────────────────────────────────────────────
 export const FontSize = {
-  xs: 11,
-  sm: 13,
+  xs: 15,
+  sm: 15,
+  helper: 13,
   base: 15,
   md: 17,
   lg: 20,
@@ -40,8 +42,9 @@ export const FontSize = {
 } as const;
 
 export const LineHeight = {
-  xs: 16,
-  sm: 18,
+  xs: 20,
+  sm: 20,
+  helper: 18,
   base: 22,
   md: 24,
   lg: 28,
@@ -52,6 +55,13 @@ export const LineHeight = {
 
 // Pre-built type styles
 export const TypeStyle = {
+  title: { fontFamily: FontFamily.bold, fontSize: 23, lineHeight: 28 },
+  prompt: { fontFamily: FontFamily.bold, fontSize: 17, lineHeight: 24 },
+  helper: {
+    fontFamily: FontFamily.regular,
+    fontSize: FontSize.helper,
+    lineHeight: LineHeight.helper,
+  },
   h1: {
     fontFamily: FontFamily.bold,
     fontSize: FontSize['3xl'],
@@ -172,3 +182,7 @@ export const HitTarget = {
 
 // Readable ink for the soft accent fills in both themes.
 export const ON_ACCENT_TEXT = '#202830';
+
+// A darker track than dark-mode sky ink keeps the white thumb perceivable.
+export const SWITCH_ON_TRACK = '#2F6D85';
+export const SWITCH_ON_THUMB = '#FFFFFF';

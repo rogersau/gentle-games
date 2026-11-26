@@ -7,6 +7,7 @@ interface AppScreenProps {
   children: React.ReactNode;
   /** Navigation stays reachable while the game content scrolls. */
   header?: React.ReactNode;
+  footer?: React.ReactNode;
   /** Whether content should scroll */
   scroll?: boolean;
   /** SafeAreaView edges to respect */
@@ -23,6 +24,7 @@ interface AppScreenProps {
 export const AppScreen: React.FC<AppScreenProps> = ({
   children,
   header,
+  footer,
   scroll = false,
   edges = ['top', 'bottom'],
   style,
@@ -53,6 +55,7 @@ export const AppScreen: React.FC<AppScreenProps> = ({
         <View style={containerStyle} testID={testID}>
           {header}
           {scrollContent}
+          {footer}
         </View>
       );
     }
@@ -61,6 +64,7 @@ export const AppScreen: React.FC<AppScreenProps> = ({
       <SafeAreaView style={containerStyle} edges={edges} testID={testID}>
         {header}
         {scrollContent}
+        {footer}
       </SafeAreaView>
     );
   }
@@ -72,6 +76,7 @@ export const AppScreen: React.FC<AppScreenProps> = ({
         <View style={styles.inner} onLayout={onLayout}>
           {children}
         </View>
+        {footer}
       </View>
     );
   }
@@ -82,6 +87,7 @@ export const AppScreen: React.FC<AppScreenProps> = ({
       <View style={styles.inner} onLayout={onLayout}>
         {children}
       </View>
+      {footer}
     </SafeAreaView>
   );
 };

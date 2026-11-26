@@ -18,7 +18,7 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 jest.mock('../utils/theme', () => ({
-  useReducedMotion: () => false,
+  useReducedMotion: () => mockKeepySettings.movement === 'still',
   useThemeColors: () => ({
     colors: {
       background: '#FFFEF7',
@@ -37,15 +37,15 @@ jest.mock('../utils/theme', () => ({
   }),
 }));
 
-const keepySettings = {
+const mockKeepySettings = {
   keepyUppyEasyMode: true,
   showMochiInGames: true,
   pressureFreeMode: false,
-  animationsEnabled: true,
+  movement: 'lively' as 'lively' | 'gentle' | 'still',
 };
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
-    settings: keepySettings,
+    settings: mockKeepySettings,
   }),
 }));
 jest.mock('../context/MochiContext', () => ({
@@ -63,8 +63,8 @@ describe('KeepyUppyScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    keepySettings.animationsEnabled = true;
-    keepySettings.pressureFreeMode = false;
+    mockKeepySettings.movement = 'lively';
+    mockKeepySettings.pressureFreeMode = false;
     consoleErrorSpy = createSetStateDuringRenderSpy();
   });
 
@@ -136,7 +136,7 @@ describe('KeepyUppyScreen', () => {
   });
 
   it('hides score, balloon, and popped counters in pressure-free mode', () => {
-    keepySettings.pressureFreeMode = true;
+    mockKeepySettings.pressureFreeMode = true;
     const screen = render(<KeepyUppyScreen />);
     expect(screen.getByText('Tap a balloon to lift it. It can rest on the grass.')).toBeTruthy();
     expect(screen.queryByText('Taps: 0')).toBeNull();
@@ -157,8 +157,8 @@ describe('KeepyUppyScreen', () => {
     expect(screen.getByText('Tap a balloon to help it float. Take your time.')).toBeTruthy();
   });
 
-  it('offers still play from the start when animations are disabled', () => {
-    keepySettings.animationsEnabled = false;
+  it('offers still play from the start when Movement is Still', () => {
+    mockKeepySettings.movement = 'still';
     const screen = render(<KeepyUppyScreen />);
     expect(screen.getByText('Tap a balloon to move it.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Pause movement' })).toBeNull();

@@ -162,6 +162,8 @@ interface DrawingCanvasProps {
   bottomInset?: number;
   initialHistory?: HistoryEntry[];
   onHistoryChange?: (history: HistoryEntry[]) => void;
+  onInstructionChange?: (key: TranslationKey) => void;
+  hideClear?: boolean;
   canvasBackgroundColor?: string;
 }
 
@@ -245,6 +247,8 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
       bottomInset = 0,
       initialHistory = EMPTY_HISTORY,
       onHistoryChange,
+      onInstructionChange,
+      hideClear = false,
       canvasBackgroundColor = '#FFFFFF',
     },
     ref,
@@ -265,6 +269,10 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
 
     const [selectedColor, setSelectedColor] = useState('#FF6B6B');
     const [tool, setTool] = useState<Tool>('pen');
+    useEffect(
+      () => onInstructionChange?.(TOOL_INSTRUCTION_KEYS[tool]),
+      [tool, onInstructionChange],
+    );
     const [shape, setShape] = useState<ShapeChoice>({ type: 'circle', size: 60 });
     const [shapeDraft, setShapeDraft] = useState<ShapeChoice | null>(null);
     const [symmetryMode, setSymmetryMode] = useState<SymmetryMode>('none');
@@ -631,9 +639,11 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
           />
         </View>
 
-        <Text style={[styles.drawingInstruction, { color: colors.textLight }]}>
-          {t(TOOL_INSTRUCTION_KEYS[tool])}
-        </Text>
+        {!onInstructionChange && (
+          <Text style={[styles.drawingInstruction, { color: colors.textLight }]}>
+            {t(TOOL_INSTRUCTION_KEYS[tool])}
+          </Text>
+        )}
         {/* Toolbar */}
         <View style={[styles.toolbar, { paddingBottom: Math.max(8, bottomInset) }]}>
           <View style={styles.colorPalette}>
@@ -773,39 +783,43 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(
               style={[
                 styles.toolButton,
                 themedStyles.toolButton,
-                !canUndo ? styles.toolButtonDisabled : undefined,
+                !canUndo && { backgroundColor: colors.sunken, borderColor: colors.outline },
               ]}
               onPress={handleUndo}
               disabled={!canUndo}
               accessibilityRole='button'
-              accessibilityLabel={t('games.drawing.undo')}
+              accessibilityLabel={t(
+                !canUndo && hideClear ? 'games.drawing.undoUnavailable' : 'games.drawing.undo',
+              )}
               accessibilityState={{ disabled: !canUndo }}
             >
-              <ControlIcon name='undo' color={colors.text} size={26} />
-              <Text style={[styles.toolLabel, { color: colors.text }]}>
-                {t('games.drawing.undo')}
+              <ControlIcon name='undo' color={canUndo ? colors.text : colors.textLight} size={26} />
+              <Text style={[styles.toolLabel, { color: canUndo ? colors.text : colors.textLight }]}>
+                {t(!canUndo && hideClear ? 'games.drawing.undoUnavailable' : 'games.drawing.undo')}
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              testID='clear-drawing-button'
-              style={[
-                styles.toolButton,
-                themedStyles.toolButton,
-                !canClear && styles.toolButtonDisabled,
-              ]}
-              onPress={handleClear}
-              disabled={!canClear}
-              accessibilityRole='button'
-              accessibilityLabel={t('games.drawing.clearCanvas')}
-              accessibilityHint={t('games.drawing.clearHint')}
-              accessibilityState={{ disabled: !canClear }}
-            >
-              <ControlIcon name='bin' color={colors.text} size={26} />
-              <Text style={[styles.toolLabel, { color: colors.text }]}>
-                {t('games.drawing.tools.clear')}
-              </Text>
-            </TouchableOpacity>
+            {!hideClear && (
+              <TouchableOpacity
+                testID='clear-drawing-button'
+                style={[
+                  styles.toolButton,
+                  themedStyles.toolButton,
+                  !canClear && { backgroundColor: colors.sunken, borderColor: colors.outline },
+                ]}
+                onPress={handleClear}
+                disabled={!canClear}
+                accessibilityRole='button'
+                accessibilityLabel={t('games.drawing.clearCanvas')}
+                accessibilityHint={t('games.drawing.clearHint')}
+                accessibilityState={{ disabled: !canClear }}
+              >
+                <ControlIcon name='bin' color={colors.text} size={26} />
+                <Text style={[styles.toolLabel, { color: colors.text }]}>
+                  {t('games.drawing.tools.clear')}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
         <Text
@@ -1092,9 +1106,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#E8E4E1',
   },
-  toolButtonDisabled: {
-    opacity: 0.4,
-  },
   drawingInstruction: { ...TypeStyle.bodySm, textAlign: 'center', marginTop: Space.sm },
   toolLabel: { ...TypeStyle.bodySm, color: ON_ACCENT_TEXT, textAlign: 'center' },
   toolIndicator: {
@@ -1102,7 +1113,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   toolIndicatorText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#5A5A5A',
     marginBottom: 4,
   },
@@ -1171,7 +1182,7 @@ const styles = StyleSheet.create({
     borderColor: '#E8E4E1',
   },
   colorHex: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#5A5A5A',
     fontWeight: '600',
   },
@@ -1242,7 +1253,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   shapeLabel: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#5A5A5A',
     fontWeight: '600',
   },
@@ -1280,7 +1291,7 @@ const styles = StyleSheet.create({
     height: 1,
   },
   sizeControlText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#5A5A5A',
     fontWeight: '500',
   },

@@ -1,6 +1,18 @@
 appId: com.gentlegames.app
 ---
-- launchApp
-- assertVisible: 'Gentle Games'
-- tapOn: '⚙️  Settings'
-- assertVisible: 'Settings'
+- launchApp:
+    clearState: true
+- assertVisible: 'Hello!'
+- assertVisible:
+    id: home-game-pattern-train
+- tapOn:
+    id: home-grown-ups
+- assertVisible: 'Hello!'
+- longPressOn:
+    id: home-grown-ups
+- assertVisible: 'Comfort'
+- tapOn: 'Games'
+- tapOn: 'Memory Snap'
+- assertVisible: 'Show this game on Home'
+- tapOn: 'Done'
+- assertVisible: 'Hello!'

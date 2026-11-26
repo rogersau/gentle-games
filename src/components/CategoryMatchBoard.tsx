@@ -33,6 +33,12 @@ import { webGameDragSurface } from '../utils/pwaInteractionGuards';
 import { AppButton } from '../ui/components';
 
 interface CategoryMatchBoardProps {
+  renderShell?: (
+    prompt: string,
+    action: React.ReactNode,
+    board: React.ReactNode,
+    more?: (close: () => void) => React.ReactNode,
+  ) => React.ReactNode;
   width: number;
   height: number;
   pack?: CategoryMatchPack;
@@ -54,6 +60,7 @@ const DRAG_HOME = { x: 0, y: 0 };
 const webDragStyle = Platform.OS === 'web' ? ({ touchAction: 'none' } as ViewStyle) : undefined;
 
 export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
+  renderShell,
   width,
   height,
   categoryCount = 2,
@@ -258,9 +265,51 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
     });
   }, [answerCategory, dragPosition, resetDrag, round.categories, roundFinished]);
 
-  return (
+  const next = (
+    <AppButton
+      icon='next'
+      label={t('games.categoryMatch.next')}
+      onPress={handleNextRound}
+      testID='category-match-next'
+      accessibilityHint={t('games.categoryMatch.nextHint')}
+    />
+  );
+  const action = roundFinished ? (
+    next
+  ) : guidedRound.phase === 'independent' ? (
+    <AppButton
+      icon='eye'
+      label={t('games.categoryMatch.showHint')}
+      variant='secondary'
+      onPress={handleHint}
+    />
+  ) : null;
+  const more = roundFinished
+    ? undefined
+    : (close: () => void) => (
+        <>
+          <AppButton
+            label={t('games.categoryMatch.replay')}
+            variant='ghost'
+            onPress={() => {
+              handleReplay();
+              close();
+            }}
+          />
+          <AppButton
+            label={t('games.categoryMatch.skip')}
+            variant='ghost'
+            onPress={() => {
+              handleSkip();
+              close();
+            }}
+          />
+        </>
+      );
+  const prompt = t('games.categoryMatch.interactionInstruction');
+  const board = (
     <View style={[styles.container, { width }]} testID='category-match-board'>
-      <Text style={styles.instruction}>{t('games.categoryMatch.interactionInstruction')}</Text>
+      {!renderShell && <Text style={styles.instruction}>{prompt}</Text>}
 
       <View>
         <View
@@ -363,15 +412,9 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
       </View>
 
       {roundFinished ? (
-        <AppButton
-          icon='next'
-          label={t('games.categoryMatch.next')}
-          onPress={handleNextRound}
-          testID='category-match-next'
-          accessibilityHint={t('games.categoryMatch.nextHint')}
-          fullWidth
-          style={styles.nextButton}
-        />
+        renderShell ? null : (
+          next
+        )
       ) : (
         <GuidedPracticePrompt
           state={guidedRound}
@@ -393,10 +436,12 @@ export const CategoryMatchBoard: React.FC<CategoryMatchBoardProps> = ({
           onHint={handleHint}
           hintLabel={t('games.categoryMatch.showHint')}
           onSkip={handleSkip}
+          hideActions={!!renderShell}
         />
       )}
     </View>
   );
+  return renderShell ? renderShell(prompt, action, board, more) : board;
 };
 
 const createStyles = (colors: ThemeColors, resolvedMode: ResolvedThemeMode) => {

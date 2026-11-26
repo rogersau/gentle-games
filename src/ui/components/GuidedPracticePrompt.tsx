@@ -13,11 +13,12 @@ interface GuidedPracticePromptProps {
   hintPicture?: React.ReactNode;
   model?: React.ReactNode;
   hintLabel?: string;
-  replayLabel: string;
-  skipLabel: string;
-  onReplay: () => void;
+  replayLabel?: string;
+  skipLabel?: string;
+  onReplay?: () => void;
   onHint?: () => void;
-  onSkip: () => void;
+  onSkip?: () => void;
+  hideActions?: boolean;
 }
 
 export const GuidedPracticePrompt: React.FC<GuidedPracticePromptProps> = ({
@@ -33,6 +34,7 @@ export const GuidedPracticePrompt: React.FC<GuidedPracticePromptProps> = ({
   onReplay,
   onHint,
   onSkip,
+  hideActions = false,
 }) => {
   const { colors } = useThemeColors();
   const supportText = state.phase === 'hinted' ? hint : undefined;
@@ -59,7 +61,7 @@ export const GuidedPracticePrompt: React.FC<GuidedPracticePromptProps> = ({
         </Text>
       ) : null}
       {state.phase === 'modelled' ? <View style={styles.model}>{model}</View> : null}
-      {state.phase !== 'corrected' && state.phase !== 'skipped' ? (
+      {!hideActions && state.phase !== 'corrected' && state.phase !== 'skipped' ? (
         <View style={styles.actions}>
           {hintLabel && onHint && state.phase === 'independent' ? (
             <AppButton
@@ -70,14 +72,18 @@ export const GuidedPracticePrompt: React.FC<GuidedPracticePromptProps> = ({
               onPress={onHint}
             />
           ) : null}
-          <AppButton
-            icon='repeat'
-            label={replayLabel}
-            variant='ghost'
-            size='sm'
-            onPress={onReplay}
-          />
-          <AppButton icon='next' label={skipLabel} variant='ghost' size='sm' onPress={onSkip} />
+          {replayLabel && onReplay && (
+            <AppButton
+              icon='repeat'
+              label={replayLabel}
+              variant='ghost'
+              size='sm'
+              onPress={onReplay}
+            />
+          )}
+          {skipLabel && onSkip && (
+            <AppButton icon='next' label={skipLabel} variant='ghost' size='sm' onPress={onSkip} />
+          )}
         </View>
       ) : null}
     </View>

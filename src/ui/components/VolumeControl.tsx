@@ -61,7 +61,7 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.button, value <= 0 && styles.buttonDisabled]}
         onPress={decrease}
         disabled={value <= 0}
         accessibilityLabel={t('settings.volume.decrease')}
@@ -115,7 +115,7 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
       </Pressable>
 
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.button, value >= 1 && styles.buttonDisabled]}
         onPress={increase}
         disabled={value >= 1}
         accessibilityLabel={t('settings.volume.increase')}
@@ -149,9 +149,8 @@ const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
       color: colors.text,
       lineHeight: 24,
     },
-    buttonTextDisabled: {
-      opacity: 0.3,
-    },
+    buttonDisabled: { backgroundColor: colors.sunken },
+    buttonTextDisabled: { color: colors.textLight },
     barTrack: {
       flex: 1,
       minWidth: HitTarget.min,
@@ -164,9 +163,12 @@ const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
       flex: 1,
       height: 20,
       borderRadius: Radius.xs,
-      backgroundColor: colors.border,
+      backgroundColor: colors.sunken,
+      borderWidth: 1,
+      borderColor: colors.outline,
     },
     segmentFilled: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.skyInk,
+      borderColor: colors.skyInk,
     },
   });

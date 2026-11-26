@@ -21,6 +21,7 @@ import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
 import { useAnimationEnabled } from '../ui/animations';
 import { useSettings } from './SettingsContext';
 import { HitTarget } from '../ui/tokens';
+import { generateMathQuestion, isMathAnswer } from '../utils/grownUpsChallenge';
 
 interface ParentTimerContextType {
   /** Seconds remaining; 0 when disabled or paused */
@@ -65,18 +66,6 @@ const parsePersistedSession = (value: string | null): PersistedTimerSession | nu
   } catch {
     return null;
   }
-};
-
-const generateMathQuestion = (): { question: string; answer: number } => {
-  const a = Math.floor(Math.random() * 40) + 12;
-  const b = Math.floor(Math.random() * 30) + 11;
-  const useAddition = Math.random() > 0.4;
-  if (useAddition) {
-    return { question: `${a} + ${b}`, answer: a + b };
-  }
-  const big = Math.max(a, b);
-  const small = Math.min(a, b);
-  return { question: `${big} − ${small}`, answer: big - small };
 };
 
 export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -304,8 +293,7 @@ export const ParentTimerProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [startFreshSession]);
 
   const handleUnlock = useCallback(() => {
-    const answer = userAnswer.trim();
-    if (/^\d+$/.test(answer) && Number(answer) === mathChallenge.answer) {
+    if (isMathAnswer(userAnswer, mathChallenge.answer)) {
       continueSession();
     } else {
       setShowError(true);

@@ -10,6 +10,7 @@ export interface Tile {
 }
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
+export type Movement = 'still' | 'gentle' | 'lively';
 export type ColorMode = 'light' | 'dark' | 'system';
 
 export interface ThemeColors {
@@ -31,11 +32,25 @@ export interface ThemeColors {
   overlay: string;
   accent: string;
   danger: string;
+  sunken: string;
+  line: string;
+  outline: string;
+  sky: string;
+  skyInk: string;
+  lavender: string;
+  lavenderInk: string;
+  sage: string;
+  sageInk: string;
+  peach: string;
+  peachInk: string;
+  butter: string;
+  rose: string;
 }
 
 export interface Settings {
   settingsVersion?: number;
-  animationsEnabled: boolean;
+  movement: Movement;
+  grownUpsHoldGate: boolean;
   soundEnabled: boolean;
   soundVolume: number;
   difficulty: Difficulty;
@@ -47,7 +62,6 @@ export interface Settings {
   parentTimerMinutes: number;
   enableUnfinishedGames: boolean;
   language: import('./i18n').SupportedLanguage;
-  reducedMotionEnabled: boolean;
   telemetryEnabled: boolean;
   showMochiInGames: boolean;
   /** When enabled, hide non-essential scores, counters, and milestone celebrations in games. */
@@ -406,41 +420,67 @@ export const BALLOON_PALETTE = [
 ] as const;
 
 export const PASTEL_COLORS: ThemeColors = {
-  background: '#FFFEF7',
-  cardBack: '#E8E4E1',
-  cardFront: '#FFFFFF',
-  text: '#5A5A5A',
-  textLight: '#6F6F6F',
-  primary: '#A8D8EA',
-  secondary: '#FFB6C1',
-  success: '#B8E6B8',
-  matched: '#D3D3D3',
-  surfaceGame: '#FFFFFF',
+  background: '#FBF8F1',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
-  border: '#E8E4E1',
-  borderSubtle: '#F0EDE9',
-  overlay: 'rgba(90, 90, 90, 0.4)',
+  surfaceGame: '#FFFFFF',
+  sunken: '#F3EFE6',
+  line: '#E6E0D5',
+  outline: '#938B7F',
+  border: '#938B7F',
+  borderSubtle: '#E6E0D5',
+  text: '#3D444D',
+  textLight: '#5C636C',
+  sky: '#D9EDF5',
+  skyInk: '#2F6D85',
+  lavender: '#EEE5F6',
+  lavenderInk: '#664A86',
+  sage: '#DFF0DC',
+  sageInk: '#3B6E4A',
+  peach: '#FCE7DA',
+  peachInk: '#8E5230',
+  butter: '#FBF1D2',
+  rose: '#FBE3E7',
+  primary: '#A8D8EA',
+  secondary: '#FFB6C1',
   accent: '#D4A9E6',
-  danger: '#E8A0A0',
+  success: '#B8E6B8',
+  matched: '#DFF0DC',
+  danger: '#FCE7DA',
+  cardBack: '#E6E0D5',
+  cardFront: '#FFFFFF',
+  overlay: 'rgba(61, 68, 77, 0.36)',
 };
 
 export const DARK_PASTEL_COLORS: ThemeColors = {
-  background: '#2F333B',
-  cardBack: '#4A4E57',
-  cardFront: '#E9E4DC',
-  text: '#EAE6DF',
-  textLight: '#C2BEB6',
-  primary: '#7FB1C1',
+  background: '#262A31',
+  surface: '#323741',
+  surfaceElevated: '#3B414D',
+  surfaceGame: '#323741',
+  sunken: '#292E36',
+  line: '#494F5A',
+  outline: '#958E85',
+  border: '#958E85',
+  borderSubtle: '#494F5A',
+  text: '#ECE7DF',
+  textLight: '#B9B3AA',
+  sky: '#344B57',
+  skyInk: '#8CC7DC',
+  lavender: '#443851',
+  lavenderInk: '#DCC1F1',
+  sage: '#344B3E',
+  sageInk: '#B3DCB7',
+  peach: '#503B32',
+  peachInk: '#F2BB9C',
+  butter: '#493F2E',
+  rose: '#4C3745',
+  primary: '#8CC7DC',
   secondary: '#D59CB2',
+  accent: '#B28DC7',
   success: '#95C5A3',
   matched: '#8B9099',
-  surfaceGame: '#3F444D',
-  surface: '#3A3E47',
-  surfaceElevated: '#44484F',
-  border: '#4A4E57',
-  borderSubtle: '#3F434C',
+  danger: '#F2BB9C',
+  cardBack: '#4A4E57',
+  cardFront: '#E9E4DC',
   overlay: 'rgba(0, 0, 0, 0.5)',
-  accent: '#B28DC7',
-  danger: '#C87878',
 };

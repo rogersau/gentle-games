@@ -140,6 +140,7 @@ describe('keepyUppyLogic', () => {
 
   it('generates a palette that excludes background tokens and keeps new balloons unique', () => {
     const theme: ThemeColors = {
+      ...PASTEL_COLORS,
       background: '#000',
       cardBack: '#CCCCCC',
       cardFront: '#FFFFFF',
@@ -173,6 +174,7 @@ describe('keepyUppyLogic', () => {
     it('resolves balloon palette with empty forbidden set', () => {
       // When no balloon colors match the forbidden set
       const theme: ThemeColors = {
+        ...PASTEL_COLORS,
         background: '#000',
         cardBack: '#FFFFFF',
         cardFront: '#EEEEEE',

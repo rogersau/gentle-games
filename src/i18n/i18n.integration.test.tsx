@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text } from 'react-native';
 import i18n, { resources } from './index';
 import type { TranslationKey } from './types';
-import { LANGUAGE_OPTIONS } from '../types/i18n';
+import { SUPPORTED_LANGUAGES } from '../types/i18n';
 import { SettingsProvider, useSettings } from '../context/SettingsContext';
 import { VolumeControl } from '../ui/components/VolumeControl';
 
@@ -34,7 +34,7 @@ function stringLeaves(value: unknown, prefix = ''): string[] {
 describe('real i18n and settings integration', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  for (const { value: language } of LANGUAGE_OPTIONS) {
+  for (const language of SUPPORTED_LANGUAGES) {
     it(`resolves every ${language} translation without falling back to another locale or raw keys`, async () => {
       await i18n.changeLanguage(language);
       for (const key of stringLeaves(resources[language].translation)) {

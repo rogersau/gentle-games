@@ -28,6 +28,7 @@ interface AppButtonProps {
   variant?: ButtonVariant;
   size?: ButtonSize;
   disabled?: boolean;
+  disabledLabel?: string;
   fullWidth?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
@@ -46,6 +47,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
   variant = 'primary',
   size = 'md',
   disabled = false,
+  disabledLabel,
   fullWidth = false,
   style,
   textStyle,
@@ -63,10 +65,12 @@ export const AppButton: React.FC<AppButtonProps> = ({
     [colors, resolvedMode, variant, size],
   );
 
+  const displayedLabel = disabled ? (disabledLabel ?? label) : label;
+
   return (
     <Animated.View style={{ transform: [{ scale }], alignSelf: fullWidth ? 'stretch' : 'auto' }}>
       <TouchableOpacity
-        style={[styles.button, disabled && styles.disabled, fullWidth && styles.fullWidth, style]}
+        style={[styles.button, fullWidth && styles.fullWidth, style, disabled && styles.disabled]}
         onPress={onPress}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
@@ -74,7 +78,9 @@ export const AppButton: React.FC<AppButtonProps> = ({
         activeOpacity={0.9}
         hitSlop={BUTTON_TOUCH_SLOP}
         pressRetentionOffset={BUTTON_PRESS_RETENTION}
-        accessibilityLabel={accessibilityLabel ?? label}
+        accessibilityLabel={
+          disabled && disabledLabel ? displayedLabel : (accessibilityLabel ?? label)
+        }
         accessibilityRole={accessibilityRole}
         accessibilityHint={accessibilityHint}
         accessibilityState={{ ...accessibilityState, disabled }}
@@ -82,8 +88,12 @@ export const AppButton: React.FC<AppButtonProps> = ({
         aria-expanded={accessibilityState?.expanded}
         testID={testID}
       >
-        {icon ? <ControlIcon name={icon} color={styles.label.color} /> : null}
-        <Text style={[styles.label, textStyle]}>{label}</Text>
+        {icon ? (
+          <ControlIcon name={icon} color={disabled ? colors.textLight : styles.label.color} />
+        ) : null}
+        <Text style={[styles.label, textStyle, disabled && { color: colors.textLight }]}>
+          {displayedLabel}
+        </Text>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -108,14 +118,18 @@ const createStyles = (
   const sizeValues = sizeMap[size];
 
   const variantStyles: Record<ButtonVariant, { bg: string; text: string; border: string }> = {
-    primary: { bg: colors.primary, text: ON_ACCENT_TEXT, border: colors.primary },
-    secondary: { bg: colors.secondary, text: ON_ACCENT_TEXT, border: colors.secondary },
-    ghost: {
-      bg: 'transparent',
-      text: resolvedMode === 'dark' ? colors.text : colors.text,
-      border: colors.border,
+    primary: {
+      bg: colors.primary,
+      text: resolvedMode === 'dark' ? ON_ACCENT_TEXT : colors.text,
+      border: resolvedMode === 'dark' ? colors.primary : colors.skyInk,
     },
-    danger: { bg: colors.danger, text: ON_ACCENT_TEXT, border: colors.danger },
+    secondary: { bg: colors.lavender, text: colors.lavenderInk, border: colors.lavenderInk },
+    ghost: {
+      bg: colors.surface,
+      text: colors.text,
+      border: colors.outline,
+    },
+    danger: { bg: colors.peach, text: colors.peachInk, border: colors.peachInk },
   };
 
   const v = variantStyles[variant];
@@ -124,7 +138,7 @@ const createStyles = (
     button: {
       backgroundColor: v.bg,
       borderRadius: Radius.full,
-      borderWidth: variant === 'ghost' ? 2 : 0,
+      borderWidth: 1.5,
       borderColor: v.border,
       flexDirection: 'row',
       gap: Space.sm,
@@ -139,7 +153,8 @@ const createStyles = (
       flexShrink: 1,
     },
     disabled: {
-      opacity: 0.5,
+      backgroundColor: colors.sunken,
+      borderColor: colors.outline,
     },
     fullWidth: {
       width: '100%',

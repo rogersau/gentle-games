@@ -12,10 +12,10 @@ const mockToggleMusic = jest.fn();
 const mockStopMusic = jest.fn();
 const mockUpdateSettings = jest.fn();
 const mockUpdateGameSettings = jest.fn();
-let appStateHandler: ((state: AppStateStatus) => void) | undefined;
+let appStateHandlers: ((state: AppStateStatus) => void)[] = [];
 
 const mockSettings: any = {
-  animationsEnabled: true,
+  movement: 'lively' as 'lively' | 'gentle' | 'still',
   soundEnabled: true,
   soundVolume: 0.5,
   difficulty: 'medium',
@@ -30,7 +30,7 @@ const mockSettings: any = {
 };
 
 jest.mock('../utils/theme', () => ({
-  useReducedMotion: () => false,
+  useReducedMotion: () => true,
   useThemeColors: () => ({
     colors: {
       background: '#FFFEF7',
@@ -83,10 +83,14 @@ describe('BreathingGardenScreen', () => {
       sessionLength: 'open-ended',
       visualCue: true,
     };
-    appStateHandler = undefined;
+    appStateHandlers = [];
     jest.spyOn(AppState, 'addEventListener').mockImplementation((event, handler) => {
-      if (event === 'change') appStateHandler = handler;
-      return { remove: jest.fn() };
+      if (event === 'change') appStateHandlers.push(handler);
+      return {
+        remove: () => {
+          appStateHandlers = appStateHandlers.filter((listener) => listener !== handler);
+        },
+      };
     });
   });
 
@@ -100,9 +104,11 @@ describe('BreathingGardenScreen', () => {
 
     expect(screen.queryByTestId('breathing-ball')).toBeNull();
     expect(screen.getByTestId('breathing-start')).toBeTruthy();
+    expect(screen.queryByTestId('breathing-watch-first')).toBeNull();
+    fireEvent.press(screen.getByTestId('game-more'));
     expect(screen.getByTestId('breathing-watch-first')).toBeTruthy();
     expect(screen.getByTestId('breathing-normal')).toBeTruthy();
-    expect(screen.getByTestId('breathing-exit')).toBeTruthy();
+    expect(screen.queryByTestId('breathing-exit')).toBeNull();
     expect(screen.getByRole('switch', { name: 'games.breathingGarden.visualLabel' })).toBeChecked();
   });
 
@@ -110,7 +116,7 @@ describe('BreathingGardenScreen', () => {
     const screen = render(<BreathingGardenScreen />);
     fireEvent.press(screen.getByTestId('breathing-start'));
     const scrollContent = within(screen.UNSAFE_getByType(ScrollView));
-    expect(scrollContent.getByText('Breathe in')).toBeTruthy();
+    expect(screen.getByText('Breathe in')).toBeTruthy();
     expect(scrollContent.queryByTestId('breathing-pause')).toBeNull();
     expect(scrollContent.queryByTestId('breathing-stop')).toBeNull();
 
@@ -122,6 +128,7 @@ describe('BreathingGardenScreen', () => {
 
     fireEvent.press(screen.getByTestId('breathing-resume'));
     expect(screen.getByText('Breathe in')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('game-more'));
     fireEvent.press(screen.getByTestId('breathing-stop'));
     expect(screen.getByTestId('breathing-complete')).toBeTruthy();
   });
@@ -129,6 +136,7 @@ describe('BreathingGardenScreen', () => {
   it('resumes Watch first in the same breath and returns to the choices after one cycle', () => {
     mockSettings.gameSettings['breathing-garden'].sessionLength = 3;
     const screen = render(<BreathingGardenScreen />);
+    fireEvent.press(screen.getByTestId('game-more'));
     fireEvent.press(screen.getByTestId('breathing-watch-first'));
     advance(BREATHING_PHASE_DURATION_MS);
     expect(screen.getByText('Breathe out')).toBeTruthy();
@@ -153,8 +161,10 @@ describe('BreathingGardenScreen', () => {
 
   it('lets the child leave a paused preview and return to their choices', () => {
     const screen = render(<BreathingGardenScreen />);
+    fireEvent.press(screen.getByTestId('game-more'));
     fireEvent.press(screen.getByTestId('breathing-watch-first'));
     fireEvent.press(screen.getByTestId('breathing-pause'));
+    fireEvent.press(screen.getByTestId('game-more'));
     fireEvent.press(screen.getByTestId('breathing-stop'));
 
     expect(screen.getByTestId('breathing-start')).toBeTruthy();
@@ -183,17 +193,20 @@ describe('BreathingGardenScreen', () => {
     fireEvent.press(screen.getByTestId('breathing-start'));
     advance(12 * BREATHING_CYCLE_DURATION_MS);
     expect(screen.queryByTestId('breathing-complete')).toBeNull();
+    fireEvent.press(screen.getByTestId('game-more'));
     expect(screen.getByTestId('breathing-stop')).toBeTruthy();
   });
 
   it('offers an unpaced breathe-normally state with persistent controls', () => {
     const screen = render(<BreathingGardenScreen />);
+    fireEvent.press(screen.getByTestId('game-more'));
     fireEvent.press(screen.getByTestId('breathing-normal'));
 
     expect(screen.getByTestId('breathing-normal-state')).toBeTruthy();
     expect(screen.queryByTestId('breathing-ball')).toBeNull();
     expect(screen.getByTestId('breathing-stop')).toBeTruthy();
     expect(screen.getByTestId('game-sound')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('game-more'));
     expect(screen.getByTestId('breathing-music')).toBeTruthy();
     expect(screen.queryByTestId('breathing-pause')).toBeNull();
     advance(12 * BREATHING_CYCLE_DURATION_MS);
@@ -211,11 +224,13 @@ describe('BreathingGardenScreen', () => {
 
   it('can hide the ball before starting and still follow the phase words', () => {
     const screen = render(<BreathingGardenScreen />);
+    fireEvent.press(screen.getByTestId('game-more'));
     fireEvent.press(screen.getByTestId('breathing-visual-cue'));
     expect(mockUpdateGameSettings).toHaveBeenCalledWith('breathing-garden', { visualCue: false });
     mockSettings.gameSettings['breathing-garden'].visualCue = false;
     screen.rerender(<BreathingGardenScreen />);
     expect(screen.getByTestId('breathing-visual-cue')).not.toBeChecked();
+    fireEvent.press(screen.getByText('Close'));
 
     fireEvent.press(screen.getByTestId('breathing-start'));
     expect(screen.queryByTestId('breathing-ball', { includeHiddenElements: true })).toBeNull();
@@ -227,6 +242,7 @@ describe('BreathingGardenScreen', () => {
 
   it('persists sound, visual cue, and session choices while respecting global sound', () => {
     const screen = render(<BreathingGardenScreen />);
+    fireEvent.press(screen.getByTestId('breathing-session-length'));
     fireEvent.press(
       screen.getAllByRole('radio', { name: /games.breathingGarden.session.breaths/ })[0],
     );
@@ -234,9 +250,11 @@ describe('BreathingGardenScreen', () => {
       sessionLength: 3,
     });
 
+    fireEvent.press(screen.getByTestId('game-more'));
     fireEvent.press(screen.getByTestId('breathing-normal'));
     fireEvent.press(screen.getByTestId('game-sound'));
     expect(mockUpdateSettings).toHaveBeenCalledWith({ soundEnabled: false });
+    fireEvent.press(screen.getByTestId('game-more'));
     fireEvent.press(screen.getByTestId('breathing-music'));
     expect(mockToggleMusic).toHaveBeenCalled();
     mockSettings.soundEnabled = false;
@@ -248,10 +266,10 @@ describe('BreathingGardenScreen', () => {
     const screen = render(<BreathingGardenScreen />);
     fireEvent.press(screen.getByTestId('breathing-start'));
 
-    act(() => appStateHandler?.('background'));
+    act(() => appStateHandlers.forEach((handler) => handler('background')));
     expect(mockStopMusic).toHaveBeenCalled();
     expect(screen.getByTestId('breathing-resume')).toBeTruthy();
-    act(() => appStateHandler?.('active'));
+    act(() => appStateHandlers.forEach((handler) => handler('active')));
     advance(BREATHING_CYCLE_DURATION_MS);
     expect(screen.getByTestId('breathing-resume')).toBeTruthy();
     expect(screen.queryByText('Breathe in')).toBeNull();

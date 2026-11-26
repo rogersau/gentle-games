@@ -1,5 +1,6 @@
 import { useColorScheme, AccessibilityInfo } from 'react-native';
-import { useEffect, useState } from 'react';
+import { createContext, createElement, useContext, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useSettings } from '../context/SettingsContext';
 import { ColorMode, DARK_PASTEL_COLORS, PASTEL_COLORS, ThemeColors } from '../types';
 
@@ -30,31 +31,51 @@ export const useThemeColors = () => {
   };
 };
 
-export const useReducedMotion = (): boolean => {
-  const { settings } = useSettings();
-  const [systemPrefersReducedMotion, setSystemPrefersReducedMotion] = useState(false);
+const SystemMotionContext = createContext<boolean | undefined>(undefined);
+
+const useObservedSystemMotion = (initialValue: boolean, observe = true) => {
+  const [systemPrefersReducedMotion, setSystemPrefersReducedMotion] = useState(initialValue);
 
   useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled()
+    if (!observe) return;
+    let active = true;
+    let receivedChange = false;
+    Promise.resolve(AccessibilityInfo.isReduceMotionEnabled())
       .then((enabled) => {
-        setSystemPrefersReducedMotion(enabled);
+        if (active && !receivedChange) setSystemPrefersReducedMotion(enabled === true);
       })
       .catch((error: unknown) => {
         console.warn('Unable to read system reduced motion preference.', error);
       });
 
     const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
-      setSystemPrefersReducedMotion(enabled);
+      receivedChange = true;
+      setSystemPrefersReducedMotion(enabled === true);
     });
 
     return () => {
-      subscription.remove();
+      active = false;
+      subscription?.remove();
     };
-  }, []);
-
-  if (settings.reducedMotionEnabled) {
-    return true;
-  }
+  }, [observe]);
 
   return systemPrefersReducedMotion;
+};
+
+/** Share the device preference throughout the app and stay still until the first read. */
+export const SystemMotionProvider = ({ children }: { children: ReactNode }) => {
+  const reducedMotion = useObservedSystemMotion(true);
+  return createElement(SystemMotionContext.Provider, { value: reducedMotion }, children);
+};
+
+export const useSystemReducedMotion = (): boolean => {
+  const sharedPreference = useContext(SystemMotionContext);
+  const localPreference = useObservedSystemMotion(false, sharedPreference === undefined);
+  return sharedPreference ?? localPreference;
+};
+
+export const useReducedMotion = (): boolean => {
+  const { settings } = useSettings();
+  const systemPrefersReducedMotion = useSystemReducedMotion();
+  return settings.movement === 'still' || systemPrefersReducedMotion;
 };

@@ -14,8 +14,8 @@ jest.mock('@react-navigation/native', () => ({
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: {
-      animationsEnabled: false,
-      reducedMotionEnabled: false,
+      movement: 'still' as 'lively' | 'gentle' | 'still',
+
       gameSettings: {
         'number-picnic': {
           maxQuantity: 5,

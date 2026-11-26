@@ -79,19 +79,28 @@ jest.mock('../components/GameBoard', () => {
       onBackPress,
       _onPositiveEvent,
       renderStats,
+      renderShell,
     }: {
       onBackPress?: () => void;
       _onPositiveEvent?: () => void;
+      renderShell: (
+        prompt: string,
+        action: React.ReactNode,
+        board: React.ReactNode,
+      ) => React.ReactNode;
       renderStats?: (stats: { time: string; moves: number }) => React.ReactNode;
-    }) => (
-      <View>
-        <Text testID='mock-text'>Mock Memory Board</Text>
-        {renderStats?.({ time: '0:42', moves: 7 })}
-        <TouchableOpacity onPress={onBackPress}>
-          <Text testID='board-back'>Board Back</Text>
-        </TouchableOpacity>
-      </View>
-    ),
+    }) =>
+      renderShell(
+        'Turn over two cards.',
+        null,
+        <View>
+          <Text testID='mock-text'>Mock Memory Board</Text>
+          {renderStats?.({ time: '0:42', moves: 7 })}
+          <TouchableOpacity onPress={onBackPress}>
+            <Text testID='board-back'>Board Back</Text>
+          </TouchableOpacity>
+        </View>,
+      ),
   };
 });
 
@@ -114,7 +123,7 @@ describe('GameScreen', () => {
   it('offers all board sizes on request and remembers the chosen size', () => {
     const screen = render(<GameScreen />);
     expect(screen.queryByTestId('memory-pairs-2')).toBeNull();
-    fireEvent.press(screen.getByTestId('memory-change-board'));
+    fireEvent.press(screen.getByTestId('game-more'));
     for (const count of [2, 3, 4, 6, 10, 15])
       expect(screen.getByTestId(`memory-pairs-${count}`)).toBeTruthy();
     fireEvent.press(screen.getByTestId('memory-pairs-3'));
@@ -124,9 +133,9 @@ describe('GameScreen', () => {
 
   it('closes the board chooser without saving a size that is already selected', () => {
     const screen = render(<GameScreen />);
-    fireEvent.press(screen.getByTestId('memory-change-board'));
+    fireEvent.press(screen.getByTestId('game-more'));
     const currentSize = screen.getByTestId('memory-pairs-2');
-    expect(currentSize.props.accessibilityState).toMatchObject({ selected: true, disabled: false });
+    expect(currentSize.props.accessibilityState).toMatchObject({ checked: true });
     fireEvent.press(currentSize);
     expect(mockUpdateGameSettings).not.toHaveBeenCalled();
     expect(screen.queryByTestId('memory-pairs-2')).toBeNull();

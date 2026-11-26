@@ -7,7 +7,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DrawingCanvas, DrawingCanvasRef, HistoryEntry } from '../components/DrawingCanvas';
 import { ThemeColors } from '../types';
 import { useThemeColors } from '../utils/theme';
-import { AppScreen, GameHeader } from '../ui/components';
+import { AppScreen, AppButton } from '../ui/components';
+import { GameShell } from '../ui/components/GameShell';
+import type { TranslationKey } from '../i18n/types';
 import { Space, TypeStyle } from '../ui/tokens';
 import {
   DEFAULT_DRAWING_SAVE_DEBOUNCE_MS,
@@ -21,6 +23,7 @@ const DRAWING_STORAGE_KEY = '@gentle_match_saved_drawing';
 export const DRAWING_HEADER_HEIGHT = 68;
 export const DRAWING_TOOLBAR_HEIGHT = 304;
 export const DRAWING_LAYOUT_PADDING = 32;
+export const DRAWING_SHELL_CHROME_HEIGHT = 120;
 export const DRAWING_SAVE_DEBOUNCE_MS = DEFAULT_DRAWING_SAVE_DEBOUNCE_MS;
 
 export const DrawingScreen: React.FC = () => {
@@ -38,18 +41,22 @@ export const DrawingScreen: React.FC = () => {
   const { settings } = useSettings();
   const { showMochi } = useMochi();
 
+  const [promptKey, setPromptKey] = useState<TranslationKey>('games.drawing.instruction');
+  const [canClear, setCanClear] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
   const [savedHistory, setSavedHistory] = useState<HistoryEntry[]>([]);
   const [hasCheckedSaved, setHasCheckedSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showSaveNotice, setShowSaveNotice] = useState(false);
 
   const canvasDimensions = useMemo(() => {
-    const availableWidth = screenWidth - DRAWING_LAYOUT_PADDING;
+    const availableWidth = Math.min(screenWidth, 760) - DRAWING_LAYOUT_PADDING;
     const availableHeight =
       screenHeight -
       insets.top -
       insets.bottom -
       DRAWING_HEADER_HEIGHT -
+      DRAWING_SHELL_CHROME_HEIGHT -
       DRAWING_TOOLBAR_HEIGHT -
       DRAWING_LAYOUT_PADDING;
 
@@ -150,6 +157,7 @@ export const DrawingScreen: React.FC = () => {
 
   const handleHistoryChange = useCallback(
     (history: HistoryEntry[]) => {
+      setCanClear(history.length > 0);
       scheduleSave(history);
     },
     [scheduleSave],
@@ -171,9 +179,51 @@ export const DrawingScreen: React.FC = () => {
   }
 
   return (
-    <AppScreen
-      scroll
-      header={<GameHeader title={t('games.drawing.title')} onBack={handleBackPress} />}
+    <GameShell
+      title={t('games.drawing.title')}
+      prompt={t(promptKey)}
+      onHome={handleBackPress}
+      stageStyle={{ padding: 2 }}
+      onMoreClose={() => setConfirmClear(false)}
+      more={(close) =>
+        confirmClear ? (
+          <>
+            <Text accessibilityRole='header' style={[TypeStyle.title, { color: colors.text }]}>
+              {t('games.drawing.clearTitle')}
+            </Text>
+            <Text style={[TypeStyle.body, { color: colors.text }]}>
+              {t('games.drawing.clearConfirmMessage')}
+            </Text>
+            <AppButton
+              label={t('common.cancel')}
+              variant='ghost'
+              onPress={() => setConfirmClear(false)}
+              testID='clear-confirm-cancel'
+            />
+            <AppButton
+              label={t('games.drawing.clearConfirm')}
+              icon='bin'
+              variant='danger'
+              testID='clear-confirm-accept'
+              onPress={() => {
+                canvasRef.current?.clear();
+                close();
+              }}
+            />
+          </>
+        ) : (
+          <AppButton
+            label={t('games.drawing.tools.clear')}
+            accessibilityLabel={t('games.drawing.clearCanvas')}
+            disabledLabel={t('games.drawing.clearUnavailable')}
+            icon='bin'
+            variant='danger'
+            disabled={!canClear}
+            onPress={() => setConfirmClear(true)}
+            testID='clear-drawing-button'
+          />
+        )
+      }
     >
       <View style={styles.content}>
         {showSaveNotice && (
@@ -196,10 +246,12 @@ export const DrawingScreen: React.FC = () => {
             bottomInset={insets.bottom}
             initialHistory={savedHistory}
             onHistoryChange={handleHistoryChange}
+            onInstructionChange={setPromptKey}
+            hideClear
           />
         )}
       </View>
-    </AppScreen>
+    </GameShell>
   );
 };
 
@@ -218,8 +270,7 @@ const createStyles = (colors: ThemeColors) =>
       flex: 1,
       alignItems: 'center',
       justifyContent: 'flex-start',
-      paddingHorizontal: Space.base,
-      paddingTop: Space.base,
+      width: '100%',
     },
     saveNotice: {
       ...TypeStyle.body,

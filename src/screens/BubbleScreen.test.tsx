@@ -8,7 +8,7 @@ const mockPlayBubblePopSound = jest.fn();
 let mockReducedMotion = false;
 let mockBubbleProps: Record<string, unknown> = {};
 const mockSettings = {
-  animationsEnabled: true,
+  movement: 'lively' as 'lively' | 'gentle' | 'still',
   soundEnabled: true,
   soundVolume: 0.5,
   difficulty: 'medium' as const,
@@ -88,7 +88,7 @@ describe('BubbleScreen', () => {
     jest.clearAllMocks();
     mockReducedMotion = false;
     mockBubbleProps = {};
-    mockSettings.animationsEnabled = true;
+    mockSettings.movement = 'lively';
     mockSettings.pressureFreeMode = false;
     mockSettings.gameSettings = DEFAULT_GAME_SETTINGS;
   });
@@ -101,7 +101,7 @@ describe('BubbleScreen', () => {
   });
 
   it('keeps gameplay motion enabled when only decorative animations are disabled', () => {
-    mockSettings.animationsEnabled = false;
+    mockSettings.movement = 'still';
     mockSettings.gameSettings = {
       ...DEFAULT_GAME_SETTINGS,
       'bubble-pop': { motion: 'moving', density: 'full' },

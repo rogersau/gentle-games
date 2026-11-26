@@ -81,7 +81,10 @@ export const Carriage: React.FC<CarriageProps> = ({
           {content === '?' ? (
             <Text
               allowFontScaling={false}
-              style={[styles.contentText, { fontSize: size * 0.41, color: colors.text }]}
+              style={[
+                styles.contentText,
+                { fontSize: Math.max(15, size * 0.41), color: colors.text },
+              ]}
             >
               ?
             </Text>

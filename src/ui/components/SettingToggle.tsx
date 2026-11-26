@@ -1,7 +1,7 @@
 import React, { useId, useMemo } from 'react';
 import { Platform, Pressable, StyleSheet, View, Text } from 'react-native';
 import { useThemeColors } from '../../utils/theme';
-import { HitTarget, Space, TypeStyle } from '../tokens';
+import { HitTarget, Space, TypeStyle, SWITCH_ON_TRACK, SWITCH_ON_THUMB } from '../tokens';
 import { ThemeColors } from '../../types';
 
 interface SettingToggleProps {
@@ -62,7 +62,7 @@ export const SettingToggle: React.FC<SettingToggleProps> = ({
         importantForAccessibility='no-hide-descendants'
         aria-hidden
       >
-        <View style={styles.thumb} />
+        <View style={[styles.thumb, value && styles.thumbOn]} />
       </View>
     </Pressable>
   );
@@ -78,17 +78,24 @@ const createStyles = (colors: ThemeColors) =>
       alignItems: 'center',
       gap: Space.base,
     },
-    disabled: { opacity: 0.6 },
+    disabled: { backgroundColor: colors.sunken },
     track: {
-      width: 42,
-      height: 24,
+      width: 50,
+      height: 30,
       padding: 3,
-      borderRadius: 12,
-      backgroundColor: colors.border,
+      borderRadius: 15,
+      borderWidth: 2,
+      borderColor: colors.outline,
+      backgroundColor: colors.surface,
       justifyContent: 'center',
     },
-    trackOn: { backgroundColor: colors.primary, alignItems: 'flex-end' },
-    thumb: { width: 18, height: 18, borderRadius: 9, backgroundColor: colors.surface },
+    trackOn: {
+      backgroundColor: SWITCH_ON_TRACK,
+      borderColor: colors.skyInk,
+      alignItems: 'flex-end',
+    },
+    thumb: { width: 20, height: 20, borderRadius: 10, backgroundColor: colors.outline },
+    thumbOn: { backgroundColor: SWITCH_ON_THUMB },
     labelContainer: {
       flex: 1,
     },
@@ -97,7 +104,7 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.text,
     },
     description: {
-      ...TypeStyle.bodySm,
+      ...TypeStyle.helper,
       color: colors.textLight,
       marginTop: Space.xxs,
     },

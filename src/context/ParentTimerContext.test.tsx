@@ -6,7 +6,7 @@ import { ParentTimerProvider, useParentTimer } from './ParentTimerContext';
 
 const mockSettings = {
   parentTimerMinutes: 1,
-  animationsEnabled: true,
+  movement: 'lively' as 'lively' | 'gentle' | 'still',
 };
 
 jest.mock('../context/SettingsContext', () => ({
@@ -63,7 +63,7 @@ describe('ParentTimerContext', () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
     mockSettings.parentTimerMinutes = 1;
-    mockSettings.animationsEnabled = true;
+    mockSettings.movement = 'lively';
     storage.getItem.mockResolvedValue(null);
     storage.setItem.mockResolvedValue(undefined);
     storage.removeItem.mockResolvedValue(undefined);
@@ -213,7 +213,7 @@ describe('ParentTimerContext', () => {
     'restarts the allowance for a correct answer to $question',
     async ({ random, question, answer }) => {
       jest.spyOn(Math, 'random').mockReturnValue(random);
-      mockSettings.animationsEnabled = false;
+      mockSettings.movement = 'still';
       storage.getItem.mockResolvedValueOnce(
         JSON.stringify({ expiresAt: Date.now() - 1, durationMinutes: 1, locked: true }),
       );
@@ -236,7 +236,7 @@ describe('ParentTimerContext', () => {
     'keeps the gate closed for an incorrect or malformed answer: %s',
     async (answer) => {
       jest.spyOn(Math, 'random').mockReturnValue(0);
-      mockSettings.animationsEnabled = false;
+      mockSettings.movement = 'still';
       storage.getItem.mockResolvedValueOnce(
         JSON.stringify({ expiresAt: Date.now() - 1, durationMinutes: 1, locked: true }),
       );

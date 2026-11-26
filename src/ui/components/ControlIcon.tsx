@@ -2,6 +2,10 @@ import React from 'react';
 import Svg, { Path } from 'react-native-svg';
 
 const paths = {
+  lock: 'M5 11h14v10H5Z M8 11V8a4 4 0 1 1 8 0v3 M12 15v2',
+  more: 'M6 12a1 1 0 1 1-2 0 1 1 0 1 1 2 0 M13 12a1 1 0 1 1-2 0 1 1 0 1 1 2 0 M20 12a1 1 0 1 1-2 0 1 1 0 1 1 2 0',
+  sound: 'M3 9h4l5-5v16l-5-5H3Z M16 8q4 4 0 8 M19 4q7 8 0 16',
+  back: 'm15 6-6 6 6 6',
   settings:
     'M3 6h5 M13 6h8 M3 12h11 M19 12h2 M3 18h3 M11 18h10 M13 6a2.5 2.5 0 1 1-5 0 2.5 2.5 0 1 1 5 0 M19 12a2.5 2.5 0 1 1-5 0 2.5 2.5 0 1 1 5 0 M11 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 1 1 5 0',
   eraser: 'M3 13l9-9a2 2 0 0 1 3 0l5 5a2 2 0 0 1 0 3l-8 8H8l-5-5a2 2 0 0 1 0-2Z M7 9l8 8 M12 20h9',

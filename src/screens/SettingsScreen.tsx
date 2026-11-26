@@ -1,33 +1,35 @@
 import { CategoryMatchPackPicker } from '../components/CategoryMatchPackPicker';
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import * as Application from 'expo-application';
+import { APP_ROUTES, AppStackParamList, SettingsPage } from '../types/navigation';
+import { openExternalUrl } from '../utils/externalLinks';
+import { ControlIcon } from '../ui/components/ControlIcon';
 import { useSettings } from '../context/SettingsContext';
 import {
   CategoryMatchCategoryCount,
-  ColorMode,
+  Movement,
   NumberPicnicMode,
   NumberPicnicStage,
-  ThemeColors,
 } from '../types';
-import { GAME_REGISTRY } from '../games/registry';
-import { ResolvedThemeMode, useThemeColors } from '../utils/theme';
-import { LANGUAGE_OPTIONS } from '../types/i18n';
+import { GAME_REGISTRY, GameId } from '../games/registry';
+import { useSystemReducedMotion, useThemeColors } from '../utils/theme';
+import { SUPPORTED_LANGUAGES } from '../types/i18n';
 import { useNumberPicnicSpeechAvailable } from '../utils/numberPicnicNarration';
 import {
   AppScreen,
   GameArtwork,
-  AppHeader,
+  AppModal,
   SettingToggle,
   SegmentedControl,
-  SelectBox,
   VolumeControl,
   SectionHeader,
   AppButton,
 } from '../ui/components';
-import { Space, TypeStyle } from '../ui/tokens';
-import { useLayout } from '../ui/useLayout';
+import { Radius, Space, TypeStyle } from '../ui/tokens';
 import {
   getGameSettings,
   MemorySnapMismatchDuration,
@@ -43,18 +45,346 @@ import {
 } from '../games/glitterSettings';
 
 export const SettingsScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const { settings, updateSettings, updateGameSettings, isSaving, persistenceError } =
-    useSettings();
-  const { colors, resolvedMode } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
-  const { contentWidth, isTablet } = useLayout();
+  const navigation = useNavigation<StackNavigationProp<AppStackParamList>>();
+  const route = useRoute<RouteProp<AppStackParamList, 'Settings'>>();
+  const { settings, updateSettings, persistenceError } = useSettings();
+  const { colors } = useThemeColors();
+  const systemReduced = useSystemReducedMotion();
   const { t } = useTranslation();
+  const [websiteFallback, setWebsiteFallback] = useState(false);
+  const page = route.params?.page ?? 'hub';
+  const gameId = route.params?.gameId;
+  const game = GAME_REGISTRY.find((item) => item.id === gameId);
+  const open = (next: SettingsPage, id?: GameId) =>
+    navigation.push(APP_ROUTES.Settings, { page: next, gameId: id });
+  const done = () => navigation.popToTop();
+  const games = GAME_REGISTRY.filter(
+    (item) => !item.isUnfinished || settings.enableUnfinishedGames,
+  );
+  const title =
+    page === 'game' && game
+      ? t(game.nameKey)
+      : t(
+          (
+            {
+              hub: 'settings.title',
+              games: 'settings.games.title',
+              game: 'settings.games.title',
+              break: 'settings.parentTimer.title',
+              language: 'settings.language.title',
+              privacy: 'settings.privacy.title',
+              appearance: 'settings.appearance.title',
+            } as const
+          )[page],
+        );
+  const currentAppearance = t(`settings.appearance.${settings.colorMode}`);
+  const timerLabel = (count: number) =>
+    count ? t('settings.parentTimer.duration', { count }) : t('settings.parentTimer.off');
+
+  return (
+    <AppScreen
+      scroll
+      contentContainerStyle={styles.content}
+      testID={`settings-${page}`}
+      header={
+        <View style={styles.header}>
+          {page !== 'hub' && (
+            <AppButton
+              label={t('common.backPlain')}
+              icon='back'
+              variant='ghost'
+              size='sm'
+              onPress={() => navigation.goBack()}
+            />
+          )}
+          <Text
+            accessibilityRole='header'
+            style={[TypeStyle.title, styles.headerTitle, { color: colors.text }]}
+          >
+            {title}
+          </Text>
+          <AppButton label={t('common.done')} size='sm' onPress={done} />
+        </View>
+      }
+    >
+      {persistenceError && (
+        <Text
+          testID='settings-persistence-status'
+          accessibilityRole='alert'
+          accessibilityLiveRegion='polite'
+          style={[
+            TypeStyle.body,
+            styles.error,
+            { color: colors.peachInk, backgroundColor: colors.peach },
+          ]}
+        >
+          {t('settings.persistenceError')}
+        </Text>
+      )}
+      {page === 'hub' && (
+        <>
+          <Group title={t('settings.comfort')}>
+            <SettingToggle
+              label={t('settings.sound.label')}
+              value={settings.soundEnabled}
+              onValueChange={(soundEnabled) => updateSettings({ soundEnabled })}
+            />
+            {settings.soundEnabled && (
+              <VolumeControl
+                value={settings.soundVolume}
+                onValueChange={(soundVolume) => updateSettings({ soundVolume })}
+              />
+            )}
+            <Text style={[styles.controlLabel, { color: colors.text }]}>
+              {t('settings.movement.title')}
+            </Text>
+            <Text style={[styles.description, { color: colors.textLight }]}>
+              {t(systemReduced ? 'settings.movement.device' : 'settings.movement.description')}
+            </Text>
+            <SegmentedControl<Movement>
+              options={(['still', 'gentle', 'lively'] as const).map((value) => ({
+                value,
+                label: t(`settings.movement.${value}`),
+              }))}
+              value={settings.movement}
+              onValueChange={(movement) => updateSettings({ movement })}
+            />
+            <SettingsRow
+              label={t('settings.appearance.title')}
+              value={currentAppearance}
+              onPress={() => open('appearance')}
+            />
+            <SettingToggle
+              label={t('settings.pressureFreeMode.label')}
+              description={t('settings.pressureFreeMode.description')}
+              value={settings.pressureFreeMode !== false}
+              onValueChange={(pressureFreeMode) => updateSettings({ pressureFreeMode })}
+            />
+            <SettingToggle
+              label={t('settings.showMochiInGames.label')}
+              value={settings.showMochiInGames}
+              onValueChange={(showMochiInGames) => updateSettings({ showMochiInGames })}
+            />
+            <SettingToggle
+              label={t('settings.grownUpsHoldGate.label')}
+              description={t('settings.grownUpsHoldGate.description')}
+              value={settings.grownUpsHoldGate !== false}
+              onValueChange={(grownUpsHoldGate) => updateSettings({ grownUpsHoldGate })}
+            />
+          </Group>
+          <Group title={t('settings.play')}>
+            <SettingsRow
+              label={t('settings.parentTimer.title')}
+              value={timerLabel(settings.parentTimerMinutes)}
+              onPress={() => open('break')}
+            />
+            <SettingsRow
+              label={t('settings.games.title')}
+              description={t('settings.games.description')}
+              onPress={() => open('games')}
+            />
+          </Group>
+          <Group title={t('settings.app')}>
+            <SettingsRow
+              label={t('settings.language.title')}
+              value={t(`settings.language.${settings.language}`)}
+              onPress={() => open('language')}
+            />
+            <SettingsRow label={t('settings.privacy.title')} onPress={() => open('privacy')} />
+          </Group>
+        </>
+      )}
+      {page === 'appearance' && (
+        <Group>
+          <Text style={[styles.description, { color: colors.textLight }]}>
+            {t('settings.appearance.description')}
+          </Text>
+          <SegmentedControl
+            options={(['light', 'dark', 'system'] as const).map((value) => ({
+              value,
+              label: t(`settings.appearance.${value}`),
+            }))}
+            value={settings.colorMode}
+            onValueChange={(colorMode) => updateSettings({ colorMode })}
+            wrap
+          />
+        </Group>
+      )}
+      {page === 'break' && (
+        <Group>
+          <Text style={[styles.description, { color: colors.textLight }]}>
+            {t('settings.parentTimer.description')}
+          </Text>
+          <SegmentedControl
+            options={[0, 5, 10, 15, 20, 30].map((value) => ({ value, label: timerLabel(value) }))}
+            value={settings.parentTimerMinutes}
+            onValueChange={(parentTimerMinutes) => updateSettings({ parentTimerMinutes })}
+            wrap
+          />
+        </Group>
+      )}
+      {page === 'language' && (
+        <Group>
+          <Text style={[styles.description, { color: colors.textLight }]}>
+            {t('settings.language.description')}
+          </Text>
+          <SegmentedControl
+            options={SUPPORTED_LANGUAGES.map((value) => ({
+              value,
+              label: t(`settings.language.${value}`),
+            }))}
+            value={settings.language}
+            onValueChange={(language) => updateSettings({ language })}
+            wrap
+          />
+        </Group>
+      )}
+      {page === 'privacy' && (
+        <Group>
+          <SettingToggle
+            label={t('settings.telemetry.label')}
+            description={t('settings.telemetry.description')}
+            value={settings.telemetryEnabled}
+            onValueChange={(telemetryEnabled) => updateSettings({ telemetryEnabled })}
+          />
+          <SettingToggle
+            label={t('settings.unfinishedGames.label')}
+            description={t('settings.unfinishedGames.description')}
+            value={settings.enableUnfinishedGames}
+            onValueChange={(enableUnfinishedGames) => updateSettings({ enableUnfinishedGames })}
+          />
+          <SettingsRow
+            label={t('settings.privacy.websiteLink')}
+            link
+            onPress={() =>
+              void openExternalUrl('https://gentlegames.org').then((result) => {
+                if (result !== 'opened') setWebsiteFallback(true);
+              })
+            }
+          />
+          <Text style={[styles.description, { color: colors.textLight }]}>
+            {t('settings.privacy.version', {
+              version:
+                Application.nativeApplicationVersion ?? require('../../package.json').version,
+            })}
+          </Text>
+          <AppModal
+            visible={websiteFallback}
+            onClose={() => setWebsiteFallback(false)}
+            title={t('settings.privacy.websiteFallback.title')}
+          >
+            <Text style={[styles.description, { color: colors.textLight }]}>
+              {t('settings.privacy.websiteFallback.message')}
+            </Text>
+          </AppModal>
+        </Group>
+      )}
+      {page === 'games' && (
+        <Group>
+          {games.map((item) => (
+            <SettingsRow
+              key={item.id}
+              label={t(item.nameKey)}
+              artwork={<GameArtwork gameId={item.id} size={36} />}
+              value={t(
+                settings.hiddenGames.includes(item.id)
+                  ? 'settings.games.hidden'
+                  : 'settings.games.shown',
+              )}
+              onPress={() => open('game', item.id)}
+            />
+          ))}
+        </Group>
+      )}
+      {page === 'game' && game && (
+        <>
+          <View style={styles.hero}>
+            <GameArtwork gameId={game.id} size={80} />
+            <Text style={[TypeStyle.body, { color: colors.text, flex: 1 }]}>
+              {t(game.descriptionKey)}
+            </Text>
+          </View>
+          <Group title={t('settings.games.onHome')}>
+            <SettingToggle
+              label={t('settings.games.showOnHome')}
+              value={!settings.hiddenGames.includes(game.id)}
+              onValueChange={(show) =>
+                updateSettings({
+                  hiddenGames: show
+                    ? settings.hiddenGames.filter((id) => id !== game.id)
+                    : [...settings.hiddenGames, game.id],
+                })
+              }
+            />
+          </Group>
+          <GameOptions gameId={game.id} />
+        </>
+      )}
+    </AppScreen>
+  );
+};
+
+const Group: React.FC<{ title?: string; children: React.ReactNode }> = ({ title, children }) => {
+  const { colors } = useThemeColors();
+  return (
+    <View style={styles.group}>
+      {title && <SectionHeader title={title} />}
+      <View
+        style={[styles.groupBody, { backgroundColor: colors.surface, borderColor: colors.line }]}
+      >
+        {children}
+      </View>
+    </View>
+  );
+};
+
+const SettingsRow: React.FC<{
+  label: string;
+  description?: string;
+  value?: string;
+  artwork?: React.ReactNode;
+  link?: boolean;
+  onPress: () => void;
+}> = ({ label, description, value, artwork, link, onPress }) => {
+  const { colors } = useThemeColors();
+  return (
+    <Pressable
+      accessibilityRole={link ? 'link' : 'button'}
+      accessibilityLabel={label}
+      accessibilityHint={description ?? value}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.row,
+        { borderTopColor: colors.line, backgroundColor: pressed ? colors.sunken : colors.surface },
+      ]}
+    >
+      {artwork}
+      <View style={styles.rowCopy}>
+        <Text style={[TypeStyle.label, { color: colors.text }]}>{label}</Text>
+        {description && (
+          <Text style={[TypeStyle.helper, { color: colors.textLight }]}>{description}</Text>
+        )}
+      </View>
+      {value && <Text style={[TypeStyle.helper, { color: colors.textLight }]}>{value}</Text>}
+      <View style={!link && styles.chevron}>
+        <ControlIcon name={link ? 'next' : 'back'} size={16} color={colors.textLight} />
+      </View>
+    </Pressable>
+  );
+};
+
+const GameOptions: React.FC<{ gameId: GameId }> = ({ gameId }) => {
+  const { t } = useTranslation();
+  const { colors } = useThemeColors();
+  const { settings, updateGameSettings } = useSettings();
   const glitterSettings = getGameSettings(settings, 'glitter-fall');
   const memorySettings = getGameSettings(settings, 'memory-snap');
   const categorySettings = getGameSettings(settings, 'category-match');
   const numberPicnicSettings = getGameSettings(settings, 'number-picnic');
-  const picnicSpeechAvailable = useNumberPicnicSpeechAvailable(settings.language);
+  const picnicSpeechAvailable = useNumberPicnicSpeechAvailable(
+    settings.language,
+    gameId === 'number-picnic',
+  );
 
   const memoryPairOptions: { value: MemorySnapPairCount; label: string }[] = [
     { value: 2, label: t('settings.memorySnap.pairs.two') },
@@ -109,139 +439,68 @@ export const SettingsScreen: React.FC = () => {
     { value: 6, label: t('settings.glitterFall.colors.six') },
   ];
 
-  const colorModeOptions: { value: ColorMode; label: string }[] = [
-    { value: 'light', label: t('settings.appearance.light') },
-    { value: 'dark', label: t('settings.appearance.dark') },
-    { value: 'system', label: t('settings.appearance.system') },
-  ];
-
-  const timerOptions: { value: number; label: string }[] = [
-    { value: 0, label: t('settings.parentTimer.off') },
-    { value: 5, label: t('settings.parentTimer.duration', { count: 5 } as any) },
-    { value: 10, label: t('settings.parentTimer.duration', { count: 10 } as any) },
-    { value: 15, label: t('settings.parentTimer.duration', { count: 15 } as any) },
-    { value: 20, label: t('settings.parentTimer.duration', { count: 20 } as any) },
-    { value: 30, label: t('settings.parentTimer.duration', { count: 30 } as any) },
-  ];
-
   return (
-    <AppScreen>
-      <AppHeader title={t('settings.title')} onBack={() => navigation.goBack()} />
-
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          isTablet && { maxWidth: contentWidth, alignSelf: 'center', width: '100%' },
-        ]}
-      >
-        <Text
-          testID='settings-persistence-status'
-          accessibilityRole={persistenceError && !isSaving ? 'alert' : 'text'}
-          accessibilityLiveRegion={persistenceError && !isSaving ? 'polite' : 'none'}
-          style={persistenceError && !isSaving ? styles.errorMessage : styles.persistenceStatus}
-        >
-          {isSaving
-            ? t('settings.saving')
-            : persistenceError
-              ? t('settings.persistenceError')
-              : t('settings.saved')}
-        </Text>
-
-        {/* Language */}
-        <View style={styles.section}>
-          <SectionHeader title={t('settings.language.title')} />
-          <SelectBox
-            options={LANGUAGE_OPTIONS}
-            value={settings.language}
-            onValueChange={(value) => updateSettings({ language: value })}
-          />
-          <Text style={styles.description}>{t('settings.language.description')}</Text>
-        </View>
-
-        {/* Appearance */}
-        <View style={styles.section}>
-          <SectionHeader title={t('settings.appearance.title')} />
-          <SegmentedControl
-            options={colorModeOptions}
-            value={settings.colorMode}
-            onValueChange={(value) => updateSettings({ colorMode: value })}
-          />
-          <Text style={styles.description}>{t('settings.appearance.description')}</Text>
-        </View>
-
-        {/* Reduced Motion */}
-        <View style={styles.section}>
-          <SettingToggle
-            label={t('settings.reducedMotion.label')}
-            description={t('settings.reducedMotion.description')}
-            value={!!settings.reducedMotionEnabled}
-            onValueChange={(value) => updateSettings({ reducedMotionEnabled: value })}
-          />
-        </View>
-
-        {/* Show Mochi in Games */}
-        <View style={styles.section}>
-          <SettingToggle
-            label={t('settings.showMochiInGames.label')}
-            description={t('settings.showMochiInGames.description')}
-            value={!!settings.showMochiInGames}
-            onValueChange={(value) => updateSettings({ showMochiInGames: value })}
-          />
-        </View>
-
-        {/* Pressure-free Play */}
-        <View style={styles.section}>
-          <SettingToggle
-            label={t('settings.pressureFreeMode.label')}
-            description={t('settings.pressureFreeMode.description')}
-            value={!!settings.pressureFreeMode}
-            onValueChange={(value) => updateSettings({ pressureFreeMode: value })}
-          />
-        </View>
-
-        {/* Memory Snap */}
-        <View style={styles.section}>
-          <SectionHeader title={t('settings.memorySnap.title')} />
-          <Text style={styles.controlLabel}>{t('settings.memorySnap.pairs.title')}</Text>
-          <SegmentedControl
-            options={memoryPairOptions}
-            value={memorySettings.pairCount}
-            onValueChange={(pairCount) => updateGameSettings('memory-snap', { pairCount })}
-            wrap
-          />
-          <Text style={styles.description}>{t('settings.memorySnap.pairs.description')}</Text>
-          <Text style={styles.controlLabel}>{t('settings.memorySnap.preview.title')}</Text>
-          <SegmentedControl
-            options={memoryPreviewOptions}
-            value={memorySettings.previewMode}
-            onValueChange={(previewMode) => updateGameSettings('memory-snap', { previewMode })}
-            wrap
-          />
-          <Text style={styles.description}>{t('settings.memorySnap.preview.description')}</Text>
-          <Text style={styles.controlLabel}>{t('settings.memorySnap.mismatch.title')}</Text>
-          <SegmentedControl
-            options={memoryMismatchOptions}
-            value={memorySettings.mismatchDuration}
-            onValueChange={(mismatchDuration) =>
-              updateGameSettings('memory-snap', { mismatchDuration })
-            }
-          />
-          <Text style={styles.description}>{t('settings.memorySnap.mismatch.description')}</Text>
-          <SettingToggle
-            label={t('settings.memorySnap.hint.label')}
-            description={t('settings.memorySnap.hint.description')}
-            value={memorySettings.hintEnabled}
-            onValueChange={(hintEnabled) => updateGameSettings('memory-snap', { hintEnabled })}
-          />
-        </View>
-
-        {/* Category Match */}
-        <View style={styles.section}>
-          <SectionHeader title={t('settings.categoryMatch.title')} />
-          <Text style={styles.controlLabel}>{t('settings.categoryMatch.pack.title')}</Text>
+    <>
+      {gameId === 'memory-snap' && (
+        <>
+          <Group title={t('settings.challenge')}>
+            <Text style={[styles.controlLabel, { color: colors.text }]}>
+              {t('settings.memorySnap.pairs.title')}
+            </Text>
+            <SegmentedControl
+              options={memoryPairOptions}
+              value={memorySettings.pairCount}
+              onValueChange={(pairCount) => updateGameSettings('memory-snap', { pairCount })}
+              wrap
+            />
+            <Text style={[styles.description, { color: colors.textLight }]}>
+              {t('settings.memorySnap.pairs.description')}
+            </Text>
+            <Text style={[styles.controlLabel, { color: colors.text }]}>
+              {t('settings.memorySnap.preview.title')}
+            </Text>
+            <SegmentedControl
+              options={memoryPreviewOptions}
+              value={memorySettings.previewMode}
+              onValueChange={(previewMode) => updateGameSettings('memory-snap', { previewMode })}
+              wrap
+            />
+            <Text style={[styles.description, { color: colors.textLight }]}>
+              {t('settings.memorySnap.preview.description')}
+            </Text>
+            <Text style={[styles.controlLabel, { color: colors.text }]}>
+              {t('settings.memorySnap.mismatch.title')}
+            </Text>
+            <SegmentedControl
+              options={memoryMismatchOptions}
+              value={memorySettings.mismatchDuration}
+              onValueChange={(mismatchDuration) =>
+                updateGameSettings('memory-snap', { mismatchDuration })
+              }
+            />
+            <Text style={[styles.description, { color: colors.textLight }]}>
+              {t('settings.memorySnap.mismatch.description')}
+            </Text>
+          </Group>
+          <Group title={t('settings.help')}>
+            <SettingToggle
+              label={t('settings.memorySnap.hint.label')}
+              description={t('settings.memorySnap.hint.description')}
+              value={memorySettings.hintEnabled}
+              onValueChange={(hintEnabled) => updateGameSettings('memory-snap', { hintEnabled })}
+            />
+          </Group>
+        </>
+      )}
+      {gameId === 'category-match' && (
+        <Group title={t('settings.challenge')}>
+          <Text style={[styles.controlLabel, { color: colors.text }]}>
+            {t('settings.categoryMatch.pack.title')}
+          </Text>
           <CategoryMatchPackPicker />
-          <Text style={styles.controlLabel}>{t('settings.categoryMatch.categories.title')}</Text>
+          <Text style={[styles.controlLabel, { color: colors.text }]}>
+            {t('settings.categoryMatch.categories.title')}
+          </Text>
           <SegmentedControl
             options={categoryCountOptions}
             value={categorySettings.categoryCount}
@@ -249,82 +508,71 @@ export const SettingsScreen: React.FC = () => {
               updateGameSettings('category-match', { categoryCount })
             }
           />
-          <Text style={styles.description}>
+          <Text style={[styles.description, { color: colors.textLight }]}>
             {t('settings.categoryMatch.categories.description')}
           </Text>
-        </View>
-
-        {/* Enable Unfinished Games */}
-        <View style={styles.section}>
           <SettingToggle
-            label={t('settings.unfinishedGames.label')}
-            description={t('settings.unfinishedGames.description')}
-            value={!!settings.enableUnfinishedGames}
-            onValueChange={(value) => updateSettings({ enableUnfinishedGames: value })}
+            label={t('settings.categoryMatch.showPreview')}
+            value={categorySettings.showPreview}
+            onValueChange={(showPreview) => updateGameSettings('category-match', { showPreview })}
           />
-        </View>
-
-        {/* Number Picnic */}
-        {settings.enableUnfinishedGames && (
-          <View style={styles.section}>
-            <SectionHeader title={t('settings.numberPicnic.title')} />
-            <Text style={styles.controlLabel}>{t('settings.numberPicnic.stage.title')}</Text>
-            <SegmentedControl
-              options={numberPicnicStageOptions}
-              value={numberPicnicSettings.stage}
-              onValueChange={(stage) =>
-                updateGameSettings('number-picnic', {
-                  stage,
-                  maxQuantity: stageToMaxQuantity(stage),
-                  mode:
-                    stage === '6-10'
-                      ? numberPicnicSettings.mode
-                      : numberPicnicSettings.mode === 'add-one-more'
-                        ? 'make-amount'
-                        : numberPicnicSettings.mode,
-                })
-              }
-              wrap
-            />
-            <Text style={styles.description}>{t('settings.numberPicnic.stage.description')}</Text>
-            <Text style={styles.controlLabel}>{t('settings.numberPicnic.mode.title')}</Text>
-            <SegmentedControl
-              options={numberPicnicModeOptions.filter(
-                (option) =>
-                  option.value !== 'add-one-more' || numberPicnicSettings.stage === '6-10',
-              )}
-              value={numberPicnicSettings.mode}
-              onValueChange={(mode) => updateGameSettings('number-picnic', { mode })}
-              wrap
-            />
-            <Text style={styles.description}>{t('settings.numberPicnic.mode.description')}</Text>
-            <SettingToggle
-              label={t('settings.numberPicnic.spokenCounting.label')}
-              description={t(
-                picnicSpeechAvailable
-                  ? 'settings.numberPicnic.spokenCounting.description'
-                  : 'settings.numberPicnic.spokenCounting.unavailable',
-              )}
-              value={numberPicnicSettings.spokenCounting}
-              onValueChange={(spokenCounting) =>
-                updateGameSettings('number-picnic', { spokenCounting })
-              }
-            />
-          </View>
-        )}
-
-        {/* Animations */}
-        <View style={styles.section}>
+        </Group>
+      )}
+      {gameId === 'number-picnic' && (
+        <Group title={t('settings.challenge')}>
+          <Text style={[styles.controlLabel, { color: colors.text }]}>
+            {t('settings.numberPicnic.stage.title')}
+          </Text>
+          <SegmentedControl
+            options={numberPicnicStageOptions}
+            value={numberPicnicSettings.stage}
+            onValueChange={(stage) =>
+              updateGameSettings('number-picnic', {
+                stage,
+                maxQuantity: stageToMaxQuantity(stage),
+                mode:
+                  stage === '6-10'
+                    ? numberPicnicSettings.mode
+                    : numberPicnicSettings.mode === 'add-one-more'
+                      ? 'make-amount'
+                      : numberPicnicSettings.mode,
+              })
+            }
+            wrap
+          />
+          <Text style={[styles.description, { color: colors.textLight }]}>
+            {t('settings.numberPicnic.stage.description')}
+          </Text>
+          <Text style={[styles.controlLabel, { color: colors.text }]}>
+            {t('settings.numberPicnic.mode.title')}
+          </Text>
+          <SegmentedControl
+            options={numberPicnicModeOptions.filter(
+              (option) => option.value !== 'add-one-more' || numberPicnicSettings.stage === '6-10',
+            )}
+            value={numberPicnicSettings.mode}
+            onValueChange={(mode) => updateGameSettings('number-picnic', { mode })}
+            wrap
+          />
+          <Text style={[styles.description, { color: colors.textLight }]}>
+            {t('settings.numberPicnic.mode.description')}
+          </Text>
           <SettingToggle
-            label={t('settings.animations.label')}
-            description={t('settings.animations.description')}
-            value={!!settings.animationsEnabled}
-            onValueChange={(value) => updateSettings({ animationsEnabled: value })}
+            label={t('settings.numberPicnic.spokenCounting.label')}
+            description={t(
+              picnicSpeechAvailable
+                ? 'settings.numberPicnic.spokenCounting.description'
+                : 'settings.numberPicnic.spokenCounting.unavailable',
+            )}
+            value={numberPicnicSettings.spokenCounting}
+            onValueChange={(spokenCounting) =>
+              updateGameSettings('number-picnic', { spokenCounting })
+            }
           />
-        </View>
-
-        {/* Keepy Uppy Easy Mode */}
-        <View style={styles.section}>
+        </Group>
+      )}
+      {gameId === 'keepy-uppy' && (
+        <Group title={t('settings.challenge')}>
           <SettingToggle
             label={t('settings.keepyUppyEasyMode.label')}
             description={t('settings.keepyUppyEasyMode.description')}
@@ -333,11 +581,10 @@ export const SettingsScreen: React.FC = () => {
               updateGameSettings('keepy-uppy', { liftMode: value ? 'gentle' : 'precise' })
             }
           />
-        </View>
-
-        {/* Sensory game controls */}
-        <View style={styles.section}>
-          <SectionHeader title={t('settings.bubblePop.title')} />
+        </Group>
+      )}
+      {gameId === 'bubble-pop' && (
+        <Group title={t('settings.challenge')}>
           <SettingToggle
             label={t('settings.bubblePop.moving.label')}
             description={t('settings.bubblePop.moving.description')}
@@ -354,11 +601,13 @@ export const SettingsScreen: React.FC = () => {
               updateGameSettings('bubble-pop', { density: value ? 'full' : 'sparse' })
             }
           />
-        </View>
-
-        <View style={styles.section}>
-          <SectionHeader title={t('settings.glitterFall.title')} />
-          <Text style={styles.controlLabel}>{t('settings.glitterFall.density.title')}</Text>
+        </Group>
+      )}
+      {gameId === 'glitter-fall' && (
+        <Group title={t('settings.challenge')}>
+          <Text style={[styles.controlLabel, { color: colors.text }]}>
+            {t('settings.glitterFall.density.title')}
+          </Text>
           <SegmentedControl
             options={glitterDensityOptions}
             value={glitterSettings.particleDensity}
@@ -367,13 +616,17 @@ export const SettingsScreen: React.FC = () => {
             }
             wrap
           />
-          <Text style={styles.controlLabel}>{t('settings.glitterFall.speed.title')}</Text>
+          <Text style={[styles.controlLabel, { color: colors.text }]}>
+            {t('settings.glitterFall.speed.title')}
+          </Text>
           <SegmentedControl
             options={glitterSpeedOptions}
             value={glitterSettings.fallSpeed}
             onValueChange={(fallSpeed) => updateGameSettings('glitter-fall', { fallSpeed })}
           />
-          <Text style={styles.controlLabel}>{t('settings.glitterFall.colors.title')}</Text>
+          <Text style={[styles.controlLabel, { color: colors.text }]}>
+            {t('settings.glitterFall.colors.title')}
+          </Text>
           <SegmentedControl
             options={glitterColorOptions}
             value={glitterSettings.colorCount}
@@ -410,112 +663,90 @@ export const SettingsScreen: React.FC = () => {
               updateGameSettings('glitter-fall', GLITTER_PRESETS[glitterSettings.preset])
             }
           />
-        </View>
-
-        {/* Sound */}
-        <View style={styles.section}>
-          <SettingToggle
-            label={t('settings.sound.label')}
-            description={t('settings.sound.description')}
-            value={!!settings.soundEnabled}
-            onValueChange={(value) => updateSettings({ soundEnabled: value })}
-          />
-        </View>
-
-        {/* Volume */}
-        {settings.soundEnabled && (
-          <View style={styles.section}>
-            <SectionHeader title={t('settings.volume.title')} />
-            <VolumeControl
-              value={settings.soundVolume}
-              onValueChange={(value) => updateSettings({ soundVolume: value })}
-            />
-            <Text style={styles.description}>{Math.round(settings.soundVolume * 100)}%</Text>
-          </View>
-        )}
-
-        {/* Games on Home Screen */}
-        <View style={styles.section}>
-          <SectionHeader title={t('settings.gamesOnHomeScreen.title')} />
-          {GAME_REGISTRY.filter((game) => settings.enableUnfinishedGames || !game.isUnfinished).map(
-            (game) => {
-              const isVisible = !settings.hiddenGames.includes(game.id);
-              return (
-                <SettingToggle
-                  key={game.id}
-                  label={t(game.nameKey)}
-                  artwork={<GameArtwork gameId={game.id} size={32} />}
-                  value={isVisible}
-                  onValueChange={(value) => {
-                    const updated = value
-                      ? settings.hiddenGames.filter((id) => id !== game.id)
-                      : [...settings.hiddenGames, game.id];
-                    updateSettings({ hiddenGames: updated });
-                  }}
-                />
-              );
-            },
-          )}
-          <Text style={styles.description}>{t('settings.gamesOnHomeScreen.description')}</Text>
-        </View>
-
-        {/* Parent Timer */}
-        <View style={styles.section}>
-          <SectionHeader title={t('settings.parentTimer.title')} />
+        </Group>
+      )}
+      {gameId === 'pattern-train' && (
+        <Group title={t('settings.challenge')}>
+          <Text style={[styles.controlLabel, { color: colors.text }]}>
+            {t('games.patternTrain.chooseDifficulty')}
+          </Text>
           <SegmentedControl
-            options={timerOptions}
-            value={settings.parentTimerMinutes}
-            onValueChange={(value) => updateSettings({ parentTimerMinutes: value })}
+            options={(['starter', 'growing', 'challenge'] as const).map((value) => ({
+              value,
+              label: t(
+                (
+                  {
+                    starter: 'games.patternTrain.difficulty.easy.label',
+                    growing: 'games.patternTrain.difficulty.medium.label',
+                    challenge: 'games.patternTrain.difficulty.hard.label',
+                  } as const
+                )[value],
+              ),
+            }))}
+            value={getGameSettings(settings, gameId).level}
+            onValueChange={(level) => updateGameSettings(gameId, { level })}
             wrap
           />
-          <Text style={styles.description}>{t('settings.parentTimer.description')}</Text>
-        </View>
-
-        {/* Telemetry */}
-        <View style={styles.section}>
-          <SettingToggle
-            label={t('settings.telemetry.label')}
-            description={t('settings.telemetry.description')}
-            value={!!settings.telemetryEnabled}
-            onValueChange={(value) => updateSettings({ telemetryEnabled: value })}
+        </Group>
+      )}
+      {gameId === 'breathing-garden' && (
+        <Group title={t('settings.help')}>
+          <Text style={[styles.controlLabel, { color: colors.text }]}>
+            {t('games.breathingGarden.session.title')}
+          </Text>
+          <SegmentedControl
+            options={([3, 5, 10, 'open-ended'] as const).map((value) => ({
+              value,
+              label:
+                value === 'open-ended'
+                  ? t('games.breathingGarden.session.openEnded')
+                  : t('games.breathingGarden.session.breaths', { count: value }),
+            }))}
+            value={getGameSettings(settings, gameId).sessionLength}
+            onValueChange={(sessionLength) => updateGameSettings(gameId, { sessionLength })}
+            wrap
           />
-        </View>
-      </ScrollView>
-    </AppScreen>
+          <SettingToggle
+            label={t('games.breathingGarden.visualLabel')}
+            value={getGameSettings(settings, gameId).visualCue}
+            onValueChange={(visualCue) => updateGameSettings(gameId, { visualCue })}
+          />
+        </Group>
+      )}
+    </>
   );
 };
 
-const createStyles = (colors: ThemeColors, _resolvedMode: ResolvedThemeMode) =>
-  StyleSheet.create({
-    scrollContent: {
-      padding: Space.xl,
-    },
-    scroll: {
-      flex: 1,
-      minHeight: 0,
-    },
-    section: {
-      marginBottom: Space.xl,
-    },
-    description: {
-      ...TypeStyle.bodySm,
-      color: colors.textLight,
-      marginTop: Space.xs,
-    },
-    controlLabel: {
-      ...TypeStyle.label,
-      color: colors.text,
-      marginTop: Space.base,
-      marginBottom: Space.xs,
-    },
-    errorMessage: {
-      ...TypeStyle.bodySm,
-      color: colors.danger,
-      marginBottom: Space.base,
-    },
-    persistenceStatus: {
-      ...TypeStyle.bodySm,
-      color: colors.textLight,
-      marginBottom: Space.base,
-    },
-  });
+const styles = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.md },
+  headerTitle: { flex: 1 },
+  content: {
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
+    padding: Space.base,
+    gap: Space.md,
+  },
+  group: { gap: Space.xs },
+  groupBody: {
+    borderWidth: 1.5,
+    borderRadius: Radius.xl,
+    paddingHorizontal: Space.md,
+    paddingVertical: Space.xs,
+    gap: Space.xs,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Space.sm,
+    minHeight: 52,
+    paddingVertical: Space.xs,
+    borderTopWidth: 1,
+  },
+  rowCopy: { flex: 1, gap: 2 },
+  chevron: { transform: [{ rotate: '180deg' }] },
+  hero: { flexDirection: 'row', alignItems: 'center', gap: Space.md },
+  controlLabel: { ...TypeStyle.label, marginTop: Space.sm },
+  description: { ...TypeStyle.helper, marginVertical: Space.xs },
+  error: { borderRadius: Radius.md, padding: Space.md },
+});

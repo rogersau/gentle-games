@@ -524,6 +524,6 @@ const createStyles = (colors: ThemeColors) =>
     modeToggleText: {
       color: colors.text,
       fontFamily: FontFamily.bold,
-      fontSize: 14,
+      fontSize: 15,
     },
   });

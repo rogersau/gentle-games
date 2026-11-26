@@ -33,6 +33,7 @@ jest.mock('./src/ui/fonts', () => ({
 
 jest.mock('./src/utils/theme', () => ({
   useReducedMotion: () => false,
+  SystemMotionProvider: ({ children }: { children: React.ReactNode }) => children,
   useThemeColors: jest.fn(() => ({
     resolvedMode: 'light',
     colors: {
@@ -180,7 +181,8 @@ const createSettingsValue = (overrides?: {
   isLoading?: boolean;
 }): SettingsValue => {
   const settings: Settings = {
-    animationsEnabled: true,
+    movement: 'lively',
+    grownUpsHoldGate: true,
     soundEnabled: true,
     soundVolume: 0.5,
     difficulty: 'medium',
@@ -192,7 +194,7 @@ const createSettingsValue = (overrides?: {
     parentTimerMinutes: 0,
     enableUnfinishedGames: true,
     language: 'en-US',
-    reducedMotionEnabled: false,
+
     telemetryEnabled: false,
     showMochiInGames: true,
     ...overrides?.settings,

@@ -12,12 +12,12 @@ module.exports = {
   version,
   orientation: 'portrait',
   icon: './assets/pwa/icon-512x512.png',
-  userInterfaceStyle: 'light',
-  backgroundColor: '#FFFEF7',
+  userInterfaceStyle: 'automatic',
+  backgroundColor: '#FBF8F1',
   splash: {
     image: './assets/splash-icon.png',
     resizeMode: 'contain',
-    backgroundColor: '#FFFEF7',
+    backgroundColor: '#FBF8F1',
   },
   ios: {
     supportsTablet: true,
@@ -27,7 +27,7 @@ module.exports = {
   android: {
     adaptiveIcon: {
       foregroundImage: './assets/pwa/icon-512x512-maskable.png',
-      backgroundColor: '#FFFEF7',
+      backgroundColor: '#FBF8F1',
     },
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
@@ -39,8 +39,8 @@ module.exports = {
     output: 'single',
     name: 'Gentle Games',
     shortName: 'Gentle Games',
-    themeColor: '#FFFEF7',
-    backgroundColor: '#FFFEF7',
+    themeColor: '#FBF8F1',
+    backgroundColor: '#FBF8F1',
     display: 'standalone',
     favicon: './assets/pwa/icon-32x32.png',
     icons: [

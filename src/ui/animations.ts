@@ -1,15 +1,15 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import { Animated, Easing, Platform } from 'react-native';
 import { useSettings } from '../context/SettingsContext';
 import { useReducedMotion } from '../utils/theme';
 
 const supportsNativeDriver = Platform.OS !== 'web';
 
-/** Returns the effective decorative-motion policy (app setting plus OS reduced motion). */
+/** Decorative motion is reserved for Lively. Still also disables user-directed motion. */
 export const useAnimationEnabled = (): boolean => {
   const { settings } = useSettings();
   const reducedMotion = useReducedMotion();
-  return settings.animationsEnabled !== false && !reducedMotion;
+  return settings.movement === 'lively' && !reducedMotion;
 };
 
 /** Fade in from 0 to 1 */
@@ -64,6 +64,13 @@ export const useGentleBounce = () => {
 export const useScalePress = () => {
   const scale = useRef(new Animated.Value(1)).current;
   const enabled = useAnimationEnabled();
+
+  useEffect(() => {
+    if (!enabled) {
+      scale.stopAnimation();
+      scale.setValue(1);
+    }
+  }, [enabled, scale]);
 
   const onPressIn = useCallback(() => {
     if (!enabled) return;

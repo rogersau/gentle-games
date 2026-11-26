@@ -67,11 +67,24 @@ jest.mock('../context/SettingsContext', () => ({
 jest.mock('../components/CategoryMatchBoard', () => {
   const { Text, View } = require('react-native');
   return {
-    CategoryMatchBoard: ({ categoryCount }: { categoryCount: number }) => (
-      <View testID='category-board'>
-        <Text>{`category-count-${categoryCount}`}</Text>
-      </View>
-    ),
+    CategoryMatchBoard: ({
+      categoryCount,
+      renderShell,
+    }: {
+      categoryCount: number;
+      renderShell: (
+        prompt: string,
+        action: React.ReactNode,
+        board: React.ReactNode,
+      ) => React.ReactNode;
+    }) =>
+      renderShell(
+        'Sort the pictures.',
+        null,
+        <View testID='category-board'>
+          <Text>{`category-count-${categoryCount}`}</Text>
+        </View>,
+      ),
   };
 });
 
@@ -95,6 +108,7 @@ describe('CategoryMatchScreen', () => {
 
   it('lets a player choose a set from the preview and see its groups', () => {
     const screen = render(<CategoryMatchScreen />);
+    fireEvent.press(screen.getByTestId('game-more'));
     fireEvent.press(screen.getByRole('radio', { name: 'Around town' }));
     expect(mockUpdateGameSettings).toHaveBeenCalledWith('category-match', { pack: 'town' });
     mockSettings.gameSettings['category-match'].pack = 'town';

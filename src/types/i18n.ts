@@ -1,13 +1,3 @@
-export type SupportedLanguage = 'en-AU' | 'en-US';
-
-export interface LanguageOption {
-  value: SupportedLanguage;
-  label: string;
-}
-
-export const LANGUAGE_OPTIONS: LanguageOption[] = [
-  { value: 'en-AU', label: '🇦🇺 English (Australia)' },
-  { value: 'en-US', label: '🇺🇸 English (United States)' },
-];
-
+export const SUPPORTED_LANGUAGES = ['en-AU', 'en-US'] as const;
+export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 export const DEFAULT_LANGUAGE: SupportedLanguage = 'en-AU';
